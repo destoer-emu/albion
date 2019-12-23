@@ -1,5 +1,6 @@
 #pragma once
 #include <QThread>
+#include <QMutex>
 #include "../headers/gb.h"
 #include "framebuffer.h"
 

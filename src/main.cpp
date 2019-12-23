@@ -16,7 +16,6 @@ int main(int argc, char *argv[])
     return app.exec();
 #endif
 
-
 #ifdef FRONTEND_SDL
     
     if(argc != 2)
@@ -24,6 +23,7 @@ int main(int argc, char *argv[])
         printf("usage: %s <rom_name>\n",argv[0]);
         return 0;
     }
+
 
     SDLMainWindow window(argv[1]);
 #endif
@@ -34,6 +34,14 @@ int main(int argc, char *argv[])
         printf("usage: %s <rom_name>\n",argv[0]);
         return 0;
     }
+    
+    // sdl required for audio
+    SDL_SetMainReady();
+	if(SDL_Init(SDL_INIT_EVERYTHING) != 0)
+	{
+		printf("Unable to initialize SDL: %s\n", SDL_GetError());
+		return 1;
+	}
 
     ImguiMainWindow window(argv[1]);
 #endif

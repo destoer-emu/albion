@@ -39,6 +39,12 @@ void QtMainWindow::create_actions()
     open_act->setStatusTip(tr("open a rom file"));
     connect(open_act,&QAction::triggered, this, &QtMainWindow::open);
 
+/*
+    disassembler_act = new QAction(tr("&open disassembler"),this);
+    open_act->setShortcuts(QKeySequence::New);
+    open_act->setStatusTip(tr("open the debugger"));
+    connect(disassembler_act,&QAction::triggered, this, &QtMainWindow::disassembler);
+*/
 
     alignment_group = new QActionGroup(this);
     alignment_group->addAction(open_act);
@@ -48,10 +54,16 @@ void QtMainWindow::create_actions()
 // create our top bar menu
 void QtMainWindow::create_menus()
 {
-    file_menu = menuBar()->addMenu(tr("&File"));
-    file_menu->addAction(open_act);
+    emu_menu = menuBar()->addMenu(tr("&File"));
+    emu_menu->addAction(open_act);
+/*
+    emu_menu = menuBar()->addMenu(tr("&Debug"));
+    emu_menu->addAction(disassembler_act);
+*/
 }
 
+
+//void QtMainWindow::disassembler() {}
 
 void QtMainWindow::keyPressEvent(QKeyEvent *event)
 {
@@ -144,7 +156,7 @@ void QtMainWindow::open()
         // construct our main gb class
         gb.reset(file_name);
 
-        setMinimumSize(gb.ppu.X,(gb.ppu.Y));
+        setMinimumSize(gb.ppu.X,gb.ppu.Y);
         resize(gb.ppu.X * 2,(gb.ppu.Y * 2));
         // set window name with the rom title
         QString window_tile = QString::fromStdString(fmt::format("destoer-emu: {}",

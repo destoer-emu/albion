@@ -22,7 +22,7 @@ public:
     FrameBuffer framebuffer;
 private slots:
     void open();
-
+    //void disassembler(); <-- disassembler implemented in imgui first for now!
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -33,9 +33,10 @@ private:
     void create_menus();
 
 
-    QMenu *file_menu;
+    QMenu *emu_menu;
     QActionGroup *alignment_group;
     QAction *open_act;
+    QAction *disassembler_act;
     QLabel *info_label;
     QThread *emu_thread;
 

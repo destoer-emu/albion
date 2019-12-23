@@ -2,63 +2,39 @@
 #include "framebuffer.h"
 #include <QSurface>
 
-
-void FrameBuffer::init(std::vector<uint32_t> *buf,int x, int y)
+void FrameBuffer::swap_buffer(std::vector<uint32_t> &other)
 {
-    if(buf == nullptr)
-    {
-        puts("nullptr for screen when constructing framebuffer");
-        exit(1);
-    }
-    screen = buf;
-    width = x;
-    height = y;
+    // have to lock this here as paintevent can be called
+    // from our emu thread or our main window
+    std::scoped_lock<std::mutex> guard(screen_mutex);
+    std::swap(screen,other);
+}
+
+void FrameBuffer::init(int x, int y)
+{
     ready = true;
+    X = x;
+    Y = y;
+    screen.resize(x * y);
 }
 
-
-void FrameBuffer::initializeGL()
+void FrameBuffer::paintEvent(QPaintEvent*)
 {
-    // clear the screen
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    // gl texture
-    glEnable(GL_TEXTURE_2D); 
-
-}
-
-// called when we need to draw this
-void FrameBuffer::paintGL()
-{
-    // not ready to draw yet
-    if(!ready || screen == nullptr)
+    if(!ready)
     {
         return;
     }
 
-    glClear(GL_COLOR_BUFFER_BIT);
+    std::scoped_lock<std::mutex> guard(screen_mutex);
 
-    // setup our texture
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    // create the texture supposedly theres a faster way to do this with subimage but i cant get
-    // it working?
-    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,screen->data());
-
-    // render the texture
-    glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0, 1.0);
-        glTexCoord2f(1.0f, 0.0f); glVertex2f( 1.0, 1.0);
-        glTexCoord2f(1.0f, 1.0f); glVertex2f( 1.0, -1.0);
-        glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0, -1.0);
-    glEnd();
+    QPainter painter(this);
+    QImage image((uchar*)screen.data(), X, Y, QImage::Format_RGBA8888);
+    painter.drawImage(0,0,image.scaled(width(),height()));
 }
 
-//why the heck is this so slow
-void FrameBuffer::redraw()
+void FrameBuffer::redraw(std::vector<uint32_t> &other)
 {
+    swap_buffer(other);
     update();
 }
 

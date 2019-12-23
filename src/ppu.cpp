@@ -232,23 +232,17 @@ bool Ppu::push_pixel()
 	{
 		int colour_address = static_cast<uint16_t>(ppu_fifo[pixel_idx].source) + 0xff47;	
 		dmg_colors col = get_colour(col_num,colour_address); 
-		int red = 0;
-		int green = 0;
-		int blue = 0;
-		
-		// black is default
+
+        // black is default
+        uint32_t full_color = 0xff000000;
+
 		switch(col)
 		{
-            case dmg_colors::black: break;
-			case dmg_colors::white: red = 255; green = 255; blue = 255; break;
-			case dmg_colors::light_gray: red = 0xCC; green = 0xCC; blue = 0xCC;  break;
-			case dmg_colors::dark_gray: red = 0x77; green = 0x77; blue = 0x77;  break;
+            case dmg_colors::black: /*full_color = 0x000000ff;*/ break;
+			case dmg_colors::white: full_color = 0xffffffff; break;
+			case dmg_colors::light_gray: full_color = 0xffcccccc;  break;
+			case dmg_colors::dark_gray: full_color = 0xff777777; break;
 		}
-		
-
-        uint32_t full_color = red;
-        full_color |= green << 8;
-        full_color |= blue << 16;
 
 		screen[(scanline*X)+x_cord] = full_color;
 	}
@@ -596,18 +590,18 @@ dmg_colors Ppu::get_colour(uint8_t colour_num, uint16_t address)
 
 
 
-int cmpfunc(const Obj &a, const Obj &b)
+bool cmpfunc(const Obj &a, const Obj &b)
 {
 	// sort by the oam index
 	if(a.x_pos == b.x_pos)
 	{
-		return -(a.index - b.index);
+		return (a.index > b.index);
 	}
 
 	// sort by the x posistion
 	else
 	{
-		return (a.x_pos - b.x_pos);
+		return (a.x_pos < b.x_pos);
 	}
 }
 
@@ -667,7 +661,7 @@ bool Ppu::sprite_fetch()
 
 	int scanline = current_line;
 	
-	bool did_draw;
+	bool did_draw = false;
 	
 	for(int i = 0; i < no_sprites; i++)
 	{

@@ -19,8 +19,17 @@ struct Rom_info
         switch(cart_type)
         {
             case 0: break; // rom only
-            case 1 ... 3: mbc1 = true; break;
-            case 5 ... 6: mbc2 = true; break;
+
+            case 1: case 2: case 3:
+            { 
+                mbc1 = true; break;
+            }
+
+            case 5: case 6:
+            { 
+                mbc2 = true; break;
+            }
+            
             case 10:  mbc3 = true; has_rtc = true; break; 
             case 0x1b: mbc5 = true; break;
             default: mbc3 = true; break; // assume mb3 for now

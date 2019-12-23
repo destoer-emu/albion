@@ -3,6 +3,7 @@
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #include <QTimer>
+#include <QPainter>
 #include <vector>
 #include <stdint.h>
 #include <stdio.h>
@@ -10,30 +11,25 @@
 #include "../headers/lib.h"
 
 
-class FrameBuffer : public QOpenGLWidget
+class FrameBuffer : public QWidget
 {
-
     Q_OBJECT
 
 public:
-    // holds a mutable ref to a buffer we can write to
-    void init(std::vector<uint32_t> *buf, int x, int y);
-    void redraw();
+    void init(int x, int y);
+    void redraw(std::vector<uint32_t> &other);
 
 protected:
-
-    void initializeGL() override;
-
-    // called when we need to draw this
-    void paintGL() override;
+    void paintEvent(QPaintEvent*) override;
 
 private:
-    bool ready = false;
-    int width;
-    int height;
-    std::vector<uint32_t> *screen = nullptr;
-    QTimer *timer;
+    void swap_buffer(std::vector<uint32_t> &other);
 
-    GLuint screen_texture;
+    int X;
+    int Y;
+    bool ready = false;
+    std::vector<uint32_t> screen;
+    std::mutex screen_mutex;
 };
 #endif
+

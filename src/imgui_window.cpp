@@ -1,6 +1,7 @@
 #include "imgui_window.h"
-
 #ifdef FRONTEND_IMGUI
+
+
 
 // init imgui
 ImguiMainWindow::ImguiMainWindow(std::string filename)
@@ -83,11 +84,9 @@ ImguiMainWindow::~ImguiMainWindow()
 
 
 // can probably optimise this to an init and redraw but screw it for now :P
-void bind_texture(GLuint &texture, std::vector<uint32_t> &buf, int x, int y)
+void update_texture(GLuint &texture, std::vector<uint32_t> &buf, const int x, const int y)
 {
     glEnable(GL_TEXTURE_2D); 
-
-    glGenTextures(1,&texture);
 
     glBindTexture(GL_TEXTURE_2D,texture);
 
@@ -98,44 +97,95 @@ void bind_texture(GLuint &texture, std::vector<uint32_t> &buf, int x, int y)
     // create the texture supposedly theres a faster way to do this with subimage but i cant get
     // it working?
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,x,y,0,GL_RGBA,GL_UNSIGNED_BYTE,buf.data());
+    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,x,y,0,GL_RGBA, GL_UNSIGNED_BYTE,buf.data());
 
     glBindTexture(GL_TEXTURE_2D,0);
 
     glDisable(GL_TEXTURE_2D); 
 }
 
+// looks like we need to use imgui for the key input :P
+void handle_input(GB &gb)
+{
+	SDL_Event event;
+	
+	// handle input
+	while(SDL_PollEvent(&event))
+	{	
+		switch(event.type)
+		{
+			case SDL_KEYDOWN:
+			{
+				switch(event.key.keysym.sym) // <--- could remove as repeated code
+				{
+					case SDLK_a: gb.key_pressed(4); break;
+					case SDLK_s: gb.key_pressed(5); break;
+					case SDLK_RETURN: gb.key_pressed(7); break;
+					case SDLK_SPACE: gb.key_pressed(6); break;
+					case SDLK_RIGHT: gb.key_pressed(0); break;
+					case SDLK_LEFT: gb.key_pressed(1); break;
+					case SDLK_UP: gb.key_pressed(2);break;
+					case SDLK_DOWN: gb.key_pressed(3); break;
+                    default: break;
+				}
+				break;
+			}
+			
+			case SDL_KEYUP:
+			{
+				switch(event.key.keysym.sym)
+				{
+					case SDLK_a: gb.key_released(4); break;
+					case SDLK_s: gb.key_released(5); break;
+					case SDLK_RETURN: gb.key_released(7); break;
+					case SDLK_SPACE: gb.key_released(6); break;
+					case SDLK_RIGHT: gb.key_released(0); break;
+					case SDLK_LEFT: gb.key_released(1); break;
+					case SDLK_UP: gb.key_released(2); break;
+					case SDLK_DOWN: gb.key_released(3);break;
+                    default: break;
+				}
+				break;
+			}
 
-void emu_instance(GB &gb, std::string filename)
+            default: break;
+        }
+    }    
+}
+
+// we will switch them in and out but for now its faster to just copy it
+void emu_instance(GB &gb, std::string filename, std::vector<uint32_t> &screen_copy, std::mutex &screen_mutex)
 {
 	constexpr uint32_t fps = 60; 
 	constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
 	uint64_t next_time = current_time() + screen_ticks_per_frame;
     gb.reset(filename);
-    //init_sdl();
 
-
-
-try
-{
-    while(!gb.quit)
+    try
     {
-        //handle_input();
+        while(!gb.quit)
+        {
+            handle_input(gb);
+            
+            
+            gb.run();
 
-        gb.run();
+            // swap the buffer so the frontend can render it
+            {
+                std::scoped_lock<std::mutex> guard(screen_mutex);
+                std::swap(gb.ppu.screen,screen_copy);
+            }
 
-        //render();
-
-		// throttle the emulation
-        std::this_thread::sleep_for(std::chrono::milliseconds(time_left(next_time)));
-		next_time += screen_ticks_per_frame;
+            // throttle the emulation
+            std::this_thread::sleep_for(std::chrono::milliseconds(time_left(next_time)));
+            next_time += screen_ticks_per_frame;
+        }
     }
-}
 
-catch(std::exception &ex)
-{
-    std::cout << ex.what();
-}
+    catch(std::exception &ex)
+    {
+        std::cout << ex.what();
+    }
 }
 
 
@@ -150,6 +200,7 @@ void ImguiMainWindow::destroy_instance()
     }
 }
 
+//memory on emulator steadily grows for some reason!?
 void ImguiMainWindow::mainloop(std::string filename)
 {
 
@@ -169,17 +220,20 @@ void ImguiMainWindow::mainloop(std::string filename)
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
 
+    std::vector<uint32_t> screen_copy(gb.ppu.X*gb.ppu.Y);
 
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    GLuint screen_texture;
 
-    std::thread emulator(emu_instance,std::ref(gb),filename);
+    GLuint screen_texture;
+    glGenTextures(1,&screen_texture);
+
+    std::mutex screen_mutex;
+    std::thread emulator(emu_instance,std::ref(gb),filename,std::ref(screen_copy),std::ref(screen_mutex));
     emu_running = true;
     std::swap(emulator,emu_thread);
+    
 
-    std::vector<uint32_t> test;
-    test.resize(160*144);
-    std::fill(test.begin(),test.end(),0xffffffff);
+    
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -197,8 +251,11 @@ void ImguiMainWindow::mainloop(std::string filename)
         ImGui::NewFrame();
 
         ImGui::Begin("screen"); // <--- figure out why this doesent draw then add syncing and only showing debug info during a pause
-        bind_texture(screen_texture,gb.ppu.screen,gb.ppu.X,gb.ppu.Y);
-        ImGui::Image((void*)(intptr_t)screen_texture,ImVec2(gb.ppu.X*2,gb.ppu.Y*2));
+        {
+            std::scoped_lock<std::mutex> guard(screen_mutex);
+            update_texture(screen_texture,screen_copy,gb.ppu.X,gb.ppu.Y);
+        }        
+        ImGui::Image((void*)(intptr_t)screen_texture,ImVec2(gb.ppu.X*2,gb.ppu.Y*2));    
         ImGui::End();
 
 
