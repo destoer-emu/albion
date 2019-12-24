@@ -446,39 +446,13 @@ void Memory::tick_dma(int cycles)
         return;
     }
 
-
-	if(oam_dma_index > 0xa0)
+	oam_dma_index += cycles;
+	// We are done with our dma
+	if(oam_dma_index >= 0xa2) 
 	{
-		oam_dma_index += cycles;
-		if(oam_dma_index >= 0xa2) // now its done 
-		{
-			oam_dma_active = false;
-			return;
-		}	
-	}
-
-	
-	for(int i = 0; i < cycles; i++)
-	{
-		oam_dma_index += 1; // go to next one
-		// We are done with our dma
-		if(oam_dma_index > 0xa0) 
-		{ 			
-			// get ready to add cycles as 2 extra are used for start / stop
-			cycles -= i;
-			break;
-		}
-	}
-	
-	if(oam_dma_index > 0xa0)
-	{
-		oam_dma_index += cycles;
-		if(oam_dma_index >= 0xa2) // now its done 
-		{
-			oam_dma_active = false;
-			return;
-		}	
-	}
+		oam_dma_active = false;
+		return;
+	}	
 }
 
 

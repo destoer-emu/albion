@@ -52,17 +52,32 @@ inline void glfw_error_callback(int error, const char* description)
 class ImguiMainWindow
 {
 public:
-    ImguiMainWindow(std::string filename);
+    ImguiMainWindow();
     ~ImguiMainWindow();
-
+    void mainloop(); 
 private:
-    void mainloop(std::string filename);
-    void destroy_instance();
+
+
+    // emulator managment
+    void stop_instance();
+    void start_instance();
+
+    // frontend drawing
+    void draw_screen();
+    void draw_regs();
+    void draw_menu_bar();
+
     GLFWwindow* window;
 
+    // underlying emulator instance data
     GB gb;
     std::thread emu_thread;
-    bool emu_running;
+    bool emu_running = false;
+
+    // screen rendering data
+    std::mutex screen_mutex;
+    std::vector<uint32_t> screen_copy;
+    GLuint screen_texture;
 };
 
 

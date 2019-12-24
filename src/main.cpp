@@ -24,17 +24,12 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-
+    SDL_SetMainReady();
     SDLMainWindow window(argv[1]);
 #endif
 
 #ifdef FRONTEND_IMGUI
-    if(argc != 2)
-    {
-        printf("usage: %s <rom_name>\n",argv[0]);
-        return 0;
-    }
-    
+
     // sdl required for audio
     SDL_SetMainReady();
 	if(SDL_Init(SDL_INIT_EVERYTHING) != 0)
@@ -43,7 +38,9 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-    ImguiMainWindow window(argv[1]);
+    ImguiMainWindow window;
+
+    window.mainloop();
 #endif
 
     return 0;
