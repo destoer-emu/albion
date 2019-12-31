@@ -1,12 +1,34 @@
 #include "headers/cpu.h"
 #include "headers/memory.h"
 #include "headers/disass.h"
+#include "headers/debug.h"
 
+
+
+
+void Cpu::check_rst_loop(uint16_t addr, uint8_t op)
+{
+	if(mem->read_mem(addr) == op)
+	{
+		#ifdef DEBUG
+		write_log("[ERROR] rst infinite loop at {:x}",addr);
+		#endif
+		throw std::runtime_error("infinite rst lockup");
+	}
+}
 
 void Cpu::exec_instr()
 {
 
-    //std::cout << fmt::format("{:x}: {}\n",pc,disass->disass_op(pc));
+#ifdef DEBUG
+	if(debug->step_instr || debug->breakpoint_hit(pc,mem->read_mem(pc),break_type::execute))
+	{
+		// halt until told otherwhise :)
+		write_log("[DEBUG] execute breakpoint hit ({:x}:{:x})",pc,mem->read_mem(pc));
+		debug->halt();
+	}
+#endif
+
 
     uint8_t opcode = mem->read_memt(pc++);
 
@@ -100,34 +122,24 @@ void Cpu::exec_instr()
 			
 			// most games should never even execute this 
 		case 0x10: // stop 
-			//puts("fix stop"); // <-- does not emualte teh correct functionalitly of this instr
 			pc += 1; // skip over next byte
 			
-	/*		// if bit one is set we are gonna do a speed switch
-			if(is_cgb && is_set(io[IO_SPEED],0))
+			if(is_cgb && is_set(mem->io[IO_SPEED],0))
 			{
-				deset_bit(io[IO_SPEED],0); // clear the bit
-				puts("double speed!");
+				mem->io[IO_SPEED] = deset_bit(mem->io[IO_SPEED],0); // clear the bit
 				is_double = !is_double;
 				
 				if(is_double)
 				{
-					set_bit(io[IO_SPEED],7);
+					mem->io[IO_SPEED] = set_bit(mem->io[IO_SPEED],7);
 				}
 			
 				else // single speed 
 				{
-					deset_bit(io[IO_SPEED],7);
+					mem->io[IO_SPEED] = deset_bit(mem->io[IO_SPEED],7);
 				}
 			
 			}
-			
-			else
-			{
-				puts("unhandled normal stop!");
-				exit(1);
-			}
-	*/		
 			
 			break;
 			
@@ -945,12 +957,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xc0: // ret nz
-			cycle_tick(1); // internal
-			if(!is_set(f,Z))
-			{
-				pc = read_stackwt();
-				cycle_tick(1);  // internal
-			}
+			ret_cond(false,Z);
 			break;
 	
 		case 0xc1: // pop bc	
@@ -977,14 +984,7 @@ void Cpu::exec_instr()
 		
 		case 0xc4: // call nz
         {
-			uint16_t v = mem->read_wordt(pc);
-			pc += 2;
-			if(!is_set(f,Z))
-			{
-				cycle_tick(1); // internal
-				write_stackwt(pc);
-				pc = v;
-			}
+			call_cond(false,Z);
 			break;
         }
 
@@ -999,6 +999,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xc7: // rst 00
+			check_rst_loop(0x00,0xc7);
 			cycle_tick(1); // internal
 			write_stackwt(pc);
 			pc = 0;
@@ -1006,12 +1007,7 @@ void Cpu::exec_instr()
 		
 		case 0xc8: // ret z
         {
-			cycle_tick(1); // internal delay
-			if(is_set(f,Z))
-			{
-				pc = read_stackwt();
-				cycle_tick(1); // internal delay
-			}
+			ret_cond(true,Z);
 			break;
         }
 
@@ -1042,14 +1038,7 @@ void Cpu::exec_instr()
 		
 		case 0xcc: // call z
         {
-			uint16_t v = mem->read_wordt(pc);
-			pc += 2;
-			if(is_set(f,Z))
-			{
-				cycle_tick(1);  // internal delay
-				write_stackwt(pc);
-				pc = v;
-			}
+			call_cond(true,Z);
 			break;
         }
 		case 0xCD: // call nn <-- verify
@@ -1067,18 +1056,14 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xcf: // rst 08
+			check_rst_loop(0x08,0xcf);	
 			cycle_tick(1); // internal
 			write_stackwt(pc);
 			pc = 0x8;
 			break;
 		
 		case 0xd0: // ret nc
-			cycle_tick(1); // internal delay
-			if(!is_set(f,C))
-			{
-				pc = read_stackwt();			
-				cycle_tick(1); // internal delay
-			}
+			ret_cond(false,C);
 			break;
 		
 		case 0xd1: // pop de
@@ -1099,14 +1084,7 @@ void Cpu::exec_instr()
 
 		case 0xd4: // call nc nnnn
         {
-			uint16_t v = mem->read_wordt(pc);
-			pc += 2;
-			if(!is_set(f,C))
-			{
-				cycle_tick(1); // internal delay
-				write_stackwt(pc);
-				pc = v;
-			}
+			call_cond(false,C);
 			break;			
         }
 
@@ -1120,18 +1098,16 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xd7: // rst 10
+			#ifdef DEBUG
+			check_rst_loop(0x10,0xd7);
+			#endif
 			cycle_tick(1); // internal
 			write_stackwt(pc);
 			pc = 0x10;
 			break;
 		
 		case 0xd8: // ret c
-			cycle_tick(1); // internal delay
-			if(is_set(f,C))
-			{
-				pc = read_stackwt();				
-				cycle_tick(1); // internal delay
-			}
+			ret_cond(true,C);
 			break;
 			
 		case 0xd9: // reti
@@ -1154,14 +1130,7 @@ void Cpu::exec_instr()
 
 		case 0xdc: // call c, u16
         {
-			uint16_t v = mem->read_wordt(pc);
-			pc += 2;
-			if(is_set(f,C))
-			{
-				cycle_tick(1); // internal 
-				write_stackwt(pc);
-				pc = v;
-			}
+			call_cond(true,C);
 			break;
         }
 
@@ -1170,6 +1139,7 @@ void Cpu::exec_instr()
 			break;
 
 		case 0xdf: // rst 18
+			check_rst_loop(0x18,0xdf);
 			cycle_tick(1); // internal
 			write_stackwt(pc);
 			pc = 0x18;
@@ -1197,6 +1167,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xe7: // rst 20
+			check_rst_loop(0x20,0xe7);
 			cycle_tick(1); // internal
 			write_stackwt(pc);
 			pc = 0x20;
@@ -1221,6 +1192,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xef: // rst 28
+			check_rst_loop(0x28,0xef);
 			cycle_tick(1); // internal
 			write_stackwt(pc);
 			pc = 0x28;
@@ -1254,6 +1226,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xf7: // rst 30
+			check_rst_loop(0x30,0xf7);
 			cycle_tick(1); // internal
 			write_stackwt(pc);
 			pc = 0x30;
@@ -1285,14 +1258,15 @@ void Cpu::exec_instr()
 			
 		
 		case 0xff: // rst 38
+			check_rst_loop(0x38,0xff);	
 			cycle_tick(1); // internal 
+			write_log("[DEBUG] rst 38 at {}",pc);
 			write_stackwt(pc);
 			pc = 0x38;
 			break;   
 
 		default:
 		{
-			printf("invalid opcode %x\n",opcode);
 			throw std::runtime_error("invalid opcode!");		
 		}
     }

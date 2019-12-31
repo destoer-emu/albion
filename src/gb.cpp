@@ -1,10 +1,10 @@
 #include "headers/gb.h"
 
 
-void GB::reset(std::string rom_name)
+void GB::reset(std::string rom_name, bool with_rom)
 {
-    mem.init(&cpu,&ppu,rom_name);
-    cpu.init(&mem,&ppu,&disass);
+    mem.init(&cpu,&ppu,&debug,rom_name,with_rom);
+    cpu.init(&mem,&ppu,&disass,&debug);
     ppu.init(&cpu,&mem);
     disass.init(&mem);
 }

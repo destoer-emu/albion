@@ -461,3 +461,26 @@ void Cpu::instr_jr_cond(bool cond, int bit)
 		pc += operand;
 	}	
 }
+
+void Cpu::call_cond(bool cond, int bit)
+{
+	uint16_t v = mem->read_wordt(pc);
+	pc += 2;
+	if(is_set(f,bit) == cond)
+	{
+		cycle_tick(1);  // internal delay
+		write_stackwt(pc);
+		pc = v;
+	}
+}
+
+
+void Cpu::ret_cond(bool cond, int bit)
+{
+	cycle_tick(1); // internal
+	if(is_set(f,bit) == cond)
+	{
+		pc = read_stackwt();
+		cycle_tick(1);  // internal
+	}	
+}

@@ -7,7 +7,7 @@
 class Memory
 {
 public:
-    void init(Cpu *c,Ppu *p,std::string rom_name);
+    void init(Cpu *c,Ppu *p,Debug *d,std::string rom_name, bool with_rom=true);
 
     bool is_lcd_enabled();
 
@@ -34,9 +34,20 @@ public:
     std::vector<std::vector<uint8_t>> vram; // 0x4000
     std::vector<uint8_t> oam; // 0xa0
 
+    // direct write access no side affects
+    void raw_write(uint16_t addr, uint8_t v);
+    uint8_t raw_read(uint16_t addr);
+
+    // save file helpers
+    void save_cart_ram();
+    void load_cart_ram();
+
+
+    void do_hdma();
 private:
     Cpu *cpu;
     Ppu *ppu;
+    Debug *debug;
 
     void do_dma(uint8_t v);
 
@@ -72,6 +83,27 @@ private:
     void ram_bank_change_mbc1(uint8_t v);   
     
 
+    // mbc3
+    void change_rom_bank_mbc3(uint16_t address,uint8_t v);
+    void mbc3_ram_bank_change(uint16_t address,uint8_t v);
+
+    // mbc2
+    void change_lo_rom_bank_mbc2(uint16_t address,uint8_t v);
+    void ram_bank_enable_mbc2(uint16_t address,uint8_t v);
+
+    //mbc5
+    void mbc5_ram_bank_change(uint16_t address,uint8_t data);
+    void change_hi_rom_bank_mbc5(uint16_t address,uint8_t data);
+    void change_lo_rom_bank_mbc5(uint16_t address,uint8_t data);
+
+
+    // cgb
+    void do_gdma();
+    int hdma_len = 0; // length to transfer on a  gdma
+	int hdma_len_ticked = 0; // how many total dma transfers we have done
+	int dma_src = 0;
+	int dma_dst = 0;
+	bool hdma_active = false;
 
 
     // banking vars

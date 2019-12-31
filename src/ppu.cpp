@@ -13,6 +13,81 @@ void Ppu::init(Cpu *c,Memory *m)
     mem = m;
 	screen.resize(X*Y);
 	std::fill(screen.begin(),screen.end(),0);
+
+    // main ppu state
+	mode = ppu_mode::oam_search;
+	signal = false;
+    scanline_counter = 0;
+    current_line = 0;
+    new_vblank = false;
+
+	// fetcher
+	hblank = false;
+	x_cord = 0; // current x cord of the ppu
+	pixel_idx = 0;
+
+	ppu_cyc = 0; // how far for a tile fetch is
+	ppu_scyc = 0; // how far along a sprite fetch is
+	pixel_count = 0; // how many pixels are in the fifo
+	tile_cord = 0;
+	tile_ready = false; // is the tile fetch ready to go into the fio 
+	no_sprites = 0; // how many sprites
+	sprite_drawn = false;
+	window_start = false;
+	x_scroll_tick = false;
+	scx_cnt = 0;
+
+    // cgb pal
+	sp_pal_idx = 0;
+	bg_pal_idx = 0; // index into the bg pal (entry takes two bytes)
+
+	memset(bg_pal,0,sizeof(bg_pal)); // bg palette data
+	memset(sp_pal,0,sizeof(sp_pal)); // sprite pallete data 
+
+}
+
+
+// cgb
+void Ppu::set_bg_pal_idx(uint8_t v)
+{
+	bg_pal_idx = v & 0x3f;
+}
+
+void Ppu::set_sp_pal_idx(uint8_t v)
+{
+	sp_pal_idx = v & 0x3f;
+}
+
+void Ppu::write_sppd(uint8_t v)
+{
+	// cant be accessed during pixel transfer
+	if(mode != ppu_mode::pixel_transfer)
+	{
+		sp_pal[sp_pal_idx] = v; 
+	}
+
+	if(is_set(mem->io[IO_SPPI],7)) // increment on a write 
+	{
+		sp_pal_idx = (sp_pal_idx + 1) & 0x3f;
+		mem->io[IO_SPPI] &= ~0x3f;
+		mem->io[IO_SPPI] |= sp_pal_idx;
+	}	
+}
+
+void Ppu::write_bgpd(uint8_t v)
+{
+	// cant be accessed during pixel transfer
+	if(mode != ppu_mode::pixel_transfer)
+	{
+		bg_pal[bg_pal_idx] = v; 
+	}
+
+	if(is_set(mem->io[IO_BGPI],7)) // increment on a write 
+	{
+		bg_pal_idx = (bg_pal_idx + 1) & 0x3f;
+		mem->io[IO_BGPI] &= ~0x3f;
+		mem->io[IO_BGPI] |= bg_pal_idx;
+	}	
 }
 
 void Ppu::update_graphics(int cycles)
@@ -135,10 +210,10 @@ void Ppu::update_graphics(int cycles)
 				window_start = false;
 				ppu_scyc = 0;						
 					
-				// on cgb do hdma
-				//if(cpu->get_cgb() && hdma_active)
+				// on cgb do hdma (handler will check if its active)
+				if(cpu->get_cgb())
 				{
-					//do_hdma(cpu);
+					mem->do_hdma();
 				}
 			}	
 			break;
@@ -280,12 +355,12 @@ bool Ppu::push_pixel()
 		blue = (blue << 3) | (blue >> 2);
 		green = (green << 3) | (green >> 2);
 
-        uint32_t full_color = red;
+
+		uint32_t full_color = blue;
         full_color |= green << 8;
-        full_color |= blue << 16;
+        full_color |= red << 16;
 
-
-		screen[(scanline*X)+x_cord] = full_color;
+		screen[(scanline*X)+x_cord] = (full_color) | 0xff000000;
 	}
 	
 	// shift out a pixel
@@ -622,13 +697,13 @@ void Ppu::read_sprites()
 	for(int sprite = 0; sprite < 40; sprite++) // should fetch all these as soon as we leave oam search
 	{
         uint16_t addr = sprite*4;
-		uint8_t y_pos = mem->oam[addr & 0x9f];
+		uint8_t y_pos = mem->oam[addr & 0xff];
 		if( scanline -(y_size - 16) < y_pos  && scanline + 16 >= y_pos )
 		{
 			// intercepts with the line
-			objects_priority[x].index = sprite*4; // save the index
+			objects_priority[x].index = addr; // save the index
 			// and the x pos
-			objects_priority[x].x_pos = mem->oam[(addr+1)&0x9f]-8;
+			objects_priority[x].x_pos = mem->oam[(addr+1)&0xff]-8;
 			if(++x == 10) { break; } // only draw a max of 10 sprites per line
 		}
 	}

@@ -16,6 +16,8 @@ void Memory::ram_bank_enable(uint16_t address, uint8_t v)
 }
 
 
+// MBC1
+
 // 0x2000 - 0x3fff
 
 // mbc1 low rom bank change sets lower 5 bits of bank index
@@ -37,8 +39,9 @@ void Memory::change_lo_rom_bank_mbc1(uint16_t address, uint8_t v)
 	// bank greater than the current number of rom banks wraps back round
 	if(cart_rom_bank >= rom_info.no_rom_banks) 
     {
-		cart_rom_bank %= rom_info.no_ram_banks;
+		cart_rom_bank %= rom_info.no_rom_banks;
 	}
+
 }
 
 // 0x4000 - 0x5fff
@@ -97,10 +100,11 @@ void Memory::change_hi_rom_bank_mbc1(uint8_t v)
 	}	
 
 	// bank greater than the current number of rom banks wraps back round
-	if(cart_rom_bank >= rom_info.no_rom_banks) {
+	if(cart_rom_bank >= rom_info.no_rom_banks) 
+	{
 		cart_rom_bank %= rom_info.no_rom_banks;
 	}
-	
+
 }
 
 
@@ -108,7 +112,8 @@ void Memory::ram_bank_change_mbc1(uint8_t v)
 {
 	cart_ram_bank = v & 0x3; //  max 3 banks in mbc1
 	
-	if(rom_info.no_ram_banks <= 1) {
+	if(rom_info.no_ram_banks <= 1) 
+	{
 		cart_ram_bank = 0;
 	}
 	
@@ -116,5 +121,131 @@ void Memory::ram_bank_change_mbc1(uint8_t v)
 	else if(cart_ram_bank >= rom_info.no_ram_banks) 
     {
 		cart_ram_bank %= rom_info.no_ram_banks;
+	}
+}
+
+
+
+
+
+// mbc2
+
+
+//mbc2
+//0x2000 - 0x4000
+void Memory::change_lo_rom_bank_mbc2(uint16_t address,uint8_t data)
+{
+	UNUSED(address);
+	cart_rom_bank = data & 0xf;
+	if(cart_rom_bank == 0) 
+	{
+		cart_rom_bank = 1;
+	}
+	return;
+}
+
+// 0x0000 - 0x2000
+void Memory::ram_bank_enable_mbc2(uint16_t address,uint8_t v)
+{
+	UNUSED(address);
+
+	if(is_set(address,4)) // dont enabel if bit 4 of address written to is set
+	{
+		return;
+	}
+
+	ram_bank_enable(address,v);
+}
+
+
+
+// mbc3
+
+// mbc3 ( lower 7 bits of rom bank index set here)
+// 0x2000 - 0x4000
+void Memory::change_rom_bank_mbc3(uint16_t address,uint8_t v)
+{
+	UNUSED(address);
+	cart_rom_bank = v & 127;
+	cart_rom_bank &= 127;
+			
+	if(cart_rom_bank >= rom_info.no_rom_banks)
+	{
+		cart_rom_bank %= rom_info.no_rom_banks;
+	}
+
+	if(cart_rom_bank == 0)
+	{
+		cart_rom_bank = 1;
+	}	
+}
+
+// 0x4000 - 0x6000
+void Memory::mbc3_ram_bank_change(uint16_t address,uint8_t v)
+{
+	UNUSED(address);
+	// change the ram bank
+	// if ram bank is greater than 0x3 disable writes
+	cart_ram_bank = v;
+			
+	if(cart_ram_bank > 3)
+	{
+		// should signal rtc being accessed
+		// but for now leave unimpl
+		cart_ram_bank = CART_RAM_BANK_INVALID;
+	}	
+	
+	else if(rom_info.no_ram_banks == 0)
+	{
+		cart_ram_bank = 0;
+	}
+	
+	else if(cart_ram_bank <= 3 && cart_ram_bank >= rom_info.no_ram_banks)
+	{
+		cart_ram_bank %= rom_info.no_ram_banks;
+	}
+}	
+
+
+// mbc5
+
+// 0x2000 - 0x4000
+void Memory::change_lo_rom_bank_mbc5(uint16_t address,uint8_t data)
+{
+	UNUSED(address);
+	cart_rom_bank &= 0x100;
+	cart_rom_bank |= data;
+				
+	if(cart_rom_bank >= rom_info.no_rom_banks)
+	{
+		cart_rom_bank %= rom_info.no_rom_banks;
+
+	}			
+	// bank zero actually acceses bank 0
+}
+
+
+//mbc5 (9th bit) (03000 - 0x3fff)
+void Memory::change_hi_rom_bank_mbc5(uint16_t address,uint8_t data)
+{
+	UNUSED(address);
+	cart_rom_bank &= 0xff;
+	cart_rom_bank |= (data & 1) << 8; // 9th bank bit
+	if(cart_rom_bank >= rom_info.no_rom_banks)
+	{
+		cart_rom_bank %= rom_info.no_rom_banks;
+	}
+}
+
+// 0x4000 - 0x6000
+// mbc5
+void Memory::mbc5_ram_bank_change(uint16_t address,uint8_t data)
+{
+	UNUSED(address);
+	cart_ram_bank = data & 0xf;
+	
+	if(cart_ram_bank >= rom_info.no_ram_banks)
+	{
+		cart_ram_bank %= rom_info.no_ram_banks;	
 	}	
 }

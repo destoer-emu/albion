@@ -4,13 +4,14 @@
 #include "ppu.h"
 #include "lib.h"
 #include "disass.h"
+#include "debug.h"
 
 
 class GB
 {
 public:
     // sets up a new emulator state!
-    void reset(std::string rom_name);
+    void reset(std::string rom_name, bool with_rom=true);
     void run();
     void key_released(int key);
     void key_pressed(int key);
@@ -19,6 +20,7 @@ public:
     Memory mem;
     Ppu ppu;
     Disass disass;
+    Debug debug;
 
     bool quit = false;
 };

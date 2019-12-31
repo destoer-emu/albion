@@ -2,6 +2,7 @@
 #include "headers/ppu.h"
 #include "headers/cpu.h"
 #include "headers/lib.h"
+#include "headers/debug.h"
 
 
 bool Memory::is_lcd_enabled()
@@ -9,52 +10,117 @@ bool Memory::is_lcd_enabled()
 	return ( is_set(io[IO_LCDC],7) );	
 }
 
-void Memory::init(Cpu *c,Ppu *p,std::string rom_name)
+void Memory::save_cart_ram()
+{
+	std::string filename = rom_info.filename;
+	if(filename == "")
+	{
+		return;
+	}
+
+	std::string save_name = filename;
+
+	size_t ext_idx = filename.find_last_of("."); 
+	if(ext_idx != std::string::npos)
+	{
+		std::string save_name = filename.substr(0, ext_idx); 	
+	}
+
+	save_name += ".sav";
+
+    auto fp = std::fstream(save_name, std::ios::out | std::ios::binary);
+	for(auto &x : cart_ram_banks)
+	{
+    	fp.write(reinterpret_cast<char*>(x.data()), x.size());
+	}
+    fp.close();
+}
+
+void Memory::load_cart_ram()
+{
+	std::string filename = rom_info.filename;
+	if(filename == "")
+	{
+		return;
+	}
+
+	std::string save_name = filename;
+
+	size_t ext_idx = filename.find_last_of("."); 
+	if(ext_idx != std::string::npos)
+	{
+		std::string save_name = filename.substr(0, ext_idx); 	
+	}
+
+	save_name += ".sav";
+
+    auto fp = std::fstream(save_name, std::ios::in | std::ios::binary);
+	for(auto &x : cart_ram_banks)
+	{
+    	fp.read(reinterpret_cast<char*>(x.data()), x.size());
+	}
+    fp.close();	
+}
+
+void Memory::init(Cpu *c,Ppu *p,Debug *d,std::string rom_name, bool with_rom)
 {
     cpu = c; // init our cpu pointer
     ppu = p;
+	debug = d;
 
-    read_file(rom_name,rom); // read our rom in
+	if(with_rom)
+	{
+		read_file(rom_name,rom); // read our rom in
 
 
-    // propagate an error back with an exception later for now we just bail
-    if(rom.size() < 0x4000)
-    {
-        std::cout << "Rom is too small!";
-        throw std::runtime_error("rom is too small!");
-    }
+		// propagate an error back with an exception later for now we just bail
+		if(rom.size() < 0x4000)
+		{
+			throw std::runtime_error("rom is too small!");
+		}
+	}
 
+	else
+	{
+		rom.resize(0x4000);
+	}
 
     // reserve our underlying memory
     vram.resize(0x2);
     for(auto &x: vram)
     {
-        x.resize(0x2000);
+        x.resize(0x2000); 
+		std::fill(x.begin(),x.end(),0);
     }
 
 
     wram.resize(0x1000);
+	std::fill(wram.begin(),wram.end(),0); 
     oam.resize(0xa0);
+	std::fill(oam.begin(),oam.end(),0);
     io.resize(0x100);
+	std::fill(io.begin(),io.end(),0);
 
 
     // pull out our rom info
-    rom_info.init(rom);
+    rom_info.init(rom,rom_name);
 
 
     cart_ram_banks.resize(rom_info.no_ram_banks);
     for(auto &x: cart_ram_banks)
     {
         x.resize(0x2000);
+		std::fill(x.begin(),x.end(),0);
     }
 
-
+	load_cart_ram();
 
 
     cgb_wram_bank.resize(7);
     for(auto &x: cgb_wram_bank)
     {
         x.resize(0x1000);
+		std::fill(x.begin(),x.end(),0);
     }
 
 
@@ -90,34 +156,87 @@ void Memory::init(Cpu *c,Ppu *p,std::string rom_name)
 	memory_table[0xe].write_memf = &Memory::write_wram_low;
 	memory_table[0xf].write_memf = &Memory::write_hram;
 
-    // banking
-    if(rom_info.mbc1)
-    {
-		memory_table[0x0].write_memf = &Memory::ram_bank_enable;
-		memory_table[0x1].write_memf = &Memory::ram_bank_enable;
-		memory_table[0x2].write_memf = &Memory::change_lo_rom_bank_mbc1;
-		memory_table[0x3].write_memf = &Memory::change_lo_rom_bank_mbc1;
-		memory_table[0x4].write_memf = &Memory::mbc1_banking_change;
-		memory_table[0x5].write_memf = &Memory::mbc1_banking_change;
-		memory_table[0x6].write_memf = &Memory::change_mode_mbc1;
-		memory_table[0x7].write_memf = &Memory::change_mode_mbc1;        
-    }
-
-    // rom only
-    else if(rom_info.cart_type == 0)
-    {
-        for(int i = 0; i < 8; i++)
-        {
-            memory_table[i].write_memf = &Memory::banking_unused;
-        }
-    }
-    
-	else
+	switch(rom_info.type)
 	{
-		throw std::runtime_error("unknown banking type!");
+		// mbc1 rom
+		case rom_type::mbc1:
+		{
+			memory_table[0x0].write_memf = &Memory::ram_bank_enable;
+			memory_table[0x1].write_memf = &Memory::ram_bank_enable;
+			memory_table[0x2].write_memf = &Memory::change_lo_rom_bank_mbc1;
+			memory_table[0x3].write_memf = &Memory::change_lo_rom_bank_mbc1;
+			memory_table[0x4].write_memf = &Memory::mbc1_banking_change;
+			memory_table[0x5].write_memf = &Memory::mbc1_banking_change;
+			memory_table[0x6].write_memf = &Memory::change_mode_mbc1;
+			memory_table[0x7].write_memf = &Memory::change_mode_mbc1;
+			break;        
+		}
+
+
+		// mbc2 rom
+		case rom_type::mbc2:
+		{
+			memory_table[0x0].write_memf = &Memory::ram_bank_enable_mbc2;
+			memory_table[0x1].write_memf = &Memory::ram_bank_enable_mbc2;
+
+			// same impl as mbc1
+			memory_table[0x2].write_memf = &Memory::change_lo_rom_bank_mbc2;
+			memory_table[0x3].write_memf = &Memory::change_lo_rom_bank_mbc2;
+			
+			// no ram bank changing
+			memory_table[0x4].write_memf = &Memory::banking_unused;
+			memory_table[0x5].write_memf = &Memory::banking_unused;
+			
+			// unused
+			memory_table[0x6].write_memf = &Memory::banking_unused;
+			memory_table[0x7].write_memf = &Memory::banking_unused;
+			break;
+		}
+
+		// mbc3 rom
+		case rom_type::mbc3:
+		{
+			memory_table[0x0].write_memf = &Memory::ram_bank_enable;
+			memory_table[0x1].write_memf = &Memory::ram_bank_enable;
+			memory_table[0x2].write_memf = &Memory::change_rom_bank_mbc3;
+			memory_table[0x3].write_memf = &Memory::change_rom_bank_mbc3;
+			memory_table[0x4].write_memf = &Memory::mbc3_ram_bank_change;
+			memory_table[0x5].write_memf = &Memory::mbc3_ram_bank_change;
+			memory_table[0x6].write_memf = &Memory::banking_unused;
+			memory_table[0x7].write_memf = &Memory::banking_unused;
+			break;
+		}
+
+		// mbc5 rom
+		case rom_type::mbc5:
+		{
+			memory_table[0x0].write_memf = &Memory::ram_bank_enable;
+			memory_table[0x1].write_memf = &Memory::ram_bank_enable;
+			memory_table[0x2].write_memf = &Memory::change_lo_rom_bank_mbc5;
+			memory_table[0x3].write_memf = &Memory::change_hi_rom_bank_mbc5;
+			memory_table[0x4].write_memf = &Memory::mbc5_ram_bank_change;
+			memory_table[0x5].write_memf = &Memory::mbc5_ram_bank_change;
+			memory_table[0x6].write_memf = &Memory::banking_unused;
+			memory_table[0x7].write_memf = &Memory::banking_unused;		
+			break;
+		}
+
+		// rom only
+		case rom_type::rom_only:
+		{
+			for(int i = 0; i < 8; i++)
+			{
+				memory_table[i].write_memf = &Memory::banking_unused;
+			}
+			break;
+		}
+		
+		default:
+		{
+			throw std::runtime_error("unknown banking type!");
+		}
 	}
 
-	cgb_wram_bank_idx = 0;
     // init io
 	io[0x10] = 0x80;
 	io[0x11] = 0xBF;	
@@ -157,19 +276,239 @@ void Memory::init(Cpu *c,Ppu *p,std::string rom_name)
 	io[0x28] = 0xff;
 	io[0x29] = 0xff;
 	io[0x20] = 0xff;
+
+
+    // banking vars
+    enable_ram = false; // is ram banking enabled
+    cart_ram_bank = CART_RAM_BANK_INVALID;
+	cart_rom_bank = 1; // currently selected rom bank
+	rom_banking = true; // is rom banking enabled
+
+    // oam dma
+	oam_dma_active = false; // indicate a dma is active and to lock memory
+	oam_dma_address = 0; // the source address
+	oam_dma_index = 0; // how far along the dma transfer we are    
+
+    cgb_wram_bank_idx = 0;  // default zero
+    vram_bank = 0; // what cgb vram bank are we in?
+
+    hdma_len = 0; // length to transfer on a  gdma
+	hdma_len_ticked = 0; // how many total dma transfers we have done
+	dma_src = 0;
+	dma_dst = 0;
+	hdma_active = false;
 }
 
 
+
+void Memory::raw_write(uint16_t addr, uint8_t v)
+{
+	switch((addr & 0xf000) >> 12)
+	{
+		// bank zero
+		case 0:  case 1: case 2: case 3:
+		{
+			rom[addr] = v;
+			break;
+		} 
+
+		// rom (banked)
+		case 4: case 5: case 6: case 7:
+		{
+			rom[(cart_rom_bank*0x4000)+addr-0x4000] = v;
+			break;
+		}
+
+		// vram
+		case 8: case 9: 
+		{
+			vram[vram_bank][addr - 0x8000] = v;
+			break;
+		}
+
+		// cart ram
+		case 0xa: case 0xb:
+		{
+			if(cart_ram_bank != CART_RAM_BANK_INVALID)
+			{
+				addr -= 0xa000;
+				cart_ram_banks[cart_ram_bank][addr] = v;
+			}
+			break;
+		}
+
+		// wram low
+		case 0xc:
+		{
+			wram[addr&0xfff] = v;
+			break;
+		}
+
+		// wram high
+		case 0xd:
+		{
+			cgb_wram_bank[cgb_wram_bank_idx][addr&0xfff] = v;
+			break;
+		}
+
+		// echo ram
+		case 0xe: 
+		{
+			wram[addr&0xfff] = v;
+			break;
+		}
+
+		case 0xf: // hram
+		{
+			// io regs
+			if(addr >= 0xff00)
+			{
+				io[addr & 0xff] = v;
+			}
+
+			// high wram mirror
+			else if(addr >= 0xf000 && addr <= 0xfdff)
+			{
+				cgb_wram_bank[cgb_wram_bank_idx][addr&0xfff] = v;
+			}
+
+			// oam is accesible during mode 0-1
+			else if(addr >= 0xfe00 && addr <= 0xfe9f)
+			{
+				oam[addr & 0x9f] = v;
+			}
+
+
+			else // restricted
+			{
+			}
+			break;
+		}
+	}
+}
+
+
+uint8_t Memory::raw_read(uint16_t addr)
+{
+	switch((addr & 0xf000) >> 12)
+	{
+		// bank zero
+		case 0:  case 1: case 2: case 3:
+		{
+			return rom[addr];
+			break;
+		} 
+
+		// rom (banked)
+		case 4: case 5: case 6: case 7:
+		{
+			return rom[(cart_rom_bank*0x4000)+addr-0x4000];
+			break;
+		}
+
+		// vram
+		case 8: case 9: 
+		{
+			return vram[vram_bank][addr - 0x8000];
+			break;
+		}
+
+		// cart ram
+		case 0xa: case 0xb:
+		{
+			if(cart_ram_bank != CART_RAM_BANK_INVALID)
+			{
+				addr -= 0xa000;
+				return cart_ram_banks[cart_ram_bank][addr];
+			}
+
+			else
+			{
+				return 0xff;
+			}
+			break;
+		}
+
+		// wram low
+		case 0xc:
+		{
+			return wram[addr&0xfff];
+			break;
+		}
+
+		// wram high
+		case 0xd:
+		{
+			return cgb_wram_bank[cgb_wram_bank_idx][addr&0xfff];
+			break;
+		}
+
+		// echo ram
+		case 0xe: 
+		{
+			return wram[addr&0xfff];
+			break;
+		}
+
+		case 0xf: // hram
+		{
+			// io regs
+			if(addr >= 0xff00)
+			{
+				return read_io(addr);
+			}
+
+			// high wram mirror
+			else if(addr >= 0xf000 && addr <= 0xfdff)
+			{
+				return cgb_wram_bank[cgb_wram_bank_idx][addr&0xfff];
+			}
+
+			// oam is accesible during mode 0-1
+			else if(addr >= 0xfe00 && addr <= 0xfe9f)
+			{
+				return oam[addr & 0x9f];
+			}
+
+
+			else // restricted
+			{
+			}
+			break;
+		}
+	}
+	return 0xff; // should not be reached
+}
 
 
 // public access functions
 uint8_t Memory::read_mem(uint16_t addr)
 {
+#ifdef DEBUG
+	uint8_t value = std::invoke(memory_table[(addr & 0xf000) >> 12].read_memf,this,addr);
+	if(debug->breakpoint_hit(addr,value,break_type::read))
+	{
+		// halt until told otherwhise :)
+		write_log("[DEBUG] read breakpoint hit ({:x}:{:x})",addr,value);
+		debug->halt();
+	}
+	return value;
+
+#else 
     return std::invoke(memory_table[(addr & 0xf000) >> 12].read_memf,this,addr);
+#endif
 }
 
 void Memory::write_mem(uint16_t addr, uint8_t v)
 {
+#ifdef DEBUG
+	if(debug->breakpoint_hit(addr,v,break_type::write))
+	{
+		// halt until told otherwhise :)
+		write_log("[DEBUG] write breakpoint hit ({:x}:{:})",addr,v);
+		debug->halt();
+	}
+#endif
     return std::invoke(memory_table[(addr & 0xf000) >> 12].write_memf,this,addr,v);    
 }
 
@@ -534,12 +873,262 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 		}
 
 
+		// cgb regs
+		
+		// cgb ram bank number
+		case IO_SVBK:
+		{
+			if(cpu->get_cgb())
+			{
+				cgb_wram_bank_idx = v & 0x7;
+				
+				// bank 0 is same as accessing bank 1
+				if(cgb_wram_bank_idx == 0)
+				{
+					cgb_wram_bank_idx = 1;
+				}
+				
+				// index it
+				cgb_wram_bank_idx -= 1;
+				
+				io[IO_SVBK] = v | 248;
+				
+			}
+			
+			else
+			{
+				io[IO_SVBK] = v;
+			}
+			
+			return;	
+		}
+
+		case IO_SPEED:
+		{
+			// not cgb return ff 
+			if(!cpu->get_cgb())
+			{
+				io[IO_SPEED] = 0xff;
+				return;
+			}
+
+			io[IO_SPEED] = (io[IO_SPEED] & 0x80) | (v & 0x1) | 0x7e;
+			return;
+		}
+
+		case IO_VBANK: // what vram bank are we writing to?
+		{
+			// not cgb return data
+			if(!cpu->get_cgb())
+			{
+				io[IO_VBANK] = v;
+				return;
+			}
+			
+
+			vram_bank = v & 1;
+			io[IO_VBANK] = v | 254;
+			return;
+		}
+
+		case IO_BGPI:
+		{
+			// not cgb return ff 
+			if(!cpu->get_cgb())
+			{
+				io[IO_BGPI] = v;
+				return;
+			}
+			
+			ppu->set_bg_pal_idx(v);
+			io[IO_BGPI] = v | 0x40;
+			return;
+		}
+
+		case IO_BGPD: // finish later 
+		{
+			if(!cpu->get_cgb())
+			{
+				io[IO_BGPD] = v;
+				return;
+			}
+
+			ppu->write_bgpd(v);
+			return;
+		}
+
+		case IO_SPPI: // sprite pallete index
+		{
+			// not cgb return ff 
+			if(!cpu->get_cgb())
+			{
+				io[IO_SPPI] = v;
+				return;
+			}			
+
+			ppu->set_sp_pal_idx(v);
+			io[IO_SPPI] = v | 0x40;
+			return;
+		}		
+		
+		case IO_SPPD: // sprite pallete data
+		{
+			// not cgb return ff 
+			if(!cpu->get_cgb())
+			{
+				io[IO_SPPD] = v;
+				return;
+			}			
+			ppu->write_sppd(v);
+			return;
+		}
+	
+		// specifies src byte dest of dma
+		case IO_HDMA1:
+		{
+			dma_src &= 0xff;
+			dma_src |= v << 8;
+			io[IO_HDMA1] = v;
+			return;
+		}
+		
+		// lo byte dma src
+		case IO_HDMA2:
+		{
+			v &= 0xf0;
+			dma_src &= ~0xff;
+			dma_src |= v;
+			io[IO_HDMA2] = v;
+			return;
+		}
+		
+		
+		// high byte dma dst
+		case IO_HDMA3:
+		{
+			v &= 0x1f;
+			dma_dst &= 0xff;
+			dma_dst |= v << 8;
+			io[IO_HDMA3] = v;
+			return;
+		}
+		
+		// low byte dma dst
+		case IO_HDMA4:
+		{
+			v &= 0xf0;
+			dma_dst &= ~0xff;
+			dma_dst |= v;
+			io[IO_HDMA4] = v;
+			return;
+		}
+	
+		// cgb dma start
+		case IO_HDMA5: // <-- unsure on this behavior
+		{
+			io[IO_HDMA5] = v;
+			// if bit 7	is zero do a gdma
+			// 1 will start a hdma during hblank
+			
+			// if data is 0 and there is no active hdma
+			if(!is_set(v,7) && !hdma_active) 
+			{
+				do_gdma();
+			}
+			
+			// writing 0 to bit 7 terminates a hdma transfer
+			else if(!is_set(v,7))
+			{
+				hdma_active = false;
+			}
+			
+			else // start a hdma
+			{
+				// number of 16 byte incremnts to transfer
+				hdma_len = (v & 0x7f)+1;
+				hdma_len_ticked = 0;
+				hdma_active = true;
+			}
+			return;
+		}
+
+
         default: // hram
         {
             io[addr & 0xff] = v;
             return;
         }
     }
+}
+
+
+void Memory::do_gdma()
+{
+	uint16_t source = dma_src & 0xfff0;
+	
+	uint16_t dest = (dma_dst & 0x1ff0) | 0x8000;
+	
+	// hdma5 stores how many 16 byte incremnts we have to transfer
+	int len = ((io[IO_HDMA5] & 0x7f) + 1) * 0x10;
+
+	
+	// find out how many cycles we tick but for now just copy the whole damb thing 
+	for(int i = 0; i < len; i++)
+	{
+		write_mem(dest+i,read_mem(source+i));
+	}
+
+	cpu->cycle_tick(8*(len / 0x10)); // 8 M cycles for each 10 byte block
+
+	io[IO_HDMA5] = 0xff; // terminate the transfer
+}
+
+
+void Memory::do_hdma()
+{
+
+	if(!hdma_active)
+	{
+		return;
+	}
+
+	uint16_t source = dma_src & 0xfff0;
+
+	uint16_t dest = (dma_dst & 0x1ff0) | 0x8000;
+
+	
+	source += hdma_len_ticked*0x10;
+	dest += hdma_len_ticked*0x10;
+	
+	/*if(!(source <= 0x7ff0 || ( source >= 0xa000 && source <= 0xdff0)))
+	{
+		printf("ILEGGAL HDMA SOURCE: %X!\n",source);
+		exit(1);
+	}
+	*/
+
+	// find out how many cycles we tick but for now just copy the whole damb thing 						
+	for(int i = 0; i < 0x10; i++)
+	{
+		write_mem(dest+i,read_mem(source+i));
+	}
+
+	// 8 M cycles for each 0x10 block
+	cpu->cycle_tick(8);
+	
+	// hdma is over 
+	if(--hdma_len <= 0)
+	{
+		// indicate the tranfser is over
+		io[IO_HDMA5] = 0xff;
+		hdma_active = false;
+	}
+
+	// goto next block
+	else
+	{
+		hdma_len_ticked++;
+	}	
 }
 
 void Memory::write_iot(uint16_t addr,uint8_t v)

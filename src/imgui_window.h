@@ -3,7 +3,7 @@
 #ifdef FRONTEND_IMGUI
 
 #define SDL_MAIN_HANDLED
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 // dear imgui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
 // If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.
@@ -61,11 +61,17 @@ private:
     // emulator managment
     void stop_instance();
     void start_instance();
+    void new_instance(std::string filename);
 
     // frontend drawing
     void draw_screen();
     void draw_regs();
-    void draw_menu_bar();
+    //void draw_menu_bar();
+    void draw_disassembly();
+    void draw_breakpoints();
+    void draw_memory();
+    void draw_logger();
+    void file_browser();
 
     GLFWwindow* window;
 

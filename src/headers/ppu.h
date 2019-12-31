@@ -49,6 +49,16 @@ public:
     {
         scanline_counter = v;
     }
+
+    // cgb 
+    void set_bg_pal_idx(uint8_t v);
+    void set_sp_pal_idx(uint8_t v);
+    void write_sppd(uint8_t v);
+    void write_bgpd(uint8_t v);
+
+
+
+
 private:
 
     Cpu *cpu;

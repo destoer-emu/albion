@@ -30,6 +30,8 @@ int main(int argc, char *argv[])
 
 #ifdef FRONTEND_IMGUI
 
+    UNUSED(argc); UNUSED(argv);
+
     // sdl required for audio
     SDL_SetMainReady();
 	if(SDL_Init(SDL_INIT_EVERYTHING) != 0)

@@ -5,7 +5,7 @@
 class Cpu
 {
 public:
-    void init(Memory *m, Ppu *p, Disass *d);
+    void init(Memory *m, Ppu *p, Disass *d, Debug *debug);
     void step();
     void cycle_tick(int cycles); 
 
@@ -33,6 +33,7 @@ private:
     Memory *mem;
     Ppu *ppu;
     Disass *disass;
+    Debug *debug;
 
 
     // registers
@@ -60,7 +61,7 @@ private:
 
     // cgb
     bool is_cgb = false;
-
+    bool is_double = false;
 
     void write_af(uint16_t data);
     void write_bc(uint16_t data);
@@ -108,6 +109,8 @@ private:
     uint8_t instr_rlc(uint8_t reg);
     void instr_jr();
     void instr_jr_cond(bool cond, int bit);
+    void call_cond(bool cond, int bit);
+    void ret_cond(bool cond, int bit);
 
 
     // stack helpers
@@ -117,6 +120,9 @@ private:
     void write_stackwt(uint16_t v);
     void write_stackw(uint16_t v);
     void write_stack(uint8_t v);
+
+    void check_rst_loop(uint16_t addr, uint8_t op);
+
 };
 
 

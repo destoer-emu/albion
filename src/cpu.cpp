@@ -1,21 +1,63 @@
 #include "headers/cpu.h"
 #include "headers/memory.h"
 #include "headers/ppu.h"
+#include "headers/debug.h"
 
-void Cpu::init(Memory *m, Ppu *p, Disass *d)
+void Cpu::init(Memory *m, Ppu *p, Disass *dis, Debug *debug)
 {
+
+	write_log("[INFO] new instance started!");
+
     mem = m;
     ppu = p;
-    disass = d;
+    disass = dis;
+	this->debug = debug;
 
 
-    // set our initial register state
-    a = 0x01; f = 0xb0; // af = 0x01b0
-    b = 0x00; c = 0x13; // bc = 0x0013
-    d = 0x00; e = 0xd8; // de = 0x00d8
-    h = 0x01; l = 0x4d; // hl = 0x014d
-    sp = 0xfffe;
-    pc = 0x0100;
+	uint8_t test = mem->read_mem(0x143);
+
+	switch(test)
+	{
+		case 0x80: is_cgb = true; break; // add options to run cgb in dmg1
+		case 0xc0: is_cgb = true; break;
+		default: is_cgb = false; break;
+	}
+	
+	// set the cgb initial registers 
+	if(is_cgb)
+	{
+		a = 0x11; f = 0x80; // af = 0x1180;
+		b = 0x00; c = 0x00; // bc = 0x0000;
+		d = 0xff; e = 0x56; // de = 0xff56;
+		h = 0x00; l = 0x0d; // hl = 0x000d;
+		sp = 0xfffe;
+		pc = 0x100;
+	}
+
+	// dmg
+	else 
+	{
+		// set our initial register state
+		a = 0x01; f = 0xb0; // af = 0x01b0
+		b = 0x00; c = 0x13; // bc = 0x0013
+		d = 0x00; e = 0xd8; // de = 0x00d8
+		h = 0x01; l = 0x4d; // hl = 0x014d
+		sp = 0xfffe;
+		pc = 0x0100;
+	}
+
+	is_double = false;
+    internal_timer = 0;
+    
+    joypad_state = 0xff;
+
+    // interrupts
+    halt = false;
+    ei = false;
+   	di = false;
+    interrupt_enable = false;
+    halt_bug = false;
+
 }
 
 
@@ -37,12 +79,18 @@ void Cpu::step()
 // just a stub for now
 void Cpu::cycle_tick(int cycles)
 {
-	// function will check if its enabled
-	mem->tick_dma(cycles);
+	// should operate at double speed
+	int factor = is_double ? 2 : 1;
 
 	// timers act at constant speed
 	update_timers(cycles*4); 
-	ppu->update_graphics(cycles*4);
+
+	// handler will check if its enabled
+	mem->tick_dma(cycles*factor);
+	
+	// in double speed mode gfx and apu should operate at half
+	ppu->update_graphics((cycles*4) / factor); // handle the lcd emulation
+	//tick_apu((cycles*4) / factor); // advance the apu state
 }
 
 
@@ -153,18 +201,22 @@ void Cpu::handle_instr_effects()
 		{
 			halt_bug = true;
 		}
-
-				
-		/*// not sure what defined behaviour is here
-		else if(enabled == 0)
-		{
-	
-		}*/
-				
+		
 		// normal halt
 				
 		else 
 		{
+			// sanity check to check if this thing will actually fire
+
+			uint8_t stat = mem->io[IO_STAT];
+			if(enabled == 0 || ((((stat >> 3) & 0x7) == 0) && enabled == val_bit(enabled,1)))
+			{
+				write_log("[ERROR] halt infinite loop");
+				throw std::runtime_error("halt infinite loop");
+			}
+
+
+
 			while( ( req & enabled & 0x1f) == 0) 
 			{
 				// just tick it
@@ -244,7 +296,7 @@ void Cpu::service_interrupt(int interrupt)
 		// interrupts are one less than listed in cpu manual
 		// as our bit macros work from bits 0-7 not 1-8
 		case 0: pc = 0x40; break; //vblank
-		case 1: pc = 0x48; break; //lcd-state 
+		case 1: pc = 0x48; break; //lcd-stat 
 		case 2: pc = 0x50; break; // timer 
 		case 3: pc = 0x58; break; //serial (not fully implemented)
 		case 4: pc = 0x60; break; // joypad
@@ -257,18 +309,21 @@ void Cpu::service_interrupt(int interrupt)
 // util for opcodes
 
 // register getters and setters
-void Cpu::write_bc(uint16_t data) {
+void Cpu::write_bc(uint16_t data) 
+{
     b = (data & 0xff00) >> 8;
     c = data & 0x00ff;
 }
 
 
-uint16_t Cpu::read_bc(void) const {
+uint16_t Cpu::read_bc(void) const 
+{
     return (b << 8) | c;
 }
 
 
-uint16_t Cpu::read_af(void) const {
+uint16_t Cpu::read_af(void) const
+{
     return (a << 8) | f;
 }
 

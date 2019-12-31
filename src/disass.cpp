@@ -11,7 +11,16 @@ void Disass::init(Memory *m)
 
 enum class disass_type
 {
-    op_u16, op_u8, op_i8, op_none
+    op_u16=0, op_u8=1, op_i8=2, op_none=3
+};
+
+
+constexpr int disass_type_size[] = 
+{
+    3, // opcode and u16 oper (op_u16)
+    2, // opcode and u8 oper (op_u8)
+    2, // ditto (op_i8)
+    1 // opcode only (op_none)
 };
 
 struct Disass_entry
@@ -542,6 +551,22 @@ constexpr Disass_entry cb_opcode_table[256] =
     {"set 7,a",disass_type::op_none}    
 };
 
+// not sure if its worth just adding a size field
+// and having a bunch of extra bytes in the exe
+uint32_t Disass::get_op_sz(uint16_t addr)
+{
+    uint8_t opcode = mem->read_mem(addr++);
+
+    bool is_cb = opcode == 0xcb;
+
+    disass_type type = is_cb ? cb_opcode_table[mem->read_mem(addr)].type : opcode_table[opcode].type;
+
+    int size = is_cb?  1 : 0; // 1 byte prefix for cb
+
+    return size + disass_type_size[static_cast<int>(type)];
+}
+
+
 
 std::string Disass::disass_op(uint16_t addr)
 {
@@ -551,6 +576,7 @@ std::string Disass::disass_op(uint16_t addr)
     
     if(opcode == 0xcb)
     {
+        opcode = mem->read_mem(addr);
         Disass_entry entry = cb_opcode_table[opcode];
         return std::string(entry.fmt_str);
     }
@@ -577,7 +603,7 @@ std::string Disass::disass_op(uint16_t addr)
             // eg jr
             case disass_type::op_i8:
             {
-                int8_t operand = mem->read_mem(addr);
+                int8_t operand = mem->read_mem(addr++);
                 return fmt::format(entry.fmt_str,addr+operand);
             }
 
