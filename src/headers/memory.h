@@ -42,6 +42,9 @@ public:
     void save_cart_ram();
     void load_cart_ram();
 
+    // save states
+    void save_state(std::ofstream &fp);
+    void load_state(std::ifstream &fp);
 
     void do_hdma();
 private:

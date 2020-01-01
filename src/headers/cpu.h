@@ -29,6 +29,10 @@ public:
     uint16_t get_bc() const { return read_bc(); }
     uint16_t get_de() const { return read_de(); }
 
+    // save states
+    void save_state(std::ofstream &fp);
+    void load_state(std::ifstream &fp);
+
 private:
     Memory *mem;
     Ppu *ppu;

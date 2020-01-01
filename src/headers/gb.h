@@ -17,6 +17,9 @@ public:
     void key_released(int key);
     void key_pressed(int key);
 
+    void save_state(std::string filename);
+    void load_state(std::string filename);
+
     Cpu cpu;
     Memory mem;
     Ppu ppu;

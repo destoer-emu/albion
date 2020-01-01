@@ -63,6 +63,7 @@ void Memory::load_cart_ram()
     fp.close();	
 }
 
+
 void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_rom)
 {
     cpu = c; // init our cpu pointer

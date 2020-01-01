@@ -306,7 +306,7 @@ void ImguiMainWindow::draw_disassembly()
     ImGui::BeginChild("disass view");
     
     // technically could be less than this but we dont know for sure
-    constexpr int ITEMS_COUNT = 0xffff; 
+    constexpr int ITEMS_COUNT = 0x10000; 
     ImGuiListClipper clipper(ITEMS_COUNT); 
 
     float line_size = ImGui::GetTextLineHeightWithSpacing();
@@ -576,7 +576,7 @@ void ImguiMainWindow::file_browser()
     static int selected = -1;
     static std::string selected_file = "";
     static std::vector<std::string> dir_list = read_sorted_directory(file_path);
-
+    static char input_path[50] = "";
 
     ImGui::Begin("file browser");
 
@@ -598,6 +598,54 @@ void ImguiMainWindow::file_browser()
 
     ImGui::SameLine();
 
+
+    if(ImGui::Button("load state"))
+    {
+        if(selected != -1)
+        {
+            if(std::filesystem::is_regular_file(selected_file))
+            {
+                stop_instance();
+
+                try
+                {
+                    gb.load_state(selected_file);
+                }
+
+                
+
+                catch(std::exception &ex)
+                {
+                    std::cout << ex.what() << "\n";
+                }
+                start_instance();                
+            }
+        }
+    }
+
+    ImGui::SameLine();
+
+
+    if(ImGui::Button("save state") && *input_path != '\0')
+    {
+        stop_instance();
+        std::string loc = file_path + "/" + std::string(input_path);
+        try
+        {
+            gb.save_state(loc);
+        }
+
+        catch(std::exception &ex)
+        {
+            std::cout << ex.what() << "\n";
+        }
+        dir_list = read_sorted_directory(file_path);
+        *input_path = '\0'; 
+        start_instance();
+    }
+
+    ImGui::SameLine();
+
 	if (ImGui::Button("../"))
 	{  
 
@@ -609,21 +657,22 @@ void ImguiMainWindow::file_browser()
         dir_list = read_sorted_directory(file_path);
 	}
 
-	static char input_dir[50] = "";
+	
 	if (ImGui::Button("change dir"))
 	{  
-        if(std::filesystem::is_directory(input_dir))
+        if(std::filesystem::is_directory(input_path))
         {
             selected = -1;
             selected_file = "";
-            file_path = input_dir;
+            *input_path = '\0';
+            file_path = input_path;
             dir_list = read_sorted_directory(file_path);
         }
 	}
 
     ImGui::SameLine();
 
-    ImGui::InputText("", input_dir, IM_ARRAYSIZE(input_dir));
+    ImGui::InputText("", input_path, IM_ARRAYSIZE(input_path));
 
 
 

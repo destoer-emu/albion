@@ -1260,7 +1260,6 @@ void Cpu::exec_instr()
 		case 0xff: // rst 38
 			check_rst_loop(0x38,0xff);	
 			cycle_tick(1); // internal 
-			write_log("[DEBUG] rst 38 at {:x}",pc);
 			write_stackwt(pc);
 			pc = 0x38;
 			break;   

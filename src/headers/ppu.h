@@ -57,7 +57,9 @@ public:
     void write_bgpd(uint8_t v);
 
 
-
+    // save states
+    void save_state(std::ofstream &fp);
+    void load_state(std::ifstream &fp);
 
 private:
 

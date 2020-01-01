@@ -16,6 +16,60 @@ void GB::key_released(int key)
 	cpu.joypad_state = set_bit(cpu.joypad_state, key);
 }
 
+
+//  woud have been much cleaner to directly dump and read
+// this from a file but doing it into a buf
+// allows us to reuse code if we choose to add rewind
+
+void GB::save_state(std::string filename)
+{
+try
+{
+
+
+	std::ofstream fp(filename,std::ios::binary);
+
+	cpu.save_state(fp);
+	mem.save_state(fp);
+	//ppu.save_state(fp);
+	//apu.save_state(fp);
+
+	fp.close();
+}
+
+catch(std::exception &ex)
+{
+	std::string err = fmt::format("failed to save state: {}",ex.what());
+	debug.write_logger(err);
+	throw std::runtime_error(err);
+}
+}
+
+
+void GB::load_state(std::string filename)
+{
+try
+{	
+	std::ifstream fp(filename,std::ios::binary);
+
+	cpu.load_state(fp);
+	mem.load_state(fp);
+	//ppu.load_state(fp);
+	//apu.load_state(fp);
+
+	fp.close();
+}
+
+
+catch(std::exception &ex)
+{
+	std::string err = fmt::format("failed to load state: {}",ex.what());
+	debug.write_logger(err);
+	throw std::runtime_error(err);
+}
+
+}
+
 void GB::key_pressed(int key)
 {
 	bool previously_unset = false;
