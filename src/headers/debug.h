@@ -79,8 +79,6 @@ public:
     // step an instruction
     bool step_instr = false;
 
-    // is debugged instance halted
-    bool halted = false;
 
     // map to hold breakpoints (lookup by addr)
     std::map<uint16_t,Breakpoint> breakpoints;
@@ -91,6 +89,9 @@ public:
 private:
     std::vector<std::string> log;
     bool log_full = false;
+    // is debugged instance halted
+    bool halted = false;
+    std::mutex halt_mutex;    
 };
 
 
@@ -98,10 +99,14 @@ private:
 //----- logger macro definition ---
 // might be a less nasty way to ensure these drop away
 // when the debugger is not compiled into the code
-//#define write_log(text,...) debug->write_logger(text,__VA_ARGS__)
-#define write_log(text,...)
+#define write_log(...) debug->write_logger(__VA_ARGS__)
+
+
 #else
+
+
 class Debug {};
-#define write_log(text,...)
+#define write_log(...)
+
 
 #endif  

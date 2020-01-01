@@ -1,4 +1,4 @@
-#include "headers/lib.h"
+#include "../headers/lib.h"
 
 
 void read_file(std::string filename, std::vector<uint8_t> &buf)
@@ -41,8 +41,8 @@ void sort_alphabetically(std::vector<std::string> &vec)
             return true;
         }
 
-        char x_char = x[0];
-        char y_char = y[0];
+        char x_char = tolower(x[0]);
+        char y_char = tolower(y[0]);
         return x_char < y_char;
     });    
 }

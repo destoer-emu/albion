@@ -1,7 +1,7 @@
-#include "headers/cpu.h"
-#include "headers/memory.h"
-#include "headers/disass.h"
-#include "headers/debug.h"
+#include "../headers/cpu.h"
+#include "../headers/memory.h"
+#include "../headers/disass.h"
+#include "../headers/debug.h"
 
 
 
@@ -11,7 +11,7 @@ void Cpu::check_rst_loop(uint16_t addr, uint8_t op)
 	if(mem->read_mem(addr) == op)
 	{
 		#ifdef DEBUG
-		write_log("[ERROR] rst infinite loop at {:x}",addr);
+		write_log("[ERROR] rst infinite loop at {:x}->{:x}",pc,addr);
 		#endif
 		throw std::runtime_error("infinite rst lockup");
 	}
@@ -1260,13 +1260,14 @@ void Cpu::exec_instr()
 		case 0xff: // rst 38
 			check_rst_loop(0x38,0xff);	
 			cycle_tick(1); // internal 
-			write_log("[DEBUG] rst 38 at {}",pc);
+			write_log("[DEBUG] rst 38 at {:x}",pc);
 			write_stackwt(pc);
 			pc = 0x38;
 			break;   
 
 		default:
 		{
+			write_log("[ERROR] invalid opcode at {:x}",pc);
 			throw std::runtime_error("invalid opcode!");		
 		}
     }

@@ -1,5 +1,5 @@
-#include "headers/cpu.h"
-#include "headers/memory.h"
+#include "../headers/cpu.h"
+#include "../headers/memory.h"
 
 void Cpu::exec_cb(uint8_t cbop)
 {

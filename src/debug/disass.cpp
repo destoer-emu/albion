@@ -1,6 +1,6 @@
-#include "headers/disass.h"
-#include "headers/memory.h"
-#include "fmt/format.h"
+#include "../headers/disass.h"
+#include "../headers/memory.h"
+#include "../headers/lib.h"
 
 void Disass::init(Memory *m)
 {

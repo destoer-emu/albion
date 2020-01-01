@@ -1,9 +1,10 @@
-#include "headers/cpu.h"
-#include "headers/memory.h"
-#include "headers/ppu.h"
-#include "headers/debug.h"
+#include "../headers/cpu.h"
+#include "../headers/memory.h"
+#include "../headers/ppu.h"
+#include "../headers/apu.h"
+#include "../headers/debug.h"
 
-void Cpu::init(Memory *m, Ppu *p, Disass *dis, Debug *debug)
+void Cpu::init(Memory *m, Ppu *p,Apu *apu, Disass *dis, Debug *debug)
 {
 
 	write_log("[INFO] new instance started!");
@@ -12,7 +13,7 @@ void Cpu::init(Memory *m, Ppu *p, Disass *dis, Debug *debug)
     ppu = p;
     disass = dis;
 	this->debug = debug;
-
+	this->apu = apu;
 
 	uint8_t test = mem->read_mem(0x143);
 
@@ -98,9 +99,9 @@ void Cpu::cycle_tick(int cycles)
 void Cpu::update_timers(int cycles)
 {
 	
-	//int sound_bit = cpu->is_double? 13 : 12;
+	int sound_bit = is_double? 13 : 12;
 
-	//bool sound_bit_set = is_set(internal_timer,sound_bit);
+	bool sound_bit_set = is_set(internal_timer,sound_bit);
 	
 
 	// if our bit is deset and it was before (falling edge)
@@ -132,16 +133,16 @@ void Cpu::update_timers(int cycles)
 			    mem->io[IO_TIMA]++;
 			}
 		}
-        /*
+        
 		// we repeat this here because we have to add the cycles
 		// at the proper time for the falling edge det to work
 		// and we dont want to waste time handling the falling edge
 		// for the timer when its off
 		if(!is_set(internal_timer,sound_bit) && sound_bit_set)
 		{
-			advance_sequencer(); // advance the sequencer
+			apu->advance_sequencer(); // advance the sequencer
 		}
-        */
+        
 	}
 
     
@@ -151,11 +152,10 @@ void Cpu::update_timers(int cycles)
 	else 
 	{
 		internal_timer += cycles;
-	/*	if(!is_set(cpu->internal_timer,sound_bit) && sound_bit_set)
+		if(!is_set(internal_timer,sound_bit) && sound_bit_set)
 		{
-			advance_sequencer(cpu); // advance the sequencer
+			apu->advance_sequencer(); // advance the sequencer
 		}
-	*/
 	} 
        
 }

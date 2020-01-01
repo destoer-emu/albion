@@ -116,8 +116,8 @@ private:
 	int scx_cnt = 0;
 
     // cgb pal
-	uint8_t bg_pal[0x40] = {0}; // bg palette data
-	uint8_t sp_pal[0x40] = {0}; // sprite pallete data 
+	uint8_t bg_pal[0x40] = {0xff}; // bg palette data
+	uint8_t sp_pal[0x40] = {0xff}; // sprite pallete data 
 	int sp_pal_idx = 0;
 	int bg_pal_idx = 0; // index into the bg pal (entry takes two bytes)
 

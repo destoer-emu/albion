@@ -3,10 +3,11 @@
 
 void GB::reset(std::string rom_name, bool with_rom)
 {
-    mem.init(&cpu,&ppu,&debug,rom_name,with_rom);
-    cpu.init(&mem,&ppu,&disass,&debug);
+    mem.init(&cpu,&ppu,&debug,&apu,rom_name,with_rom);
+    cpu.init(&mem,&ppu,&apu,&disass,&debug);
     ppu.init(&cpu,&mem);
     disass.init(&mem);
+	apu.init(&mem);
 }
 
 // our "frontend" will call these

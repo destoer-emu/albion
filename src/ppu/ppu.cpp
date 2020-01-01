@@ -1,6 +1,6 @@
-#include "headers/ppu.h"
-#include "headers/cpu.h"
-#include "headers/memory.h"
+#include "../headers/ppu.h"
+#include "../headers/cpu.h"
+#include "../headers/memory.h"
 
 
 
@@ -41,8 +41,8 @@ void Ppu::init(Cpu *c,Memory *m)
 	sp_pal_idx = 0;
 	bg_pal_idx = 0; // index into the bg pal (entry takes two bytes)
 
-	memset(bg_pal,0,sizeof(bg_pal)); // bg palette data
-	memset(sp_pal,0,sizeof(sp_pal)); // sprite pallete data 
+	memset(bg_pal,0xff,sizeof(bg_pal)); // bg palette data
+	memset(sp_pal,0xff,sizeof(sp_pal)); // sprite pallete data 
 
 }
 

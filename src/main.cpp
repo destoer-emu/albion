@@ -1,6 +1,6 @@
-#include "qt/qt_window.h"
-#include "sdl/sdl_window.h"
-#include "imgui_window.h"
+#include "frontend/qt/qt_window.h"
+#include "frontend/sdl/sdl_window.h"
+#include "frontend/imgui/imgui_window.h"
 
 
 int main(int argc, char *argv[])

@@ -212,11 +212,11 @@ void ImguiMainWindow::draw_regs()
     // print regs
     ImGui::Begin("registers");
     ImGui::Text("pc: %04x",gb.cpu.get_pc());
-    ImGui::Text("sp: %04x",gb.cpu.get_sp());
     ImGui::Text("af: %04x",gb.cpu.get_af());
-    ImGui::Text("de: %04x",gb.cpu.get_de());
     ImGui::Text("bc: %04x",gb.cpu.get_bc());
+    ImGui::Text("de: %04x",gb.cpu.get_de());
     ImGui::Text("hl: %04x",gb.cpu.get_hl());
+    ImGui::Text("sp: %04x",gb.cpu.get_sp());
     ImGui::End();            
 }
 
@@ -249,10 +249,10 @@ void ImguiMainWindow::draw_menu_bar()
 
 void ImguiMainWindow::draw_disassembly()
 {
-    static constexpr int disass_items = 20;
     static uint32_t addr = 0x100; // make this resync when a breakpoint is hit :)
     static int selected = -1;
     static uint32_t selected_addr = 0x0;
+    static bool update = false;
 
     ImGui::Begin("disassembly");
 
@@ -262,9 +262,11 @@ void ImguiMainWindow::draw_disassembly()
 		if (is_valid_hex_string(input_disass))
 		{
 			addr = strtoll(input_disass, NULL, 16) % 0xffff;
+            update = true;
 			*input_disass = '\0';
 		}  
 	}
+
 
     ImGui::SameLine();
 
@@ -295,33 +297,54 @@ void ImguiMainWindow::draw_disassembly()
         gb.debug.step_instr = false;
     }
 
+    if(ImGui::Button("Goto pc"))
+    {
+        addr = gb.cpu.get_pc();
+        update = true;
+    }
+
     ImGui::BeginChild("disass view");
     
-    uint32_t target = addr;
-    std::string disass_str;
-    for(int i = 0; i < disass_items; i++)
+    // technically could be less than this but we dont know for sure
+    constexpr int ITEMS_COUNT = 0xffff; 
+    ImGuiListClipper clipper(ITEMS_COUNT); 
+
+    float line_size = ImGui::GetTextLineHeightWithSpacing();
+
+    if(update)
     {
-        target &= 0xffff;
-        bool is_pc = target == gb.cpu.get_pc();
-        if(is_pc)
+        update = false;
+        ImGui::SetScrollY(addr * line_size);
+    }
+
+
+    std::string disass_str;
+    while (clipper.Step())
+    {
+        uint16_t target = clipper.DisplayStart;
+        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
         {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f,0.0f,1.0f,1.0f));
+            bool is_pc = target == gb.cpu.get_pc();
+            if(is_pc)
+            {
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f,0.0f,1.0f,1.0f));
+            }
+
+            disass_str = fmt::format("{:04x}: {}",target,gb.disass.disass_op(target));
+            if(ImGui::Selectable(disass_str.c_str(),selected == i))
+            {
+                selected = i;
+                selected_addr = target;
+            }
+
+
+            if(is_pc)
+            {
+                ImGui::PopStyleColor();
+            }
+
+            target += gb.disass.get_op_sz(target) & 0xffff;
         }
-
-        disass_str = fmt::format("{:04x}: {}",target,gb.disass.disass_op(target));
-        if(ImGui::Selectable(disass_str.c_str(),selected == i))
-        {
-            selected = i;
-            selected_addr = target;
-        }
-
-
-        if(is_pc)
-        {
-            ImGui::PopStyleColor();
-        }
-
-        target += gb.disass.get_op_sz(target);
     }
 
     ImGui::EndChild();
@@ -350,12 +373,13 @@ void ImguiMainWindow::draw_logger()
     ImGui::End();
 }
 
+
 void ImguiMainWindow::draw_memory()
 {
-    static uint32_t addr = 0x100;
+    static uint32_t addr = 0x0;
     static uint32_t edit_addr = 0x100;
     static uint32_t edit_value = 0xff;
-
+    static bool update = false;
     ImGui::Begin("Memory editor");
 
 
@@ -366,6 +390,7 @@ void ImguiMainWindow::draw_memory()
 		{
 			addr = strtoll(input_mem, NULL, 16);
             addr &= 0xfff0; // round to nearest section
+            update = true;
 			*input_mem = '\0';
 		}  
 	}
@@ -393,7 +418,7 @@ void ImguiMainWindow::draw_memory()
 
     ImGui::InputText("value", input_edit, IM_ARRAYSIZE(input_edit));
 
-    ImGui::BeginChild("Memory view");
+    
 
     // padding
     ImGui::Text("      "); ImGui::SameLine();
@@ -409,19 +434,36 @@ void ImguiMainWindow::draw_memory()
     ImGui::Separator();
 
 
-    for(int i = 0; i < 0x10; i++)
+    ImGui::BeginChild("Memory View");
+    constexpr int ITEMS_COUNT = 0x10000 / 0x10;
+    ImGuiListClipper clipper(ITEMS_COUNT); 
+
+    float line_size = ImGui::GetTextLineHeightWithSpacing();
+
+    if(update)
     {
-        ImGui::Text("%04x: ",(addr+i*0x10)&0xffff);
-        ImGui::SameLine();
-
-        for(int j = 0; j < 0x10; j++)
-        {
-            ImGui::Text("%02x ",gb.mem.raw_read((addr+j)+i*0x10)&0xffff);
-            ImGui::SameLine();        
-        }
-
-        ImGui::Text("\n");
+        update = false;
+        ImGui::SetScrollY((addr / 0x10) * line_size);
     }
+
+    while (clipper.Step())
+    {
+        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+        {
+            
+            ImGui::Text("%04x: ",(i*0x10)&0xffff);
+            ImGui::SameLine();
+
+
+            for(int j = 0; j < 0x10; j++)
+            {
+                ImGui::Text("%02x ",gb.mem.raw_read((j)+i*0x10)&0xffff);
+                ImGui::SameLine();
+            }
+            ImGui::Text("\n");
+        }
+    }
+
     ImGui::EndChild();
     ImGui::End();
 }
@@ -668,12 +710,16 @@ void ImguiMainWindow::mainloop()
     gb.reset("",false);
 
 
-    // after fix links awakening crash
-    // and fix gekkio test failures call_iming ret_timing
-    // also figure out why exceptions crash this version of the code
+    
+    // and fix gekkio test failures call_iming ret_timing <-- timing issue with vblank and hblank
 
-    // and finally redo sound (dont just copy code for it cause its a very messy impl)
-    // use inheritance
+    /*TODO*/
+    // after fix links awakening crash
+    // super mario land 2 also crashes
+    // and kirbys dreamland 2
+    // finish sound impl (incrediby buggy and i have zero idea why)
+
+
 
     // Main loop
     while (!glfwWindowShouldClose(window))

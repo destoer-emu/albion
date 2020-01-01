@@ -1,7 +1,8 @@
 #pragma once
+#ifdef FRONTEND_QT
 #include <QThread>
 #include <QMutex>
-#include "../headers/gb.h"
+#include "../../headers/gb.h"
 #include "framebuffer.h"
 
 class EmuInstance : public QThread
@@ -15,5 +16,5 @@ private:
      GB *gb;
      FrameBuffer *framebuffer;
 };
-
+#endif
 

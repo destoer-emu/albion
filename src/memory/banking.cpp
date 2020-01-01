@@ -1,4 +1,4 @@
-#include "headers/memory.h"
+#include "../headers/memory.h"
 
 
 // 0x0000 - 0x1fff

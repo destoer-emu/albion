@@ -1,4 +1,4 @@
-#include "headers/rom.h"
+#include "../headers/rom.h"
 
 void Rom_info::init(std::vector<uint8_t> &rom, std::string filename)
 {

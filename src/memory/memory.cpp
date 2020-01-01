@@ -1,8 +1,9 @@
-#include "headers/memory.h"
-#include "headers/ppu.h"
-#include "headers/cpu.h"
-#include "headers/lib.h"
-#include "headers/debug.h"
+#include "../headers/memory.h"
+#include "../headers/ppu.h"
+#include "../headers/cpu.h"
+#include "../headers/apu.h"
+#include "../headers/lib.h"
+#include "../headers/debug.h"
 
 
 bool Memory::is_lcd_enabled()
@@ -62,10 +63,11 @@ void Memory::load_cart_ram()
     fp.close();	
 }
 
-void Memory::init(Cpu *c,Ppu *p,Debug *d,std::string rom_name, bool with_rom)
+void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_rom)
 {
     cpu = c; // init our cpu pointer
     ppu = p;
+	apu = a;
 	debug = d;
 
 	if(with_rom)
@@ -646,6 +648,94 @@ uint8_t Memory::read_io(uint16_t addr)
 			return (cpu->internal_timer & 0xff00) >> 8;
 		}
 
+		// sound regs
+		// nr 11 only 7 and 6 readable
+		case IO_NR11:
+		{
+			return (io[IO_NR11] & (128 + 64)) | (0xff-(128+64));
+		}
+			
+		// write only
+		case IO_NR13:
+		{
+			return 0xff;
+		}
+			
+		// nr 14 only 6 is readable
+		case IO_NR14:
+		{
+			return (io[IO_NR14] & (64)) | (0xff-64);
+		}
+			
+		// nr 21 only bits 6-7 are r 
+		case IO_NR21:
+		{
+			return (io[IO_NR21] & (128 + 64)) | (0xff-(128+64));		
+		}
+			
+		// nr 23 write only
+		case IO_NR23:
+		{
+			return 0xff;
+		}
+			
+		// nr 24 only bit 6 can be read 
+		case IO_NR24:
+		{
+			return (io[IO_NR24] & (64)) | (0xff-64);	
+		}
+			
+		// nr 30 only bit 7
+		case IO_NR30:
+		{
+			return (io[IO_NR30] & (128)) | (0xff-128);	
+		}
+			
+		// nr 31 <-- unsure
+		case IO_NR31:
+		{
+			return 0xff;
+		}
+			
+		// nr 32 6-5 r
+		case IO_NR32:
+		{
+			return (io[IO_NR32] & (64 + 32)) | (0xff-(64+32));
+		}
+			
+		// nr33 write only
+		case IO_NR33:
+		{
+			return 0xff;
+		}
+			
+		// nr 34 6 r
+		case IO_NR34:
+		{
+			return (io[IO_NR34] & (64)) | (0xff-64);
+		}
+			
+		// nr 41
+		case IO_NR41:
+		{
+			return io[IO_NR41] | 192;
+		}
+
+		// nr 44 bit 6
+		case IO_NR44:
+		{
+			return (io[IO_NR44] & (64)) | (0xff-64);		
+		}		
+
+
+		// unused
+		case 0x2a: case 0x2b: case 0x2c: 
+		case 0x2d: case 0x2e: case 0x2f:
+		{
+			return 0xff;
+		}
+
+
         default: 
         {
             return io[addr & 0xff];
@@ -768,7 +858,7 @@ void Memory::do_dma(uint8_t v)
 		// old implementaiton
 		for(int i = 0; i < 0xA0; i++)
 		{
-			write_oam(0xfe00+i, read_mem(dma_address+i)); 	
+			oam[i] =  read_mem(dma_address+i); 	
 		}
 		oam_dma_active = true; // indicate a dma is active and to lock memory
 		oam_dma_address = dma_address; // the source address
@@ -800,12 +890,27 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 {
     switch(addr & 0xff)
     {
+		// unused io
+		case 0x03:
+		{
+			break;
+		}
+			
+		// unused
+		case 0x08: case 0x09: case 0x0a: case 0x0b:
+		case 0x0c: case 0x0d: case 0x0e: case 0x15:
+		case 0x1f: case 0x27: case 0x28: case 0x29:
+		{
+			io[addr & 0xff] = 0xff;
+			break;
+		}
+			
 
 		// update the timer freq (tac in gb docs)
 		case IO_TMC:
 		{
 			io[IO_TMC] = v | 248;
-			return;
+			break;
 		}		
 
 		// div and tima share the same internal counter
@@ -813,13 +918,13 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 		case IO_DIV:
 		{
 			cpu->internal_timer = 0;
-			return;
+			break;
 		}
 			
 		case IO_IF:
 		{
 			io[IO_IF] = v | (128 + 64 + 32); // top 3 bits allways on
-			return;
+			break;
 		}
 
 		case IO_LCDC: // lcdc
@@ -840,7 +945,7 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			}
 			
 			io[IO_LCDC] = v;
-			return;
+			break;
 		}
 
 
@@ -855,21 +960,21 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			
 			// set unused bit
 			io[IO_STAT] |= 0x80;
-			return;
+			break;
 		}
 
 
 		// block ly writes
 		case IO_LY:
 		{
-			return;
+			break;
 		}
 
 		// implement timing on dma and page boundary checking
 		case IO_DMA: // dma reg perform a dma transfer //<-- may need seperate handling in a do_dma
 		{
 			do_dma(v);
-			return;
+			break;
 		}
 
 
@@ -900,7 +1005,7 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 				io[IO_SVBK] = v;
 			}
 			
-			return;	
+			break;
 		}
 
 		case IO_SPEED:
@@ -909,11 +1014,13 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			if(!cpu->get_cgb())
 			{
 				io[IO_SPEED] = 0xff;
-				return;
 			}
 
-			io[IO_SPEED] = (io[IO_SPEED] & 0x80) | (v & 0x1) | 0x7e;
-			return;
+			else
+			{
+				io[IO_SPEED] = (io[IO_SPEED] & 0x80) | (v & 0x1) | 0x7e;
+			}
+			break;
 		}
 
 		case IO_VBANK: // what vram bank are we writing to?
@@ -922,13 +1029,14 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			if(!cpu->get_cgb())
 			{
 				io[IO_VBANK] = v;
-				return;
 			}
 			
-
-			vram_bank = v & 1;
-			io[IO_VBANK] = v | 254;
-			return;
+			else
+			{
+				vram_bank = v & 1;
+				io[IO_VBANK] = v | 254;
+			}
+			break;
 		}
 
 		case IO_BGPI:
@@ -937,12 +1045,14 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			if(!cpu->get_cgb())
 			{
 				io[IO_BGPI] = v;
-				return;
 			}
 			
-			ppu->set_bg_pal_idx(v);
-			io[IO_BGPI] = v | 0x40;
-			return;
+			else
+			{
+				ppu->set_bg_pal_idx(v);
+				io[IO_BGPI] = v | 0x40;
+			}
+			break;
 		}
 
 		case IO_BGPD: // finish later 
@@ -950,11 +1060,13 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			if(!cpu->get_cgb())
 			{
 				io[IO_BGPD] = v;
-				return;
 			}
 
-			ppu->write_bgpd(v);
-			return;
+			else
+			{
+				ppu->write_bgpd(v);
+			}
+			break;
 		}
 
 		case IO_SPPI: // sprite pallete index
@@ -963,12 +1075,14 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			if(!cpu->get_cgb())
 			{
 				io[IO_SPPI] = v;
-				return;
 			}			
 
-			ppu->set_sp_pal_idx(v);
-			io[IO_SPPI] = v | 0x40;
-			return;
+			else
+			{
+				ppu->set_sp_pal_idx(v);
+				io[IO_SPPI] = v | 0x40;
+			}
+			break;
 		}		
 		
 		case IO_SPPD: // sprite pallete data
@@ -977,10 +1091,13 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			if(!cpu->get_cgb())
 			{
 				io[IO_SPPD] = v;
-				return;
-			}			
-			ppu->write_sppd(v);
-			return;
+			}
+
+			else
+			{			
+				ppu->write_sppd(v);
+			}
+			break;
 		}
 	
 		// specifies src byte dest of dma
@@ -989,7 +1106,7 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			dma_src &= 0xff;
 			dma_src |= v << 8;
 			io[IO_HDMA1] = v;
-			return;
+			break;
 		}
 		
 		// lo byte dma src
@@ -999,7 +1116,7 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			dma_src &= ~0xff;
 			dma_src |= v;
 			io[IO_HDMA2] = v;
-			return;
+			break;
 		}
 		
 		
@@ -1010,7 +1127,7 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			dma_dst &= 0xff;
 			dma_dst |= v << 8;
 			io[IO_HDMA3] = v;
-			return;
+			break;
 		}
 		
 		// low byte dma dst
@@ -1020,7 +1137,7 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			dma_dst &= ~0xff;
 			dma_dst |= v;
 			io[IO_HDMA4] = v;
-			return;
+			break;
 		}
 	
 		// cgb dma start
@@ -1049,8 +1166,282 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 				hdma_len_ticked = 0;
 				hdma_active = true;
 			}
-			return;
+			break;
 		}
+
+
+		// sound registers
+		case IO_NR10:
+		{
+			if(apu->enabled())
+			{
+				io[IO_NR10] = v | 128;
+			}
+			break;
+		}
+
+
+
+		case IO_NR11:
+		{
+			if(apu->enabled())
+			{
+				// bottom 6 bits are length data 
+				// set the internal counter to 64 - bottom 6 bits of data
+				apu->c1.write_lengthc(v);
+				io[IO_NR11] = v;
+			}
+			break;
+		}
+
+		case IO_NR12:
+		{
+			if(apu->enabled())
+			{
+				io[IO_NR12] = v;
+				apu->c1.check_dac();
+			}
+			break;
+		}
+
+		case IO_NR13:
+		{
+			if(apu->enabled())
+			{
+				io[IO_NR13] = v;
+			}
+			break;
+		}
+
+		case IO_NR14:
+		{
+			if(apu->enabled())
+			{
+				
+				if(is_set(v,7)) // trigger
+				{
+					apu->c1.length_trigger(v,apu->get_sequencer_step());
+				}
+
+				// after all the trigger events have happend
+				// if the dac is off switch channel off				
+				apu->c1.check_dac();
+
+				io[IO_NR14] = v;
+			}
+			break;
+		}
+
+
+
+		case IO_NR21:
+		{
+			if(apu->enabled())
+			{
+				apu->c2.write_lengthc(v);
+				io[IO_NR21] = v;
+			}
+			break;
+		}
+
+		case IO_NR22:
+		{
+			if(apu->enabled())
+			{
+				io[IO_NR22] = v;
+				apu->c2.check_dac();	
+			}
+			break;
+		}
+
+		case IO_NR23:
+		{
+			if(apu->enabled())
+			{
+				io[IO_NR23] = v;
+			}
+			break;
+		}
+
+		case IO_NR24:
+		{
+			if(apu->enabled())
+			{
+				if(is_set(v,7)) // trigger
+				{
+					apu->c2.length_trigger(v,apu->get_sequencer_step());
+				}
+
+				// after all the trigger events have happend
+				// if the dac is off switch channel off
+				// after all the trigger events have happend
+				// if the dac is off switch channel off				
+				apu->c2.check_dac();
+
+				io[IO_NR24] = v;
+			}
+			break;
+		}
+
+
+		case IO_NR30:
+		{
+			if(apu->enabled())
+			{
+				io[IO_NR30] = v | 127;
+				apu->c3.check_dac();
+			}
+			break;
+		}
+
+
+		case IO_NR31:
+		{
+			if(apu->enabled())
+			{
+				apu->c3.write_lengthc(v);
+				io[IO_NR31] = v;
+			}
+			break;
+		}
+
+		case IO_NR32:
+		{
+			if(apu->enabled())
+			{
+			
+				io[IO_NR32] = v | 159;
+			}
+			break;
+		}
+
+		case IO_NR33:
+		{
+			if(apu->enabled())
+			{
+				io[IO_NR33] = v;
+			}
+			break;
+		}
+
+		case IO_NR34:
+		{
+			if(apu->enabled())
+			{
+				if(is_set(v,7)) // trigger
+				{
+					apu->c3.length_trigger(v,apu->get_sequencer_step());
+				}
+
+				// after all the trigger events have happend
+				// if the dac is off switch channel off				
+				apu->c3.check_dac();
+
+
+				io[IO_NR34] = v | (16 + 32 + 8);
+			}
+			break;
+		}
+
+		case IO_NR41:
+		{
+			if(apu->enabled())
+			{
+				apu->c4.write_lengthc(v);
+				io[IO_NR41] = v | 192;
+			}
+			break;
+		}
+
+		case IO_NR42:
+		{
+			if(apu->enabled())
+			{
+				io[IO_NR42] = v;
+				apu->c4.check_dac();
+			}
+			break;
+		}
+
+		case IO_NR43:
+		{
+			if(apu->enabled())
+			{
+				io[IO_NR43] = v;
+			}
+			break;
+		}
+
+		case IO_NR44:
+		{
+			if(apu->enabled())
+			{
+				if(is_set(v,7)) // trigger
+				{
+					apu->c4.length_trigger(v,apu->get_sequencer_step());
+				}
+
+				// after all the trigger events have happend
+				// if the dac is off switch channel off				
+				apu->c4.check_dac();				
+
+				io[IO_NR44] = v | 63;
+			}
+			break;
+		}		
+
+
+		// nr 50
+		case IO_NR50:
+		{
+			if(apu->enabled())
+			{
+				io[IO_NR50] = v;
+			}
+			break;
+		}
+
+			
+		case IO_NR51:
+		{
+			if(apu->enabled())
+			{
+				io[IO_NR51] = v;
+			}
+			break;
+		}
+
+
+
+		// bits 0-3 read only 7 r/w 4-6 unused
+		case IO_NR52:
+		{
+			io[IO_NR52] |= 112;
+			
+			if(is_set(io[IO_NR52] ^ v,7)) // if we are going from on to off reset the sequencer
+			{
+				apu->reset_sequencer();
+			}
+
+
+
+			// if we have disabled sound we should
+			// zero all the registers (nr10-nr51) 
+			// and lock writes until its on
+			if(!is_set(v,7))
+			{
+				apu->disable_sound();
+			}
+			
+			else // its enabled
+			{
+				apu->enable_sound();
+			}			
+			break;
+		}
+
+
+
 
 
         default: // hram

@@ -1,3 +1,4 @@
+#ifdef FRONTEND_QT
 #include "emu_instance.h"
 #include <QMessageBox>
 
@@ -40,3 +41,4 @@ void EmuInstance::run()
         messageBox.setFixedSize(500,200);
     }
 }
+#endif

@@ -1,6 +1,7 @@
 #pragma once
 #include "cpu.h"
 #include "memory.h"
+#include "apu.h"
 #include "ppu.h"
 #include "lib.h"
 #include "disass.h"
@@ -19,6 +20,7 @@ public:
     Cpu cpu;
     Memory mem;
     Ppu ppu;
+    Apu apu;
     Disass disass;
     Debug debug;
 

@@ -1,5 +1,5 @@
-#include "headers/cpu.h"
-#include "headers/memory.h"
+#include "../headers/cpu.h"
+#include "../headers/memory.h"
 
 
 void Cpu::set_zero(uint8_t reg)

@@ -1,4 +1,4 @@
-#include "headers/debug.h"
+#include "../headers/debug.h"
 
 
 // think we need varidiac templates to achieve this the way we want it
@@ -7,14 +7,17 @@
 // wake the instance up
 void Debug::wake_up()
 {
+    std::scoped_lock<std::mutex> guard(halt_mutex);
     halted = false;
 }
 
 // halt the instance so the debugger is free to poke at it
 void Debug::halt()
 {
-    halted = true;
-
+    {
+        std::scoped_lock<std::mutex> guard(halt_mutex);
+        halted = true;
+    }
     while(halted)
     {
         // repeatdadly sleep

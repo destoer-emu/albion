@@ -7,7 +7,7 @@
 class Memory
 {
 public:
-    void init(Cpu *c,Ppu *p,Debug *d,std::string rom_name, bool with_rom=true);
+    void init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_rom=true);
 
     bool is_lcd_enabled();
 
@@ -26,7 +26,7 @@ public:
     uint16_t read_wordt(uint16_t addr);
     void write_wordt(uint16_t addr, uint16_t v);
     void write_iot(uint16_t addr,uint8_t v);
-
+    void write_io(uint16_t addr,uint8_t v);
 
     // public underlying memory for direct access
     // required for handling io and vram
@@ -47,6 +47,7 @@ public:
 private:
     Cpu *cpu;
     Ppu *ppu;
+    Apu *apu;
     Debug *debug;
 
     void do_dma(uint8_t v);
@@ -65,7 +66,6 @@ private:
     // write mem underlying
     void write_oam(uint16_t addr,uint8_t v);
     void write_vram(uint16_t addr,uint8_t v);
-    void write_io(uint16_t addr,uint8_t v);
     void write_wram_low(uint16_t addr,uint8_t v);
     void write_wram_high(uint16_t addr,uint8_t v);
     void write_hram(uint16_t addr,uint8_t v);
