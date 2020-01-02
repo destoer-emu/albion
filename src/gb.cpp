@@ -17,10 +17,7 @@ void GB::key_released(int key)
 }
 
 
-//  woud have been much cleaner to directly dump and read
-// this from a file but doing it into a buf
-// allows us to reuse code if we choose to add rewind
-
+// need to do alot more integrity checking on data in these :)
 void GB::save_state(std::string filename)
 {
 try
@@ -31,7 +28,7 @@ try
 
 	cpu.save_state(fp);
 	mem.save_state(fp);
-	//ppu.save_state(fp);
+	ppu.save_state(fp);
 	//apu.save_state(fp);
 
 	fp.close();
@@ -54,7 +51,7 @@ try
 
 	cpu.load_state(fp);
 	mem.load_state(fp);
-	//ppu.load_state(fp);
+	ppu.load_state(fp);
 	//apu.load_state(fp);
 
 	fp.close();

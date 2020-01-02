@@ -139,7 +139,7 @@ inline void file_read_var(std::ifstream &fp, T &data)
 template<typename T>
 inline void file_write_arr(std::ofstream &fp, const T *data,size_t size)
 {
-	fp.write(reinterpret_cast<const char*>(&data),size);
+	fp.write(reinterpret_cast<const char*>(data),size);
 }
 
 template<typename T>
@@ -150,7 +150,7 @@ inline void file_read_arr(std::ifstream &fp, T *data, size_t size)
 	{
 		throw std::runtime_error("file_read_arr error");
 	}	
-	fp.read(reinterpret_cast<char*>(&data),size);
+	fp.read(reinterpret_cast<char*>(data),size);
 }
 
 template<typename T>
