@@ -141,6 +141,11 @@ void Cpu::exec_instr()
 			
 			}
 			
+			else // almost nothing triggers this 
+			{
+				write_log("[WARNING] stop opcode hit at {:x}",pc);
+			}
+
 			break;
 			
 		case 0x11: // ld de, nn

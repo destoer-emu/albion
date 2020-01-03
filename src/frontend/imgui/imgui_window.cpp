@@ -767,7 +767,8 @@ void ImguiMainWindow::mainloop()
     // super mario land 2 also crashes
     // and kirbys dreamland 2
     // finish sound impl (incrediby buggy and i have zero idea why)
-
+    // metroid 2 gbc has now broken i think its becuase we added sound!?
+    // oam bug test repeatadly restarts?
 
 
     // Main loop
@@ -797,12 +798,7 @@ void ImguiMainWindow::mainloop()
             file_browser();
         }
 
-        // <---- START HERE!
-        // get this working then begin work on breakpoints
-        // disassembly and memory viewing
-        // make debugger or play mode changable from menu bar
-        // add ppu and sound viewers later :)
-        else // render jsut the main game fullscreen
+        else // todo render jsut the main game fullscreen
         {
 
         }

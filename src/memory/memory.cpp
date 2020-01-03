@@ -737,6 +737,45 @@ uint8_t Memory::read_io(uint16_t addr)
 		}
 
 
+		// CGB
+		
+		
+		
+		// cgb vram bank unused on dmg
+		case IO_VBANK:
+		{
+			return io[IO_VBANK];
+		}
+
+		
+		case IO_BGPD: 
+		{
+			return ppu->get_bgpd();
+		}
+		
+		case IO_SPPD:
+		{
+			return ppu->get_sppd();
+		}
+
+		
+		case IO_HDMA5: // verify
+		{
+			if(!hdma_active)
+			{
+				return 0xff;
+			}
+			
+			// return the lenght tick left
+			else 
+			{
+				return (hdma_len - 1);
+			}
+		}
+
+
+
+
         default: 
         {
             return io[addr & 0xff];

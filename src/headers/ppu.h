@@ -57,6 +57,10 @@ public:
     void write_bgpd(uint8_t v);
 
 
+    uint8_t get_sppd() const;
+    uint8_t get_bgpd() const;
+
+
     // save states
     void save_state(std::ofstream &fp);
     void load_state(std::ifstream &fp);
@@ -75,6 +79,7 @@ private:
     bool sprite_fetch();  
 
 
+    void reset_fetcher();
 
     // main ppu state
 	bool signal = false;

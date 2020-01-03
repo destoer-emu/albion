@@ -5,6 +5,26 @@
 
 
 
+void Ppu::reset_fetcher()
+{
+	// fetcher
+	hblank = false;
+	x_cord = 0; // current x cord of the ppu
+	pixel_idx = 0;
+
+	ppu_cyc = 0; // how far for a tile fetch is
+	ppu_scyc = 0; // how far along a sprite fetch is
+	pixel_count = 0; // how many pixels are in the fifo
+	tile_cord = 0;
+	tile_ready = false; // is the tile fetch ready to go into the fio 
+	no_sprites = 0; // how many sprites
+	sprite_drawn = false;
+	window_start = false;
+	x_scroll_tick = false;
+	scx_cnt = 0;
+
+}
+
 
 // other stuff should proabably go in here i forgot to port over
 void Ppu::init(Cpu *c,Memory *m)
@@ -21,21 +41,7 @@ void Ppu::init(Cpu *c,Memory *m)
     current_line = 0;
     new_vblank = false;
 
-	// fetcher
-	hblank = false;
-	x_cord = 0; // current x cord of the ppu
-	pixel_idx = 0;
-
-	ppu_cyc = 0; // how far for a tile fetch is
-	ppu_scyc = 0; // how far along a sprite fetch is
-	pixel_count = 0; // how many pixels are in the fifo
-	tile_cord = 0;
-	tile_ready = false; // is the tile fetch ready to go into the fio 
-	no_sprites = 0; // how many sprites
-	sprite_drawn = false;
-	window_start = false;
-	x_scroll_tick = false;
-	scx_cnt = 0;
+	reset_fetcher();
 
     // cgb pal
 	sp_pal_idx = 0;
@@ -88,6 +94,18 @@ void Ppu::write_bgpd(uint8_t v)
 		mem->io[IO_BGPI] &= ~0x3f;
 		mem->io[IO_BGPI] |= bg_pal_idx;
 	}	
+}
+
+
+
+uint8_t Ppu::get_sppd() const
+{
+	return sp_pal[sp_pal_idx];
+}
+
+uint8_t Ppu::get_bgpd() const
+{
+	return bg_pal[bg_pal_idx];	
 }
 
 void Ppu::update_graphics(int cycles)
@@ -199,16 +217,7 @@ void Ppu::update_graphics(int cycles)
 				// switch to hblank
 				mode = ppu_mode::hblank;
 					
-				// reset our fetcher :)
-				x_cord = 0;
-				tile_ready = false;
-				pixel_count = 0;
-				ppu_cyc = 0;
-				hblank = false;
-				tile_cord = 0;
-				pixel_idx = 0;
-				window_start = false;
-				ppu_scyc = 0;						
+				reset_fetcher();
 					
 				// on cgb do hdma (handler will check if its active)
 				if(cpu->get_cgb())
