@@ -3,7 +3,16 @@
 #ifdef FRONTEND_IMGUI
 
 #define SDL_MAIN_HANDLED
+
+#ifdef _WIN32
+
+#include <SDL.H>
+
+#else
+
 #include <SDL2/SDL.h>
+
+#endif
 
 // dear imgui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
 // If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.

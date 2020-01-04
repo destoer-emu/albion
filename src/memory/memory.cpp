@@ -283,7 +283,7 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
 
     // banking vars
     enable_ram = false; // is ram banking enabled
-    cart_ram_bank = CART_RAM_BANK_INVALID;
+    cart_ram_bank = 0;
 	cart_rom_bank = 1; // currently selected rom bank
 	rom_banking = true; // is rom banking enabled
 

@@ -111,7 +111,7 @@ private:
 
     // banking vars
     bool enable_ram = false; // is ram banking enabled
-    int cart_ram_bank = CART_RAM_BANK_INVALID;
+    int cart_ram_bank = 0;
 	int cart_rom_bank = 1; // currently selected rom bank
 	bool rom_banking = true; // is rom banking enabled
 

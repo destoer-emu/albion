@@ -572,11 +572,11 @@ void ImguiMainWindow::draw_breakpoints()
 
 void ImguiMainWindow::file_browser()
 {
-    static std::string file_path = std::filesystem::current_path(); 
+    static std::string file_path = std::filesystem::current_path().string(); 
     static int selected = -1;
     static std::string selected_file = "";
     static std::vector<std::string> dir_list = read_sorted_directory(file_path);
-    static char input_path[50] = "";
+    static char input_path[128] = "";
 
     ImGui::Begin("file browser");
 
@@ -653,7 +653,7 @@ void ImguiMainWindow::file_browser()
         selected_file = "";
 
         std::filesystem::path p(file_path);
-        file_path = p.parent_path();
+        file_path = p.parent_path().string();
         dir_list = read_sorted_directory(file_path);
 	}
 
@@ -664,8 +664,8 @@ void ImguiMainWindow::file_browser()
         {
             selected = -1;
             selected_file = "";
-            *input_path = '\0';
             file_path = input_path;
+            *input_path = '\0';
             dir_list = read_sorted_directory(file_path);
         }
 	}
@@ -683,7 +683,7 @@ void ImguiMainWindow::file_browser()
     for(auto &path: dir_list)
     {
         // display only the file name
-        std::string disp_path = std::filesystem::path(path).filename();
+        std::string disp_path = std::filesystem::path(path).filename().string();
 
         if(ImGui::Selectable(disp_path.c_str(),selected == i,ImGuiSelectableFlags_AllowDoubleClick))
         {

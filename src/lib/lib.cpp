@@ -55,7 +55,7 @@ std::vector<std::string> read_directory(std::string file_path)
 
     for(auto &x: std::filesystem::directory_iterator(file_path))
     {
-        dir_list.push_back(x.path().filename());
+        dir_list.push_back(x.path().filename().string());
     }
 
     return dir_list;
