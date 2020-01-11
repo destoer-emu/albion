@@ -2,69 +2,46 @@
 #include "lib.h"
 #include "forward_def.h"
 #include "mem_constants.h"
+#ifdef _WIN32
 
-/*
-// should have a bool for the channel being enabled
-// as it is better to cache it
-typedef struct 
-{
-	int lengthc;
-	bool length_enabled;
-	int period; // how long before we move to the next sample
-	float output; // output of the channel
-	int volume; // should have envelope regs here
-	int volume_load;
-	int duty; // current duty 
-	int duty_idx; // current index into duty
-	int freq; // current frequency
-	int env_period; // current timer
-	int env_load; // cached period
-	bool env_enabled; // disabled when it ticks over or under
-} Sqaure;
+#include <SDL.H>
 
+#else
 
+#include <SDL2/SDL.h>
 
-static const uint8_t duty[4][8] = 
-{
-    {0,0,0,0,0,0,0,1},    // 12.5
-    {1,0,0,0,0,0,0,1},   // 25
-    {1,0,0,0,0,1,1,1},   // 50 
-    {0,1,1,1,1,1,1,0}    // 75
-};
-
-//http://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware#Noise_Channel
-static const int divisors[8] = { 8, 16, 32, 48, 64, 80, 96, 112 };
-
-*/
+#endif
 
 
 class Channel
 {
 public:
-	void init_channel(Memory *mem, int chan_number);
-
 	// length counter
     void tick_lengthc();
-	void length_trigger(uint8_t v, int sequencer_step);
-	void enable_lengthc();
-	void set_lengthc(int c);
+	void length_trigger();
+	void length_write(uint8_t v, int sequencer_step);
 
 	void enable_chan();
 	void disable_chan();
-
-	void write_lengthc(uint8_t v);
 	void check_dac();
 
+	void write_lengthc(uint8_t v);
+	int get_output() const;
 
 protected:
+	void init_channel(Memory *m, int chan_number);
+	bool dac_on() const;
+	bool enabled() const;
+
     int lengthc = 0;
     bool length_enabled = false;
     int chan_number; // must be inited
-	int period = 0;
-	int volume = 0;
+
+	int output = 0;
 
 	Memory *mem;
 
+	// ideally these should be consts...
 	uint16_t trigger_addr;
 	int max_len;
 	int len_mask;
@@ -77,38 +54,132 @@ protected:
 	static constexpr int len_masks[] = {0x3f,0x3f,0xff,0x3f};
 
 	static constexpr uint16_t dac_regs[] = {IO_NR12,IO_NR22,IO_NR30,IO_NR42};	
-	static constexpr uint16_t dac_masks[] = {248,248,128,248};
+	static constexpr int dac_masks[] = {248,248,128,248};
+};
+
+
+class FreqReg
+{
+
+public:
+	void freq_init();
+	void freq_write_lower(uint8_t v);
+	void freq_write_higher(uint8_t v);
+	void freq_reload_period();
+	int get_duty_idx() const;
+protected:
+	int freq = 0;
+	int period = 0;
+
+
+	int freq_lower_mask;
+	int period_scale;
+
+	// write info
+	static constexpr int freq_lower_masks[] = {~0xff,0x700,~0xff};
+	static constexpr int freq_period_scales[] = {4,4,2};
+
+
+	int duty_idx = 0;
+};
+
+
+class Envelope
+{
+public:
+	void env_init();
+	void env_trigger();
+	void clock_envelope();
+	void env_write(uint8_t v);
+protected:
+	int env_period = 0; // current timer
+	int env_load = 0; // cached period
+	int volume = 0;
+	int volume_load = 0;
+	bool env_enabled = false; // disabled when it ticks over or under
+	bool env_up = true;
 };
 
 
 // sqaure is same as sweep but lacks the freq sweep
-class Sqaure : public Channel
+class Sqaure : public Channel, public FreqReg, public Envelope
 {
 public:
+	void init(Memory *mem, int chan_number);
+	void tick_period(int cycles);
+	void write_cur_duty(uint8_t v);
+	void duty_trigger();
+protected:
+	int cur_duty = 0;
+
+	static constexpr int duty[4][8] = 
+	{
+		{0,0,0,0,0,0,0,1},   // 12.5
+		{1,0,0,0,0,0,0,1},   // 25
+		{1,0,0,0,0,1,1,1},   // 50 
+		{0,1,1,1,1,1,1,0}    // 75
+	};
 };
 
 class Sweep : public Sqaure
 {
 public:
+	void sweep_init();
+	void sweep_trigger();
+	void sweep_write(uint8_t v);
+	uint16_t calc_freqsweep();
+	void do_freqsweep();
+	void clock_sweep();
+private:
+	bool sweep_enabled = false;
+	uint16_t sweep_shadow = 0;
+	int sweep_period = 0;
+	int sweep_timer = 0;
+	bool sweep_calced = false;
+	uint8_t sweep_reg = 0; // nr10 copy
 };
 
-class Wave : public Channel
+class Wave : public Channel, public FreqReg
 {
 public:
+	void init(Memory *m, int c);
+	void wave_trigger();
+	void vol_trigger();
+	void write_vol(uint8_t v);
+	void tick_period(int cycles);
+private:
+	int volume = 0;
+	int volume_load = 0;
 };
 
 
-class Noise : public Channel
+class Noise : public Channel, public Envelope
 {
 public:
+	void init(Memory *m, int c);
+	void tick_period(int cycles);
+	void noise_write(uint8_t v);
+	void noise_trigger();
+private:
+	//http://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware#Noise_Channel
+	static constexpr int divisors[8] = { 8, 16, 32, 48, 64, 80, 96, 112 };
+
+	int clock_shift = 0;
+	int counter_width = 0;
+	int divisor_idx = 0; // indexes into divisors table
+	uint16_t shift_reg = 0; // 15 bit reg
+	int period = 0;
 };
 
 class Apu
 {
 public:
-	void init(Memory *mem);
+	void init_audio();
+	void push_samples();
 
-	
+	void init(Memory *m);
+
+	void tick(int cycles);
 
 	void disable_sound();
 	void enable_sound();
@@ -121,6 +192,8 @@ public:
 
 	bool enabled() const;
 
+	void set_double(bool d);
+
 	Sweep c1;
 	Sqaure c2;
 	Wave c3;
@@ -128,8 +201,22 @@ public:
 private:
 
 	void tick_length_counters();
+	void clock_envelopes();
 	int sequencer_step = 0;
 	Memory *mem;
 
 	bool sound_enabled = true;
+
+
+	bool is_double = false;
+
+	// sound playback
+	static constexpr int sample_size = 1024;
+
+	// SDL SOUND
+	SDL_AudioSpec audio_spec;
+	float audio_buf[sample_size] = {0};
+	int audio_buf_idx = 0; // how filled up is the buffer
+	int down_sample_cnt = 0; // counter used to down sample	
+	bool audio_setup = false;
 };

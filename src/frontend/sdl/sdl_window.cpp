@@ -79,6 +79,7 @@ void SDLMainWindow::handle_input()
 	
 			case SDL_QUIT:
 			{
+				gb.mem.save_cart_ram();
 				exit(0);
 			}
         }
@@ -103,7 +104,7 @@ void SDLMainWindow::init_sdl()
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
 	texture = SDL_CreateTexture(renderer,
-		SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, gb.ppu.X, gb.ppu.Y);
+		SDL_PIXELFORMAT_BGR888, SDL_TEXTUREACCESS_STREAMING, gb.ppu.X, gb.ppu.Y);
 	std::fill(gb.ppu.screen.begin(),gb.ppu.screen.end(),255);	    
 }
 

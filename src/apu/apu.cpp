@@ -2,140 +2,37 @@
 #include "../headers/memory.h"
 
 
-void Channel::disable_chan()
+void Apu::init(Memory *m)
 {
-    mem->io[IO_NR52] = deset_bit(mem->io[IO_NR52],chan_number);
-}
-
-void Channel::enable_chan()
-{
-    mem->io[IO_NR52] = set_bit(mem->io[IO_NR52],chan_number);    
-}
-
-void Channel::tick_lengthc()
-{
-    if(length_enabled)
-    {
-        // tick the length counter if zero deset it
-        if(!--lengthc)
-        {
-            disable_chan();
-        }
-    }
-}
-
-void Channel::init_channel(Memory *mem, int chan_number)
-{
-    this->mem = mem;
-    this->chan_number = chan_number;
-    trigger_addr = trigger_regs[chan_number];
-    max_len = max_lengths[chan_number];
-    len_mask = len_masks[chan_number];
-    dac_reg = dac_regs[chan_number];
-    dac_mask = dac_masks[chan_number];
-
-    lengthc = 0;
-    length_enabled = false;
-	period = 0;
-	volume = 0;
-}
-
-// done upon NRX4 write
-void Channel::length_trigger(uint8_t v, int sequencer_step)
-{
-    enable_chan();
-
-    // if the length counter is 0 it should be loaded with max upon a trigger event
-    if(lengthc == 0)
-    {
-        lengthc = max_len;
-        
-        // disable the chan length
-        // if the value enables the length this will cause an extra tick :P
-        // disable chan in NRX4
-        mem->io[trigger_addr] = deset_bit(mem->io[trigger_addr],6); 
-    }
-
-    // if previously clear and now is enabled 
-    // + next step doesent clock, clock the length counter
-    if(!is_set(mem->io[trigger_addr],6) && is_set(v,6) && !(sequencer_step & 1))
-    {
-        // if not zero decrement
-        if(lengthc != 0)
-        {	
-            // decrement and if now zero and there is no trigger 
-            // switch the channel off
-            if(!--lengthc)
-            {
-                if(is_set(v,7)) 
-                { 
-                    // if we have hit a trigger it should be max len - 1
-                    lengthc = max_len-1;
-                }
-                    
-                else
-                {
-                    disable_chan();
-                }
-                    
-            }	
-        }	
-    }
-
-    check_dac();
-
-    // bit 6 enables legnth counter
-    length_enabled = is_set(v,6);        
-}
-
-void Channel::enable_lengthc()
-{
-    length_enabled = true;
-}
-
-void Channel::set_lengthc(int c)
-{
-    lengthc = c;
-}
-
-void Channel::write_lengthc(uint8_t v)
-{
-    lengthc = max_len - (v & len_mask);
-}
-
-void Channel::check_dac()
-{
-    if((mem->io[dac_reg] & dac_mask) == 0)
-    {
-        disable_chan();
-    }
-}
-
-
-void Apu::init(Memory *mem)
-{
-    this->mem = mem;
+    mem = m;
 
     // init every channel
-    c1.init_channel(mem,0);
-    c2.init_channel(mem,1);
-    c3.init_channel(mem,2);
-    c4.init_channel(mem,3);
+    c1.init(mem,0); c1.sweep_init();
+    c2.init(mem,1);
+    c3.init(mem,2);
+    c4.init(mem,3);
 
 	sequencer_step = 0;
-	sound_enabled = true;    
+	sound_enabled = true;
+
+    // init our audio playback
+    if(!audio_setup)
+    {
+        init_audio();
+    }
+
+    down_sample_cnt = 23;
+    audio_buf_idx = 0;
+	is_double = false;
+
 }
 
 void Apu::advance_sequencer()
 {
 	// go to the next step
-	sequencer_step += 1;
+	sequencer_step = (sequencer_step + 1) & 7;
 		
-	if(sequencer_step == 8)
-	{
-		sequencer_step = 0; // loop back around the steps
-	}
-		
+
 	// switch and perform the function required for our step
 	switch(sequencer_step)
 	{
@@ -151,7 +48,7 @@ void Apu::advance_sequencer()
 		case 2: // sweep generator + lengthc
 		{
 			tick_length_counters();
-			//clock_sweep();
+			c1.clock_sweep();
 			break;
 		}
 			
@@ -169,13 +66,13 @@ void Apu::advance_sequencer()
 		case 6:  // clock the sweep generator + lengthc
 		{
 			tick_length_counters();
-			//clock_sweep();
+			c1.clock_sweep();
 			break;
 		}
 			
 		case 7:
 		{ 
-			//clock_envelope();
+			clock_envelopes();
 			break; //clock the envelope 
 		}
 		default:
@@ -185,6 +82,28 @@ void Apu::advance_sequencer()
 	}	
 }
 
+void Apu::clock_envelopes()
+{
+    c1.clock_envelope();
+    c2.clock_envelope();
+    c4.clock_envelope();
+}
+
+void Apu::tick(int cycles)
+{
+    if(!enabled())
+    {
+        return;
+    }
+
+    c1.tick_period(cycles);
+    c2.tick_period(cycles);
+    c3.tick_period(cycles);
+    c4.tick_period(cycles);
+    
+
+    push_samples();
+}
 
 void Apu::tick_length_counters()
 {
@@ -233,3 +152,105 @@ bool Apu::enabled() const
 {
     return sound_enabled;
 }
+
+void Apu::set_double(bool d)
+{
+	is_double = d;
+}
+
+void Apu::init_audio()
+{
+	memset(&audio_spec,0,sizeof(audio_spec));
+
+	audio_spec.freq = 44100;
+	audio_spec.format = AUDIO_F32SYS;
+	audio_spec.channels = 2;
+	audio_spec.samples = sample_size;	
+	audio_spec.callback = NULL; // we will use SDL_QueueAudio()  rather than 
+	audio_spec.userdata = NULL; // using a callback :)
+
+
+    SDL_OpenAudio(&audio_spec,NULL);
+	SDL_PauseAudio(0);
+}
+
+void Apu::push_samples()
+{
+    
+	// handle audio output 
+	if(!--down_sample_cnt)
+	{
+		// while our counts are in T cycles the update function is called 
+		// ever M cycle so its 23
+		down_sample_cnt = 23; // may need adjusting for m cycles (95)
+	
+		if(is_double) // if in double speed the function is called twice as often 
+		{					// so to adjust the down sample count must be double
+			down_sample_cnt *= 2;
+		}
+
+		
+		float bufferin0 = 0;
+		float bufferin1 = 0;
+		
+		// left output
+		int volume = (128 *(mem->io[IO_NR50] & 7)) / 7 ;
+
+        float output[4];
+        output[0] = static_cast<float>(c1.get_output()) / 100;
+        output[1] = static_cast<float>(c2.get_output()) / 100;
+        output[2] = static_cast<float>(c3.get_output()) / 100;
+        output[3] = static_cast<float>(c4.get_output()) / 100;
+
+        // mix left and right channels
+        for(int i = 0; i < 4; i++)
+        {
+            if(is_set(mem->io[IO_NR51],i))
+            {
+				if(i != 0) { continue; }
+                bufferin1 = output[i];
+                SDL_MixAudioFormat((Uint8*)&bufferin0,(Uint8*)&bufferin1,AUDIO_F32SYS,sizeof(float),volume);
+            }            
+        }
+
+        audio_buf[audio_buf_idx] = bufferin0;
+
+        for(int i = 0; i < 4; i++)
+        {
+            if(is_set(mem->io[IO_NR51],i+4))
+            {
+				if(i != 0) { continue; }
+                bufferin1 = output[i];
+                SDL_MixAudioFormat((Uint8*)&bufferin0,(Uint8*)&bufferin1,AUDIO_F32SYS,sizeof(float),volume);
+            }            
+        }
+
+        audio_buf[audio_buf_idx+1] = bufferin0;
+        audio_buf_idx += 2;
+    }
+
+    // push audio to sdl
+	if(audio_buf_idx >= sample_size)
+	{
+		audio_buf_idx = 0;
+		
+
+		// legacy interface
+		static const SDL_AudioDeviceID dev = 1;
+		
+		auto buffer_size = (sample_size * sizeof(float));
+
+		// delay execution and let the que drain
+		while(SDL_GetQueuedAudioSize(dev) > buffer_size)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}			
+
+	
+		if(SDL_QueueAudio(dev,audio_buf,buffer_size) < 0)
+		{
+			printf("%s\n",SDL_GetError()); exit(1);
+		}
+    }
+}    
+

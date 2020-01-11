@@ -1,9 +1,9 @@
 #include "../headers/rom.h"
 
-void Rom_info::init(std::vector<uint8_t> &rom, std::string filename)
+void Rom_info::init(std::vector<uint8_t> &rom, std::string romname)
 {
 
-    this->filename = filename;
+    filename = romname;
 
     // pull the filename
     for(int i = 0x134; i < 0x147; i++)

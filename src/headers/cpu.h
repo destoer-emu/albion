@@ -5,7 +5,7 @@
 class Cpu
 {
 public:
-    void init(Memory *m, Ppu *p,Apu *apu, Disass *d, Debug *debug);
+    void init(Memory *m, Ppu *p,Apu *ap, Disass *d, Debug *debugger);
     void step();
     void cycle_tick(int cycles); 
 

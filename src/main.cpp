@@ -6,7 +6,7 @@
 int main(int argc, char *argv[])
 {
 #ifdef FRONTEND_QT    
-    QApplication app(argc, argv); // assume a qt build for now..
+    QApplication app(argc, argv);
 
     QtMainWindow window;
 

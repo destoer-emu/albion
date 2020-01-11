@@ -4,7 +4,7 @@
 #include "../headers/apu.h"
 #include "../headers/debug.h"
 
-void Cpu::init(Memory *m, Ppu *p,Apu *apu, Disass *dis, Debug *debug)
+void Cpu::init(Memory *m, Ppu *p,Apu *ap, Disass *dis, Debug *debugger)
 {
 
 	write_log("[INFO] new instance started!");
@@ -12,8 +12,8 @@ void Cpu::init(Memory *m, Ppu *p,Apu *apu, Disass *dis, Debug *debug)
     mem = m;
     ppu = p;
     disass = dis;
-	this->debug = debug;
-	this->apu = apu;
+	debug = debugger;
+	apu = ap;
 
 	uint8_t test = mem->read_mem(0x143);
 
@@ -91,7 +91,7 @@ void Cpu::cycle_tick(int cycles)
 	
 	// in double speed mode gfx and apu should operate at half
 	ppu->update_graphics((cycles*4) / factor); // handle the lcd emulation
-	//tick_apu((cycles*4) / factor); // advance the apu state
+	apu->tick((cycles*4) / factor); // advance the apu state
 }
 
 

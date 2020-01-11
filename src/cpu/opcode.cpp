@@ -2,6 +2,7 @@
 #include "../headers/memory.h"
 #include "../headers/disass.h"
 #include "../headers/debug.h"
+#include "../headers/apu.h"
 
 
 
@@ -10,9 +11,7 @@ void Cpu::check_rst_loop(uint16_t addr, uint8_t op)
 {
 	if(mem->read_mem(addr) == op)
 	{
-		#ifdef DEBUG
 		write_log("[ERROR] rst infinite loop at {:x}->{:x}",pc,addr);
-		#endif
 		throw std::runtime_error("infinite rst lockup");
 	}
 }
@@ -138,7 +137,7 @@ void Cpu::exec_instr()
 				{
 					mem->io[IO_SPEED] = deset_bit(mem->io[IO_SPEED],7);
 				}
-			
+				apu->set_double(is_double);
 			}
 			
 			else // almost nothing triggers this 

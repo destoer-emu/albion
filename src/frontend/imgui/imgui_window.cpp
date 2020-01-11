@@ -763,12 +763,10 @@ void ImguiMainWindow::mainloop()
     // and fix gekkio test failures call_iming ret_timing <-- timing issue with vblank and hblank
 
     /*TODO*/
-    // after fix links awakening crash
-    // super mario land 2 also crashes
-    // and kirbys dreamland 2
-    // finish sound impl (incrediby buggy and i have zero idea why)
+    // finish sound impl test each channel against a few games and get it up to par with old version
+    // impl channel 4 fully!
     // metroid 2 gbc has now broken i think its becuase we added sound!?
-    // oam bug test repeatadly restarts?
+    
 
 
     // Main loop

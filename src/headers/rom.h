@@ -9,7 +9,7 @@ enum class rom_type
 
 struct Rom_info
 {
-    void init(std::vector<uint8_t> &rom, std::string filename);
+    void init(std::vector<uint8_t> &rom, std::string romname);
 
     int no_ram_banks = 0;
     int no_rom_banks = 0;

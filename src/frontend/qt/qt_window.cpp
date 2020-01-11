@@ -156,8 +156,8 @@ void QtMainWindow::open()
         // construct our main gb class
         gb.reset(file_name);
 
-        setMinimumSize(gb.ppu.X,gb.ppu.Y);
-        resize(gb.ppu.X * 2,(gb.ppu.Y * 2));
+        setMinimumSize(gb.ppu.X,(gb.ppu.Y) + emu_menu->height());
+        resize(gb.ppu.X * 2,(gb.ppu.Y * 2) + emu_menu->height());
         // set window name with the rom title
         QString window_tile = QString::fromStdString(fmt::format("destoer-emu: {}",
             file_name.substr(file_name.find_last_of("/\\") + 1)));
@@ -187,6 +187,7 @@ void QtMainWindow::destroy_emu()
         delete(emu_instance);
         emu_running = false;
         gb.quit = false;
+        gb.mem.save_cart_ram();
         setWindowTitle("destoer-emu: no rom");
     }
 }

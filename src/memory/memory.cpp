@@ -24,7 +24,7 @@ void Memory::save_cart_ram()
 	size_t ext_idx = filename.find_last_of("."); 
 	if(ext_idx != std::string::npos)
 	{
-		std::string save_name = filename.substr(0, ext_idx); 	
+		save_name = filename.substr(0, ext_idx); 	
 	}
 
 	save_name += ".sav";
@@ -50,7 +50,7 @@ void Memory::load_cart_ram()
 	size_t ext_idx = filename.find_last_of("."); 
 	if(ext_idx != std::string::npos)
 	{
-		std::string save_name = filename.substr(0, ext_idx); 	
+		save_name = filename.substr(0, ext_idx); 	
 	}
 
 	save_name += ".sav";
@@ -736,6 +736,25 @@ uint8_t Memory::read_io(uint16_t addr)
 			return 0xff;
 		}
 
+		// wave table
+		case 0x30: case 0x31: case 0x32: case 0x33:
+		case 0x34: case 0x35: case 0x36: case 0x37:
+		case 0x38: case 0x39: case 0x3a: case 0x3b:
+		case 0x3c: case 0x3d: case 0x3e: case 0x3f:
+		{
+			// if wave is on write to current byte <-- finish accuracy later
+			if(apu->chan_enabled(2))
+			{
+				return io[0x30 + (apu->c3.get_duty_idx() / 2)];
+			}
+			
+			else // if its off allow "free reign" over it
+			{
+				return io[addr & 0xff];	
+			}
+		}
+
+
 
 		// CGB
 		
@@ -1215,6 +1234,7 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 		{
 			if(apu->enabled())
 			{
+				apu->c1.sweep_write(v);
 				io[IO_NR10] = v | 128;
 			}
 			break;
@@ -1229,6 +1249,7 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 				// bottom 6 bits are length data 
 				// set the internal counter to 64 - bottom 6 bits of data
 				apu->c1.write_lengthc(v);
+				apu->c1.write_cur_duty(v);
 				io[IO_NR11] = v;
 			}
 			break;
@@ -1240,6 +1261,7 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			{
 				io[IO_NR12] = v;
 				apu->c1.check_dac();
+				apu->c1.env_write(v);
 			}
 			break;
 		}
@@ -1248,6 +1270,7 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 		{
 			if(apu->enabled())
 			{
+				apu->c1.freq_write_lower(v);
 				io[IO_NR13] = v;
 			}
 			break;
@@ -1257,15 +1280,19 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 		{
 			if(apu->enabled())
 			{
+				apu->c1.freq_write_higher(v);
 				
+
 				if(is_set(v,7)) // trigger
 				{
-					apu->c1.length_trigger(v,apu->get_sequencer_step());
+					apu->c1.length_trigger();
+					apu->c1.freq_reload_period();
+					apu->c1.env_trigger();
+					apu->c1.sweep_trigger();
+					apu->c1.duty_trigger();
 				}
 
-				// after all the trigger events have happend
-				// if the dac is off switch channel off				
-				apu->c1.check_dac();
+				apu->c1.length_write(v,apu->get_sequencer_step());
 
 				io[IO_NR14] = v;
 			}
@@ -1279,6 +1306,7 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			if(apu->enabled())
 			{
 				apu->c2.write_lengthc(v);
+				apu->c2.write_cur_duty(v);
 				io[IO_NR21] = v;
 			}
 			break;
@@ -1290,6 +1318,7 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			{
 				io[IO_NR22] = v;
 				apu->c2.check_dac();	
+				apu->c2.env_write(v);
 			}
 			break;
 		}
@@ -1299,6 +1328,7 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			if(apu->enabled())
 			{
 				io[IO_NR23] = v;
+				apu->c2.freq_write_lower(v);
 			}
 			break;
 		}
@@ -1307,16 +1337,17 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 		{
 			if(apu->enabled())
 			{
+				apu->c2.freq_write_higher(v);
+
 				if(is_set(v,7)) // trigger
 				{
-					apu->c2.length_trigger(v,apu->get_sequencer_step());
+					apu->c2.length_trigger();
+					apu->c2.freq_reload_period();
+					apu->c2.env_trigger();
+					apu->c2.duty_trigger();
 				}
 
-				// after all the trigger events have happend
-				// if the dac is off switch channel off
-				// after all the trigger events have happend
-				// if the dac is off switch channel off				
-				apu->c2.check_dac();
+				apu->c2.length_write(v,apu->get_sequencer_step());
 
 				io[IO_NR24] = v;
 			}
@@ -1349,7 +1380,7 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 		{
 			if(apu->enabled())
 			{
-			
+				apu->c3.write_vol(v);
 				io[IO_NR32] = v | 159;
 			}
 			break;
@@ -1359,6 +1390,7 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 		{
 			if(apu->enabled())
 			{
+				apu->c3.freq_write_lower(v);
 				io[IO_NR33] = v;
 			}
 			break;
@@ -1368,10 +1400,17 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 		{
 			if(apu->enabled())
 			{
+				apu->c3.freq_write_higher(v);
+
 				if(is_set(v,7)) // trigger
 				{
-					apu->c3.length_trigger(v,apu->get_sequencer_step());
+					apu->c3.length_trigger();
+					apu->c3.freq_reload_period();
+					apu->c3.wave_trigger();
+					apu->c3.vol_trigger();
 				}
+
+				apu->c3.length_write(v,apu->get_sequencer_step());
 
 				// after all the trigger events have happend
 				// if the dac is off switch channel off				
@@ -1399,6 +1438,7 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			{
 				io[IO_NR42] = v;
 				apu->c4.check_dac();
+				apu->c4.env_write(v);
 			}
 			break;
 		}
@@ -1408,22 +1448,27 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 			if(apu->enabled())
 			{
 				io[IO_NR43] = v;
+				apu->c4.noise_write(v);
 			}
 			break;
 		}
 
 		case IO_NR44:
 		{
+
+
 			if(apu->enabled())
 			{
 				if(is_set(v,7)) // trigger
 				{
-					apu->c4.length_trigger(v,apu->get_sequencer_step());
+					apu->c4.length_trigger();
+					apu->c4.env_trigger();
+					apu->c4.noise_trigger();
 				}
 
-				// after all the trigger events have happend
-				// if the dac is off switch channel off				
-				apu->c4.check_dac();				
+				apu->c4.length_write(v,apu->get_sequencer_step());		
+
+				apu->c4.check_dac();	
 
 				io[IO_NR44] = v | 63;
 			}
@@ -1481,7 +1526,24 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 		}
 
 
-
+		// wave table
+		case 0x30: case 0x31: case 0x32: case 0x33:
+		case 0x34: case 0x35: case 0x36: case 0x37:
+		case 0x38: case 0x39: case 0x3a: case 0x3b:
+		case 0x3c: case 0x3d: case 0x3e: case 0x3f:
+		{
+			// if wave is on write to current byte <-- finish accuracy later
+			if(apu->chan_enabled(2))
+			{
+				io[0x30 + (apu->c3.get_duty_idx() / 2)] = v;
+			}
+			
+			else // if its off allow "free reign" over it
+			{
+				io[addr & 0xff] = v;	
+			}
+			return;
+		}
 
 
         default: // hram

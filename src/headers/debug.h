@@ -105,7 +105,12 @@ private:
 #else
 
 
-class Debug {};
+class Debug 
+{
+public: 
+    template<typename... Args>
+    void write_logger(std::string x,Args... args) { UNUSED(x); }
+};
 #define write_log(...)
 
 

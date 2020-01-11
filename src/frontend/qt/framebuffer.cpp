@@ -16,6 +16,7 @@ void FrameBuffer::init(int x, int y)
     X = x;
     Y = y;
     screen.resize(x * y);
+    resize(x*2,y*2);
 }
 
 void FrameBuffer::paintEvent(QPaintEvent*)
