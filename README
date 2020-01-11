@@ -1,2 +1,3 @@
-rewrite of original gameboy C emulator into C++ with a proper gui frontend
-in a very unfinished state with lots of bugs!
+rewrite of original gameboy C emulator into C++
+
+audio is still behind the original verison
