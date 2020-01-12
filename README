@@ -1,3 +1,1 @@
-rewrite of original gameboy C emulator into C++
-
-audio is still behind the original verison
+rewrite of gameboy C emulator into C++
