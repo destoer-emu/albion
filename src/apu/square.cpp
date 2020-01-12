@@ -4,7 +4,7 @@
 // CHANNEL 1 & 2 SQAURE WAVE
 
 
-void Sqaure::init(Memory *m, int c)
+void Square::init(Memory *m, int c)
 {
     init_channel(m,c);
 	freq_init();
@@ -14,12 +14,12 @@ void Sqaure::init(Memory *m, int c)
 	cur_duty = 0;
 }
 
-void Sqaure::write_cur_duty(uint8_t v)
+void Square::write_cur_duty(uint8_t v)
 {
     cur_duty = (v >> 6) & 0x3;    
 }
 
-void Sqaure::tick_period(int cycles)
+void Square::tick_period(int cycles)
 {
 	period -= cycles;
 
@@ -40,7 +40,7 @@ void Sqaure::tick_period(int cycles)
 	}
 }
 
-void Sqaure::duty_trigger()
+void Square::duty_trigger()
 {
 	duty_idx = 0;
 }

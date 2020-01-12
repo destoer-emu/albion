@@ -19,8 +19,16 @@ SDLMainWindow::SDLMainWindow(std::string file_name)
         render();
 
 		// throttle the emulation
-        SDL_Delay(time_left(next_time));
-		next_time += screen_ticks_per_frame;
+		if(gb.throttle_emu)
+		{
+        	SDL_Delay(time_left(next_time));
+		}
+
+		else
+		{
+			SDL_Delay(time_left(next_time) / 8);
+		}
+		next_time = current_time() + screen_ticks_per_frame;
     }
 }
 
@@ -72,6 +80,21 @@ void SDLMainWindow::handle_input()
 					case SDLK_LEFT: gb.key_released(1); break;
 					case SDLK_UP: gb.key_released(2); break;
 					case SDLK_DOWN: gb.key_released(3);break;
+
+					case SDLK_KP_PLUS:
+					{
+						gb.apu.stop_audio();
+						gb.throttle_emu = false;
+						break;
+					}
+
+					case SDLK_KP_MINUS:
+					{
+						gb.apu.start_audio();
+						gb.throttle_emu = true;						
+						break;
+					}
+
 				}
 				break;
 			}

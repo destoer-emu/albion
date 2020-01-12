@@ -24,7 +24,18 @@ void Apu::init(Memory *m)
     down_sample_cnt = 23;
     audio_buf_idx = 0;
 	is_double = false;
+	play_audio = true;
+}
 
+void Apu::start_audio()
+{
+	play_audio = true;
+}
+
+void Apu::stop_audio()
+{
+	play_audio = false;
+	SDL_ClearQueuedAudio(1);
 }
 
 void Apu::advance_sequencer()
@@ -176,7 +187,6 @@ void Apu::init_audio()
 
 void Apu::push_samples()
 {
-    
 	// handle audio output 
 	if(!--down_sample_cnt)
 	{
@@ -188,6 +198,8 @@ void Apu::push_samples()
 		{					// so to adjust the down sample count must be double
 			down_sample_cnt *= 2;
 		}
+
+		if(!play_audio) { return; }
 
 		
 		float bufferin0 = 0;
@@ -202,12 +214,13 @@ void Apu::push_samples()
         output[2] = static_cast<float>(c3.get_output()) / 100;
         output[3] = static_cast<float>(c4.get_output()) / 100;
 
+		uint8_t sound_select = mem->io[IO_NR51];
+
         // mix left and right channels
         for(int i = 0; i < 4; i++)
         {
-            if(is_set(mem->io[IO_NR51],i))
+            if(is_set(sound_select,i))
             {
-				if(i != 0) { continue; }
                 bufferin1 = output[i];
                 SDL_MixAudioFormat((Uint8*)&bufferin0,(Uint8*)&bufferin1,AUDIO_F32SYS,sizeof(float),volume);
             }            
@@ -215,11 +228,12 @@ void Apu::push_samples()
 
         audio_buf[audio_buf_idx] = bufferin0;
 
+		// right output
+		bufferin0 = 0;
         for(int i = 0; i < 4; i++)
         {
-            if(is_set(mem->io[IO_NR51],i+4))
+            if(is_set(sound_select,i+4))
             {
-				if(i != 0) { continue; }
                 bufferin1 = output[i];
                 SDL_MixAudioFormat((Uint8*)&bufferin0,(Uint8*)&bufferin1,AUDIO_F32SYS,sizeof(float),volume);
             }            
@@ -236,7 +250,7 @@ void Apu::push_samples()
 		
 
 		// legacy interface
-		static const SDL_AudioDeviceID dev = 1;
+		static constexpr SDL_AudioDeviceID dev = 1;
 		
 		auto buffer_size = (sample_size * sizeof(float));
 

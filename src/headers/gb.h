@@ -28,4 +28,5 @@ public:
     Debug debug;
 
     bool quit = false;
+    bool throttle_emu = true;
 };

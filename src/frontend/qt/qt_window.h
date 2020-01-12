@@ -22,6 +22,8 @@ public:
     FrameBuffer framebuffer;
 private slots:
     void open();
+    void load_state();
+    void save_state();
     //void disassembler(); <-- disassembler implemented in imgui first for now!
 
 protected:
@@ -36,12 +38,15 @@ private:
     QMenu *emu_menu;
     QActionGroup *alignment_group;
     QAction *open_act;
+    QAction *load_state_act;
+    QAction *save_state_act;
     QAction *disassembler_act;
     QLabel *info_label;
     QThread *emu_thread;
 
 
-    void destroy_emu();
+    void stop_emu();
+    void start_emu();
 
     GB gb;
     bool emu_running = false;

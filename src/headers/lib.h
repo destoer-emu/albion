@@ -32,12 +32,11 @@ inline uint64_t current_time()
         (std::chrono::system_clock::now().time_since_epoch()).count();    
 }
 
-inline uint64_t time_left(uint64_t &next_time)
+inline uint64_t time_left(uint64_t next_time)
 {	
     uint64_t now = current_time();
     if(next_time <= now)
     {
-        next_time = current_time() + 1000 / 60;
         return 0;     
     }
     

@@ -13,8 +13,8 @@ public:
     void run();
 
 private:
-     GB *gb;
-     FrameBuffer *framebuffer;
+    GB *gb;
+    FrameBuffer *framebuffer;
 };
 #endif
 

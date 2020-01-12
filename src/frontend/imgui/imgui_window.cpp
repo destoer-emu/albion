@@ -133,7 +133,21 @@ void handle_input(GB &gb)
         {
             gb.key_released(gb_key[i]);  
         }
-    } 
+    }
+
+    if(ImGui::IsKeyDown(GLFW_KEY_KP_ADD))
+    {
+        gb.apu.stop_audio();
+        gb.throttle_emu = false;
+    }
+
+    else if(ImGui::IsKeyDown(GLFW_KEY_KP_SUBTRACT))
+    {
+        gb.apu.start_audio();
+        gb.throttle_emu = true;						
+    }
+
+
 }
 
 // we will switch them in and out but for now its faster to just copy it
@@ -159,8 +173,17 @@ void emu_instance(GB &gb, std::vector<uint32_t> &screen_copy, std::mutex &screen
             }
 
             // throttle the emulation
-            std::this_thread::sleep_for(std::chrono::milliseconds(time_left(next_time)));
-            next_time += screen_ticks_per_frame;
+            if(gb.throttle_emu)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(time_left(next_time)));
+            }
+
+            else
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(time_left(next_time) / 8));
+            }
+
+            next_time = current_time() + screen_ticks_per_frame;
         }
     }
 

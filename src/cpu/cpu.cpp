@@ -6,14 +6,13 @@
 
 void Cpu::init(Memory *m, Ppu *p,Apu *ap, Disass *dis, Debug *debugger)
 {
-
-	write_log("[INFO] new instance started!");
-
     mem = m;
     ppu = p;
     disass = dis;
 	debug = debugger;
 	apu = ap;
+
+	write_log("[INFO] new instance started!");
 
 	uint8_t test = mem->read_mem(0x143);
 

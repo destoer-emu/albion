@@ -11,14 +11,14 @@ enum class break_type
 // breakpoint helper class
 struct Breakpoint
 {
-    void set(uint32_t addr, bool r, bool w, bool x, 
-        bool value_enabled,uint32_t value,bool break_enabled);
+    void set(uint32_t Addr, bool R, bool W, bool X, 
+        bool Value_enabled,uint32_t Value,bool Break_enabled);
 
     void disable();
 
     void enable();
 
-    bool is_hit(uint32_t addr,break_type type,uint32_t value);
+    bool is_hit(uint32_t Addr,break_type type,uint32_t Value);
 
     uint32_t value = 0xdeadbeef;
     bool value_enabled = false;

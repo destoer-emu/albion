@@ -16,7 +16,6 @@ void Sweep::sweep_init()
 
 void Sweep::sweep_write(uint8_t v)
 {
-    
     // if we have used a sweep calc in negation mode 
     // since the last trigger turn the channel off
     if(is_set(sweep_reg,3) && !is_set(v,3))

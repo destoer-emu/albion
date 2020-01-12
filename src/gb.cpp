@@ -8,6 +8,7 @@ void GB::reset(std::string rom_name, bool with_rom)
     ppu.init(&cpu,&mem);
     disass.init(&mem);
 	apu.init(&mem);
+	throttle_emu = true;
 }
 
 // our "frontend" will call these
@@ -22,14 +23,12 @@ void GB::save_state(std::string filename)
 {
 try
 {
-
-
 	std::ofstream fp(filename,std::ios::binary);
 
 	cpu.save_state(fp);
 	mem.save_state(fp);
 	ppu.save_state(fp);
-	//apu.save_state(fp);
+	apu.save_state(fp);
 
 	fp.close();
 }
@@ -52,7 +51,7 @@ try
 	cpu.load_state(fp);
 	mem.load_state(fp);
 	ppu.load_state(fp);
-	//apu.load_state(fp);
+	apu.load_state(fp);
 
 	fp.close();
 }

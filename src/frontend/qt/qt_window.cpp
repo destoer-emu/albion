@@ -27,7 +27,7 @@ QtMainWindow::QtMainWindow()
 // if any of our emulator threads are still running terminate them gracefully
 QtMainWindow::~QtMainWindow()
 {
-    destroy_emu();
+    stop_emu();
 }
 
 
@@ -46,8 +46,20 @@ void QtMainWindow::create_actions()
     connect(disassembler_act,&QAction::triggered, this, &QtMainWindow::disassembler);
 */
 
+    load_state_act = new QAction(tr("&load state"), this);
+    load_state_act->setShortcuts(QKeySequence::New);
+    load_state_act->setStatusTip(tr("load a save state"));
+    connect(load_state_act,&QAction::triggered, this, &QtMainWindow::load_state);
+
+    save_state_act = new QAction(tr("&save state"), this);
+    save_state_act->setShortcuts(QKeySequence::New);
+    save_state_act->setStatusTip(tr("save a save state"));
+    connect(save_state_act,&QAction::triggered, this, &QtMainWindow::save_state);
+
     alignment_group = new QActionGroup(this);
     alignment_group->addAction(open_act);
+    alignment_group->addAction(load_state_act);
+    alignment_group->addAction(save_state_act);
 }
 
 
@@ -56,6 +68,8 @@ void QtMainWindow::create_menus()
 {
     emu_menu = menuBar()->addMenu(tr("&File"));
     emu_menu->addAction(open_act);
+    emu_menu->addAction(load_state_act);
+    emu_menu->addAction(save_state_act);
 /*
     emu_menu = menuBar()->addMenu(tr("&Debug"));
     emu_menu->addAction(disassembler_act);
@@ -128,6 +142,21 @@ void QtMainWindow::keyReleaseEvent(QKeyEvent *event)
             case Qt::Key_Left: gb.key_released(1); break;
             case Qt::Key_Up: gb.key_released(2);break;
             case Qt::Key_Down: gb.key_released(3); break;
+
+            case Qt::Key_Plus:
+            {
+                gb.apu.stop_audio();
+                gb.throttle_emu = false;
+                break;
+            }
+
+            case Qt::Key_Minus:
+            {
+                gb.apu.start_audio();
+                gb.throttle_emu = true;
+                break;
+            }
+
         }
     }
 }
@@ -139,25 +168,24 @@ void QtMainWindow::keyReleaseEvent(QKeyEvent *event)
 // will need handling for if its allready open we will neglect this for now
 void QtMainWindow::open()
 {
+    // if any emulator instance is running kill it
+    stop_emu(); 
+
     std::string file_name = QFileDialog::getOpenFileName(this,tr("open rom"),".","").toStdString();
     
     // we quit out
-    if(file_name == "")
+    if(file_name == "" || !std::filesystem::is_regular_file(file_name))
     {
         return;
     }
-
-
-    // if any emulator instance is running kill it
-    destroy_emu(); 
 
     try
     {
         // construct our main gb class
         gb.reset(file_name);
 
-        setMinimumSize(gb.ppu.X,(gb.ppu.Y) + emu_menu->height());
-        resize(gb.ppu.X * 2,(gb.ppu.Y * 2) + emu_menu->height());
+        setMinimumSize(gb.ppu.X,(gb.ppu.Y) + menuBar()->height());
+        resize(gb.ppu.X * 2,(gb.ppu.Y * 2) + menuBar()->height());
         // set window name with the rom title
         QString window_tile = QString::fromStdString(fmt::format("destoer-emu: {}",
             file_name.substr(file_name.find_last_of("/\\") + 1)));
@@ -168,17 +196,83 @@ void QtMainWindow::open()
     {
         QMessageBox messageBox;
         messageBox.critical(nullptr,"Error",ex.what());
-        messageBox.setFixedSize(500,200);        
+        messageBox.setFixedSize(500,200);
+        setWindowTitle("destoer-emu: no rom");        
         return;
     }
-
-    emu_running = true;
-    emu_instance = new EmuInstance(nullptr,&gb,&framebuffer);
-    emu_instance->start();
+    start_emu();
 }
 
 
-void QtMainWindow::destroy_emu()
+
+
+void QtMainWindow::load_state()
+{
+    if(!emu_running)
+    { 
+        return;
+    }
+
+    stop_emu();
+    std::string file_name = QFileDialog::getOpenFileName(this,tr("load state"),"").toStdString();
+    
+    // we didnt quit out
+    if(file_name != "" && std::filesystem::is_regular_file(file_name))
+    {
+        std::string backup = std::filesystem::current_path().string() + "/backup.state";
+
+        // save a state just before incase they somehow
+        gb.save_state(backup);
+
+        try
+        {
+            gb.load_state(file_name);
+        }
+
+        catch(std::exception &ex)
+        {
+            QMessageBox messageBox;
+            messageBox.critical(nullptr,"Error",ex.what());
+            messageBox.setFixedSize(500,200);
+            gb.load_state(backup);
+        }
+    }
+
+    
+    start_emu();
+}
+
+
+void QtMainWindow::save_state()
+{
+    if(!emu_running)
+    { 
+        return;
+    }
+
+    stop_emu();
+    std::string file_name = QFileDialog::getSaveFileName(this,tr("load state"),"").toStdString();
+    
+    // we didnt quit out
+    if(file_name != "")
+    {
+        try
+        {
+            gb.save_state(file_name);
+        }
+
+        catch(std::exception &ex)
+        {
+            QMessageBox messageBox;
+            messageBox.critical(nullptr,"Error",ex.what());
+            messageBox.setFixedSize(500,200);
+        }
+    }
+
+    start_emu();
+}
+
+void QtMainWindow::stop_emu()
 {
     if(emu_running)
     {
@@ -188,7 +282,13 @@ void QtMainWindow::destroy_emu()
         emu_running = false;
         gb.quit = false;
         gb.mem.save_cart_ram();
-        setWindowTitle("destoer-emu: no rom");
     }
+}
+
+void QtMainWindow::start_emu()
+{
+    emu_running = true;
+    emu_instance = new EmuInstance(nullptr,&gb,&framebuffer);
+    emu_instance->start();
 }
 #endif

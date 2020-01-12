@@ -28,6 +28,8 @@ public:
 	void write_lengthc(uint8_t v);
 	int get_output() const;
 
+	void chan_save_state(std::ofstream &fp);
+	void chan_load_state(std::ifstream &fp);
 protected:
 	void init_channel(Memory *m, int chan_number);
 	bool dac_on() const;
@@ -67,6 +69,8 @@ public:
 	void freq_write_higher(uint8_t v);
 	void freq_reload_period();
 	int get_duty_idx() const;
+	void freq_save_state(std::ofstream &fp);
+	void freq_load_state(std::ifstream &fp);
 protected:
 	int freq = 0;
 	int period = 0;
@@ -91,6 +95,8 @@ public:
 	void env_trigger();
 	void clock_envelope();
 	void env_write(uint8_t v);
+	void env_save_state(std::ofstream &fp);
+	void env_load_state(std::ifstream &fp);
 protected:
 	int env_period = 0; // current timer
 	int env_load = 0; // cached period
@@ -102,13 +108,15 @@ protected:
 
 
 // sqaure is same as sweep but lacks the freq sweep
-class Sqaure : public Channel, public FreqReg, public Envelope
+class Square : public Channel, public FreqReg, public Envelope
 {
 public:
 	void init(Memory *mem, int chan_number);
 	void tick_period(int cycles);
 	void write_cur_duty(uint8_t v);
 	void duty_trigger();
+	void save_state(std::ofstream &fp);
+	void load_state(std::ifstream &fp);
 protected:
 	int cur_duty = 0;
 
@@ -121,7 +129,7 @@ protected:
 	};
 };
 
-class Sweep : public Sqaure
+class Sweep : public Square
 {
 public:
 	void sweep_init();
@@ -130,6 +138,8 @@ public:
 	uint16_t calc_freqsweep();
 	void do_freqsweep();
 	void clock_sweep();
+	void sweep_save_state(std::ofstream &fp);
+	void sweep_load_state(std::ifstream &fp);
 private:
 	bool sweep_enabled = false;
 	uint16_t sweep_shadow = 0;
@@ -147,6 +157,8 @@ public:
 	void vol_trigger();
 	void write_vol(uint8_t v);
 	void tick_period(int cycles);
+	void save_state(std::ofstream &fp);
+	void load_state(std::ifstream &fp);
 private:
 	int volume = 0;
 	int volume_load = 0;
@@ -160,6 +172,8 @@ public:
 	void tick_period(int cycles);
 	void noise_write(uint8_t v);
 	void noise_trigger();
+	void save_state(std::ofstream &fp);
+	void load_state(std::ifstream &fp);	
 private:
 	//http://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware#Noise_Channel
 	static constexpr int divisors[8] = { 8, 16, 32, 48, 64, 80, 96, 112 };
@@ -174,6 +188,10 @@ private:
 class Apu
 {
 public:
+	void stop_audio();
+	void start_audio();
+
+
 	void init_audio();
 	void push_samples();
 
@@ -194,8 +212,12 @@ public:
 
 	void set_double(bool d);
 
+
+	void save_state(std::ofstream &fp);
+	void load_state(std::ifstream &fp);
+
 	Sweep c1;
-	Sqaure c2;
+	Square c2;
 	Wave c3;
 	Noise c4;
 private:
@@ -207,11 +229,12 @@ private:
 
 	bool sound_enabled = true;
 
+	bool play_audio = true;
 
 	bool is_double = false;
 
 	// sound playback
-	static constexpr int sample_size = 1024;
+	static constexpr int sample_size = 2048;
 
 	// SDL SOUND
 	SDL_AudioSpec audio_spec;

@@ -61,16 +61,16 @@ void Debug::set_breakpoint(uint32_t addr,bool r, bool w, bool x, bool value_enab
 }
 
 
-void Breakpoint::set(uint32_t addr, bool r, bool w, bool x, 
-    bool value_enabled,uint32_t value,bool break_enabled)
+void Breakpoint::set(uint32_t Addr, bool R, bool W, bool X, 
+    bool Value_enabled,uint32_t Value,bool Break_enabled)
 {
-    this->value = value;
-    this->addr = addr;
-    this->break_enabled = break_enabled;
-    this->value_enabled = value_enabled;
-    this->r = r;
-    this->w = w;
-    this->x = x;
+    value = Value;
+    addr = Addr;
+    break_enabled = Break_enabled;
+    value_enabled = Value_enabled;
+    r = R;
+    w = W;
+    x = X;
 }
 
 void Breakpoint::disable()
@@ -83,12 +83,12 @@ void Breakpoint::enable()
     break_enabled = true;
 }
 
-bool Breakpoint::is_hit(uint32_t addr,break_type type,uint32_t value)
+bool Breakpoint::is_hit(uint32_t Addr,break_type type,uint32_t Value)
 {
 
     // if the its not enabled or the value does not match if enabled
     // then it is not hit
-    if(!break_enabled || (value_enabled && this->value != value))
+    if(!break_enabled || (value_enabled && value != Value))
     {
         return false;
     }
@@ -127,6 +127,6 @@ bool Breakpoint::is_hit(uint32_t addr,break_type type,uint32_t value)
 
     // in many cases this will be checked be callee
     // aswell can we optimise this?
-    return addr == this->addr;
+    return addr == Addr;
 }
 #endif

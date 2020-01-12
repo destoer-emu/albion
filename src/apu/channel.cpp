@@ -111,7 +111,7 @@ void Channel::write_lengthc(uint8_t v)
 
 bool Channel::dac_on() const
 {
-    return (mem->io[dac_reg] & dac_mask) > 0;    
+    return (mem->io[dac_reg] & dac_mask);    
 }
 
 void Channel::check_dac()
