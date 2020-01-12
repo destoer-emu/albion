@@ -1,1 +1,7 @@
-rewrite of gameboy C emulator into C++
+emulator written in C++, currently only supports gameboy but gba is planned
+
+FRONTENDS
+sdl frontend is the most bare bones version not supporting save states
+imgui frontend has a built in debugger.
+qt has support for save states unlike the sdl build
+
