@@ -5,7 +5,13 @@
 
 int main(int argc, char *argv[])
 {
-#ifdef FRONTEND_QT    
+#ifdef FRONTEND_QT 
+    SDL_SetMainReady();
+	if(SDL_Init(SDL_INIT_EVERYTHING) != 0)
+	{
+		printf("Unable to initialize SDL: %s\n", SDL_GetError());
+		return 1;
+	}   
     QApplication app(argc, argv);
 
     QtMainWindow window;

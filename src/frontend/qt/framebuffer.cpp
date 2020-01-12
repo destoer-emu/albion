@@ -28,8 +28,9 @@ void FrameBuffer::paintEvent(QPaintEvent*)
 
     std::scoped_lock<std::mutex> guard(screen_mutex);
 
+    // probably a faster way to smash this to the screen (its slow)
     QPainter painter(this);
-    QImage image((uchar*)screen.data(), X, Y, QImage::Format_RGBA8888);
+    QImage image(X, Y, QImage::Format_RGBA8888);
     painter.drawImage(0,0,image.scaled(width(),height()));
 }
 

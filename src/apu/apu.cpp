@@ -199,7 +199,10 @@ void Apu::push_samples()
 			down_sample_cnt *= 2;
 		}
 
-		if(!play_audio) { return; }
+		if(!play_audio) 
+		{ 
+			return; 
+		}
 
 		
 		float bufferin0 = 0;
