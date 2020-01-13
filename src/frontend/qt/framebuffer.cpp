@@ -31,7 +31,7 @@ void FrameBuffer::paintEvent(QPaintEvent*)
     // probably a faster way to smash this to the screen (its slow)
     QPainter painter(this);
     QImage image(X, Y, QImage::Format_RGBA8888);
-    painter.drawImage(0,0,image.scaled(width(),height()));
+    painter.drawImage((uchar*)screen.data(),0,0,image.scaled(width(),height()));
 }
 
 void FrameBuffer::redraw(std::vector<uint32_t> &other)
