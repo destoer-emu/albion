@@ -4,6 +4,7 @@
 #include <QOpenGLFunctions>
 #include <QTimer>
 #include <QPainter>
+#include <QGLWidget>
 #include <vector>
 #include <stdint.h>
 #include <stdio.h>
@@ -11,7 +12,7 @@
 #include "../../headers/lib.h"
 
 
-class FrameBuffer : public QWidget
+class FrameBuffer : public QOpenGLWidget
 {
     Q_OBJECT
 
@@ -20,14 +21,13 @@ public:
     void redraw(std::vector<uint32_t> &other);
 
 protected:
-    void paintEvent(QPaintEvent*) override;
+    void paintGL() override;
 
 private:
     void swap_buffer(std::vector<uint32_t> &other);
 
     int X;
     int Y;
-    bool ready = false;
     std::vector<uint32_t> screen;
     std::mutex screen_mutex;
 };

@@ -176,6 +176,7 @@ void QtMainWindow::open()
     // we quit out
     if(file_name == "" || !std::filesystem::is_regular_file(file_name))
     {
+        start_emu();
         return;
     }
 
@@ -289,6 +290,7 @@ void QtMainWindow::start_emu()
 {
     emu_running = true;
     emu_instance = new EmuInstance(nullptr,&gb,&framebuffer);
+    framebuffer.init(gb.ppu.X,gb.ppu.Y);
     emu_instance->start();
 }
 #endif

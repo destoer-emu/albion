@@ -81,25 +81,28 @@ ImguiMainWindow::~ImguiMainWindow()
 
 
 
-// can probably optimise this to an init and redraw but screw it for now :P
+
 void update_texture(GLuint &texture, std::vector<uint32_t> &buf, const int x, const int y)
 {
     glEnable(GL_TEXTURE_2D); 
+    glBindTexture(GL_TEXTURE_2D,texture);
+    glTexSubImage2D(GL_TEXTURE_2D,0,0,0,x,y,GL_RGBA, GL_UNSIGNED_BYTE,buf.data());
+    glBindTexture(GL_TEXTURE_2D,0);
+    glDisable(GL_TEXTURE_2D); 
+}
 
+void init_texture(GLuint &texture, std::vector<uint32_t> &buf, const int x, const int y)
+{
+    glGenTextures(1,&texture);
     glBindTexture(GL_TEXTURE_2D,texture);
 
     // setup our texture
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    // create the texture supposedly theres a faster way to do this with subimage but i cant get
-    // it working?
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 1);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,x,y,0,GL_RGBA, GL_UNSIGNED_BYTE,buf.data());
-
     glBindTexture(GL_TEXTURE_2D,0);
-
-    glDisable(GL_TEXTURE_2D); 
 }
 
 // looks like we need to use imgui for the key input :P
@@ -777,8 +780,7 @@ void ImguiMainWindow::mainloop()
 
     // init our screen buffer
     screen_copy.resize(gb.ppu.X*gb.ppu.Y);
-    glGenTextures(1,&screen_texture);
-
+    init_texture(screen_texture,screen_copy,gb.ppu.X,gb.ppu.Y);
     gb.reset("",false);
 
 

@@ -12,26 +12,39 @@ void FrameBuffer::swap_buffer(std::vector<uint32_t> &other)
 
 void FrameBuffer::init(int x, int y)
 {
-    ready = true;
     X = x;
     Y = y;
     screen.resize(x * y);
     resize(x*2,y*2);
+
+    makeCurrent();
+
+    // setup our texture
+    glEnable(GL_TEXTURE_2D); 
+    glBindTexture(GL_TEXTURE_2D,context()->defaultFramebufferObject());    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 1);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,X,Y,0,GL_RGBA, GL_UNSIGNED_BYTE,screen.data());
+    glBindTexture(GL_TEXTURE_2D,0);
+
+
+    doneCurrent();       
 }
 
-void FrameBuffer::paintEvent(QPaintEvent*)
+
+
+void FrameBuffer::paintGL()
 {
-    if(!ready)
-    {
-        return;
-    }
+    glTexSubImage2D(GL_TEXTURE_2D,0,0,0,X,Y,GL_RGBA, GL_UNSIGNED_BYTE,screen.data());
 
-    std::scoped_lock<std::mutex> guard(screen_mutex);
-
-    // probably a faster way to smash this to the screen (its slow)
-    QPainter painter(this);
-    QImage image(X, Y, QImage::Format_RGBA8888);
-    painter.drawImage((uchar*)screen.data(),0,0,image.scaled(width(),height()));
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0, 1.0);
+        glTexCoord2f(1.0f, 0.0f); glVertex2f( 1.0, 1.0);
+        glTexCoord2f(1.0f, 1.0f); glVertex2f( 1.0, -1.0);
+        glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0, -1.0);
+    glEnd();
 }
 
 void FrameBuffer::redraw(std::vector<uint32_t> &other)
