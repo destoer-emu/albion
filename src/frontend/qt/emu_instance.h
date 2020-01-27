@@ -2,7 +2,7 @@
 #ifdef FRONTEND_QT
 #include <QThread>
 #include <QMutex>
-#include "../../headers/gb.h"
+#include <gb/gb.h>
 #include "framebuffer.h"
 
 class EmuInstance : public QThread

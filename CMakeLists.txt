@@ -10,8 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 
 #set(FRONTEND "QT")
-set(FRONTEND "SDL")
-#set(FRONTEND "IMGUI")
+#set(FRONTEND "SDL")
+set(FRONTEND "IMGUI")
 
 if(${FRONTEND} STREQUAL "IMGUI")
 	add_definitions(-DFRONTEND_IMGUI -DIMGUI_IMPL_OPENGL_LOADER_GLEW -DDEBUG -DLOG_CONSOLE)
@@ -29,8 +29,7 @@ endif()
 # make these paths less of a pain to modify :)
 
 if(WIN32)
-
-	list(APPEND CMAKE_PREFIX_PATH "C:/SDL2-2.0.10")
+	set(SDL2_DIR "C:/SDL2-2.0.10")
 
 	if(${FRONTEND} STREQUAL "IMGUI")  # needed only for imgui 
 		# external libs 
@@ -61,8 +60,8 @@ if(WIN32)
 	find_package(SDL2 REQUIRED)
 	if(SDL2_FOUND)
 		include_directories(${SDL2_INCLUDE_DIRS})
-		#link_libraries(${SDL2_LIBRARIES})
-		link_libraries("C:/SDL2-2.0.10/lib/x64/SDL2.lib")
+		link_libraries(${SDL2_LIBRARIES})
+		#link_libraries("C:/SDL2-2.0.10/lib/x64/SDL2.lib") if no sdl2 cmake
 	endif()
 else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -pthread -Wshadow -O3")
@@ -75,11 +74,21 @@ endif()
 
 
 if(${FRONTEND} STREQUAL "QT") 
+	if(WIN32)
+		list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.9.9/msvc2017_64")
+	endif()
+
 	set(CMAKE_AUTOMOC ON)
 	set(CMAKE_AUTORCC ON)
 	set(CMAKE_AUTOUIC ON)
-	find_package(Qt5 COMPONENTS Widgets REQUIRED)
+	find_package(Qt5 COMPONENTS Widgets OpenGL REQUIRED)
 	link_libraries(Qt5::Widgets)
+	link_libraries(Qt5::OpenGL)
+	find_package(OPENGL REQUIRED)
+	if (OPENGL_FOUND)
+		include_directories(${OPENGL_INCLUDE_DIRS})
+		link_libraries(${OPENGL_LIBRARIES})
+	endif()	
 endif()
 
 
@@ -88,29 +97,31 @@ endif()
 file(GLOB src_files
 	"src/*.h"
 	"src/*.cpp"
-	"src/headers/*.h"
-	"src/lib/*.h"
-	"src/lib/*.cpp"
-	"src/lib/fmt/*.cpp"
-	"src/lib/fmt/*.h"
-    "src/cpu/*.h"
-    "src/cpu/*.cpp"
-    "src/ppu/*.h"
-    "src/ppu/*.cpp"
-    "src/debug/*.h"
-    "src/debug/*.cpp"
-    "src/apu/*.h"
-    "src/apu/*.cpp"
-    "src/memory/*.h"
-    "src/memory/*.cpp"
+	"src/common/lib/*.cpp"
+	"src/common/debug/*.cpp"
+	"src/common/headers/destoer-emu/*.h"
+	"src/common/lib/fmt/*.cpp"
+	"src/common/lib/fmt/*.h"	
+    "src/gb/*.cpp"	
+    "src/gb/cpu/*.cpp"
+    "src/gb/apu/*.cpp"
+	"src/gb/ppu/*.cpp"
+    "src/gb/memory/*.cpp"
+	"src/gb/headers/gb/*.h"
 )
+
+# add some includes
+include_directories("src/gb/headers")
+include_directories("src/common/headers" "src/common/lib")
+include_directories("src")
+
 
 if(${FRONTEND} STREQUAL "IMGUI")
 	file(GLOB frontend_files
 		"src/frontend/imgui/*.h"
 		"src/frontend/imgui/*.cpp"
-		"src/lib/imgui/*.cpp"
-		"src/lib/imgui/*.h"	
+		"src/common/lib/imgui/*.cpp"
+		"src/common/lib/imgui/*.h"	
 	)
 endif()
 
@@ -128,4 +139,10 @@ if(${FRONTEND} STREQUAL "SDL")
 	)
 endif()
 
-add_executable(destoer-emu ${src_files} ${frontend_files})
+if(${FRONTEND} STREQUAL "QT")
+	if(WIN32)
+		add_executable(destoer-emu  WIN32 ${src_files} ${frontend_files})
+	endif()
+else()
+	add_executable(destoer-emu ${src_files} ${frontend_files})
+endif()

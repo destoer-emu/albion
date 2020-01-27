@@ -1,6 +1,6 @@
 #pragma once
 #ifdef FRONTEND_SDL
-#include "../../headers/gb.h"
+#include <gb/gb.h>
 #define SDL_MAIN_HANDLED
 
 #ifdef _WIN32

@@ -24,7 +24,6 @@ void EmuInstance::run()
     constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
     uint64_t next_time = current_time() + screen_ticks_per_frame;
 
-    //framebuffer->init(gb->ppu.X,gb->ppu.Y);
     try
     {
         while(!gb->quit)
@@ -33,6 +32,7 @@ void EmuInstance::run()
 
 
             // update the screen!
+            // this really needs to be optimised...
             framebuffer->redraw(gb->ppu.screen);
 
 

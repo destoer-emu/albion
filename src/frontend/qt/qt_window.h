@@ -8,8 +8,8 @@
 #include <QVBoxLayout>
 #include "framebuffer.h"
 #include "emu_instance.h"
-#include "../../headers/gb.h"
-#include "../../headers/lib.h"
+#include <gb/gb.h>
+#include <destoer-emu/lib.h>
 
 class QtMainWindow : public QMainWindow
 {

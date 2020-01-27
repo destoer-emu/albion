@@ -2,27 +2,16 @@
 
 #ifdef FRONTEND_IMGUI
 
-#define SDL_MAIN_HANDLED
-
-#ifdef _WIN32
-
-#include <SDL.H>
-
-#else
-
-#include <SDL2/SDL.h>
-
-#endif
 
 // dear imgui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
 // If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.
 // (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
 
-#include "../../lib/imgui/imgui.h"
-#include "../../lib/imgui/imgui_impl_glfw.h"
-#include "../../lib/imgui/imgui_impl_opengl3.h"
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
 #include <stdio.h>
-#include "../../headers/lib.h"
+#include <destoer-emu/lib.h>
 
 
 // About OpenGL function loaders: modern OpenGL doesn't have a standard header file and requires individual function pointers to be loaded manually.
@@ -54,7 +43,7 @@ inline void glfw_error_callback(int error, const char* description)
 }
 
 
-#include "../../headers/gb.h"
+#include <gb/gb.h>
 
 
 
