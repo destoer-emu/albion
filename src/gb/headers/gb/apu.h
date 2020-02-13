@@ -9,6 +9,8 @@
 #include <SDL2/SDL.h>
 #endif
 
+namespace gameboy
+{
 
 class Channel
 {
@@ -240,3 +242,5 @@ private:
 	int down_sample_cnt = 0; // counter used to down sample	
 	bool audio_setup = false;
 };
+
+}

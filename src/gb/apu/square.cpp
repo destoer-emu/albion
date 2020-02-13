@@ -1,6 +1,8 @@
 #include <gb/apu.h>
 #include <gb/memory.h>
- 
+
+namespace gameboy
+{ 
 
 // CHANNEL 1 & 2 SQAURE WAVE
 
@@ -44,4 +46,6 @@ void Square::tick_period(int cycles)
 void Square::duty_trigger()
 {
 	duty_idx = 0;
+}
+
 }

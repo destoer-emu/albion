@@ -62,6 +62,7 @@ std::vector<std::string> read_directory(std::string file_path)
 }
 
 
+
 std::vector<std::string> read_sorted_directory(std::string file_path)
 {
     auto dir_list = read_directory(file_path);
@@ -72,7 +73,7 @@ std::vector<std::string> read_sorted_directory(std::string file_path)
     // add back the directory path
     for(auto &x : dir_list)
     {
-        x = file_path + "/" + x;
+        x = file_path + path_seperator + x;
     }
 
     return dir_list;    

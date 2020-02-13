@@ -1,5 +1,7 @@
 #include <gb/memory.h>
 
+namespace gameboy
+{
 
 // 0x0000 - 0x1fff
 void Memory::ram_bank_enable(uint16_t address, uint8_t v) 
@@ -248,4 +250,6 @@ void Memory::mbc5_ram_bank_change(uint16_t address,uint8_t data)
 	{
 		cart_ram_bank %= rom_info.no_ram_banks;	
 	}	
+}
+
 }

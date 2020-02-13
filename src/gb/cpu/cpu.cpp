@@ -4,6 +4,8 @@
 #include <gb/apu.h>
 #include <destoer-emu/debug.h>
 
+namespace gameboy
+{
 
 void Cpu::init(Memory *m, Ppu *p,Apu *ap, Disass *dis, Debug *debugger)
 {
@@ -393,4 +395,6 @@ uint8_t Cpu::read_stackt()
 uint16_t Cpu::read_stackwt() 
 {
 	return read_stackt() | (read_stackt() << 8);
+}
+
 }

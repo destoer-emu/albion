@@ -1,6 +1,8 @@
 #include <gb/apu.h>
 #include <gb/memory.h>
  
+namespace gameboy
+{
 
 // SHARED CHANNEL FUNCTIONS
 
@@ -121,4 +123,6 @@ void Channel::check_dac()
     {
         disable_chan();
     }
+}
+
 }

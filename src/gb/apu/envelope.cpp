@@ -1,5 +1,8 @@
 #include <gb/apu.h>
- 
+
+
+namespace gameboy
+{
 
 // CHANNEL 1,2,4 envelope
 
@@ -49,4 +52,6 @@ void Envelope::clock_envelope()
 		// period of zero treated as 8
 		env_period = env_load? env_load : 8;
     }    
+}
+
 }

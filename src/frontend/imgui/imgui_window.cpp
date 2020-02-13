@@ -1,5 +1,53 @@
 #ifdef FRONTEND_IMGUI
 #include "imgui_window.h"
+#include "gb_debugger.h"
+
+
+void Texture::update_texture()
+{
+    std::scoped_lock<std::mutex> guard(buf_mutex);
+    glEnable(GL_TEXTURE_2D); 
+    glBindTexture(GL_TEXTURE_2D,texture);
+    glTexSubImage2D(GL_TEXTURE_2D,0,0,0,x,y,GL_RGBA, GL_UNSIGNED_BYTE,buf.data());
+    glBindTexture(GL_TEXTURE_2D,0);
+    glDisable(GL_TEXTURE_2D); 
+}
+
+
+void Texture::init_texture(const int X, const int Y)
+{
+    x = X;
+    y = Y;
+    buf.resize(x*y);
+
+    glEnable(GL_TEXTURE_2D); 
+    if(first_time)
+    {
+        glGenTextures(1,&texture);
+        first_time = false;
+    }
+    glBindTexture(GL_TEXTURE_2D,texture);
+
+    // setup our texture
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 1);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,x,y,0,GL_RGBA, GL_UNSIGNED_BYTE,buf.data());
+    glBindTexture(GL_TEXTURE_2D,0);
+    glDisable(GL_TEXTURE_2D); 
+}
+
+void Texture::swap_buffer(std::vector<uint32_t> &other)
+{
+    std::scoped_lock<std::mutex> guard(buf_mutex);
+    std::swap(other,buf);
+}
+
+GLuint Texture::get_texture() const
+{
+    return texture;
+}
 
 
 
@@ -79,521 +127,122 @@ ImguiMainWindow::~ImguiMainWindow()
     glfwTerminate();    
 }
 
-
-
-
-void update_texture(GLuint &texture, std::vector<uint32_t> &buf, const int x, const int y)
+// assume its allways running a gb instance for now
+void ImguiMainWindow::start_instance()
 {
-    glEnable(GL_TEXTURE_2D); 
-    glBindTexture(GL_TEXTURE_2D,texture);
-    glTexSubImage2D(GL_TEXTURE_2D,0,0,0,x,y,GL_RGBA, GL_UNSIGNED_BYTE,buf.data());
-    glBindTexture(GL_TEXTURE_2D,0);
-    glDisable(GL_TEXTURE_2D); 
-}
-
-void init_texture(GLuint &texture, std::vector<uint32_t> &buf, const int x, const int y)
-{
-    glGenTextures(1,&texture);
-    glBindTexture(GL_TEXTURE_2D,texture);
-
-    // setup our texture
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 1);
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,x,y,0,GL_RGBA, GL_UNSIGNED_BYTE,buf.data());
-    glBindTexture(GL_TEXTURE_2D,0);
-}
-
-// looks like we need to use imgui for the key input :P
-void handle_input(GB &gb)
-{
-    // buggy causes movement stutters in metroid but thats probably to be expected
-    // taking input on a thread like this from imgui...
-    const uint8_t joypad_state = gb.cpu.joypad_state;
-
-    static constexpr int scancodes[] = {GLFW_KEY_A,GLFW_KEY_S,GLFW_KEY_ENTER,GLFW_KEY_SPACE,
-        GLFW_KEY_RIGHT,GLFW_KEY_LEFT,GLFW_KEY_UP,GLFW_KEY_DOWN};
-    
-    static constexpr int gb_key[] = {4,5,7,6,0,1,2,3};
-
-    static constexpr int len = sizeof(scancodes) / sizeof(scancodes[0]);
-
-    static_assert(sizeof(scancodes) == sizeof(gb_key));
-
-    for(int i = 0; i < len; i++)
+    switch(running_type)
     {
-        if(ImGui::IsKeyDown(scancodes[i]))
+        case emu_type::gameboy:
         {
-            if(is_set(joypad_state,gb_key[i]))
-            {
-                gb.key_pressed(gb_key[i]);
-            }
+            gameboy_start_instance();
+            break;
         }
 
-        // aint pressed
-        else if(!is_set(joypad_state,gb_key[i]))
+        case emu_type::gba:
         {
-            gb.key_released(gb_key[i]);  
+            gba_start_instance();
+            break;
         }
     }
-
-    if(ImGui::IsKeyDown(GLFW_KEY_KP_ADD))
-    {
-        gb.apu.stop_audio();
-        gb.throttle_emu = false;
-    }
-
-    else if(ImGui::IsKeyDown(GLFW_KEY_KP_SUBTRACT))
-    {
-        gb.apu.start_audio();
-        gb.throttle_emu = true;						
-    }
-
-
 }
-
-// we will switch them in and out but for now its faster to just copy it
-void emu_instance(GB &gb, std::vector<uint32_t> &screen_copy, std::mutex &screen_mutex)
-{
-	constexpr uint32_t fps = 60; 
-	constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
-	uint64_t next_time = current_time() + screen_ticks_per_frame;
-
-    try
-    {
-        while(!gb.quit)
-        {
-            handle_input(gb);
-            
-            
-            gb.run();
-
-            // swap the buffer so the frontend can render it
-            {
-                std::scoped_lock<std::mutex> guard(screen_mutex);
-                std::swap(gb.ppu.screen,screen_copy);
-            }
-
-            // throttle the emulation
-            if(gb.throttle_emu)
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(time_left(next_time)));
-            }
-
-            else
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(time_left(next_time) / 8));
-            }
-
-            next_time = current_time() + screen_ticks_per_frame;
-        }
-    }
-
-    catch(std::exception &ex)
-    {
-        std::cout << ex.what() << "\n";
-        // halt the emu instance so it can be terminated properly
-        gb.debug.halt(); 
-    }
-}
-
 
 void ImguiMainWindow::stop_instance()
 {
-    if(emu_running)
+    switch(running_type)
     {
-        gb.quit = true;
-        gb.debug.disable_everything();
-        emu_thread.join(); // end the thread
-        emu_running = false;
-        gb.quit = false;
-        gb.mem.save_cart_ram();
+        case emu_type::gameboy:
+        {       
+            gameboy_stop_instance();
+            break;
+        }
+
+        case emu_type::gba:
+        {
+            gba_stop_instance();
+            break;
+        }
     }
 }
 
-void ImguiMainWindow::start_instance()
+void ImguiMainWindow::reset_instance(std::string filename)
 {
-    std::thread emulator(emu_instance,std::ref(gb),std::ref(screen_copy),std::ref(screen_mutex));
-    emu_running = true;
-    std::swap(emulator,emu_thread);    
-    gb.quit = false;
-    gb.debug.breakpoints_enabled = true;
+    running_type = get_emulator_type(filename);
+
+    switch(running_type)
+    {
+        case emu_type::gameboy:
+        {
+            screen.init_texture(gb.ppu.X,gb.ppu.Y);    
+            gameboy_reset_instance(filename);
+            break;
+        }
+
+        case emu_type::gba:
+        {
+            screen.init_texture(gba.disp.X,gba.disp.Y);
+            gba_reset_instance(filename);
+            break;
+        }
+    }
 }
 
-
-void ImguiMainWindow::draw_screen()
+void ImguiMainWindow::new_instance(std::string filename)
 {
-    ImGui::Begin("screen"); // <--- figure out why this doesent draw then add syncing and only showing debug info during a pause
+    stop_instance();
+
+    running_type = get_emulator_type(filename);
+
+    switch(running_type)
     {
-        std::scoped_lock<std::mutex> guard(screen_mutex);
-        update_texture(screen_texture,screen_copy,gb.ppu.X,gb.ppu.Y);
-    }        
-    ImGui::Image((void*)(intptr_t)screen_texture,ImVec2(gb.ppu.X*2,gb.ppu.Y*2));    
-    ImGui::End();
+        case emu_type::gameboy:
+        {
+            screen.init_texture(gb.ppu.X,gb.ppu.Y);
+            gameboy_new_instance(filename);
+            break;
+        }
+
+        case emu_type::gba:
+        {
+            screen.init_texture(gba.disp.X,gba.disp.Y);
+            gba_new_instance(filename);
+        }
+    }
 }
 
-void ImguiMainWindow::draw_regs()
+void ImguiMainWindow::load_state(std::string filename)
 {
-    // print regs
-    ImGui::Begin("registers");
-    ImGui::Text("pc: %04x",gb.cpu.get_pc());
-    ImGui::Text("af: %04x",gb.cpu.get_af());
-    ImGui::Text("bc: %04x",gb.cpu.get_bc());
-    ImGui::Text("de: %04x",gb.cpu.get_de());
-    ImGui::Text("hl: %04x",gb.cpu.get_hl());
-    ImGui::Text("sp: %04x",gb.cpu.get_sp());
-    ImGui::End();            
+    switch(running_type)
+    {
+        case emu_type::gameboy:
+        {
+            gb.load_state(filename);
+            break;
+        }
+
+        case emu_type::gba:
+        {
+            // ignore unsupported
+            break;
+        }
+    }
 }
 
-/*
-void ImguiMainWindow::draw_menu_bar()
+void ImguiMainWindow::save_state(std::string filename)
 {
-    if(ImGui::BeginMainMenuBar())
+    switch(running_type)
     {
-        if(ImGui::BeginMenu("File"))
-        {
-            if(ImGui::MenuItem("Load rom"))
-            {
-                // open menu here
-                std::string filename = open_file_dialog(".");
-
-                // nothing back means the dialog was close or an error occured
-                if(filename != "") 
-                {
-                    stop_instance();
-                    gb.reset(filename);
-                    start_instance();
-                }
-            }
-            ImGui::EndMenu();
+        case emu_type::gameboy:
+        {    
+            gb.save_state(filename);
+            break;
         }
-        ImGui::EndMainMenuBar();
-    }
-}
-*/
 
-void ImguiMainWindow::draw_disassembly()
-{
-    static uint32_t addr = 0x100; // make this resync when a breakpoint is hit :)
-    static int selected = -1;
-    static uint32_t selected_addr = 0x0;
-    static bool update = false;
-
-    ImGui::Begin("disassembly");
-
-	static char input_disass[12] = "";
-	if (ImGui::Button("Goto"))
-	{
-		if (is_valid_hex_string(input_disass))
-		{
-			addr = strtoll(input_disass, NULL, 16) % 0xffff;
-            update = true;
-			*input_disass = '\0';
-		}  
-	}
-
-
-    ImGui::SameLine();
-
-    ImGui::InputText("", input_disass, IM_ARRAYSIZE(input_disass));
-
-    if(ImGui::Button("Break"))
-    {
-        if(selected != -1)
+        case emu_type::gba:
         {
-            gb.debug.set_breakpoint(selected_addr,false,false,true);
+            //ignore unsupported
+            break;
         }
     }
-
-    ImGui::SameLine();
-
-    if(ImGui::Button("Step"))
-    {
-        gb.debug.wake_up();
-        gb.debug.step_instr = true;
-    }
-
-
-    ImGui::SameLine();
-
-    if(ImGui::Button("Continue"))
-    {
-        gb.debug.wake_up();
-        gb.debug.step_instr = false;
-    }
-
-    if(ImGui::Button("Goto pc"))
-    {
-        addr = gb.cpu.get_pc();
-        update = true;
-    }
-
-    ImGui::BeginChild("disass view");
-    
-    // technically could be less than this but we dont know for sure
-    constexpr int ITEMS_COUNT = 0x10000; 
-    ImGuiListClipper clipper(ITEMS_COUNT); 
-
-    float line_size = ImGui::GetTextLineHeightWithSpacing();
-
-    if(update)
-    {
-        update = false;
-        ImGui::SetScrollY(addr * line_size);
-    }
-
-
-    std::string disass_str;
-    while (clipper.Step())
-    {
-        uint16_t target = clipper.DisplayStart;
-        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-        {
-            bool is_pc = target == gb.cpu.get_pc();
-            if(is_pc)
-            {
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f,0.0f,1.0f,1.0f));
-            }
-
-            disass_str = fmt::format("{:04x}: {}",target,gb.disass.disass_op(target));
-            if(ImGui::Selectable(disass_str.c_str(),selected == i))
-            {
-                selected = i;
-                selected_addr = target;
-            }
-
-
-            if(is_pc)
-            {
-                ImGui::PopStyleColor();
-            }
-
-            target += gb.disass.get_op_sz(target) & 0xffff;
-        }
-    }
-
-    ImGui::EndChild();
-    ImGui::End();
-}
-
-
-// basic logger impl
-void ImguiMainWindow::draw_logger()
-{
-    ImGui::Begin("Logger");
-
-    if(ImGui::Button("clear logs"))
-    {
-        gb.debug.clear_logs();
-    }
-
-    ImGui::BeginChild("logger window");
-
-    for(const auto &x: gb.debug.get_logs())
-    {
-        ImGui::Text(x.c_str());
-    }
-    ImGui::EndChild();
-
-    ImGui::End();
-}
-
-
-void ImguiMainWindow::draw_memory()
-{
-    static uint32_t addr = 0x0;
-    static uint32_t edit_addr = 0x100;
-    static uint32_t edit_value = 0xff;
-    static bool update = false;
-    ImGui::Begin("Memory editor");
-
-
-	static char input_mem[12] = "";
-	if (ImGui::Button("Goto"))
-	{
-		if (is_valid_hex_string(input_mem))
-		{
-			addr = strtoll(input_mem, NULL, 16);
-            addr &= 0xfff0; // round to nearest section
-            update = true;
-			*input_mem = '\0';
-		}  
-	}
-
-    ImGui::SameLine();
-
-    ImGui::InputText("addr", input_mem, IM_ARRAYSIZE(input_mem));
-
-
-
-	static char input_edit[12] = "";
-	if (ImGui::Button("edit"))
-	{
-		if (is_valid_hex_string(input_mem) && is_valid_hex_string(input_edit))
-		{
-			edit_addr = strtoll(input_mem, NULL, 16) & 0xffff;
-            edit_value = strtoll(input_edit,NULL,16) & 0xff;
-            *input_edit = '\0';
-			*input_mem = '\0';
-            gb.mem.raw_write(edit_addr,edit_value);
-		}  
-	}
-
-    ImGui::SameLine();
-
-    ImGui::InputText("value", input_edit, IM_ARRAYSIZE(input_edit));
-
-    
-
-    // padding
-    ImGui::Text("      "); ImGui::SameLine();
-
-    // draw col
-    for(int i = 0; i < 0x10; i++)
-    {
-        ImGui::Text("%02x ",i);
-        ImGui::SameLine();
-    }
-
-    ImGui::Text("\n");
-    ImGui::Separator();
-
-
-    ImGui::BeginChild("Memory View");
-    constexpr int ITEMS_COUNT = 0x10000 / 0x10;
-    ImGuiListClipper clipper(ITEMS_COUNT); 
-
-    float line_size = ImGui::GetTextLineHeightWithSpacing();
-
-    if(update)
-    {
-        update = false;
-        ImGui::SetScrollY((addr / 0x10) * line_size);
-    }
-
-    while (clipper.Step())
-    {
-        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-        {
-            
-            ImGui::Text("%04x: ",(i*0x10)&0xffff);
-            ImGui::SameLine();
-
-
-            for(int j = 0; j < 0x10; j++)
-            {
-                ImGui::Text("%02x ",gb.mem.raw_read((j)+i*0x10)&0xffff);
-                ImGui::SameLine();
-            }
-            ImGui::Text("\n");
-        }
-    }
-
-    ImGui::EndChild();
-    ImGui::End();
-}
-
-void ImguiMainWindow::draw_breakpoints()
-{
-
-	static char input_breakpoint[12] = "";
-    static bool break_r = false;
-    static bool break_x = false;
-    static bool break_w = false;
-    static int selected = -1;
-    static uint32_t addr_selected;
-	ImGui::Begin("Breakpoints");
-
-
-	// look into mutlithreading the emulated instance and the debugger
-	// so it can breakpoint pre read / write
-	ImGui::Checkbox("read", &break_r);
-	ImGui::SameLine(); ImGui::Checkbox("write", &break_w);
-	ImGui::SameLine(); ImGui::Checkbox("execute", &break_x);
-
-
-    ImGui::Checkbox("enable_all",&gb.debug.breakpoints_enabled);
-
-	ImGui::InputText("", input_breakpoint, IM_ARRAYSIZE(input_breakpoint));
-
-
-	// set breakpoints
-	ImGui::SameLine();
-
-	if (ImGui::Button("Set"))
-	{
-		if (is_valid_hex_string(input_breakpoint))
-		{
-			uint32_t breakpoint = strtoll(input_breakpoint, NULL, 16);
-
-            gb.debug.set_breakpoint(breakpoint,break_r,break_w,break_x);
-
-			*input_breakpoint = '\0';
-		}
-	}
-
-
-    if(ImGui::Button("disable"))
-    {
-        if(selected != -1)
-        {
-            gb.debug.breakpoints[addr_selected].disable();
-        }
-    }
-
-    ImGui::SameLine();
-
-    if(ImGui::Button("enable"))
-    {
-        if(selected != -1)
-        {
-            gb.debug.breakpoints[addr_selected].enable();
-        }
-    }
-
-    ImGui::SameLine();
-
-    if(ImGui::Button("delete"))
-    {
-        if(selected != -1)
-        {
-            gb.debug.breakpoints.erase(addr_selected);
-            selected = -1; // gone from list so deselect it
-        }
-    }
-
-	ImGui::Separator();
-
-    ImGui::BeginChild("breakpoint list");
-
-    // print breakpoints here
-    int i = 0;
-    for(auto &it : gb.debug.breakpoints)
-    {
-        i++;
-        Breakpoint b = it.second;    
-    
-        std::string break_str = fmt::format(
-            "{:04x}: {}{}{} {} {:x} {}",b.addr,
-                b.r? "r" : "",
-                b.w? "w" : "",
-                b.x? "x" : "",
-                b.break_enabled? "enabled" : "disabled",
-                b.value,
-                b.value_enabled? "enabled" : "disabled"
-        );
-        if(ImGui::Selectable(break_str.c_str(),selected == i))
-        {
-            selected = i;
-            // save the addr so we can re index the map later
-            addr_selected = b.addr; 
-        }
-    }
-
-    ImGui::EndChild();
-
-	ImGui::End();	    
 }
 
 void ImguiMainWindow::file_browser()
@@ -615,9 +264,7 @@ void ImguiMainWindow::file_browser()
         {
             if(std::filesystem::is_regular_file(selected_file))
             {
-                stop_instance();
-                gb.reset(selected_file);
-                start_instance();                
+                new_instance(selected_file);
             }
         }
     }
@@ -634,8 +281,8 @@ void ImguiMainWindow::file_browser()
                 stop_instance();
 
                 try
-                {
-                    gb.load_state(selected_file);
+                {  
+                    load_state(selected_file);
                 }
 
                 
@@ -658,7 +305,7 @@ void ImguiMainWindow::file_browser()
         std::string loc = file_path + "/" + std::string(input_path);
         try
         {
-            gb.save_state(loc);
+           save_state(loc);
         }
 
         catch(std::exception &ex)
@@ -704,11 +351,12 @@ void ImguiMainWindow::file_browser()
 
     ImGui::BeginChild("file view");
 
-    int i = 0;
 
-    for(auto &path: dir_list)
+
+    for(int i = 0; i < dir_list.size(); i++)
     {
         // display only the file name
+        std::string path = dir_list[i];
         std::string disp_path = std::filesystem::path(path).filename().string();
 
         if(ImGui::Selectable(disp_path.c_str(),selected == i,ImGuiSelectableFlags_AllowDoubleClick))
@@ -729,33 +377,13 @@ void ImguiMainWindow::file_browser()
                 {
                     new_instance(path);
                 }
-            }
-            
+            }   
         }
-
-        i++;
     }
 
     ImGui::EndChild();
 
     ImGui::End();
-}
-
-void ImguiMainWindow::new_instance(std::string filename)
-{
-    stop_instance();
-    try
-    {
-        gb.reset(filename);
-    }
-
-    catch(std::exception &ex)
-    {
-        std::cout << ex.what()  << "\n";
-        return;
-    }
-
-    start_instance();     
 }
 
 void ImguiMainWindow::mainloop()
@@ -778,9 +406,8 @@ void ImguiMainWindow::mainloop()
     //IM_ASSERT(font != NULL);
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    // init our screen buffer
-    screen_copy.resize(gb.ppu.X*gb.ppu.Y);
-    init_texture(screen_texture,screen_copy,gb.ppu.X,gb.ppu.Y);
+    
+    screen.init_texture(gb.ppu.X,gb.ppu.Y);
     gb.reset("",false);
 
 
@@ -809,21 +436,26 @@ void ImguiMainWindow::mainloop()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        if(true) // running in debug mode flag!
+        if(running_type == emu_type::gameboy) 
         {
-            //draw_menu_bar();
-            draw_screen();
-            draw_regs();
-            draw_disassembly();
-            draw_breakpoints();
-            draw_memory();
-            draw_logger();
+            gameboy_draw_screen();
+            gameboy_draw_regs();
+            gameboy_draw_disassembly();
+            gameboy_draw_breakpoints();
+            gameboy_draw_memory();
+            gameboy_draw_logger();
             file_browser();
         }
 
-        else // todo render jsut the main game fullscreen
-        {
-
+        else if(running_type == emu_type::gba)
+        { 
+            gba_draw_screen();
+            gba_draw_disassembly();
+            gba_draw_registers();
+            gba_draw_logger();
+            gba_draw_breakpoints();
+            gba_draw_memory();
+            file_browser();
         }
 
 

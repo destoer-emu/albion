@@ -1,7 +1,8 @@
 #include <gb/cpu.h>
 #include <gb/memory.h>
  
-
+namespace gameboy
+{
 
 void Cpu::set_zero(uint8_t reg)
 {
@@ -484,4 +485,6 @@ void Cpu::ret_cond(bool cond, int bit)
 		pc = read_stackwt();
 		cycle_tick(1);  // internal
 	}	
+}
+
 }

@@ -1,5 +1,7 @@
 #include <gb/ppu.h>
 
+namespace gameboy
+{
 
 // save states
 void Ppu::save_state(std::ofstream &fp)
@@ -64,4 +66,6 @@ void Ppu::load_state(std::ifstream &fp)
     file_read_arr(fp,sp_pal,sizeof(sp_pal));
     file_read_var(fp,sp_pal_idx);
     file_read_var(fp,bg_pal_idx);
+}
+
 }

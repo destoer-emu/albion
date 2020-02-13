@@ -1,6 +1,7 @@
 #include <gb/memory.h>
 
-
+namespace gameboy
+{
 
 // save states
 void Memory::save_state(std::ofstream &fp)
@@ -92,5 +93,7 @@ void Memory::load_state(std::ifstream &fp)
 
 	// dont dump the memory table as its unecessary and unsafe
 	// same goes for the rom and info struct
+
+}
 
 }

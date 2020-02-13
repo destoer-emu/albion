@@ -3,6 +3,9 @@
 #include <destoer-emu/lib.h>
 
 
+namespace gameboy
+{
+
 class Disass
 {
 public:
@@ -14,3 +17,5 @@ private:
     Memory *mem;
 
 };
+
+}

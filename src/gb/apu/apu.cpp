@@ -1,7 +1,8 @@
 #include <gb/apu.h>
 #include <gb/memory.h>
  
-
+namespace gameboy
+{
 
 void Apu::init(Memory *m)
 {
@@ -270,4 +271,6 @@ void Apu::push_samples()
 			printf("%s\n",SDL_GetError()); exit(1);
 		}
     }
-}    
+}
+
+}

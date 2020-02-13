@@ -5,6 +5,8 @@
 #include <destoer-emu/lib.h>
 #include <destoer-emu/debug.h>
 
+namespace gameboy
+{
 
 
 bool Memory::is_lcd_enabled()
@@ -284,7 +286,7 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
 
     // banking vars
     enable_ram = false; // is ram banking enabled
-    cart_ram_bank = 0;
+    cart_ram_bank = CART_RAM_BANK_INVALID;
 	cart_rom_bank = 1; // currently selected rom bank
 	rom_banking = true; // is rom banking enabled
 
@@ -397,7 +399,7 @@ uint8_t Memory::raw_read(uint16_t addr)
 	switch((addr & 0xf000) >> 12)
 	{
 		// bank zero
-		case 0:  case 1: case 2: case 3:
+		case 0: case 1: case 2: case 3:
 		{
 			return rom[addr];
 			break;
@@ -406,7 +408,7 @@ uint8_t Memory::raw_read(uint16_t addr)
 		// rom (banked)
 		case 4: case 5: case 6: case 7:
 		{
-			return rom[(cart_rom_bank*0x4000)+addr-0x4000];
+			return rom[(cart_rom_bank*0x4000)+(addr-0x4000)];
 			break;
 		}
 
@@ -1682,4 +1684,6 @@ void Memory::write_cart_ram(uint16_t addr, uint8_t v)
         addr -= 0xa000;
         cart_ram_banks[cart_ram_bank][addr] = v;
     }
+}
+
 }

@@ -1,5 +1,7 @@
 #include <gb/apu.h>
  
+namespace gameboy
+{
 
 // CHANNEL 1,2,3 FREQUENCY
 
@@ -29,4 +31,6 @@ void FreqReg::freq_reload_period()
 int FreqReg::get_duty_idx() const
 {
     return duty_idx;
+}
+
 }

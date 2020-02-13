@@ -1,4 +1,8 @@
 #pragma once
+
+namespace gameboy
+{
+
 constexpr int CART_RAM_BANK_INVALID = -1;
 
 
@@ -62,3 +66,5 @@ constexpr int IO_HDMA3 = 0x53;
 constexpr int IO_HDMA4 = 0x54;
 
 constexpr int IO_HDMA5 = 0x55;
+
+}

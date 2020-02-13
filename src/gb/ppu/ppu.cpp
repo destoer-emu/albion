@@ -2,6 +2,8 @@
 #include <gb/cpu.h>
 #include <gb/memory.h>
 
+namespace gameboy
+{
 
 void Ppu::reset_fetcher()
 {
@@ -907,4 +909,6 @@ bool Ppu::sprite_fetch()
 	}
 
 	return did_draw;
+}
+
 }

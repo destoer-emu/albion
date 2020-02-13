@@ -1,6 +1,8 @@
 #include <gb/apu.h>
 #include <gb/memory.h>
 
+namespace gameboy
+{
 
 // CHANNEL 4 NOISE
 
@@ -66,4 +68,6 @@ void Noise::noise_trigger()
     // noise channel stuff
     period = (divisors[divisor_idx] << clock_shift);
     shift_reg = 0x7fff;
+}
+
 }

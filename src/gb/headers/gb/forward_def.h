@@ -1,7 +1,12 @@
 #pragma once
+
+namespace gameboy
+{
+
 class Memory;
 class Cpu;
 class Ppu;
 class Disass;
-class Debug;
 class Apu;
+
+}

@@ -7,6 +7,8 @@
 #include "disass.h"
 #include <destoer-emu/debug.h>
 
+namespace gameboy
+{
 
 class GB
 {
@@ -30,3 +32,5 @@ public:
     bool quit = false;
     bool throttle_emu = true;
 };
+
+}

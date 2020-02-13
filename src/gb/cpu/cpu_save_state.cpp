@@ -1,5 +1,7 @@
 #include <gb/cpu.h>
 
+namespace gameboy
+{
 
 void Cpu::save_state(std::ofstream &fp)
 {
@@ -44,4 +46,6 @@ void Cpu::load_state(std::ifstream &fp)
     file_read_var(fp,interrupt_enable);
     file_read_var(fp,is_cgb);
     file_read_var(fp,is_double);	
+}
+
 }

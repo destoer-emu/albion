@@ -1,5 +1,7 @@
 #include <gb/gb.h>
 
+namespace gameboy
+{
 
 void GB::reset(std::string rom_name, bool with_rom)
 {
@@ -119,4 +121,6 @@ void GB::run()
 	{
         cpu.step();
 	}
+}
+
 }

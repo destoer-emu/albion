@@ -1,8 +1,12 @@
 #pragma once
 #include "forward_def.h"
 #include <destoer-emu/lib.h>
+#include <destoer-emu/debug.h>
 #include "rom.h"
 #include "mem_constants.h"
+
+namespace gameboy
+{
 
 class Memory
 {
@@ -144,5 +148,7 @@ private:
     std::array<Memory_table,0x10> memory_table;
 
 
-    Rom_info rom_info;    
+    gameboy::Rom_info rom_info;    
 };
+
+}

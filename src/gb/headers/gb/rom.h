@@ -1,6 +1,9 @@
 #pragma once
 #include <destoer-emu/lib.h>
 
+namespace gameboy
+{
+
 enum class rom_type
 {
     mbc1,mbc2,mbc3,mbc5,rom_only
@@ -17,3 +20,5 @@ struct Rom_info
     rom_type type;
     bool has_rtc = false;
 };
+
+}

@@ -82,6 +82,7 @@ inline bool is_valid_hex_string(const char *input_str)
 void read_file(std::string filename, std::vector<uint8_t> &buf);
 
 
+constexpr char path_seperator = std::filesystem::path::preferred_separator;
 std::vector<std::string> read_sorted_directory(std::string file_path);
 
 inline bool is_set(uint64_t reg, int bit)
@@ -105,6 +106,38 @@ inline uint8_t val_bit(uint8_t data, int position)
 	uint8_t mask = 1 << position;
 	return ( data & mask ) ? 1 : 0;
 }
+
+// std::rotr and std::rotl in c++20 probs should be used
+// for now https://stackoverflow.com/questions/776508/best-practices-for-circular-shift-rotate-operations-in-c
+
+inline uint32_t rotl(uint32_t n, unsigned int c)
+{
+    const unsigned int mask = (CHAR_BIT*sizeof(n) - 1);  
+    c &= mask;
+    return (n<<c) | (n>>( (-c)&mask ));
+}
+
+inline uint32_t rotr(uint32_t n, unsigned int c)
+{
+    const unsigned int mask = (CHAR_BIT*sizeof(n) - 1);
+    c &= mask;
+    return (n>>c) | (n<<( (-c)&mask ));
+}
+
+ // https://stackoverflow.com/questions/5814072/sign-extend-a-nine-bit-number-in-c
+inline int64_t sign_extend(int64_t x, int64_t b)
+{
+    /* generate the sign bit mask. 'b' is the extracted number of bits */
+    int m = 1U << (b - 1);  
+
+    /* Transform a 'b' bits unsigned number 'x' into a signed number 'r' */
+    int r = (x ^ m) - m; 
+
+    return r;
+}
+
+
+
 
 // is there a nicer way to do this?
 inline size_t get_remaining_ifstream_size(std::ifstream &fp)
@@ -168,3 +201,27 @@ inline void file_read_vec(std::ifstream &fp,std::vector<T> &buf)
 	}		
 	fp.read(reinterpret_cast<char*>(buf.data()),sizeof(T)*buf.size());
 }
+
+// if we are compiling under msvc we cant user the overflow det builtins
+// we can probably do a better impl than this...
+#ifdef _MSC_VER
+template <typename T,typename U, typename X>
+inline bool did_overflow(T v1, U v2, X ans)
+{
+    return  is_set((v1 ^ ans) & (v2 ^ ans),(sizeof(T)*8)-1); 
+}
+
+template <typename T,typename U, typename X>
+inline bool __builtin_add_overflow(T v1,U v2,X *ans)
+{
+	*ans = v1 + v2;
+	return did_overflow(v1, v2, *ans);
+}
+
+template <typename T,typename U, typename X>
+inline bool __builtin_sub_overflow(T v1,U v2,X *ans)
+{
+	*ans = v1 - v2;
+	return did_overflow(v1,~v2, *ans);
+}
+#endif

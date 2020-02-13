@@ -1,5 +1,6 @@
 #include <gb/rom.h>
-
+namespace gameboy
+{
 
 void Rom_info::init(std::vector<uint8_t> &rom, std::string romname)
 {
@@ -70,4 +71,6 @@ void Rom_info::init(std::vector<uint8_t> &rom, std::string romname)
     }
 
     no_ram_banks = ram_table[ram_type];
+}
+
 }

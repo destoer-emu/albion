@@ -5,7 +5,8 @@
 #include <gb/apu.h>
 
 
-
+namespace gameboy
+{
 
 
 void Cpu::check_rst_loop(uint16_t addr, uint8_t op)
@@ -21,10 +22,11 @@ void Cpu::exec_instr()
 {
 
 #ifdef DEBUG
-	if(debug->step_instr || debug->breakpoint_hit(pc,mem->read_mem(pc),break_type::execute))
+	uint8_t x = mem->read_mem(pc);
+	if(debug->step_instr || debug->breakpoint_hit(pc,x,break_type::execute))
 	{
 		// halt until told otherwhise :)
-		write_log("[DEBUG] execute breakpoint hit ({:x}:{:x})",pc,mem->read_mem(pc));
+		write_log("[DEBUG] execute breakpoint hit ({:x}:{:x})",pc,x);
 		debug->halt();
 	}
 #endif
@@ -1275,4 +1277,6 @@ void Cpu::exec_instr()
 			throw std::runtime_error("invalid opcode!");		
 		}
     }
+}
+
 }

@@ -2,6 +2,9 @@
 #include <gb/memory.h>
  
 
+namespace gameboy
+{
+
 //CHANNEL 3 WAVE
 
 
@@ -78,4 +81,6 @@ void Wave::write_vol(uint8_t v)
 {
     volume_load = (v >> 5) & 0x3;
     volume = volume_load;    
+}
+
 }

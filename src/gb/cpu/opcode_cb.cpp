@@ -1,6 +1,8 @@
 #include <gb/cpu.h>
 #include <gb/memory.h>
 
+namespace gameboy
+{
 
 void Cpu::exec_cb(uint8_t cbop)
 {
@@ -1101,4 +1103,6 @@ void Cpu::exec_cb(uint8_t cbop)
 			throw std::runtime_error("invalid opcode!");	            
         }
     }    
+}
+
 }

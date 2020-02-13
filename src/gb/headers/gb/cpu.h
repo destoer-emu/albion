@@ -1,6 +1,10 @@
 #pragma once
 #include "forward_def.h"
 #include <destoer-emu/lib.h>
+#include <destoer-emu/debug.h>
+
+namespace gameboy
+{
 
 class Cpu
 {
@@ -136,4 +140,4 @@ constexpr uint32_t N = 6; // negative flag
 constexpr uint32_t H = 5; // half carry flag
 constexpr uint32_t C = 4; // carry flag
 
- 
+}

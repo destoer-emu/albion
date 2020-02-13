@@ -3,6 +3,9 @@
 #include <destoer-emu/lib.h>
 
 
+namespace gameboy
+{
+
 enum class ppu_mode
 {
     oam_search = 2,
@@ -130,3 +133,4 @@ private:
 
 };
 
+}

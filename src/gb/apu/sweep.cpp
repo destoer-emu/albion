@@ -1,6 +1,8 @@
 #include <gb/apu.h>
 #include <gb/memory.h>
- 
+
+namespace gameboy
+{ 
 
 // CHANNEL 1 SWEEP
 
@@ -139,4 +141,6 @@ void Sweep::clock_sweep()
 		// sweep period of 0 treated as 8
 		sweep_timer = sweep_period?  sweep_period : 8;		
 	}	
+}
+
 }

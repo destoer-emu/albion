@@ -1,6 +1,9 @@
 #include <gb/apu.h>
 
 
+namespace gameboy
+{
+
 void Apu::save_state(std::ofstream &fp)
 {
     c1.save_state(fp); c1.sweep_save_state(fp);
@@ -156,3 +159,4 @@ void Sweep::sweep_load_state(std::ifstream &fp)
 	file_read_var(fp,sweep_reg);
 }
 
+}
