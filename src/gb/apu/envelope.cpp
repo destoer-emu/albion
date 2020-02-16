@@ -6,7 +6,7 @@ namespace gameboy
 
 // CHANNEL 1,2,4 envelope
 
-void Envelope::env_init()
+void Envelope::env_init() noexcept
 {
 	env_period = 0; 
 	env_load = 0;
@@ -16,7 +16,7 @@ void Envelope::env_init()
 	env_up = false;    
 }
 
-void Envelope::env_write(uint8_t v)
+void Envelope::env_write(uint8_t v) noexcept
 {
     volume_load = (v >> 4) & 0xf;
     volume = volume_load;
@@ -24,14 +24,14 @@ void Envelope::env_write(uint8_t v)
     env_up = is_set(v,3);
 }
 
-void Envelope::env_trigger()
+void Envelope::env_trigger() noexcept
 {
     env_period = env_load;				
     volume = volume_load;
     env_enabled = true;    
 }
 
-void Envelope::clock_envelope()
+void Envelope::clock_envelope() noexcept
 {
 	int vol = volume;
 	if(!--env_period && env_enabled)

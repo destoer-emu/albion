@@ -13,24 +13,24 @@ class Memory
 public:
     void init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_rom=true);
 
-    bool is_lcd_enabled();
+    bool is_lcd_enabled() const noexcept;
 
-    void tick_dma(int cycles);
+    void tick_dma(int cycles) noexcept;
 
     // public access functions
-    uint8_t read_mem(uint16_t addr);
-    void write_mem(uint16_t addr, uint8_t v);
-    uint16_t read_word(uint16_t addr);
-    void write_word(uint16_t addr, uint16_t v);
-    uint8_t read_iot(uint16_t);
+    uint8_t read_mem(uint16_t addr) noexcept;
+    void write_mem(uint16_t addr, uint8_t v) noexcept;
+    uint16_t read_word(uint16_t addr) noexcept;
+    void write_word(uint16_t addr, uint16_t v) noexcept;
+    uint8_t read_iot(uint16_t) noexcept;
 
     // memory accesses (timed)
-    uint8_t read_memt(uint16_t addr);
-    void write_memt(uint16_t addr, uint8_t v);
-    uint16_t read_wordt(uint16_t addr);
-    void write_wordt(uint16_t addr, uint16_t v);
-    void write_iot(uint16_t addr,uint8_t v);
-    void write_io(uint16_t addr,uint8_t v);
+    uint8_t read_memt(uint16_t addr) noexcept;
+    void write_memt(uint16_t addr, uint8_t v) noexcept;
+    uint16_t read_wordt(uint16_t addr) noexcept;
+    void write_wordt(uint16_t addr, uint16_t v) noexcept;
+    void write_iot(uint16_t addr,uint8_t v) noexcept;
+    void write_io(uint16_t addr,uint8_t v) noexcept;
 
     // public underlying memory for direct access
     // required for handling io and vram
@@ -39,8 +39,8 @@ public:
     std::vector<uint8_t> oam; // 0xa0
 
     // direct write access no side affects
-    void raw_write(uint16_t addr, uint8_t v);
-    uint8_t raw_read(uint16_t addr);
+    void raw_write(uint16_t addr, uint8_t v) noexcept;
+    uint8_t raw_read(uint16_t addr) noexcept;
 
     // save file helpers
     void save_cart_ram();
@@ -50,62 +50,62 @@ public:
     void save_state(std::ofstream &fp);
     void load_state(std::ifstream &fp);
 
-    void do_hdma();
+    void do_hdma() noexcept;
 private:
-    Cpu *cpu;
-    Ppu *ppu;
-    Apu *apu;
-    Debug *debug;
+    Cpu *cpu = nullptr;
+    Ppu *ppu = nullptr;
+    Apu *apu = nullptr;
+    Debug *debug = nullptr;
 
-    void do_dma(uint8_t v);
+    void do_dma(uint8_t v) noexcept;
 
     // read mem underyling
-    uint8_t read_oam(uint16_t addr);
-    uint8_t read_vram(uint16_t addr);
-    uint8_t read_cart_ram(uint16_t addr);
-    uint8_t read_io(uint16_t addr);
-    uint8_t read_rom_bank(uint16_t addr);
-    uint8_t read_bank_zero(uint16_t addr);
-    uint8_t read_wram_low(uint16_t addr);
-    uint8_t read_wram_high(uint16_t addr);
-    uint8_t read_hram(uint16_t addr);
+    uint8_t read_oam(uint16_t addr) const noexcept;
+    uint8_t read_vram(uint16_t addr) const noexcept;
+    uint8_t read_cart_ram(uint16_t addr) const noexcept;
+    uint8_t read_io(uint16_t addr) const noexcept; 
+    uint8_t read_rom_bank(uint16_t addr) const noexcept;
+    uint8_t read_bank_zero(uint16_t addr) const noexcept;
+    uint8_t read_wram_low(uint16_t addr) const noexcept;
+    uint8_t read_wram_high(uint16_t addr) const noexcept;
+    uint8_t read_hram(uint16_t addr) const noexcept;
 
     // write mem underlying
-    void write_oam(uint16_t addr,uint8_t v);
-    void write_vram(uint16_t addr,uint8_t v);
-    void write_wram_low(uint16_t addr,uint8_t v);
-    void write_wram_high(uint16_t addr,uint8_t v);
-    void write_hram(uint16_t addr,uint8_t v);
-    void write_cart_ram(uint16_t addr, uint8_t v);
+    void write_oam(uint16_t addr,uint8_t v) noexcept;
+    void write_vram(uint16_t addr,uint8_t v) noexcept;
+    void write_wram_low(uint16_t addr,uint8_t v) noexcept;
+    void write_wram_high(uint16_t addr,uint8_t v) noexcept;
+    void write_hram(uint16_t addr,uint8_t v) noexcept;
+    void write_cart_ram(uint16_t addr, uint8_t v) noexcept;
 
     // banking functions (when writes go to the rom area)
-    void ram_bank_enable(uint16_t address, uint8_t v);
-    void banking_unused(uint16_t addr, uint8_t v);
+    void ram_bank_enable(uint16_t address, uint8_t v) noexcept;
+    void banking_unused(uint16_t addr, uint8_t v) noexcept;
 
     // mbc1
-    void change_lo_rom_bank_mbc1(uint16_t address, uint8_t v);
-    void mbc1_banking_change(uint16_t address, uint8_t v); 
-    void change_mode_mbc1(uint16_t address, uint8_t v);
-    void change_hi_rom_bank_mbc1(uint8_t v);
-    void ram_bank_change_mbc1(uint8_t v);   
+    void change_lo_rom_bank_mbc1(uint16_t address, uint8_t v) noexcept;
+    void mbc1_banking_change(uint16_t address, uint8_t v) noexcept; 
+    void change_mode_mbc1(uint16_t address, uint8_t v) noexcept;
+    void change_hi_rom_bank_mbc1(uint8_t v) noexcept;
+    void ram_bank_change_mbc1(uint8_t v) noexcept;   
     
 
     // mbc3
-    void change_rom_bank_mbc3(uint16_t address,uint8_t v);
-    void mbc3_ram_bank_change(uint16_t address,uint8_t v);
+    void change_rom_bank_mbc3(uint16_t address,uint8_t v) noexcept;
+    void mbc3_ram_bank_change(uint16_t address,uint8_t v) noexcept;
 
     // mbc2
-    void change_lo_rom_bank_mbc2(uint16_t address,uint8_t v);
-    void ram_bank_enable_mbc2(uint16_t address,uint8_t v);
+    void change_lo_rom_bank_mbc2(uint16_t address,uint8_t v) noexcept;
+    void ram_bank_enable_mbc2(uint16_t address,uint8_t v) noexcept;
 
     //mbc5
-    void mbc5_ram_bank_change(uint16_t address,uint8_t data);
-    void change_hi_rom_bank_mbc5(uint16_t address,uint8_t data);
-    void change_lo_rom_bank_mbc5(uint16_t address,uint8_t data);
+    void mbc5_ram_bank_change(uint16_t address,uint8_t data) noexcept;
+    void change_hi_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept;
+    void change_lo_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept;
 
 
     // cgb
-    void do_gdma();
+    void do_gdma() noexcept;
     int hdma_len = 0; // length to transfer on a  gdma
 	int hdma_len_ticked = 0; // how many total dma transfers we have done
 	int dma_src = 0;
@@ -135,8 +135,8 @@ private:
     int cgb_wram_bank_idx = 0;  // default zero
     int vram_bank = 0; // what cgb vram bank are we in?
 
-    using WRITE_MEM_FPTR = void (Memory::*)(uint16_t addr,uint8_t data);
-    using READ_MEM_FPTR = uint8_t (Memory::*)(uint16_t addr);
+    using WRITE_MEM_FPTR = void (Memory::*)(uint16_t addr,uint8_t data) noexcept;
+    using READ_MEM_FPTR = uint8_t (Memory::*)(uint16_t addr) const noexcept;
 
     typedef struct
     {

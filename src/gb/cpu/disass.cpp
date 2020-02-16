@@ -6,7 +6,7 @@
 namespace gameboy
 {
 
-void Disass::init(Memory *m)
+void Disass::init(Memory *m) noexcept
 {
     mem = m;
 }
@@ -557,7 +557,7 @@ constexpr Disass_entry cb_opcode_table[256] =
 
 // not sure if its worth just adding a size field
 // and having a bunch of extra bytes in the exe
-uint32_t Disass::get_op_sz(uint16_t addr)
+uint32_t Disass::get_op_sz(uint16_t addr) noexcept
 {
     uint8_t opcode = mem->read_mem(addr++);
 
@@ -572,7 +572,7 @@ uint32_t Disass::get_op_sz(uint16_t addr)
 
 
 
-std::string Disass::disass_op(uint16_t addr)
+std::string Disass::disass_op(uint16_t addr) noexcept
 {
 
     uint8_t opcode = mem->read_mem(addr++);

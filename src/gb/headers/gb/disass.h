@@ -9,12 +9,12 @@ namespace gameboy
 class Disass
 {
 public:
-    void init(Memory *m);
-    std::string disass_op(uint16_t addr);
-    uint32_t get_op_sz(uint16_t addr);
+    void init(Memory *m) noexcept;
+    std::string disass_op(uint16_t addr) noexcept;
+    uint32_t get_op_sz(uint16_t addr) noexcept;
 
 private:
-    Memory *mem;
+    Memory *mem = nullptr;
 
 };
 

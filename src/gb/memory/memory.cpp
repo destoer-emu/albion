@@ -9,7 +9,7 @@ namespace gameboy
 {
 
 
-bool Memory::is_lcd_enabled()
+bool Memory::is_lcd_enabled() const noexcept
 {
 	return ( is_set(io[IO_LCDC],7) );	
 }
@@ -307,7 +307,7 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
 
 
 
-void Memory::raw_write(uint16_t addr, uint8_t v)
+void Memory::raw_write(uint16_t addr, uint8_t v) noexcept
 {
 	switch((addr & 0xf000) >> 12)
 	{
@@ -394,7 +394,7 @@ void Memory::raw_write(uint16_t addr, uint8_t v)
 }
 
 
-uint8_t Memory::raw_read(uint16_t addr)
+uint8_t Memory::raw_read(uint16_t addr) noexcept
 {
 	switch((addr & 0xf000) >> 12)
 	{
@@ -488,10 +488,10 @@ uint8_t Memory::raw_read(uint16_t addr)
 
 
 // public access functions
-uint8_t Memory::read_mem(uint16_t addr)
+uint8_t Memory::read_mem(uint16_t addr) noexcept
 {
 #ifdef DEBUG
-	uint8_t value = std::invoke(memory_table[(addr & 0xf000) >> 12].read_memf,this,addr);
+	const uint8_t value = std::invoke(memory_table[(addr & 0xf000) >> 12].read_memf,this,addr);
 	if(debug->breakpoint_hit(addr,value,break_type::read))
 	{
 		// halt until told otherwhise :)
@@ -505,7 +505,7 @@ uint8_t Memory::read_mem(uint16_t addr)
 #endif
 }
 
-void Memory::write_mem(uint16_t addr, uint8_t v)
+void Memory::write_mem(uint16_t addr, uint8_t v) noexcept
 {
 #ifdef DEBUG
 	if(debug->breakpoint_hit(addr,v,break_type::write))
@@ -519,13 +519,13 @@ void Memory::write_mem(uint16_t addr, uint8_t v)
 }
 
 
-uint16_t Memory::read_word(uint16_t addr)
+uint16_t Memory::read_word(uint16_t addr) noexcept
 {
     return read_mem(addr) | (read_mem(addr+1) << 8);
 }
 
 
-void Memory::write_word(uint16_t addr, uint16_t v)
+void Memory::write_word(uint16_t addr, uint16_t v) noexcept
 {
     write_mem(addr+1,(v&0xff00)>>8);
     write_mem(addr,(v&0x00ff));
@@ -533,27 +533,27 @@ void Memory::write_word(uint16_t addr, uint16_t v)
 
 
 // memory accesses (timed)
-uint8_t Memory::read_memt(uint16_t addr)
+uint8_t Memory::read_memt(uint16_t addr) noexcept
 {
     uint8_t v = read_mem(addr);
     cpu->cycle_tick(1); // tick for the memory access 
     return v;
 }
 
-void Memory::write_memt(uint16_t addr, uint8_t v)
+void Memory::write_memt(uint16_t addr, uint8_t v) noexcept
 {
     write_mem(addr,v);
     cpu->cycle_tick(1); // tick for the memory access    
 }
 
 
-uint16_t Memory::read_wordt(uint16_t addr)
+uint16_t Memory::read_wordt(uint16_t addr) noexcept
 {
     return read_memt(addr) | (read_memt(addr+1) << 8);
 }
 
 
-void Memory::write_wordt(uint16_t addr, uint16_t v)
+void Memory::write_wordt(uint16_t addr, uint16_t v) noexcept
 {
     write_memt(addr+1,(v&0xff00)>>8);
     write_memt(addr,(v&0x00ff));
@@ -562,7 +562,7 @@ void Memory::write_wordt(uint16_t addr, uint16_t v)
 
 // read mem underyling
 // object attribute map 0xfe00 - 0xfe9f
-uint8_t Memory::read_oam(uint16_t addr)
+uint8_t Memory::read_oam(uint16_t addr) const noexcept
 {
     // cant access oam during a dma
     if(oam_dma_active)
@@ -580,13 +580,12 @@ uint8_t Memory::read_oam(uint16_t addr)
 }
 
 // video ram 0x8000 - 0xa000
-uint8_t Memory::read_vram(uint16_t addr)
+uint8_t Memory::read_vram(uint16_t addr) const noexcept
 {
     // vram is used in pixel transfer cannot access
     if(ppu->mode != ppu_mode::pixel_transfer)
     {
-        addr -= 0x8000;
-        return vram[vram_bank][addr];
+        return vram[vram_bank][addr - 0x8000];
     }
 
     else
@@ -596,12 +595,11 @@ uint8_t Memory::read_vram(uint16_t addr)
 }
 
 // cart  memory 0xa000 - 0xc000
-uint8_t Memory::read_cart_ram(uint16_t addr)
+uint8_t Memory::read_cart_ram(uint16_t addr) const noexcept
 { 
     if(enable_ram && cart_ram_bank != CART_RAM_BANK_INVALID)
     {
-        addr -= 0xa000;
-        return cart_ram_banks[cart_ram_bank][addr];
+        return cart_ram_banks[cart_ram_bank][addr-0xa000];
     }
 
     else
@@ -611,7 +609,7 @@ uint8_t Memory::read_cart_ram(uint16_t addr)
 }
 
 // 0xff00 io regs (has side affects)
-uint8_t Memory::read_io(uint16_t addr)
+uint8_t Memory::read_io(uint16_t addr) const noexcept
 {
     switch(addr & 0xff)
     {
@@ -620,7 +618,7 @@ uint8_t Memory::read_io(uint16_t addr)
 		case IO_JOYPAD:
 		{		
 			// read from mem
-			uint8_t req = io[IO_JOYPAD];
+			const uint8_t req = io[IO_JOYPAD];
 			// we want to test if bit 5 and 4 are set 
 			// so we can determine what the game is interested
 			// in reading
@@ -805,7 +803,7 @@ uint8_t Memory::read_io(uint16_t addr)
     }
 }
 
-uint8_t Memory::read_iot(uint16_t addr)
+uint8_t Memory::read_iot(uint16_t addr) noexcept
 {
     uint8_t v = read_io(addr);
     cpu->cycle_tick(1); // tick for mem access
@@ -814,35 +812,34 @@ uint8_t Memory::read_iot(uint16_t addr)
 
 // for now we will just return the rom
 // 0x4000 - 0x8000 return current rom bank
-uint8_t Memory::read_rom_bank(uint16_t addr)
+uint8_t Memory::read_rom_bank(uint16_t addr) const noexcept
 {   
-    addr -= 0x4000;
-    return rom[(cart_rom_bank*0x4000)+addr];
+    return rom[(cart_rom_bank*0x4000)+addr-0x4000];
 }
 
 
 //0x0000 - 0x4000 return rom bank zero
-uint8_t Memory::read_bank_zero(uint16_t addr)
+uint8_t Memory::read_bank_zero(uint16_t addr) const noexcept
 {
     return rom[addr];
 }
 
 // 0xc000 && 0xe000 (echo ram)
 // return wram non banked
-uint8_t Memory::read_wram_low(uint16_t addr)
+uint8_t Memory::read_wram_low(uint16_t addr) const noexcept
 {
     return wram[addr&0xfff];
 }
 
 // 0xd000
 // return banked wram this is fixed on dmg
-uint8_t Memory::read_wram_high(uint16_t addr)
+uint8_t Memory::read_wram_high(uint16_t addr) const noexcept
 {
     return cgb_wram_bank[cgb_wram_bank_idx][addr&0xfff];
 }
 
 // 0xf000 various
-uint8_t Memory::read_hram(uint16_t addr)
+uint8_t Memory::read_hram(uint16_t addr) const noexcept
 {
     // io regs
     if(addr >= 0xff00)
@@ -872,7 +869,7 @@ uint8_t Memory::read_hram(uint16_t addr)
 
 // write mem underlying
 // object attribute map 0xfe00 - 0xfea0
-void Memory::write_oam(uint16_t addr,uint8_t v)
+void Memory::write_oam(uint16_t addr,uint8_t v) noexcept
 {
 
     if(oam_dma_active)
@@ -890,7 +887,7 @@ void Memory::write_oam(uint16_t addr,uint8_t v)
 }
 
 //video ram 0x8000 - 0xa000
-void Memory::write_vram(uint16_t addr,uint8_t v)
+void Memory::write_vram(uint16_t addr,uint8_t v) noexcept
 {
     // vram is used in pixel transfer cannot access
     if(ppu->mode != ppu_mode::pixel_transfer)
@@ -901,7 +898,7 @@ void Memory::write_vram(uint16_t addr,uint8_t v)
 }
 
 
-void Memory::do_dma(uint8_t v)
+void Memory::do_dma(uint8_t v) noexcept
 {
 	io[IO_DMA] = v; // write to the dma reg
 	uint16_t dma_address = v << 8;
@@ -929,7 +926,7 @@ void Memory::do_dma(uint8_t v)
 }
 
 // this needs work
-void Memory::tick_dma(int cycles)
+void Memory::tick_dma(int cycles) noexcept
 {
     // not active do nothing!
     if(!oam_dma_active) 
@@ -948,7 +945,7 @@ void Memory::tick_dma(int cycles)
 
 
 // io memory has side affects 0xff00
-void Memory::write_io(uint16_t addr,uint8_t v)
+void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 {
     switch(addr & 0xff)
     {
@@ -1558,14 +1555,14 @@ void Memory::write_io(uint16_t addr,uint8_t v)
 }
 
 
-void Memory::do_gdma()
+void Memory::do_gdma() noexcept
 {
-	uint16_t source = dma_src & 0xfff0;
+	const uint16_t source = dma_src & 0xfff0;
 	
-	uint16_t dest = (dma_dst & 0x1ff0) | 0x8000;
+	const uint16_t dest = (dma_dst & 0x1ff0) | 0x8000;
 	
 	// hdma5 stores how many 16 byte incremnts we have to transfer
-	int len = ((io[IO_HDMA5] & 0x7f) + 1) * 0x10;
+	const int len = ((io[IO_HDMA5] & 0x7f) + 1) * 0x10;
 
 	
 	// find out how many cycles we tick but for now just copy the whole damb thing 
@@ -1580,7 +1577,7 @@ void Memory::do_gdma()
 }
 
 
-void Memory::do_hdma()
+void Memory::do_hdma() noexcept
 {
 
 	if(!hdma_active)
@@ -1588,14 +1585,10 @@ void Memory::do_hdma()
 		return;
 	}
 
-	uint16_t source = dma_src & 0xfff0;
+	const uint16_t source = (dma_src & 0xfff0) + hdma_len_ticked*0x10;
 
-	uint16_t dest = (dma_dst & 0x1ff0) | 0x8000;
+	const uint16_t dest = ((dma_dst & 0x1ff0) | 0x8000) + hdma_len_ticked*0x10;
 
-	
-	source += hdma_len_ticked*0x10;
-	dest += hdma_len_ticked*0x10;
-	
 	/*if(!(source <= 0x7ff0 || ( source >= 0xa000 && source <= 0xdff0)))
 	{
 		printf("ILEGGAL HDMA SOURCE: %X!\n",source);
@@ -1627,28 +1620,28 @@ void Memory::do_hdma()
 	}	
 }
 
-void Memory::write_iot(uint16_t addr,uint8_t v)
+void Memory::write_iot(uint16_t addr,uint8_t v) noexcept
 {
     write_io(addr,v);
     cpu->cycle_tick(1); // tick for mem access
 }
 
 // wram zero bank 0xc000 - 0xd000
-void Memory::write_wram_low(uint16_t addr,uint8_t v)
+void Memory::write_wram_low(uint16_t addr,uint8_t v) noexcept
 {
     wram[addr&0xfff] = v;
 }
 
 // banked wram 0xd000 - 0xe000
 // also at 0xe000 - 0xfe00 in echo ram
-void Memory::write_wram_high(uint16_t addr,uint8_t v)
+void Memory::write_wram_high(uint16_t addr,uint8_t v) noexcept
 {
     cgb_wram_bank[cgb_wram_bank_idx][addr&0xfff] = v;
 }
 
 // high ram 0xf000
 // we bundle io into this but the hram section is at 0xff80-ffff
-void Memory::write_hram(uint16_t addr,uint8_t v)
+void Memory::write_hram(uint16_t addr,uint8_t v) noexcept
 {
     // io regs
     if(addr >= 0xff00)
@@ -1677,7 +1670,7 @@ void Memory::write_hram(uint16_t addr,uint8_t v)
 }
 
 
-void Memory::write_cart_ram(uint16_t addr, uint8_t v)
+void Memory::write_cart_ram(uint16_t addr, uint8_t v) noexcept
 {
     if(enable_ram && cart_ram_bank != CART_RAM_BANK_INVALID)
     {

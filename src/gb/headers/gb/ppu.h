@@ -34,7 +34,7 @@ class Ppu
 {
 public:
 
-    void init(Cpu *c,Memory *m);
+    void init(Cpu *c,Memory *m) noexcept;
 
     std::vector<uint32_t> screen; // 160 by 144
 
@@ -46,22 +46,22 @@ public:
     int current_line = 0;
     bool new_vblank = false;
 
-    void update_graphics(int cycles);
+    void update_graphics(int cycles) noexcept;
 
-    void set_scanline_counter(int v)
+    void set_scanline_counter(int v) noexcept
     {
         scanline_counter = v;
     }
 
     // cgb 
-    void set_bg_pal_idx(uint8_t v);
-    void set_sp_pal_idx(uint8_t v);
-    void write_sppd(uint8_t v);
-    void write_bgpd(uint8_t v);
+    void set_bg_pal_idx(uint8_t v) noexcept;
+    void set_sp_pal_idx(uint8_t v) noexcept;
+    void write_sppd(uint8_t v) noexcept;
+    void write_bgpd(uint8_t v) noexcept;
 
 
-    uint8_t get_sppd() const;
-    uint8_t get_bgpd() const;
+    uint8_t get_sppd() const noexcept;
+    uint8_t get_bgpd() const noexcept;
 
 
     // save states
@@ -70,19 +70,19 @@ public:
 
 private:
 
-    Cpu *cpu;
-    Memory *mem;
+    Cpu *cpu = nullptr;
+    Memory *mem = nullptr;
 
-    bool push_pixel();
-    void tick_fetcher(int cycles);
-    void draw_scanline(int cycles);
-    void tile_fetch();
-    dmg_colors get_colour(uint8_t colour_num, uint16_t address);
-    void read_sprites();
-    bool sprite_fetch();  
+    bool push_pixel() noexcept;
+    void tick_fetcher(int cycles) noexcept;
+    void draw_scanline(int cycles) noexcept;
+    void tile_fetch() noexcept;
+    dmg_colors get_colour(uint8_t colour_num, uint16_t address) noexcept;
+    void read_sprites() noexcept;
+    bool sprite_fetch() noexcept;  
 
 
-    void reset_fetcher();
+    void reset_fetcher() noexcept;
 
     // main ppu state
 	bool signal = false;

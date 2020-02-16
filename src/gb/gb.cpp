@@ -3,6 +3,12 @@
 namespace gameboy
 {
 
+GB::GB()
+{
+	// setup a dummy state
+	reset("",false);
+}
+
 void GB::reset(std::string rom_name, bool with_rom)
 {
     mem.init(&cpu,&ppu,&debug,&apu,rom_name,with_rom);

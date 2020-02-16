@@ -4,7 +4,7 @@
 namespace gameboy
 {
 
-void Apu::init(Memory *m)
+void Apu::init(Memory *m) noexcept
 {
     mem = m;
 
@@ -29,18 +29,18 @@ void Apu::init(Memory *m)
 	play_audio = true;
 }
 
-void Apu::start_audio()
+void Apu::start_audio() noexcept
 {
 	play_audio = true;
 }
 
-void Apu::stop_audio()
+void Apu::stop_audio() noexcept
 {
 	play_audio = false;
 	SDL_ClearQueuedAudio(1);
 }
 
-void Apu::advance_sequencer()
+void Apu::advance_sequencer() noexcept
 {
 	// go to the next step
 	sequencer_step = (sequencer_step + 1) & 7;
@@ -88,21 +88,17 @@ void Apu::advance_sequencer()
 			clock_envelopes();
 			break; //clock the envelope 
 		}
-		default:
-		{
-            throw std::runtime_error("unknown sequencer step");
-		}
 	}	
 }
 
-void Apu::clock_envelopes()
+void Apu::clock_envelopes() noexcept
 {
     c1.clock_envelope();
     c2.clock_envelope();
     c4.clock_envelope();
 }
 
-void Apu::tick(int cycles)
+void Apu::tick(int cycles) noexcept
 {
     if(!enabled())
     {
@@ -118,7 +114,7 @@ void Apu::tick(int cycles)
     push_samples();
 }
 
-void Apu::tick_length_counters()
+void Apu::tick_length_counters() noexcept
 {
     c1.tick_lengthc();
     c2.tick_lengthc();
@@ -126,7 +122,7 @@ void Apu::tick_length_counters()
     c4.tick_lengthc();
 }
 
-void Apu::disable_sound()
+void Apu::disable_sound() noexcept
 {
     // set nr10-nr51 regs to 0
     for(int i = 0x10; i < 0x26; i++)
@@ -140,38 +136,38 @@ void Apu::disable_sound()
     sound_enabled = false;  
 }
 
-void Apu::enable_sound()
+void Apu::enable_sound() noexcept
 {
     sound_enabled = true;
     mem->io[IO_NR52] |= 0x80; // data had 0x80 so write back  
 }
 
-void Apu::reset_sequencer()
+void Apu::reset_sequencer() noexcept
 {
     sequencer_step = 0;
 }
 
-int Apu::get_sequencer_step() const
+int Apu::get_sequencer_step() const noexcept
 {
     return sequencer_step;
 }
 
-bool Apu::chan_enabled(int chan)
+bool Apu::chan_enabled(int chan) const noexcept
 {
     return is_set(mem->io[IO_NR52],chan);
 }
 
-bool Apu::enabled() const
+bool Apu::enabled() const noexcept
 {
     return sound_enabled;
 }
 
-void Apu::set_double(bool d)
+void Apu::set_double(bool d) noexcept
 {
 	is_double = d;
 }
 
-void Apu::init_audio()
+void Apu::init_audio() noexcept
 {
 	memset(&audio_spec,0,sizeof(audio_spec));
 
@@ -187,7 +183,7 @@ void Apu::init_audio()
 	SDL_PauseAudio(0);
 }
 
-void Apu::push_samples()
+void Apu::push_samples() noexcept
 {
 	// handle audio output 
 	if(!--down_sample_cnt)

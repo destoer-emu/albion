@@ -405,10 +405,7 @@ void ImguiMainWindow::mainloop()
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-    
     screen.init_texture(gb.ppu.X,gb.ppu.Y);
-    gb.reset("",false);
 
 
     

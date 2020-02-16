@@ -4,7 +4,7 @@
 namespace gameboy
 {
 
-void Cpu::set_zero(uint8_t reg)
+void Cpu::set_zero(uint8_t reg) noexcept
 {
     if(!reg)
     {
@@ -14,7 +14,7 @@ void Cpu::set_zero(uint8_t reg)
 
 
 // decrement
-void Cpu::instr_dec(uint8_t reg)
+void Cpu::instr_dec(uint8_t reg) noexcept
 {
     reg -= 1;
 
@@ -34,7 +34,7 @@ void Cpu::instr_dec(uint8_t reg)
 	}
 }
 
-void Cpu::instr_inc(uint8_t reg)
+void Cpu::instr_inc(uint8_t reg) noexcept
 {
 	reg += 1;
 	
@@ -52,7 +52,7 @@ void Cpu::instr_inc(uint8_t reg)
 }
 
 
-void Cpu::instr_bit(uint8_t reg, uint8_t bit)
+void Cpu::instr_bit(uint8_t reg, uint8_t bit) noexcept
 {
 	f &= (1 << C); // preserve Carry
 	if(!is_set(reg,bit)) // if bit set
@@ -66,13 +66,10 @@ void Cpu::instr_bit(uint8_t reg, uint8_t bit)
 
 
 // logical and  and n with a
-void Cpu::instr_and(uint8_t num)
+void Cpu::instr_and(uint8_t num) noexcept
 {
-	// deset negative and carry
-    f = 0;
-	
-	// set half carry
-    f = set_bit(f,H);
+	// set only the half carry flag
+	f = set_bit(0,H);
 
 	// set if result is zero 
 	a &= num;
@@ -84,9 +81,9 @@ void Cpu::instr_and(uint8_t num)
 // The carry value is put into 0th bit of the register, 
 // and the leaving 7th bit is put into the carry.
 
-uint8_t Cpu::instr_rl(uint8_t reg)
+uint8_t Cpu::instr_rl(uint8_t reg) noexcept
 {
-	bool cond = is_set(reg,7); // cache if 7 bit is set
+	const bool cond = is_set(reg,7); // cache if 7 bit is set
 	
 	// perform the rotation
 	// shift the register left
@@ -110,21 +107,18 @@ uint8_t Cpu::instr_rl(uint8_t reg)
 }
 
 
-void Cpu::instr_sub(uint8_t num)
+void Cpu::instr_sub(uint8_t num) noexcept
 {
-	// deset every flag 
-	f = 0;
+	// set only the negative flag
+	f = set_bit(0,N);
 	
-	// set negative flag
-	f = set_bit(f,N);
-
 	if(a == num)
 	{
 		f = set_bit(f,Z);
 	}
 
 	// check half carry
-	if((( (int)(a & 0xf) - (int)(num & 0xf) ) < 0))
+	if((( static_cast<int>((a & 0xf)) - static_cast<int>((num & 0xf)) ) < 0))
 	{
 		f = set_bit(f,H);
 	}
@@ -138,21 +132,18 @@ void Cpu::instr_sub(uint8_t num)
 }
 
 // compare (same as sub ignore result)
-void Cpu::instr_cp(uint8_t num)
+void Cpu::instr_cp(uint8_t num) noexcept
 {
-	// deset every flag 
-	f = 0;
+	// set only the negative flag
+	f = set_bit(0,N);
 	
-	// set negative flag
-	f = set_bit(f,N);
-
 	if(a == num)
 	{
 		f = set_bit(f,Z);
 	}
 	
-    // check half carry
-	if((( (int)(a & 0xf) - (int)(num & 0xf) ) < 0))
+	// check half carry
+	if((( static_cast<int>((a & 0xf)) - static_cast<int>((num & 0xf)) ) < 0))
 	{
 		f = set_bit(f,H);
 	}
@@ -164,13 +155,13 @@ void Cpu::instr_cp(uint8_t num)
 }
 
 
-void Cpu::instr_sbc(uint8_t num)
+void Cpu::instr_sbc(uint8_t num) noexcept
 {	
-	uint8_t reg = a;
+	const uint8_t reg = a;
 
-	int carry = is_set(f,C) ? 1 : 0;
+	const int carry = is_set(f,C) ? 1 : 0;
 	
-	int result = reg - num - carry;
+	const int result = reg - num - carry;
 	
 	// clear all flags
 	f = 0;
@@ -191,7 +182,7 @@ void Cpu::instr_sbc(uint8_t num)
 }
 
 
-void Cpu::instr_add(uint8_t num)
+void Cpu::instr_add(uint8_t num) noexcept
 {
 	// reset every flag 
 	f = 0;
@@ -215,17 +206,17 @@ void Cpu::instr_add(uint8_t num)
 
 
 // for the sp add opcodes
-uint16_t Cpu::instr_addi(uint16_t reg, int8_t num)
+uint16_t Cpu::instr_addi(uint16_t reg, int8_t num) noexcept
 {
 	f = 0; // reset flags
 	// test carry from bit 3
 	// set the half carry if there is
-	if( (( (int)(reg&0xf) + (int)(num&0xf)) & 0x10) == 0x10)
+	if( (( static_cast<int>((reg&0xf)) + static_cast<int>((num&0xf))) & 0x10) == 0x10)
 	{
 		f = set_bit(f,H);
 	}
 	
-	if( (( (int)(reg & 0xff) + (int)(num&0xff) ) & 0x100) == 0x100)
+	if( (( static_cast<int>((reg & 0xff)) + static_cast<int>((num&0xff)) ) & 0x100) == 0x100)
 	{
 		f = set_bit(f,C);
 	}	
@@ -235,13 +226,13 @@ uint16_t Cpu::instr_addi(uint16_t reg, int8_t num)
 }
 
 // add n + carry flag to a 
-void Cpu::instr_adc(uint8_t num)
+void Cpu::instr_adc(uint8_t num)  noexcept
 {
-	uint8_t reg = a;
+	const uint8_t reg = a;
 	
-	int carry = is_set(f,C) ? 1 : 0;
+	const int carry = is_set(f,C) ? 1 : 0;
 	
-	int result = reg + num + carry;
+	const int result = reg + num + carry;
 	
 	f = 0; // reset all flags
 	
@@ -260,7 +251,7 @@ void Cpu::instr_adc(uint8_t num)
 }
 
 
-uint16_t Cpu::instr_addw(uint16_t reg, uint16_t num) 
+uint16_t Cpu::instr_addw(uint16_t reg, uint16_t num) noexcept 
 {
 	f &= (1 << Z); // only preserve the Z flag 
 
@@ -281,7 +272,7 @@ uint16_t Cpu::instr_addw(uint16_t reg, uint16_t num)
 	return reg;
 }
 
-void Cpu::instr_or(uint8_t val)
+void Cpu::instr_or(uint8_t val) noexcept
 {
 	a |= val;
 	f = 0; // reset all flags
@@ -289,7 +280,7 @@ void Cpu::instr_or(uint8_t val)
 }
 
 // swap upper and lower nibbles 
-uint8_t Cpu::instr_swap(uint8_t num)
+uint8_t Cpu::instr_swap(uint8_t num) noexcept
 {
 	// reset flags register
 	f = 0;
@@ -299,7 +290,7 @@ uint8_t Cpu::instr_swap(uint8_t num)
 	return ((num & 0x0f) << 4 | (num & 0xf0) >> 4);
 }
 
-void Cpu::instr_xor(uint8_t num)
+void Cpu::instr_xor(uint8_t num) noexcept
 {
 	// reset flags register
 	f = 0;
@@ -311,7 +302,7 @@ void Cpu::instr_xor(uint8_t num)
 
 
 // shift left into carry deset bit 1
-uint8_t Cpu::instr_sla(uint8_t reg)
+uint8_t Cpu::instr_sla(uint8_t reg) noexcept
 {
 	f = 0;
 	bool cond = is_set(reg,7); // cache if 7 bit is set
@@ -333,12 +324,12 @@ uint8_t Cpu::instr_sla(uint8_t reg)
 
 
 // shift left into carry deset bit 7
-uint8_t Cpu::instr_sra(uint8_t reg)
+uint8_t Cpu::instr_sra(uint8_t reg) noexcept
 {
 	f = 0;
 	
-	bool cond = is_set(reg,0);// cache if 0 bit is set
-	bool set = is_set(reg,7);
+	const bool cond = is_set(reg,0);// cache if 0 bit is set
+	const bool set = is_set(reg,7);
 	
 	reg >>= 1;
 	
@@ -359,7 +350,7 @@ uint8_t Cpu::instr_sra(uint8_t reg)
 
 // can probably remove duplication here lol 
 
-uint8_t Cpu::instr_srl(uint8_t reg)
+uint8_t Cpu::instr_srl(uint8_t reg)  noexcept 
 {
 	f = 0;
 	if(is_set(reg,0))
@@ -378,9 +369,9 @@ uint8_t Cpu::instr_srl(uint8_t reg)
 
 
 
-uint8_t Cpu::instr_rr(uint8_t reg)
+uint8_t Cpu::instr_rr(uint8_t reg) noexcept
 {
-	bool set = is_set(reg,0);
+	const bool set = is_set(reg,0);
 	
 	reg >>= 1;
 	
@@ -411,9 +402,9 @@ uint8_t Cpu::instr_rr(uint8_t reg)
 
 
 
-uint8_t Cpu::instr_rrc(uint8_t reg)
+uint8_t Cpu::instr_rrc(uint8_t reg) noexcept
 {
-	bool set = is_set(reg,0);
+	const bool set = is_set(reg,0);
 	
 	f = 0;
 
@@ -429,9 +420,9 @@ uint8_t Cpu::instr_rrc(uint8_t reg)
 }
 
 
-uint8_t Cpu::instr_rlc(uint8_t reg)
+uint8_t Cpu::instr_rlc(uint8_t reg) noexcept
 {
-	bool set = is_set(reg,7);
+	const bool set = is_set(reg,7);
 		
 	reg <<= 1;
 	
@@ -447,16 +438,16 @@ uint8_t Cpu::instr_rlc(uint8_t reg)
 }
 
 
-void Cpu::instr_jr()
+void Cpu::instr_jr() noexcept
 {
-	int8_t operand = mem->read_memt(pc++);
+	const auto operand = static_cast<int8_t>(mem->read_memt(pc++));
 	cycle_tick(1); // internal delay
 	pc += operand;	
 }
 
-void Cpu::instr_jr_cond(bool cond, int bit)
+void Cpu::instr_jr_cond(bool cond, int bit) noexcept
 {
-	int8_t operand = mem->read_memt(pc++);
+	const auto operand = static_cast<int8_t>(mem->read_memt(pc++));
 	if(is_set(f, bit) == cond)
 	{
 		cycle_tick(1); // internal delay
@@ -464,9 +455,9 @@ void Cpu::instr_jr_cond(bool cond, int bit)
 	}	
 }
 
-void Cpu::call_cond(bool cond, int bit)
+void Cpu::call_cond(bool cond, int bit) noexcept
 {
-	uint16_t v = mem->read_wordt(pc);
+	const uint16_t v = mem->read_wordt(pc);
 	pc += 2;
 	if(is_set(f,bit) == cond)
 	{
@@ -477,7 +468,7 @@ void Cpu::call_cond(bool cond, int bit)
 }
 
 
-void Cpu::ret_cond(bool cond, int bit)
+void Cpu::ret_cond(bool cond, int bit) noexcept
 {
 	cycle_tick(1); // internal
 	if(is_set(f,bit) == cond)

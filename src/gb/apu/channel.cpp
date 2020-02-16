@@ -6,22 +6,22 @@ namespace gameboy
 
 // SHARED CHANNEL FUNCTIONS
 
-bool Channel::enabled() const
+bool Channel::enabled() const noexcept
 {
     return is_set(mem->io[IO_NR52],chan_number);
 }
 
-void Channel::disable_chan()
+void Channel::disable_chan() noexcept
 {
     mem->io[IO_NR52] = deset_bit(mem->io[IO_NR52],chan_number);
 }
 
-void Channel::enable_chan()
+void Channel::enable_chan() noexcept
 {
     mem->io[IO_NR52] = set_bit(mem->io[IO_NR52],chan_number);    
 }
 
-void Channel::tick_lengthc()
+void Channel::tick_lengthc() noexcept
 {
     if(length_enabled)
     {
@@ -33,7 +33,7 @@ void Channel::tick_lengthc()
     }
 }
 
-void Channel::init_channel(Memory *m, int c)
+void Channel::init_channel(Memory *m, int c) noexcept
 {
     mem = m;
     chan_number = c;
@@ -48,13 +48,13 @@ void Channel::init_channel(Memory *m, int c)
     output = 0;
 }
 
-int Channel::get_output() const 
+int Channel::get_output() const noexcept 
 {
     return output;
 }
 
 // done upon NRX4 write
-void Channel::length_trigger()
+void Channel::length_trigger() noexcept
 {
     enable_chan();
 
@@ -71,7 +71,7 @@ void Channel::length_trigger()
 }
 
 
-void Channel::length_write(uint8_t v, int sequencer_step)
+void Channel::length_write(uint8_t v, int sequencer_step) noexcept
 {
     // if previously clear and now is enabled 
     // + next step doesent clock, clock the length counter
@@ -107,17 +107,17 @@ void Channel::length_write(uint8_t v, int sequencer_step)
 }
 
 // length counter write = max len - bits in reg
-void Channel::write_lengthc(uint8_t v)
+void Channel::write_lengthc(uint8_t v) noexcept
 {
     lengthc = max_len - (v & len_mask);
 }
 
-bool Channel::dac_on() const
+bool Channel::dac_on() const noexcept
 {
     return (mem->io[dac_reg] & dac_mask);    
 }
 
-void Channel::check_dac()
+void Channel::check_dac() noexcept
 {
     if(!dac_on())
     {

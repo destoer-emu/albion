@@ -8,7 +8,7 @@ namespace gameboy
 //CHANNEL 3 WAVE
 
 
-void Wave::init(Memory *m, int c)
+void Wave::init(Memory *m, int c) noexcept
 {
     init_channel(m,c);
 	freq_init();
@@ -17,13 +17,13 @@ void Wave::init(Memory *m, int c)
 }
 
 
-void Wave::wave_trigger()
+void Wave::wave_trigger() noexcept
 {
     // reset the duty
     duty_idx = 0;
 }
 
-void Wave::tick_period(int cycles)
+void Wave::tick_period(int cycles) noexcept
 {
 	// handle wave ticking (square 3)	
 	period -= cycles;
@@ -72,12 +72,12 @@ void Wave::tick_period(int cycles)
 }
 
 
-void Wave::vol_trigger()
+void Wave::vol_trigger() noexcept
 {
     volume = volume_load;
 }
 
-void Wave::write_vol(uint8_t v)
+void Wave::write_vol(uint8_t v) noexcept
 {
     volume_load = (v >> 5) & 0x3;
     volume = volume_load;    

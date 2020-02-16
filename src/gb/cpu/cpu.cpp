@@ -80,10 +80,10 @@ void Cpu::step()
 
 
 // just a stub for now
-void Cpu::cycle_tick(int cycles)
+void Cpu::cycle_tick(int cycles) noexcept
 {
 	// should operate at double speed
-	int factor = is_double ? 2 : 1;
+	const int factor = is_double ? 2 : 1;
 
 	// timers act at constant speed
 	update_timers(cycles*4); 
@@ -98,25 +98,25 @@ void Cpu::cycle_tick(int cycles)
 
 
 
-void Cpu::update_timers(int cycles)
+void Cpu::update_timers(int cycles) noexcept
 {
 	
-	int sound_bit = is_double? 13 : 12;
+	const int sound_bit = is_double? 13 : 12;
 
-	bool sound_bit_set = is_set(internal_timer,sound_bit);
+	const bool sound_bit_set = is_set(internal_timer,sound_bit);
 	
 
 	// if our bit is deset and it was before (falling edge)
 	// and the timer is enabled of course
 	if(is_set(mem->io[IO_TMC],2))
 	{
-		uint8_t freq = mem->io[IO_TMC] & 0x3;
+		const uint8_t freq = mem->io[IO_TMC] & 0x3;
 
 		static constexpr int freq_arr[4] = {9,3,5,7};
 
-		int bit = freq_arr[freq];
+		const int bit = freq_arr[freq];
 
-		bool bit_set = is_set(internal_timer,bit);
+		const bool bit_set = is_set(internal_timer,bit);
 
 		internal_timer += cycles;
 
@@ -210,7 +210,7 @@ void Cpu::handle_instr_effects()
 		{
 			// sanity check to check if this thing will actually fire
 
-			uint8_t stat = mem->io[IO_STAT];
+			const uint8_t stat = mem->io[IO_STAT];
 			if(enabled == 0 || ((((stat >> 3) & 0x7) == 0) && enabled == val_bit(enabled,1)))
 			{
 				write_log("[ERROR] halt infinite loop");
@@ -238,26 +238,24 @@ void Cpu::handle_instr_effects()
 // needs accuracy improvement with the precise interrupt 
 // timings to pass ie_push
 
-void Cpu::request_interrupt(int interrupt)
+void Cpu::request_interrupt(int interrupt) noexcept
 {
 	// set the interrupt flag to signal
 	// an interrupt request
-	uint8_t req = mem->io[IO_IF];
-	req = set_bit(req,interrupt);
-	mem->io[IO_IF] = req;
+	mem->io[IO_IF] = set_bit( mem->io[IO_IF],interrupt);
 }
 
 
 
-void Cpu::do_interrupts()
+void Cpu::do_interrupts() noexcept
 {
 	// if interrupts are enabled
 	if(interrupt_enable)
 	{	
 		// get the set requested interrupts
-		uint8_t req = mem->io[IO_IF];
+		const uint8_t req = mem->io[IO_IF];
 		// checked that the interrupt is enabled from the ie reg 
-		uint8_t enabled = mem->io[IO_IE];
+		const uint8_t enabled = mem->io[IO_IE];
 		
 		if(req > 0)
 		{
@@ -276,14 +274,12 @@ void Cpu::do_interrupts()
 	}
 }
 
-void Cpu::service_interrupt(int interrupt)
+void Cpu::service_interrupt(int interrupt) noexcept
 {
 	interrupt_enable = false; // disable interrupts now one is serviced
 		
 	// reset the bit of in the if to indicate it has been serviced
-	uint8_t req = mem->io[IO_IF];
-	req = deset_bit(req,interrupt);
-	mem->io[IO_IF] = req;
+	mem->io[IO_IF] = deset_bit(mem->io[IO_IF],interrupt);
 		
 	// push the current pc on the stack to save it
 	// it will be pulled off by reti or ret later
@@ -302,7 +298,6 @@ void Cpu::service_interrupt(int interrupt)
 		case 2: pc = 0x50; break; // timer 
 		case 3: pc = 0x58; break; //serial (not fully implemented)
 		case 4: pc = 0x60; break; // joypad
-		default: printf("Invalid interrupt %d at %x\n",interrupt,pc); exit(1);
 	}	
 }
 
@@ -311,88 +306,87 @@ void Cpu::service_interrupt(int interrupt)
 // util for opcodes
 
 // register getters and setters
-void Cpu::write_bc(uint16_t data) 
+void Cpu::write_bc(uint16_t data) noexcept
 {
     b = (data & 0xff00) >> 8;
     c = data & 0x00ff;
 }
 
 
-uint16_t Cpu::read_bc(void) const 
+uint16_t Cpu::read_bc(void) const noexcept
 {
     return (b << 8) | c;
 }
 
 
-uint16_t Cpu::read_af(void) const
+uint16_t Cpu::read_af(void) const noexcept
 {
     return (a << 8) | f;
 }
 
 
 
-void Cpu::write_af(uint16_t v) 
+void Cpu::write_af(uint16_t v) noexcept 
 {
     a = (v & 0xff00) >> 8;
     f = v & 0x00f0; // only top four bits of flag is active
 }
 
-uint16_t Cpu::read_de(void) const 
+uint16_t Cpu::read_de(void) const noexcept 
 {
     return (d << 8) | e;
 }
 
 
-void Cpu::write_de(uint16_t v) 
+void Cpu::write_de(uint16_t v) noexcept
 {
     d = (v & 0xff00) >> 8;
     e = v & 0x00ff;
 }
 
 
-uint16_t Cpu::read_hl(void) const 
+uint16_t Cpu::read_hl(void) const noexcept
 {
     return (h << 8) | l;
 }
 
 
-void Cpu::write_hl(uint16_t v) 
+void Cpu::write_hl(uint16_t v) noexcept
 {
     h = (v & 0xff00) >> 8;
     l = v & 0x00ff;
 }
 
 
-void Cpu::write_stackt(uint8_t v) 
+void Cpu::write_stackt(uint8_t v) noexcept
 {
 	mem->write_memt(--sp,v); // write to stack
 }
 
-void Cpu::write_stackwt(uint16_t v) 
+void Cpu::write_stackwt(uint16_t v) noexcept
 {
 	write_stackt((v & 0xff00) >> 8);
 	write_stackt((v & 0x00ff));
 }
 
 // unticked only used by interrupts
-void Cpu::write_stack(uint8_t v) 
+void Cpu::write_stack(uint8_t v) noexcept
 {
 	mem->write_mem(--sp,v); // write to stack
 }
 
-void Cpu::write_stackw(uint16_t v) 
+void Cpu::write_stackw(uint16_t v) noexcept
 {
 	write_stack((v & 0xff00) >> 8);
 	write_stack((v & 0x00ff));
 }
 
-uint8_t Cpu::read_stackt() 
+uint8_t Cpu::read_stackt() noexcept
 {	
-	uint8_t data = mem->read_memt(sp++);
-	return data;
+	return mem->read_memt(sp++);
 }
 
-uint16_t Cpu::read_stackwt() 
+uint16_t Cpu::read_stackwt() noexcept
 {
 	return read_stackt() | (read_stackt() << 8);
 }

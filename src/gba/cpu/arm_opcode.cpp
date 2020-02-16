@@ -35,15 +35,6 @@ void Cpu::execute_arm_opcode(uint32_t instr)
 
 void Cpu::exec_arm()
 {
-/*
-#ifdef DEBUG
-    if(debug->breakpoint_x.is_hit<uint32_t>(regs[PC],mem->read_mem<uint32_t>(regs[PC])) || debug->step_instr)
-    {
-        std::cout << fmt::format("{:08x}: {}\n",regs[PC],disass->disass_arm(mem->read_mem<uint32_t>(regs[PC]),regs[PC]+ARM_WORD_SIZE));
-        debug->enter_debugger();
-    }
-#endif
-*/
     uint32_t instr = fetch_arm_opcode();
 
     // if the condition is not met just

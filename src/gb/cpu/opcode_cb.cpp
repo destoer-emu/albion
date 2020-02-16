@@ -286,7 +286,7 @@ void Cpu::exec_cb(uint8_t cbop)
             instr_bit(b,0);
             break;
         
-        case 0x41: // bit 0, c <--- just before the glitched screen
+        case 0x41: // bit 0, c 
             instr_bit(c,0);
             break;
         
@@ -316,7 +316,7 @@ void Cpu::exec_cb(uint8_t cbop)
             instr_bit(a,0);
             break;
         
-        case 0x48: // bit l, b  <--- just before the glitch print
+        case 0x48: // bit l, b 
             instr_bit(b,1);
             break;
         

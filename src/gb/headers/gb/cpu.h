@@ -11,11 +11,11 @@ class Cpu
 public:
     void init(Memory *m, Ppu *p,Apu *ap, Disass *d, Debug *debugger);
     void step();
-    void cycle_tick(int cycles); 
+    void cycle_tick(int cycles) noexcept; 
 
 
-    void request_interrupt(int interrupt);
-    bool get_cgb() const {return is_cgb;}
+    void request_interrupt(int interrupt) noexcept;
+    bool get_cgb() const noexcept {return is_cgb;}
 
 
     uint16_t internal_timer = 0;
@@ -26,23 +26,23 @@ public:
 
     /* register reads for the debugger */
 
-    uint16_t get_pc() const { return pc; }
-    uint16_t get_sp() const { return sp; }
-    uint16_t get_hl() const { return read_hl(); }
-    uint16_t get_af() const { return read_af(); }
-    uint16_t get_bc() const { return read_bc(); }
-    uint16_t get_de() const { return read_de(); }
+    uint16_t get_pc() const noexcept { return pc; }
+    uint16_t get_sp() const noexcept { return sp; }
+    uint16_t get_hl() const noexcept { return read_hl(); }
+    uint16_t get_af() const noexcept { return read_af(); }
+    uint16_t get_bc() const noexcept { return read_bc(); }
+    uint16_t get_de() const noexcept { return read_de(); }
 
     // save states
     void save_state(std::ofstream &fp);
     void load_state(std::ifstream &fp);
 
 private:
-    Memory *mem;
-    Ppu *ppu;
-    Apu *apu;
-    Disass *disass;
-    Debug *debug;
+    Memory *mem = nullptr;
+    Ppu *ppu = nullptr;
+    Apu *apu = nullptr;
+    Disass *disass = nullptr;
+    Debug *debug = nullptr;
 
 
     // registers
@@ -63,7 +63,7 @@ private:
 
 
     // timer
-    void update_timers(int cycles);
+    void update_timers(int cycles) noexcept;
     
 
 
@@ -72,15 +72,15 @@ private:
     bool is_cgb = false;
     bool is_double = false;
 
-    void write_af(uint16_t data);
-    void write_bc(uint16_t data);
-    void write_de(uint16_t data);
-    void write_hl(uint16_t data);
+    void write_af(uint16_t data) noexcept;
+    void write_bc(uint16_t data) noexcept;
+    void write_de(uint16_t data) noexcept;
+    void write_hl(uint16_t data) noexcept;
 
-    uint16_t read_af() const;
-    uint16_t read_de() const;
-    uint16_t read_bc() const;
-    uint16_t read_hl() const;
+    uint16_t read_af() const noexcept;
+    uint16_t read_de() const noexcept;
+    uint16_t read_bc() const noexcept;
+    uint16_t read_hl() const noexcept;
 
 
 
@@ -90,45 +90,45 @@ private:
 
 
     // interrupts
-    void service_interrupt(int interrupt);
-    void do_interrupts();
+    void service_interrupt(int interrupt) noexcept;
+    void do_interrupts() noexcept;
 
     // instr helpers
-    void set_zero(uint8_t reg);
-    void instr_dec(uint8_t reg);
-    void instr_inc(uint8_t reg);
-    void instr_bit(uint8_t reg, uint8_t bit);
-    void instr_and(uint8_t num);
-    uint8_t instr_rl(uint8_t reg);
-    void instr_sub(uint8_t num);
-    void instr_cp(uint8_t num);
-    void instr_sbc(uint8_t num);
-    void instr_add(uint8_t num);
-    uint16_t instr_addi(uint16_t reg, int8_t num);
-    void instr_adc(uint8_t num);
-    uint16_t instr_addw(uint16_t reg, uint16_t num);
-    void instr_or(uint8_t val);
-    uint8_t instr_swap(uint8_t num);
-    void instr_xor(uint8_t num);
-    uint8_t instr_sla(uint8_t reg);
-    uint8_t instr_sra(uint8_t reg);
-    uint8_t instr_srl(uint8_t reg);
-    uint8_t instr_rr(uint8_t reg);
-    uint8_t instr_rrc(uint8_t reg);
-    uint8_t instr_rlc(uint8_t reg);
-    void instr_jr();
-    void instr_jr_cond(bool cond, int bit);
-    void call_cond(bool cond, int bit);
-    void ret_cond(bool cond, int bit);
+    void set_zero(uint8_t reg) noexcept;
+    void instr_dec(uint8_t reg) noexcept;
+    void instr_inc(uint8_t reg) noexcept;
+    void instr_bit(uint8_t reg, uint8_t bit) noexcept;
+    void instr_and(uint8_t num) noexcept;
+    uint8_t instr_rl(uint8_t reg) noexcept;
+    void instr_sub(uint8_t num) noexcept;
+    void instr_cp(uint8_t num) noexcept;
+    void instr_sbc(uint8_t num) noexcept;
+    void instr_add(uint8_t num) noexcept;
+    uint16_t instr_addi(uint16_t reg, int8_t num) noexcept;
+    void instr_adc(uint8_t num) noexcept;
+    uint16_t instr_addw(uint16_t reg, uint16_t num) noexcept;
+    void instr_or(uint8_t val) noexcept;
+    uint8_t instr_swap(uint8_t num) noexcept;
+    void instr_xor(uint8_t num) noexcept;
+    uint8_t instr_sla(uint8_t reg) noexcept;
+    uint8_t instr_sra(uint8_t reg) noexcept;
+    uint8_t instr_srl(uint8_t reg) noexcept;
+    uint8_t instr_rr(uint8_t reg) noexcept;
+    uint8_t instr_rrc(uint8_t reg) noexcept;
+    uint8_t instr_rlc(uint8_t reg) noexcept;
+    void instr_jr() noexcept;
+    void instr_jr_cond(bool cond, int bit) noexcept;
+    void call_cond(bool cond, int bit) noexcept;
+    void ret_cond(bool cond, int bit) noexcept;
 
 
     // stack helpers
-    uint8_t read_stackt();
-    void write_stackt(uint8_t v);
-    uint16_t read_stackwt();
-    void write_stackwt(uint16_t v);
-    void write_stackw(uint16_t v);
-    void write_stack(uint8_t v);
+    uint8_t read_stackt() noexcept;
+    void write_stackt(uint8_t v) noexcept;
+    uint16_t read_stackwt() noexcept;
+    void write_stackwt(uint16_t v) noexcept;
+    void write_stackw(uint16_t v) noexcept;
+    void write_stack(uint8_t v) noexcept;
 
     void check_rst_loop(uint16_t addr, uint8_t op);
 

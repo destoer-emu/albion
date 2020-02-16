@@ -5,7 +5,7 @@
 namespace gameboy
 {
 
-void Ppu::reset_fetcher()
+void Ppu::reset_fetcher() noexcept
 {
 	// fetcher
 	hblank = false;
@@ -27,7 +27,7 @@ void Ppu::reset_fetcher()
 
 
 // other stuff should proabably go in here i forgot to port over
-void Ppu::init(Cpu *c,Memory *m)
+void Ppu::init(Cpu *c,Memory *m) noexcept
 {
     cpu = c;
     mem = m;
@@ -54,17 +54,17 @@ void Ppu::init(Cpu *c,Memory *m)
 
 
 // cgb
-void Ppu::set_bg_pal_idx(uint8_t v)
+void Ppu::set_bg_pal_idx(uint8_t v) noexcept
 {
 	bg_pal_idx = v & 0x3f;
 }
 
-void Ppu::set_sp_pal_idx(uint8_t v)
+void Ppu::set_sp_pal_idx(uint8_t v) noexcept
 {
 	sp_pal_idx = v & 0x3f;
 }
 
-void Ppu::write_sppd(uint8_t v)
+void Ppu::write_sppd(uint8_t v) noexcept
 {
 	// cant be accessed during pixel transfer
 	if(mode != ppu_mode::pixel_transfer)
@@ -80,7 +80,7 @@ void Ppu::write_sppd(uint8_t v)
 	}	
 }
 
-void Ppu::write_bgpd(uint8_t v)
+void Ppu::write_bgpd(uint8_t v) noexcept
 {
 	// cant be accessed during pixel transfer
 	if(mode != ppu_mode::pixel_transfer)
@@ -98,17 +98,17 @@ void Ppu::write_bgpd(uint8_t v)
 
 
 
-uint8_t Ppu::get_sppd() const
+uint8_t Ppu::get_sppd() const noexcept
 {
 	return sp_pal[sp_pal_idx];
 }
 
-uint8_t Ppu::get_bgpd() const
+uint8_t Ppu::get_bgpd() const noexcept
 {
 	return bg_pal[bg_pal_idx];	
 }
 
-void Ppu::update_graphics(int cycles)
+void Ppu::update_graphics(int cycles) noexcept
 {
 	//-----------------------
 	// update the stat reg state
@@ -129,7 +129,7 @@ void Ppu::update_graphics(int cycles)
 	}
 	
 	// save our current signal state
-	bool signal_old = signal;
+	const bool signal_old = signal;
 
 	scanline_counter += cycles; // advance the cycle counter
 
@@ -226,11 +226,6 @@ void Ppu::update_graphics(int cycles)
 				}
 			}	
 			break;
-		}
-		
-		default:
-		{
-			throw std::runtime_error("illegal ppu mode!");
 		}	
 	}
 
@@ -241,7 +236,7 @@ void Ppu::update_graphics(int cycles)
 		case ppu_mode::hblank: signal = is_set(status,3); break;
 		case ppu_mode::vblank: signal = is_set(status,4); break;
 		case ppu_mode::oam_search: signal = is_set(status,5); break;
-		default: signal = false; break;
+		case ppu_mode::pixel_transfer: signal = false; break;
 	}
 	
 
@@ -288,7 +283,7 @@ void Ppu::update_graphics(int cycles)
 
 // returns wether it can keep pushing or not
 
-bool Ppu::push_pixel() 
+bool Ppu::push_pixel() noexcept
 {
 
 	// cant push anymore
@@ -309,8 +304,8 @@ bool Ppu::push_pixel()
 	}
 	
 	
-	int col_num = ppu_fifo[pixel_idx].colour_num; // save the pixel we will shift
-	int scanline = current_line;
+	const int col_num = ppu_fifo[pixel_idx].colour_num; // save the pixel we will shift
+	const int scanline = current_line;
 	
 	if(!cpu->get_cgb())
 	{
@@ -334,9 +329,9 @@ bool Ppu::push_pixel()
 	else // gameboy color
 	{
 		// for now we will assume tile just for arugments sake 
-		int cgb_pal = ppu_fifo[pixel_idx].cgb_pal;
+		const int cgb_pal = ppu_fifo[pixel_idx].cgb_pal;
 		// each  rgb value takes two bytes in the pallete for cgb
-		int offset = (cgb_pal*8) + (col_num * 2); 
+		const int offset = (cgb_pal*8) + (col_num * 2); 
 
 		int col;
 		if(ppu_fifo[pixel_idx].source == pixel_source::tile ||
@@ -398,7 +393,7 @@ bool Ppu::push_pixel()
 // ^ this needs researching and implementing
 
 // need to handle bugs with the window
-void Ppu::tick_fetcher(int cycles) 
+void Ppu::tick_fetcher(int cycles) noexcept
 {
 
 	// advance the fetcher if we dont have a tile dump waiting
@@ -443,7 +438,7 @@ void Ppu::tick_fetcher(int cycles)
 }	
 	
 
-void Ppu::draw_scanline(int cycles) 
+void Ppu::draw_scanline(int cycles) noexcept 
 {
 	// get lcd control reg
 	const int control = mem->io[IO_LCDC];
@@ -475,10 +470,10 @@ void Ppu::draw_scanline(int cycles)
 
 // fetch a single tile into the fifo
 
-void Ppu::tile_fetch()
+void Ppu::tile_fetch() noexcept
 {
 
-    bool is_cgb = cpu->get_cgb();
+    const bool is_cgb = cpu->get_cgb();
 
 	// where to draw the visual area and window
 	const uint8_t scroll_y = mem->io[IO_SCY];
@@ -534,15 +529,6 @@ void Ppu::tile_fetch()
 	const int tile_row = ((y_pos/8)*32);
 
 	
-	int cgb_pal = -1;
-	bool priority = false;
-	bool x_flip = false;
-	bool y_flip = false;
-	uint8_t data1 = -1; 
-	uint8_t data2 = - 1; 
-	int vram_bank = 0;
-	
-
 	int x_pos = (tile_cord/8);
 		
 	if(!using_window) // <-- dont think this is correct
@@ -582,6 +568,13 @@ void Ppu::tile_fetch()
 		tile_location += ((tile_num+128)*16);
 	}
 
+	int cgb_pal = -1;
+	bool priority = false;
+	bool x_flip = false;
+	bool y_flip = false;
+	int vram_bank = 0;
+
+
 	if(is_cgb) // we are drawing in cgb mode 
 	{
 		// bg attributes allways in bank 1
@@ -606,8 +599,8 @@ void Ppu::tile_fetch()
 	const int line = y_flip? 14 - (y_pos*2) : (y_pos*2);
 		
 			
-	data1 = mem->vram[vram_bank][(tile_location+line)];
-	data2 = mem->vram[vram_bank][(tile_location+line+1)];
+	uint8_t data1 = mem->vram[vram_bank][(tile_location+line)];
+	uint8_t data2 = mem->vram[vram_bank][(tile_location+line+1)];
 	
 	// pixel 0 in the tile is bit 7 of data1 and data2
 	// pixel 1 is bit 6 etc
@@ -645,9 +638,9 @@ void Ppu::tile_fetch()
 	}
 }
 
-dmg_colors Ppu::get_colour(uint8_t colour_num, uint16_t address)
+dmg_colors Ppu::get_colour(uint8_t colour_num, uint16_t address) noexcept
 {
-	uint8_t palette = mem->io[address & 0xff];
+	const uint8_t palette = mem->io[address & 0xff];
 	int hi = 0;
 	int lo = 0;
 	
@@ -674,7 +667,7 @@ dmg_colors Ppu::get_colour(uint8_t colour_num, uint16_t address)
 
 
 
-bool cmpfunc(const Obj &a, const Obj &b)
+bool cmpfunc(const Obj &a, const Obj &b) noexcept
 {
 	// sort by the oam index
 	if(a.x_pos == b.x_pos)
@@ -693,20 +686,20 @@ bool cmpfunc(const Obj &a, const Obj &b)
 
 // read the up to 10 sprites for the scanline
 // called when when enter pixel transfer
-void Ppu::read_sprites()
+void Ppu::read_sprites() noexcept
 {
-	uint8_t lcd_control = mem->io[IO_LCDC]; // get lcd control reg
+	const uint8_t lcd_control = mem->io[IO_LCDC]; // get lcd control reg
 
-	int y_size = is_set(lcd_control,2) ? 16 : 8;
+	const int y_size = is_set(lcd_control,2) ? 16 : 8;
 	
-	uint8_t scanline = current_line;
+	const uint8_t scanline = current_line;
 
 
 	int x = 0;
 	for(int sprite = 0; sprite < 40; sprite++) // should fetch all these as soon as we leave oam search
 	{
-        uint16_t addr = sprite*4;
-		uint8_t y_pos = mem->oam[addr & 0xff];
+        const uint16_t addr = sprite*4;
+		const uint8_t y_pos = mem->oam[addr & 0xff];
 		if( scanline -(y_size - 16) < y_pos  && scanline + 16 >= y_pos )
 		{
 			// intercepts with the line
@@ -731,19 +724,19 @@ void Ppu::read_sprites()
 
 // returns if they have been rendered
 // because we will delay if they have been
-bool Ppu::sprite_fetch() 
+bool Ppu::sprite_fetch() noexcept 
 {
 
-    bool is_cgb = cpu->get_cgb();
+    const bool is_cgb = cpu->get_cgb();
 	
-	uint8_t lcd_control = mem->io[IO_LCDC]; // get lcd control reg
+	const uint8_t lcd_control = mem->io[IO_LCDC]; // get lcd control reg
 
 	// in cgb if lcdc bit 0 is deset sprites draw over anything
-	bool draw_over_everything = (!is_set(lcd_control,0) && is_cgb);
+	const bool draw_over_everything = (!is_set(lcd_control,0) && is_cgb);
 	
-	int y_size = is_set(lcd_control,2) ? 16 : 8;
+	const int y_size = is_set(lcd_control,2) ? 16 : 8;
 
-	int scanline = current_line;
+	const int scanline = current_line;
 	
 	bool did_draw = false;
 	
@@ -790,13 +783,13 @@ bool Ppu::sprite_fetch()
 		
 		
 		// sprite takes 4 bytes in the sprite attributes table
-		uint8_t sprite_index = objects_priority[i].index;
+		const uint8_t sprite_index = objects_priority[i].index;
 		uint8_t y_pos = mem->oam[sprite_index];
-		uint8_t sprite_location = mem->oam[(sprite_index+2)];
-		uint8_t attributes = mem->oam[(sprite_index+3)];
+		const uint8_t sprite_location = mem->oam[(sprite_index+2)];
+		const uint8_t attributes = mem->oam[(sprite_index+3)];
 		
-		bool y_flip = is_set(attributes,6);
-		bool x_flip = is_set(attributes,5);
+		const bool y_flip = is_set(attributes,6);
+		const bool x_flip = is_set(attributes,5);
 		
 		
 		// does this sprite  intercept with the scanline
@@ -820,8 +813,8 @@ bool Ppu::sprite_fetch()
 			}
 				
 
-			uint8_t data1 = mem->vram[vram_bank][data_address];
-			uint8_t data2 = mem->vram[vram_bank][(data_address+1)];
+			const uint8_t data1 = mem->vram[vram_bank][data_address];
+			const uint8_t data2 = mem->vram[vram_bank][(data_address+1)];
 			
 			// eaiser to read in from right to left as pixel 0
 			// is bit 7 in the color data pixel 1 is bit 6 etc 

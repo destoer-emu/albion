@@ -16,23 +16,23 @@ class Channel
 {
 public:
 	// length counter
-    void tick_lengthc();
-	void length_trigger();
-	void length_write(uint8_t v, int sequencer_step);
+    void tick_lengthc() noexcept;
+	void length_trigger() noexcept;
+	void length_write(uint8_t v, int sequencer_step) noexcept;
 
-	void enable_chan();
-	void disable_chan();
-	void check_dac();
+	void enable_chan() noexcept;
+	void disable_chan() noexcept;
+	void check_dac() noexcept;
 
-	void write_lengthc(uint8_t v);
-	int get_output() const;
+	void write_lengthc(uint8_t v) noexcept;
+	int get_output() const noexcept;
 
 	void chan_save_state(std::ofstream &fp);
 	void chan_load_state(std::ifstream &fp);
 protected:
-	void init_channel(Memory *m, int chan_number);
-	bool dac_on() const;
-	bool enabled() const;
+	void init_channel(Memory *m, int chan_number) noexcept;
+	bool dac_on() const noexcept;
+	bool enabled() const noexcept;
 
     int lengthc = 0;
     bool length_enabled = false;
@@ -63,11 +63,11 @@ class FreqReg
 {
 
 public:
-	void freq_init();
-	void freq_write_lower(uint8_t v);
-	void freq_write_higher(uint8_t v);
-	void freq_reload_period();
-	int get_duty_idx() const;
+	void freq_init() noexcept;
+	void freq_write_lower(uint8_t v) noexcept;
+	void freq_write_higher(uint8_t v) noexcept;
+	void freq_reload_period() noexcept;
+	int get_duty_idx() const noexcept;
 	void freq_save_state(std::ofstream &fp);
 	void freq_load_state(std::ifstream &fp);
 protected:
@@ -90,10 +90,10 @@ protected:
 class Envelope
 {
 public:
-	void env_init();
-	void env_trigger();
-	void clock_envelope();
-	void env_write(uint8_t v);
+	void env_init() noexcept;
+	void env_trigger() noexcept;
+	void clock_envelope() noexcept;
+	void env_write(uint8_t v) noexcept;
 	void env_save_state(std::ofstream &fp);
 	void env_load_state(std::ifstream &fp);
 protected:
@@ -110,10 +110,10 @@ protected:
 class Square : public Channel, public FreqReg, public Envelope
 {
 public:
-	void init(Memory *mem, int chan_number);
-	void tick_period(int cycles);
-	void write_cur_duty(uint8_t v);
-	void duty_trigger();
+	void init(Memory *mem, int chan_number) noexcept;
+	void tick_period(int cycles) noexcept;
+	void write_cur_duty(uint8_t v) noexcept;
+	void duty_trigger() noexcept;
 	void save_state(std::ofstream &fp);
 	void load_state(std::ifstream &fp);
 protected:
@@ -131,12 +131,12 @@ protected:
 class Sweep : public Square
 {
 public:
-	void sweep_init();
-	void sweep_trigger();
-	void sweep_write(uint8_t v);
-	uint16_t calc_freqsweep();
-	void do_freqsweep();
-	void clock_sweep();
+	void sweep_init() noexcept;
+	void sweep_trigger() noexcept;
+	void sweep_write(uint8_t v) noexcept;
+	uint16_t calc_freqsweep() noexcept;
+	void do_freqsweep() noexcept;
+	void clock_sweep() noexcept;
 	void sweep_save_state(std::ofstream &fp);
 	void sweep_load_state(std::ifstream &fp);
 private:
@@ -151,11 +151,11 @@ private:
 class Wave : public Channel, public FreqReg
 {
 public:
-	void init(Memory *m, int c);
-	void wave_trigger();
-	void vol_trigger();
-	void write_vol(uint8_t v);
-	void tick_period(int cycles);
+	void init(Memory *m, int c) noexcept;
+	void wave_trigger() noexcept;
+	void vol_trigger() noexcept;
+	void write_vol(uint8_t v) noexcept;
+	void tick_period(int cycles) noexcept;
 	void save_state(std::ofstream &fp);
 	void load_state(std::ifstream &fp);
 private:
@@ -167,10 +167,10 @@ private:
 class Noise : public Channel, public Envelope
 {
 public:
-	void init(Memory *m, int c);
-	void tick_period(int cycles);
-	void noise_write(uint8_t v);
-	void noise_trigger();
+	void init(Memory *m, int c) noexcept;
+	void tick_period(int cycles) noexcept;
+	void noise_write(uint8_t v) noexcept;
+	void noise_trigger() noexcept;
 	void save_state(std::ofstream &fp);
 	void load_state(std::ifstream &fp);	
 private:
@@ -187,29 +187,29 @@ private:
 class Apu
 {
 public:
-	void stop_audio();
-	void start_audio();
+	void stop_audio() noexcept;
+	void start_audio() noexcept;
 
 
-	void init_audio();
-	void push_samples();
+	void init_audio() noexcept;
+	void push_samples() noexcept;
 
-	void init(Memory *m);
+	void init(Memory *m) noexcept;
 
-	void tick(int cycles);
+	void tick(int cycles) noexcept;
 
-	void disable_sound();
-	void enable_sound();
+	void disable_sound() noexcept;
+	void enable_sound() noexcept;
 
-	void reset_sequencer();
-	int get_sequencer_step() const;
-	void advance_sequencer();
+	void reset_sequencer() noexcept;
+	int get_sequencer_step() const noexcept;
+	void advance_sequencer() noexcept;
 
-	bool chan_enabled(int chan);
+	bool chan_enabled(int chan) const noexcept;
 
-	bool enabled() const;
+	bool enabled() const noexcept;
 
-	void set_double(bool d);
+	void set_double(bool d) noexcept;
 
 
 	void save_state(std::ofstream &fp);
@@ -221,10 +221,10 @@ public:
 	Noise c4;
 private:
 
-	void tick_length_counters();
-	void clock_envelopes();
+	void tick_length_counters() noexcept;
+	void clock_envelopes() noexcept;
 	int sequencer_step = 0;
-	Memory *mem;
+	Memory *mem = nullptr;
 
 	bool sound_enabled = true;
 

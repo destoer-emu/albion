@@ -6,7 +6,7 @@ namespace gameboy
 
 // CHANNEL 4 NOISE
 
-void Noise::init(Memory *m, int c)
+void Noise::init(Memory *m, int c) noexcept
 {
     init_channel(m,c);
     env_init();
@@ -17,7 +17,7 @@ void Noise::init(Memory *m, int c)
 	period = 0;
 }
 
-void Noise::tick_period(int cycles)
+void Noise::tick_period(int cycles) noexcept
 {
 	period -= cycles; // polynomial counter
 
@@ -56,14 +56,14 @@ void Noise::tick_period(int cycles)
 }
 
 
-void Noise::noise_write(uint8_t v)
+void Noise::noise_write(uint8_t v) noexcept
 {
     divisor_idx = v & 0x7;
     counter_width = is_set(v,3);
     clock_shift = (v >> 4) & 0xf;    
 }
 
-void Noise::noise_trigger()
+void Noise::noise_trigger() noexcept
 {
     // noise channel stuff
     period = (divisors[divisor_idx] << clock_shift);

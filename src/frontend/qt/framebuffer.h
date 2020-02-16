@@ -26,8 +26,8 @@ protected:
 private:
     void swap_buffer(std::vector<uint32_t> &other);
 
-    int X;
-    int Y;
+    int X = 0;
+    int Y = 0;
     std::vector<uint32_t> screen;
     std::mutex screen_mutex;
 };

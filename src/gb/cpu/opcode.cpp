@@ -190,7 +190,7 @@ void Cpu::exec_instr()
 			cycle_tick(1); // internal
 			break;
 		
-		case 0x1a: // ld a,(de) <--- fix memory reading / writing
+		case 0x1a: // ld a,(de) 
 			a = mem->read_memt(read_de());
 			break;
 		
@@ -1048,7 +1048,7 @@ void Cpu::exec_instr()
 			call_cond(true,Z);
 			break;
         }
-		case 0xCD: // call nn <-- verify
+		case 0xCD: // call nn 
         {
 			uint16_t v = mem->read_wordt(pc);
 			pc += 2;
@@ -1180,8 +1180,8 @@ void Cpu::exec_instr()
 			pc = 0x20;
 			break;
 		
-		case 0xe8: // add sp, i8 <--- verify
-			sp = instr_addi(sp, ((int8_t)mem->read_memt(pc++)) );
+		case 0xe8: // add sp, i8 
+			sp = instr_addi(sp, static_cast<int8_t>(mem->read_memt(pc++)));
 			cycle_tick(2); // internal delay (unsure)
 			break;
 		
@@ -1239,8 +1239,8 @@ void Cpu::exec_instr()
 			pc = 0x30;
 			break;
 		
-		case 0xf8: // ld hl, sp + i8 <--- verify 
-			write_hl(instr_addi(sp,(int8_t)mem->read_memt(pc++)));
+		case 0xf8: // ld hl, sp + i8 
+			write_hl(instr_addi(sp,static_cast<int8_t>(mem->read_memt(pc++))));
 			cycle_tick(1); // internal
 			break;
 		

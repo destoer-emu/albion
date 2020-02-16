@@ -6,7 +6,7 @@ namespace gameboy
 
 // CHANNEL 1 SWEEP
 
-void Sweep::sweep_init()
+void Sweep::sweep_init() noexcept
 {
 	sweep_enabled = false;
 	sweep_shadow = 0;
@@ -17,7 +17,7 @@ void Sweep::sweep_init()
 }
 
 
-void Sweep::sweep_write(uint8_t v)
+void Sweep::sweep_write(uint8_t v) noexcept
 {
     // if we have used a sweep calc in negation mode 
     // since the last trigger turn the channel off
@@ -33,7 +33,7 @@ void Sweep::sweep_write(uint8_t v)
     sweep_reg = v;
 }
 
-void Sweep::sweep_trigger()
+void Sweep::sweep_trigger() noexcept
 {
     /*
     Square 1's frequency is copied to the shadow register.
@@ -66,7 +66,7 @@ void Sweep::sweep_trigger()
     }
 }
 
-uint16_t Sweep::calc_freqsweep()
+uint16_t Sweep::calc_freqsweep() noexcept
 {
 	uint16_t shadow_shifted = sweep_shadow >> (sweep_reg & 0x7);
 	uint16_t result;
@@ -95,7 +95,7 @@ uint16_t Sweep::calc_freqsweep()
 
 // calc the freq sweep and do the overflow checking
 // disable chan if it overflows
-void Sweep::do_freqsweep()
+void Sweep::do_freqsweep() noexcept
 {
 	// dont calc the freqsweep if sweep peroid is zero or its disabled
 	if(!sweep_enabled || !sweep_period ) { return; }
@@ -126,7 +126,7 @@ void Sweep::do_freqsweep()
 
 
 // clock sweep generator for square 1
-void Sweep::clock_sweep()
+void Sweep::clock_sweep() noexcept
 {
 	// tick the sweep timer calc when zero
 	if(sweep_timer && !--sweep_timer)
