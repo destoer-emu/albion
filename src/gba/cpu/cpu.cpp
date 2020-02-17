@@ -346,7 +346,7 @@ void Cpu::tick_timers(int cycles)
 {
 
     static constexpr uint32_t timer_lim[4] = {1,64,256,1024};
-    static constexpr Interrupt interrupt_table[4] = {Interrupt::TIMER0,Interrupt::TIMER1,Interrupt::TIMER2,Interrupt::TIMER3};
+    static constexpr interrupt interrupt_table[4] = {interrupt::timer0,interrupt::timer1,interrupt::timer2,interrupt::timer3};
  
     // ignore count up timing for now
     for(int i = 0; i < 4; i++)
@@ -361,8 +361,7 @@ void Cpu::tick_timers(int cycles)
 
         if(is_set(cnt,2)) // count up timer
         {
-            puts("count up timer!");
-            exit(1);
+            throw std::runtime_error("[unimplemented] count up timer!");
         }
 
         uint32_t lim = timer_lim[cnt & 0x3];
@@ -605,8 +604,8 @@ void Cpu::load_registers(cpu_mode mode)
 
         default:
         {
-            printf("[load-regs %08x]unhandled mode switch: %x\n",regs[PC],idx);
-            exit(1);
+            auto err = fmt::format("[load-regs {:08x}]unhandled mode switch: {:x}\n",regs[PC],idx);
+            throw std::runtime_error(err);
         }
     }    
 }
@@ -674,8 +673,8 @@ void Cpu::store_registers(cpu_mode mode)
 
         default:
         {
-            printf("[store-regs %08x]unhandled mode switch: %x\n",regs[PC],idx);
-            exit(1);
+            auto err = fmt::format("[store-regs {:08x}]unhandled mode switch: {:x}\n",regs[PC],idx);
+            throw std::runtime_error(err);
         }
     }
 }
@@ -696,9 +695,8 @@ cpu_mode Cpu::cpu_mode_from_bits(uint32_t v)
 
     // clearly no program should attempt this 
     // but is their a defined behavior for it?
-    printf("unknown mode from bits: %08x:%08x\n",v,regs[PC]);
-    print_regs();
-    exit(1);
+    auto err = fmt::format("unknown mode from bits: {:08x}:{:08x}\n",v,regs[PC]);
+    throw std::runtime_error(err);
 }
 
 
@@ -708,57 +706,54 @@ bool Cpu::cond_met(int opcode)
 
     // switch on the cond bits
     // (lower 4)
-    switch(opcode & 0xf)
+    switch(static_cast<arm_cond>(opcode & 0xf))
     {
         // z set
-        case EQ: return is_set(cpsr,Z_BIT);
+        case arm_cond::eq: return is_set(cpsr,Z_BIT);
         
         // z clear
-        case NE: return !is_set(cpsr,Z_BIT);
+        case arm_cond::ne: return !is_set(cpsr,Z_BIT);
 
         // c set
-        case CS: return is_set(cpsr,C_BIT);
+        case arm_cond::cs: return is_set(cpsr,C_BIT);
 
         // c clear
-
-        case CC: return !is_set(cpsr,C_BIT);
+        case arm_cond::cc: return !is_set(cpsr,C_BIT);
 
         // n set
-        case MI: return is_set(cpsr,N_BIT);
+        case arm_cond::mi: return is_set(cpsr,N_BIT);
 
         // n clear
-        case PL: return !is_set(cpsr,N_BIT);
+        case arm_cond::pl: return !is_set(cpsr,N_BIT);
 
         // v set
-        case VS: return is_set(cpsr,V_BIT); 
+        case arm_cond::vs: return is_set(cpsr,V_BIT); 
 
         // v clear
-        case VC: return !is_set(cpsr,V_BIT);
+        case arm_cond::vc: return !is_set(cpsr,V_BIT);
 
         // c set and z clear
-        case HI: return is_set(cpsr, C_BIT) && !is_set(cpsr,Z_BIT);
+        case arm_cond::hi: return is_set(cpsr, C_BIT) && !is_set(cpsr,Z_BIT);
 
         // c clear or z set
-        case LS: return !is_set(cpsr,C_BIT) || is_set(cpsr,Z_BIT);
+        case arm_cond::ls: return !is_set(cpsr,C_BIT) || is_set(cpsr,Z_BIT);
 
         // n equals v
-        case GE: return is_set(cpsr,N_BIT) == is_set(cpsr,V_BIT);
+        case arm_cond::ge: return is_set(cpsr,N_BIT) == is_set(cpsr,V_BIT);
 
         // n not equal to v
-        case LT: return is_set(cpsr,N_BIT) != is_set(cpsr,V_BIT); 
+        case arm_cond::lt: return is_set(cpsr,N_BIT) != is_set(cpsr,V_BIT); 
 
         // z clear and N equals v
-        case GT: return !is_set(cpsr,Z_BIT) && is_set(cpsr,N_BIT) == is_set(cpsr,V_BIT);
+        case arm_cond::gt: return !is_set(cpsr,Z_BIT) && is_set(cpsr,N_BIT) == is_set(cpsr,V_BIT);
 
         // z set or n not equal to v
-        case LE: return is_set(cpsr,Z_BIT) || is_set(cpsr,N_BIT) != is_set(cpsr,V_BIT);
+        case arm_cond::le: return is_set(cpsr,Z_BIT) || is_set(cpsr,N_BIT) != is_set(cpsr,V_BIT);
 
         // allways
-        case AL: return true;
+        case arm_cond::al: return true;
 
     }
-    printf("cond_met fell through %08x:%08x!?\n",opcode,regs[PC]);
-    exit(1);
 }
 
 // common arithmetic and logical operations
@@ -918,10 +913,10 @@ uint32_t Cpu::logical_eor(uint32_t v1, uint32_t v2, bool s)
 
 
 // write the interrupt req bit
-void Cpu::request_interrupt(Interrupt interrupt)
+void Cpu::request_interrupt(interrupt i)
 {
     uint16_t io_if = mem->handle_read<uint16_t>(mem->io,IO_IF);
-    io_if = set_bit(io_if,static_cast<uint32_t>(interrupt));
+    io_if = set_bit(io_if,static_cast<uint32_t>(i));
     mem->handle_write<uint16_t>(mem->io,IO_IF,io_if);
 }
 
@@ -973,7 +968,7 @@ void Cpu::service_interrupt()
 // check if for each dma if any of the start timing conds have been met
 // should store all the dma information in struct so its nice to access
 // also find out when dmas are actually processed?
-void Cpu::handle_dma(Dma_type req_type, int special_dma)
+void Cpu::handle_dma(dma_type req_type, int special_dma)
 {
 
 
@@ -992,13 +987,13 @@ void Cpu::handle_dma(Dma_type req_type, int special_dma)
 
         if(is_set(dma_cnt,15)) // dma is enabled
         {
-            Dma_type dma_type = static_cast<Dma_type>((dma_cnt >> 12) & 0x3);
+            auto type = static_cast<dma_type>((dma_cnt >> 12) & 0x3);
 
 
             bool is_triggered = false;
 
             // speical dma modes on trigger for their respective dma modes
-            if(dma_type == Dma_type::SPECIAL)
+            if(type == dma_type::special)
             {
                 if(i == special_dma)
                 {
@@ -1044,14 +1039,13 @@ void Cpu::handle_dma(Dma_type req_type, int special_dma)
 // this needs to know the dma number aswell as the type of dma
 // <-- how does gamepak dma work
 // this seriously needs a refeactor
-void Cpu::do_dma(uint16_t &dma_cnt,Dma_type req_type, int dma_number)
+void Cpu::do_dma(uint16_t &dma_cnt,dma_type req_type, int dma_number)
 {
 
 
     if(is_set(dma_cnt,11))
     {
-        puts("gamepak dma!");
-        exit(1);
+        throw std::runtime_error("[unimplemented] gamepak dma!");
     }
 
 
@@ -1086,14 +1080,14 @@ void Cpu::do_dma(uint16_t &dma_cnt,Dma_type req_type, int dma_number)
         }
     }
 
-    static constexpr Interrupt dma_interrupt[4] = {Interrupt::DMA0,Interrupt::DMA1,Interrupt::DMA2,Interrupt::DMA3}; 
+    static constexpr interrupt dma_interrupt[4] = {interrupt::dma0,interrupt::dma1,interrupt::dma2,interrupt::dma3}; 
     if(is_set(dma_cnt,14)) // do irq on finish
     {
         request_interrupt(dma_interrupt[dma_number]);
     }
 
 
-    if(!is_set(dma_cnt,9) || req_type == Dma_type::IMMEDIATE || is_set(dma_cnt,11) ) // dma does not repeat
+    if(!is_set(dma_cnt,9) || req_type == dma_type::immediate || is_set(dma_cnt,11) ) // dma does not repeat
     {
         dma_cnt = deset_bit(dma_cnt,15); // disable it
     }
@@ -1123,8 +1117,7 @@ void Cpu::do_dma(uint16_t &dma_cnt,Dma_type req_type, int dma_number)
 
         case 3: // invalid
         {
-            puts("sad mode of 3!");
-            exit(1);
+            throw std::runtime_error("sad mode of 3!");
         }
     }
 

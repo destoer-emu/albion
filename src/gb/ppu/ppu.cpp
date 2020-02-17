@@ -599,8 +599,8 @@ void Ppu::tile_fetch() noexcept
 	const int line = y_flip? 14 - (y_pos*2) : (y_pos*2);
 		
 			
-	uint8_t data1 = mem->vram[vram_bank][(tile_location+line)];
-	uint8_t data2 = mem->vram[vram_bank][(tile_location+line+1)];
+	const uint8_t data1 = mem->vram[vram_bank][(tile_location+line)];
+	const uint8_t data2 = mem->vram[vram_bank][(tile_location+line+1)];
 	
 	// pixel 0 in the tile is bit 7 of data1 and data2
 	// pixel 1 is bit 6 etc

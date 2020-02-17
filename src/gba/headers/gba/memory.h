@@ -60,9 +60,9 @@ public:
 
 
 private:
-    Debug *debug;
-    Cpu *cpu;
-    Display *disp;
+    Debug *debug = nullptr;
+    Cpu *cpu = nullptr;
+    Display *disp = nullptr;
 
     template<typename access_type>
     void tick_mem_access();
@@ -123,11 +123,11 @@ private:
     void write_external(uint32_t addr,access_type v);
 
     // last accessed memory region
-    enum Memory_region
+    enum class memory_region
     {
-        BIOS = 0,WRAM_BOARD,WRAM_CHIP,
-        IO,PAL,VRAM,OAM,ROM,FLASH,SRAM,
-        UNDEFINED
+        bios = 0,wram_board,wram_chip,
+        io,pal,vram,oam,rom,flash,sram,
+        undefined
     };
 
     // memory cycle timings
@@ -147,7 +147,7 @@ private:
         {5,5,5} // sram
     };
 
-    Memory_region mem_region;
+    memory_region mem_region;
 
     // general memory
     // bios code

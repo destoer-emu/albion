@@ -7,29 +7,29 @@
 
 
 
-enum class Interrupt
+enum class interrupt
 {
-    VBLANK = 0,
-    HBLANK = 1,
-    VCOUNT = 2,
-    TIMER0 = 3,
-    TIMER1 = 4,
-    TIMER2 = 5,
-    TIMER3 = 6,
-    SERIAL = 7,
-    DMA0 = 8,
-    DMA1 = 9,
-    DMA2 = 10,
-    DMA3 = 11,
-    KEYPAD = 12,
-    GAMEPAK = 13
+    vblank = 0,
+    hblank = 1,
+    vcount = 2,
+    timer0 = 3,
+    timer1 = 4,
+    timer2 = 5,
+    timer3 = 6,
+    serial = 7,
+    dma0 = 8,
+    dma1 = 9,
+    dma2 = 10,
+    dma3 = 11,
+    keypad = 12,
+    gamepak = 13
 };
 
 // add proper names for the special class later
-enum class Dma_type
+enum class dma_type
 {
-    IMMEDIATE = 0 ,VBLANK = 1,
-    HBLANK = 2, SPECIAL = 3 
+    immediate = 0 ,vblank = 1,
+    hblank = 2, special = 3 
 };
 
 
@@ -69,7 +69,7 @@ public:
     void execute_arm_opcode(uint32_t instr);
     void execute_thumb_opcode(uint16_t instr);
     
-    void request_interrupt(Interrupt interrupt);
+    void request_interrupt(interrupt i);
 
 
     struct Dma_reg
@@ -81,7 +81,7 @@ public:
 
     Dma_reg dma_regs[4];
 
-    void handle_dma(Dma_type req_type, int special_dma = -1);
+    void handle_dma(dma_type req_type, int special_dma = -1);
 private:
 
     using ARM_OPCODE_FPTR = void (Cpu::*)(uint32_t opcode);
@@ -156,7 +156,7 @@ private:
 
     // dma
     //handle_dma(Dma_type req_type, int special_dma = -1);
-    void do_dma(uint16_t &dma_cnt,Dma_type req_type, int dma_number);
+    void do_dma(uint16_t &dma_cnt,dma_type req_type, int dma_number);
 
     // timers
     void tick_timers(int cycles);
@@ -179,10 +179,10 @@ private:
     void set_zero_flag_long(uint64_t v);
     void set_nz_flag_long(uint64_t v);
 
-    Display *disp;
-    Mem *mem;
-    Debug *debug;
-    Disass *disass;
+    Display *disp = nullptr;
+    Mem *mem = nullptr;
+    Debug *debug = nullptr;
+    Disass *disass = nullptr;
 
     // underlying registers
 

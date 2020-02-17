@@ -334,7 +334,7 @@ std::string Disass::disass_arm_hds_data_transfer(uint32_t opcode)
 
             case 3:
             {
-                    return fmt::format("str{}d {},{}",suffix,user_regs_names[rd],addr_str);
+                return fmt::format("str{}d {},{}",suffix,user_regs_names[rd],addr_str);
             }
         }
     }
@@ -345,7 +345,7 @@ std::string Disass::disass_arm_hds_data_transfer(uint32_t opcode)
 // get a shift type diassembeld from an opcode
 std::string Disass::disass_arm_get_shift_string(uint32_t opcode)
 {
-    int shift_type = (opcode >> 5) & 3;
+    int type = (opcode >> 5) & 3;
     int rm = opcode & 0xf;
     // shift type on register
     if(is_set(opcode,4))
@@ -353,7 +353,7 @@ std::string Disass::disass_arm_get_shift_string(uint32_t opcode)
         int rs = (opcode >> 8) & 0xf;
 
         //r1, asr r2
-        return fmt::format("{},{} {}",user_regs_names[rm],shift_names[shift_type],user_regs_names[rs]);
+        return fmt::format("{},{} {}",user_regs_names[rm],shift_names[type],user_regs_names[rs]);
     }
 
     else // shift type on 5 bit immediate
@@ -363,35 +363,33 @@ std::string Disass::disass_arm_get_shift_string(uint32_t opcode)
 
         if(imm != 0)
         {
-            return fmt::format("{},{} #0x{:x}",user_regs_names[rm],shift_names[shift_type],imm);
+            return fmt::format("{},{} #0x{:x}",user_regs_names[rm],shift_names[type],imm);
         }
 
         else // depending on the shift it has a behavior
         {         
-            Shift_type t = static_cast<Shift_type>(shift_type); 
+            auto t = static_cast<shift_type>(type); 
             switch(t)
             {
-                case LSL: // no shift done
+                case shift_type::lsl: // no shift done
                 {
                     return std::string(user_regs_names[rm]);
                 }
 
-                case LSR: // 32 shift
+                case shift_type::lsr: // 32 shift
                 {
                     return fmt::format("{}, lsr #0x20",user_regs_names[rm]);
                 }
 
-                case ASR: // 32 shift
+                case shift_type::asr: // 32 shift
                 {
                     return fmt::format("{}, asr #0x20",user_regs_names[rm]);
                 }
 
-                case ROR: // rrx
+                case shift_type::ror: // rrx
                 {
                     return fmt::format("{}, rrx #0x1",user_regs_names[rm],32);
                 }
-
-                default: return "reg shift_undefined!";
             }
         }            
     } 
@@ -594,13 +592,6 @@ std::string Disass::disass_arm_data_processing(uint32_t opcode)
         {
             return fmt::format("mvn{} {},{}",suffix,user_regs_names[rd],operand2);
             break;            
-        }
-
-
-        default:
-        {
-            printf("unknown data processing diass %08x\n",op);
-            exit(1);
         }
     }
 }

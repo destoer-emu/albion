@@ -13,17 +13,17 @@ enum class cpu_mode
 constexpr int ARM_WORD_SIZE = 4; 
 constexpr int ARM_HALF_SIZE = 2;
 
-enum Access_type
+enum class access_size
 {
-    BYTE = 0,HALF,WORD
+    byte = 0,half,word
 };
 
 constexpr uint32_t access_sizes[3] = {1,ARM_HALF_SIZE,ARM_WORD_SIZE};
 
 
-enum Shift_type
+enum class shift_type
 {
-    LSL=0,LSR,ASR,ROR
+    lsl=0,lsr,asr,ror
 };
 
 constexpr int R0 = 0;
@@ -68,10 +68,10 @@ constexpr int C_BIT = 29; // carry
 constexpr int V_BIT = 28; // overflow
 
 
-enum Arm_cond
+enum class arm_cond
 {
-    EQ=0,NE=1,CS=2,CC=3,MI=4,PL=5,VS=6,
-    VC=7,HI=8,LS=9,GE=10,LT=11,GT=12,LE=13,AL=14
+    eq=0,ne=1,cs=2,cc=3,mi=4,pl=5,vs=6,
+    vc=7,hi=8,ls=9,ge=10,lt=11,gt=12,le=13,al=14
 };
 
 
@@ -223,16 +223,14 @@ inline uint32_t ror(uint32_t v, uint32_t n, bool &carry,bool immediate)
 }
 
 // barrel shifter
-inline uint32_t barrel_shift(Shift_type type,uint32_t v, uint32_t n, bool &carry,bool immediate)
+inline uint32_t barrel_shift(shift_type type,uint32_t v, uint32_t n, bool &carry,bool immediate)
 {
     switch(type)
     {
-        case LSL: return lsl(v,n,carry); break;
-        case LSR: return lsr(v,n,carry,immediate); break;
-        case ASR: return asr(v,n,carry,immediate); break;
-        case ROR: return ror(v,n,carry,immediate); break;
+        case shift_type::lsl: return lsl(v,n,carry); break;
+        case shift_type::lsr: return lsr(v,n,carry,immediate); break;
+        case shift_type::asr: return asr(v,n,carry,immediate); break;
+        case shift_type::ror: return ror(v,n,carry,immediate); break;
     }
-    puts("barrel shifter fell though!?");
-    exit(1);
 }
 

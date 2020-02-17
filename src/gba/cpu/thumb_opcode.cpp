@@ -33,9 +33,8 @@ void Cpu::execute_thumb_opcode(uint16_t instr)
 void Cpu::thumb_unknown(uint16_t opcode)
 {
     uint8_t op = get_thumb_opcode_bits(opcode);
-    printf("[cpu-thumb]unknown opcode %04x:%x\n",opcode,op);
-    print_regs();
-    exit(1);
+    auto err = fmt::format("[cpu-thumb]unknown opcode {:04x}:{:x}\n",opcode,op);
+    throw std::runtime_error(err);
 }
 
 
@@ -550,17 +549,7 @@ void Cpu::thumb_alu(uint16_t opcode)
             cycle_tick(1); // 1 s cycle
             break;
         }
-
-        default:
-        {
-            printf("thumb alu unimplemented: %08x\n",op);
-            print_regs();
-            exit(1); 
-        }
     }
-
-
-
 }
 
 
@@ -745,7 +734,7 @@ void Cpu::thumb_mov_reg_shift(uint16_t opcode)
     int rs = (opcode >> 3) & 0x7;
     int n = (opcode >> 6) & 0x1f;
 
-    Shift_type type = static_cast<Shift_type>((opcode >> 11) & 0x3);
+    auto type = static_cast<shift_type>((opcode >> 11) & 0x3);
 
     bool did_carry = is_set(cpsr,C_BIT);
 

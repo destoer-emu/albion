@@ -53,9 +53,8 @@ void Cpu::exec_arm()
 void Cpu::arm_unknown(uint32_t opcode)
 {
     uint32_t op = ((opcode >> 4) & 0xf) | ((opcode >> 16) & 0xff0);
-    printf("[cpu-arm %08x]unknown opcode %08x:%08x\n",regs[PC],opcode,op);
-    print_regs();
-    exit(1);
+    auto err = fmt::format("[cpu-arm {:08x}]unknown opcode {:08x}:{:08x}\n",regs[PC],opcode,op);
+    throw std::runtime_error(err);
 }
 
 
@@ -289,9 +288,8 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
 
                 else
                 {
-                    printf("[block data: %08x] illegal status bank %x\n",regs[PC],idx);
-                    print_regs();
-                    exit(1);
+                    auto err = fmt::format("[block data: {:08x}] illegal status bank {:x}\n",regs[PC],idx);
+                    throw std::runtime_error(err);
                 }
             }
         }
@@ -542,7 +540,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
     else // shifted register 
     {
-        Shift_type type = static_cast<Shift_type>((opcode >> 5 ) & 0x3);
+        auto type = static_cast<shift_type>((opcode >> 5 ) & 0x3);
 
 
 
@@ -598,12 +596,10 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
     if(update_flags && rd == PC)
     {
-        // ignored but probably indicates a error
+        // ignored by real hardware but probably indicates a error
         if(arm_mode >= cpu_mode::user)
         {
-           //printf("illegal data processing s with pc %08x\n",regs[PC]);
-           //print_regs();
-           //exit(1);
+
         }
         
         else
@@ -899,9 +895,8 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
             
             default: // doubleword ops not supported on armv4
             {
-                printf("hds illegal store op: %08x\n",regs[PC]);
-                print_regs();
-                exit(1);
+                auto err = fmt::format("hds illegal store op: {:08x}\n",regs[PC]);
+                throw std::runtime_error(err);
             }
 
         }
@@ -936,9 +931,8 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 
     if(!p && w) // operate it in a seperate mode
     {
-        printf("T present operate load/store in user mode: : %08x!\n",regs[PC]);
-        print_regs();
-        exit(1);
+        auto err = fmt::format("T present operate load/store in user mode: : {:08x}!\n",regs[PC]);
+        throw std::runtime_error(err);
     }
 
 
@@ -957,7 +951,7 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 
     if(is_set(opcode,25))
     {
-        Shift_type type = static_cast<Shift_type>((opcode >> 5 ) & 0x3);
+        auto type = static_cast<shift_type>((opcode >> 5 ) & 0x3);
 
 
         // immediate is allways register rm

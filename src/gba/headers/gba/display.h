@@ -3,9 +3,9 @@
 #include <destoer-emu/lib.h>
 
 
-enum Display_mode
+enum display_mode
 {
-    VISIBLE,HBLANK,VBLANK
+    visible,hblank,vblank
 };
 
 class Display
@@ -14,8 +14,8 @@ public:
     void init(Mem *mem, Cpu *cpu);
     void tick(int cycles);
 
-    Display_mode get_mode() const { return mode; }
-    void set_mode(Display_mode mode) { this->mode = mode; }
+    display_mode get_mode() const { return mode; }
+    void set_mode(display_mode mode) { this->mode = mode; }
     void set_cycles(int cycles) { cyc_cnt = cycles; }
     void load_reference_point_regs();
 
@@ -43,10 +43,10 @@ private:
     int cyc_cnt = 0; // current number of elapsed cycles
     int ly = 0; // current number of cycles
     
-    Mem *mem;
-    Cpu *cpu;
+    Mem *mem = nullptr;
+    Cpu *cpu = nullptr;
 
-    Display_mode mode = VISIBLE;
+    display_mode mode = display_mode::visible;
 };
 
 

@@ -22,8 +22,8 @@ public:
 
 
 private:
-    Mem *mem;
-    Cpu *cpu;
+    Mem *mem = nullptr;
+    Cpu *cpu = nullptr;
     uint32_t pc; // pc for disassmebling instrs
 
     const char *shift_names[4] = 

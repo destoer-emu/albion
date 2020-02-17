@@ -11,7 +11,7 @@ void Display::init(Mem *mem, Cpu *cpu)
 
     cyc_cnt = 0; // current number of elapsed cycles
     ly = 0; // current number of cycles
-    mode = VISIBLE;
+    mode = display_mode::visible;
     new_vblank = false;
 }
 
@@ -41,8 +41,7 @@ void Display::read_tile(uint32_t tile[],bool col_256,uint32_t base,uint32_t pal_
 
     if(col_256)
     {
-        puts("256 color unimpl!");
-        exit(1);
+        throw std::runtime_error("256 color unimpl!");
     }
 
     else
@@ -255,8 +254,8 @@ void Display::render()
 */
         default: // mode ?
         {
-            printf("unknown ppu mode %08x\n",render_mode);
-            //exit(1);
+            auto err = fmt::format("unknown ppu mode {:08x}\n",render_mode);
+            throw std::runtime_error(err);
         }
     }
 }
@@ -280,7 +279,7 @@ void Display::advance_line()
 
         if(is_set(mem->io[IO_DISPSTAT],5))
         {
-            cpu->request_interrupt(Interrupt::VCOUNT);
+            cpu->request_interrupt(interrupt::vcount);
         }
 
     }
@@ -312,33 +311,33 @@ void Display::tick(int cycles)
 
     switch(mode)
     {
-        case VISIBLE:
+        case display_mode::visible:
         {
             if(cyc_cnt >= 960)
             {
                 // enter hblank
                 mem->io[IO_DISPSTAT] = set_bit(mem->io[IO_DISPSTAT],1);
-                mode = HBLANK;
+                mode = display_mode::hblank;
 
                 // if hblank irq enabled
                 if(is_set(mem->io[IO_DISPSTAT],4))
                 {
-                    cpu->request_interrupt(Interrupt::HBLANK);
+                    cpu->request_interrupt(interrupt::hblank);
                 }
-                cpu->handle_dma(Dma_type::HBLANK);
+                cpu->handle_dma(dma_type::hblank);
 
 
 
                 if(ly >= 2)
                 {
-                    cpu->handle_dma(Dma_type::SPECIAL,3);
+                    cpu->handle_dma(dma_type::special,3);
                 }
 
             }
             break;
         }
 
-        case HBLANK:
+        case display_mode::hblank:
         {
             // end of line
             if(cyc_cnt >= 1232)
@@ -347,26 +346,26 @@ void Display::tick(int cycles)
 
                 if(ly == 160) // 160 we need to vblank
                 {
-                    mode = VBLANK;
+                    mode = display_mode::vblank;
                     mem->io[IO_DISPSTAT] = set_bit(mem->io[IO_DISPSTAT],0); // set vblank flag
 
                     // if vblank irq enabled
                     if(is_set(mem->io[IO_DISPSTAT],3))
                     {
-                        cpu->request_interrupt(Interrupt::VBLANK);
+                        cpu->request_interrupt(interrupt::vblank);
                     }
-                    cpu->handle_dma(Dma_type::VBLANK);
+                    cpu->handle_dma(dma_type::vblank);
                 }
 
                 else
                 {
-                    mode = VISIBLE;
+                    mode = display_mode::visible;
                 }
             }
             break;
         }
 
-        case VBLANK:
+        case display_mode::vblank:
         {
 
 
@@ -378,7 +377,7 @@ void Display::tick(int cycles)
                 {
                     // exit vblank
                     new_vblank = true;
-                    mode = VISIBLE;
+                    mode = display_mode::visible;
                     mem->io[IO_DISPSTAT] = deset_bit(mem->io[IO_DISPSTAT],0);
                     ly = 0;
 
@@ -396,9 +395,9 @@ void Display::tick(int cycles)
                 // if hblank irq enabled
                 if(is_set(mem->io[IO_DISPSTAT],4))
                 {
-                    cpu->request_interrupt(Interrupt::HBLANK);
+                    cpu->request_interrupt(interrupt::hblank);
                 }
-                cpu->handle_dma(Dma_type::HBLANK);
+                cpu->handle_dma(dma_type::hblank);
 
 
                 // disable video capture mode dma
@@ -406,8 +405,8 @@ void Display::tick(int cycles)
                 if(ly == 162)
                 {
                     uint16_t dma_cnt = mem->handle_read<uint16_t>(mem->io,IO_DMA3CNT_H);
-                    Dma_type dma_type = static_cast<Dma_type>((dma_cnt >> 12) & 0x3);
-                    if(dma_type == Dma_type::SPECIAL)
+                    auto type = static_cast<dma_type>((dma_cnt >> 12) & 0x3);
+                    if(type == dma_type::special)
                     {
                         mem->handle_write<uint16_t>(mem->io,IO_DMA3CNT_H,deset_bit(dma_cnt,15));
                     }

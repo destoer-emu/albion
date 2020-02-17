@@ -80,8 +80,7 @@ void Mem::init(std::string filename, Debug *debug,Cpu *cpu,Display *disp)
 
     if(bios_rom.size() != 0x4000)
     {
-        puts("invalid bios size!");
-        exit(1);
+        throw std::runtime_error("invalid bios size!");
     }
 }
 
@@ -347,7 +346,7 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
                 cpu->dma_regs[0].src = handle_read<uint32_t>(io,IO_DMA0SAD);
                 cpu->dma_regs[0].dst = handle_read<uint32_t>(io,IO_DMA0DAD);
                 cpu->dma_regs[0].nn = handle_read<uint16_t>(io,IO_DMA0CNT_L);       
-                cpu->handle_dma(Dma_type::IMMEDIATE);
+                cpu->handle_dma(dma_type::immediate);
             }
             io[addr] = v;
             break;
@@ -404,7 +403,7 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
                 cpu->dma_regs[1].src = handle_read<uint32_t>(io,IO_DMA1SAD);
                 cpu->dma_regs[1].dst = handle_read<uint32_t>(io,IO_DMA1DAD);
                 cpu->dma_regs[1].nn = handle_read<uint16_t>(io,IO_DMA1CNT_L);   
-                cpu->handle_dma(Dma_type::IMMEDIATE);
+                cpu->handle_dma(dma_type::immediate);
             }
             io[addr] = v;
             break;
@@ -457,7 +456,7 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
                 cpu->dma_regs[2].src = handle_read<uint32_t>(io,IO_DMA2SAD);
                 cpu->dma_regs[2].dst = handle_read<uint32_t>(io,IO_DMA2DAD);
                 cpu->dma_regs[2].nn = handle_read<uint16_t>(io,IO_DMA2CNT_L);   
-                cpu->handle_dma(Dma_type::IMMEDIATE);
+                cpu->handle_dma(dma_type::immediate);
             }
             io[addr] = v;
             break;
@@ -510,7 +509,7 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
                 cpu->dma_regs[3].src = handle_read<uint32_t>(io,IO_DMA3SAD);
                 cpu->dma_regs[3].dst = handle_read<uint32_t>(io,IO_DMA3DAD);
                 cpu->dma_regs[3].nn = handle_read<uint16_t>(io,IO_DMA3CNT_L);                          
-                cpu->handle_dma(Dma_type::IMMEDIATE);
+                cpu->handle_dma(dma_type::immediate);
             }
             io[addr] = v;
             break;
@@ -961,12 +960,11 @@ template<typename access_type>
 access_type Mem::handle_read(std::vector<uint8_t> &buf,uint32_t addr)
 {
 
-#ifdef DEBUG // bounds check the memory access
+#ifdef DEBUG // bounds check the memory access (we are very screwed if this happens)
     if(buf.size() < addr + sizeof(access_type))
     {
-        printf("out of range handle read at: %08x\n",cpu->get_pc());
-        cpu->print_regs();
-        exit(1);
+        auto err = fmt::format("out of range handle read at: {:08x}\n",cpu->get_pc());
+        throw std::runtime_error(err);
     }
 #endif
 
@@ -982,13 +980,13 @@ access_type Mem::read_mem_handler(uint32_t addr)
 {
     access_type v;
     if(addr < 0x00004000) v = read_bios<access_type>(addr);
-    else if(addr < 0x02000000) { mem_region = UNDEFINED; return 0; }
+    else if(addr < 0x02000000) { mem_region = memory_region::undefined; return 0; }
     else if(addr < 0x03000000) v = read_board_wram<access_type>(addr);
     else if(addr < 0x04000000) v = read_chip_wram<access_type>(addr);
     else if(addr < 0x05000000) v = read_io<access_type>(addr);
     else if(addr < 0x06000000) v = read_pal_ram<access_type>(addr);
     else if(addr < 0x06018000) v = read_vram<access_type>(addr);
-    else if(addr < 0x07000000) { mem_region = UNDEFINED; return 0; }
+    else if(addr < 0x07000000) { mem_region = memory_region::undefined; return 0; }
     else if(addr < 0x08000000) v = read_oam<access_type>(addr);
     else v = read_external<access_type>(addr);
 
@@ -1001,7 +999,11 @@ access_type Mem::read_mem_handler(uint32_t addr)
 template<typename access_type>
 access_type Mem::read_mem(uint32_t addr)
 {
+    // 28 bit bus
+    addr &= 0x0fffffff;
 
+    // handle address alignment
+    addr &= ~(sizeof(access_type)-1);
 
 #ifdef DEBUG
     uint32_t value = read_mem_handler<access_type>(addr);
@@ -1012,15 +1014,7 @@ access_type Mem::read_mem(uint32_t addr)
     }    
 #endif
 
-    // 28 bit bus
-    addr &= 0x0fffffff;
-
-    // handle address alignment
-    addr &= ~(sizeof(access_type)-1);
-
-
     access_type v = read_mem_handler<access_type>(addr);
-
     return v;
 }
 
@@ -1041,6 +1035,12 @@ template<typename access_type>
 void Mem::write_mem(uint32_t addr,access_type v)
 {
 
+    // 28 bit bus
+    addr &= 0x0fffffff;
+
+    // handle address alignemt
+    addr &= ~(sizeof(access_type)-1);
+
 #ifdef DEBUG
     if(debug->breakpoint_hit(addr,v,break_type::write))
     {
@@ -1049,21 +1049,14 @@ void Mem::write_mem(uint32_t addr,access_type v)
     }   
 #endif
 
-
-    // 28 bit bus
-    addr &= 0x0fffffff;
-
-    // handle address alignemt
-    addr &= ~(sizeof(access_type)-1);
-
-    if(addr < 0x00004000) { mem_region = BIOS; return; } // bios is read only
-    else if(addr < 0x02000000) { mem_region = UNDEFINED; return; }
+    if(addr < 0x00004000) { mem_region = memory_region::bios; return; } // bios is read only
+    else if(addr < 0x02000000) { mem_region = memory_region::undefined; return; }
     else if(addr < 0x03000000) write_board_wram<access_type>(addr,v);
     else if(addr < 0x04000000) write_chip_wram<access_type>(addr,v);
     else if(addr < 0x05000000) write_io<access_type>(addr,v);
     else if(addr < 0x06000000) write_pal_ram<access_type>(addr,v);
     else if(addr < 0x06018000) write_vram<access_type>(addr,v);
-    else if(addr < 0x07000000) { mem_region = UNDEFINED; return; }
+    else if(addr < 0x07000000) { mem_region = memory_region::undefined; return; }
     else if(addr < 0x08000000) write_oam<access_type>(addr,v);
     else write_external<access_type>(addr,v); // rom is read only but could be flash
 
@@ -1083,9 +1076,9 @@ template<>
 void Mem::tick_mem_access<uint8_t>()
 {
     // should unmapped addresses still tick a cycle?
-    if(mem_region != UNDEFINED)
+    if(mem_region != memory_region::undefined)
     {
-        cpu->cycle_tick(wait_states[mem_region][BYTE]);
+        cpu->cycle_tick(wait_states[static_cast<int>(mem_region)][static_cast<int>(access_size::byte)]);
     }
 }
 
@@ -1094,9 +1087,9 @@ template<>
 void Mem::tick_mem_access<uint16_t>()
 {
     // should unmapped addresses still tick a cycle?
-    if(mem_region != UNDEFINED)
+    if(mem_region != memory_region::undefined)
     {
-        cpu->cycle_tick(wait_states[mem_region][HALF]);
+        cpu->cycle_tick(wait_states[static_cast<int>(mem_region)][static_cast<int>(access_size::half)]);
     }
 }
 
@@ -1105,9 +1098,9 @@ template<>
 void Mem::tick_mem_access<uint32_t>()
 {
     // should unmapped addresses still tick a cycle?
-    if(mem_region != UNDEFINED)
+    if(mem_region != memory_region::undefined)
     {
-        cpu->cycle_tick(wait_states[mem_region][WORD]);
+        cpu->cycle_tick(wait_states[static_cast<int>(mem_region)][static_cast<int>(access_size::word)]);
     }
 }
 
@@ -1119,6 +1112,7 @@ access_type Mem::read_external(uint32_t addr)
 {
 
     uint32_t len = rom.size();
+    // while not illegal it probably means the there are errors
     if(((addr+sizeof(access_type))&0x1FFFFFF) > len)
     {
         //printf("rom read out of range: %08x:%08x:%08x:%08x\n",addr&0x1FFFFFF,addr,len,cpu->get_pc());
@@ -1132,7 +1126,7 @@ access_type Mem::read_external(uint32_t addr)
         case 0x8: // wait state 0
         case 0x9:
         {
-            mem_region = ROM;
+            mem_region = memory_region::rom;
             //return rom[addr - 0x08000000];
             return handle_read<access_type>(rom,addr&0x1FFFFFF);
             break;
@@ -1141,7 +1135,7 @@ access_type Mem::read_external(uint32_t addr)
         case 0xa: // wait state 1
         case 0xb:
         {
-            mem_region = ROM;
+            mem_region = memory_region::rom;
             //return rom[addr - 0x0a000000];
             return handle_read<access_type>(rom,addr&0x1FFFFFF);
             break;
@@ -1150,7 +1144,7 @@ access_type Mem::read_external(uint32_t addr)
         case 0xc: // wait state 2
         case 0xd:
         {
-            mem_region = ROM;
+            mem_region = memory_region::rom;
             //return rom[addr - 0x0c000000];
             return handle_read<access_type>(rom,addr&0x1FFFFFF);
             break;
@@ -1169,7 +1163,7 @@ access_type Mem::read_external(uint32_t addr)
                     exit(1);                    
                 }
                 */
-                mem_region = SRAM;
+                mem_region = memory_region::sram;
 
 
 
@@ -1195,7 +1189,7 @@ access_type Mem::read_external(uint32_t addr)
                 
             else // unused
             {
-                mem_region = UNDEFINED;
+                mem_region = memory_region::undefined;
                 return 0x00;
             }
         }
@@ -1238,7 +1232,7 @@ uint32_t Mem::read_io<uint32_t>(uint32_t addr)
 template<typename access_type>
 access_type Mem::read_oam(uint32_t addr)
 {
-    mem_region = OAM;
+    mem_region = memory_region::oam;
     //return oam[addr & 0x3ff];
     return handle_read<access_type>(oam,addr&0x3ff);   
 }
@@ -1246,17 +1240,15 @@ access_type Mem::read_oam(uint32_t addr)
 template<typename access_type>
 access_type Mem::read_vram(uint32_t addr)
 {
-    mem_region = VRAM;
+    mem_region = memory_region::vram;
     //return vram[addr-0x06000000];
     return handle_read<access_type>(vram,addr-0x06000000);
-    
-
 }
 
 template<typename access_type>
 access_type Mem::read_pal_ram(uint32_t addr)
 {
-    mem_region = PAL;
+    mem_region = memory_region::pal;
     //return pal_ram[addr & 0x3ff];
     return handle_read<access_type>(pal_ram,addr&0x3ff);
 
@@ -1265,7 +1257,7 @@ access_type Mem::read_pal_ram(uint32_t addr)
 template<typename access_type>
 access_type Mem::read_board_wram(uint32_t addr)
 {
-    mem_region = WRAM_BOARD;
+    mem_region = memory_region::wram_board;
     //return board_wram[addr & 0x3ffff];
     return handle_read<access_type>(board_wram,addr&0x3ffff);
 }
@@ -1273,7 +1265,7 @@ access_type Mem::read_board_wram(uint32_t addr)
 template<typename access_type>
 access_type Mem::read_chip_wram(uint32_t addr)
 {
-    mem_region = WRAM_CHIP;
+    mem_region = memory_region::wram_chip;
     //return chip_wram[addr & 0x7fff];
     return handle_read<access_type>(chip_wram,addr&0x7fff);
 }
@@ -1281,7 +1273,7 @@ access_type Mem::read_chip_wram(uint32_t addr)
 template<typename access_type>
 access_type Mem::read_bios(uint32_t addr)
 {
-    mem_region = BIOS;
+    mem_region = memory_region::bios;
     //return bios_rom[addr];
     return handle_read<access_type>(bios_rom,addr);
 }
@@ -1296,21 +1288,21 @@ void Mem::write_external(uint32_t addr,access_type v)
         case 0x8: // wait state 0
         case 0x9:
         {
-            mem_region = ROM;
+            mem_region = memory_region::rom;
             return;
         }
 
         case 0xa: // wait state 1
         case 0xb:
         {
-            mem_region = ROM;
+            mem_region = memory_region::rom;
             return;
         }
             
         case 0xc: // wait state 2
         case 0xd:
         {
-            mem_region = ROM;
+            mem_region = memory_region::rom;
             return;
         }
 
@@ -1318,7 +1310,7 @@ void Mem::write_external(uint32_t addr,access_type v)
         {
             if(addr <= 0x0e00ffff)
             {
-                mem_region = SRAM;
+                mem_region = memory_region::sram;
             /*    if(mode != BYTE)
                 {
                     printf("invalid sram write %08x:%08x\n",cpu->get_pc(),addr);
@@ -1336,14 +1328,14 @@ void Mem::write_external(uint32_t addr,access_type v)
                 
             else // unused
             {
-                mem_region = UNDEFINED;
+                mem_region = memory_region::undefined;
                 return;
             }
         }
 
         case 0xf: // probably should not write here
         {
-            mem_region = UNDEFINED;
+            mem_region = memory_region::undefined;
             return;
         }
 
@@ -1359,12 +1351,11 @@ template<typename access_type>
 void Mem::handle_write(std::vector<uint8_t> &buf,uint32_t addr,access_type v)
 {
 
-#ifdef DEBUG // bounds check the memory access
+#ifdef DEBUG // bounds check the memory access (we are very screwed if this happens)
     if(buf.size() < addr + sizeof(access_type))
     {
-        printf("out of range handle write at: %08x\n",cpu->get_pc());
-        cpu->print_regs();
-        exit(1);
+        auto err = fmt::format("out of range handle write at: {:08x}\n",cpu->get_pc());
+        throw std::runtime_error(err);
     }
 #endif
 
@@ -1381,7 +1372,7 @@ void Mem::handle_write(std::vector<uint8_t> &buf,uint32_t addr,access_type v)
 template<>
 void Mem::write_io<uint8_t>(uint32_t addr,uint8_t v)
 {
-    mem_region = IO;
+    mem_region = memory_region::io;
     //io[addr & 0x3ff] = v;
 
     write_io_regs(addr,v);
@@ -1391,7 +1382,7 @@ void Mem::write_io<uint8_t>(uint32_t addr,uint8_t v)
 template<>
 void Mem::write_io<uint16_t>(uint32_t addr,uint16_t v)
 {
-    mem_region = IO;
+    mem_region = memory_region::io;
     //io[addr & 0x3ff] = v;
 
     write_io_regs(addr,v&0x000000ff);
@@ -1402,7 +1393,7 @@ void Mem::write_io<uint16_t>(uint32_t addr,uint16_t v)
 template<>
 void Mem::write_io<uint32_t>(uint32_t addr,uint32_t v)
 {
-    mem_region = IO;
+    mem_region = memory_region::io;
     //io[addr & 0x3ff] = v;
 
     write_io_regs(addr,v&0x000000ff);
@@ -1416,7 +1407,7 @@ void Mem::write_io<uint32_t>(uint32_t addr,uint32_t v)
 template<typename access_type>
 void Mem::write_oam(uint32_t addr,access_type v)
 {
-    mem_region = OAM;
+    mem_region = memory_region::oam;
     //oam[addr & 0x3ff] = v;
     handle_write<access_type>(oam,addr&0x3ff,v);
 }
@@ -1424,7 +1415,7 @@ void Mem::write_oam(uint32_t addr,access_type v)
 template<typename access_type>
 void Mem::write_vram(uint32_t addr,access_type v)
 {
-    mem_region = VRAM;
+    mem_region = memory_region::vram;
     //vram[addr-0x06000000] = v;
     handle_write<access_type>(vram,addr-0x06000000,v); 
 }
@@ -1432,7 +1423,7 @@ void Mem::write_vram(uint32_t addr,access_type v)
 template<typename access_type>
 void Mem::write_pal_ram(uint32_t addr,access_type v)
 {
-    mem_region = PAL;
+    mem_region = memory_region::pal;
     //pal_ram[addr & 0x3ff] = v;
     handle_write<access_type>(pal_ram,addr&0x3ff,v);
 }
@@ -1440,7 +1431,7 @@ void Mem::write_pal_ram(uint32_t addr,access_type v)
 template<typename access_type>
 void Mem::write_board_wram(uint32_t addr,access_type v)
 {
-    mem_region = WRAM_BOARD;
+    mem_region = memory_region::wram_board;
     //return board_wram[addr & 0x3ffff] = v;
     handle_write<access_type>(board_wram,addr&0x3ffff,v);
 }
@@ -1448,7 +1439,7 @@ void Mem::write_board_wram(uint32_t addr,access_type v)
 template<typename access_type>
 void Mem::write_chip_wram(uint32_t addr,access_type v)
 {
-    mem_region = WRAM_CHIP;
+    mem_region = memory_region::wram_chip;
     //chip_wram[addr & 0x7fff] = v;
     handle_write<access_type>(chip_wram,addr&0x7fff,v);
 }

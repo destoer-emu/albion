@@ -13,8 +13,8 @@ public:
 
 
 private:
-    Mem *mem;
-    Cpu *cpu;
+    Mem *mem = nullptr;
+    Cpu *cpu = nullptr;
     uint32_t pc; // pc for disassmebling instrs
 
     using ARM_DISASS_FPTR = std::string (Disass::*)(uint32_t opcode);
