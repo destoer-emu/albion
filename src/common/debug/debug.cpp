@@ -127,4 +127,20 @@ bool Breakpoint::is_hit(uint32_t Addr,break_type type,uint32_t Value)
     // aswell can we optimise this?
     return addr == Addr;
 }
+
+
+Debug::Debug()
+{
+    log_file.open("emu.log");
+    if(!log_file)
+    {
+        puts("failed to open log file!");
+        exit(1);
+    }
+}
+
+Debug::~Debug()
+{
+    log_file.close();
+}
 #endif

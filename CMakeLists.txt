@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(FRONTEND "IMGUI")
 
 if(${FRONTEND} STREQUAL "IMGUI")
-	add_definitions(-DFRONTEND_IMGUI -DIMGUI_IMPL_OPENGL_LOADER_GLEW -DDEBUG -DLOG_CONSOLE)
+	add_definitions(-DFRONTEND_IMGUI -DIMGUI_IMPL_OPENGL_LOADER_GLEW -DDEBUG)
 endif()
 
 if(${FRONTEND} STREQUAL "SDL")
@@ -64,7 +64,7 @@ if(WIN32)
 		#link_libraries("C:/SDL2-2.0.10/lib/x64/SDL2.lib") if no sdl2 cmake
 	endif()
 else()
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -pthread -Wshadow -O3")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -pthread -O3")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lSDL2")
 	if(${FRONTEND} STREQUAL "IMGUI") 
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lglfw  -lGL -lGLEW")
@@ -108,10 +108,16 @@ file(GLOB src_files
 	"src/gb/ppu/*.cpp"
     "src/gb/memory/*.cpp"
 	"src/gb/headers/gb/*.h"
+	"src/gba/*.cpp"
+	"src/gba/cpu/*.cpp"
+	"src/gba/memory/*.cpp"
+	"src/gba/ppu/*.cpp"
+	"src/gba/headers/gba/*.h"
 )
 
 # add some includes
-include_directories("src/gb/headers")
+include_directories("src/headers")
+include_directories("src/headers")
 include_directories("src/common/headers" "src/common/lib")
 include_directories("src")
 

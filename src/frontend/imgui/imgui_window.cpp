@@ -386,6 +386,46 @@ void ImguiMainWindow::file_browser()
     ImGui::End();
 }
 
+
+
+void ImguiMainWindow::menu_bar(Debug &debug)
+{
+    if (ImGui::BeginMainMenuBar())
+    {
+        if(ImGui::BeginMenu("Emulator"))
+        {
+            if (ImGui::MenuItem("Pause"))
+            {
+                stop_instance();
+            }
+
+            if (ImGui::MenuItem("Continue")) 
+            {
+                start_instance();
+            }
+
+            if(debug.log_enabled)
+            {
+                if(ImGui::MenuItem("Disable logger")) 
+                {
+                    debug.log_enabled = false;
+                }
+            }
+
+            else
+            {
+                if(ImGui::MenuItem("Enable logger")) 
+                {
+                    debug.log_enabled = true;
+                }
+            }
+
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+}
+
 void ImguiMainWindow::mainloop()
 {
 
@@ -440,7 +480,7 @@ void ImguiMainWindow::mainloop()
             gameboy_draw_disassembly();
             gameboy_draw_breakpoints();
             gameboy_draw_memory();
-            gameboy_draw_logger();
+            menu_bar(gb.debug);
             file_browser();
         }
 
@@ -449,7 +489,7 @@ void ImguiMainWindow::mainloop()
             gba_draw_screen();
             gba_draw_disassembly();
             gba_draw_registers();
-            gba_draw_logger();
+            menu_bar(gba.debug);
             gba_draw_breakpoints();
             gba_draw_memory();
             file_browser();

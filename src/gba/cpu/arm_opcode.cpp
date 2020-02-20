@@ -53,7 +53,7 @@ void Cpu::exec_arm()
 void Cpu::arm_unknown(uint32_t opcode)
 {
     uint32_t op = ((opcode >> 4) & 0xf) | ((opcode >> 16) & 0xff0);
-    auto err = fmt::format("[cpu-arm {:08x}]unknown opcode {:08x}:{:08x}\n",regs[PC],opcode,op);
+    auto err = fmt::format("[cpu-arm {:08x}] unknown opcode {:08x}:{:08x}\n",regs[PC],opcode,op);
     throw std::runtime_error(err);
 }
 
@@ -370,6 +370,7 @@ void Cpu::arm_branch(uint32_t opcode)
     {
         // bits 0:1  are allways cleared
         regs[LR] = (regs[PC] & ~3);
+        write_log("[cpu-arm {:08x}] call {:08x}",regs[PC],pc+offset);
     }
 
 
@@ -929,10 +930,11 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
     bool w = is_set(opcode,21); // write back
     bool p = is_set(opcode,24); // pre index
 
-    if(!p && w) // operate it in a seperate mode
+    auto cur_mode = arm_mode;
+    bool mode_change = !p && w; // T
+    if(mode_change)  // T force user mode
     {
-        auto err = fmt::format("T present operate load/store in user mode: : {:08x}!\n",regs[PC]);
-        throw std::runtime_error(err);
+        switch_mode(cpu_mode::user);
     }
 
 
@@ -1050,6 +1052,13 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
             regs[rn] = addr;
         }
     }
+
+    // we forced it to operate in user so now we need to switch it back
+    if(mode_change)
+    {
+        switch_mode(cur_mode);
+    }
+
 
     cycle_tick(cycles);
 }

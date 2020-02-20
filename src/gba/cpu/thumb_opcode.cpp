@@ -33,7 +33,7 @@ void Cpu::execute_thumb_opcode(uint16_t instr)
 void Cpu::thumb_unknown(uint16_t opcode)
 {
     uint8_t op = get_thumb_opcode_bits(opcode);
-    auto err = fmt::format("[cpu-thumb]unknown opcode {:04x}:{:x}\n",opcode,op);
+    auto err = fmt::format("[cpu-thumb {:08x}] unknown opcode {:04x}:{:x}\n",regs[PC],opcode,op);
     throw std::runtime_error(err);
 }
 
@@ -79,7 +79,7 @@ void Cpu::thumb_swi(uint16_t opcode)
 {
     // do we even do anything with nn!?
     UNUSED(opcode);
-    //printf("[thumb-swi: %08x] %x\n",regs[PC],opcode & 0xff);
+    write_log("[cpu-thumb: {:08x}] swi {:x}",regs[PC],opcode & 0xff);
 
     int idx = static_cast<int>(cpu_mode::supervisor);
 
@@ -724,6 +724,7 @@ void Cpu::thumb_long_bl(uint16_t opcode)
         // lr = tmp | 1
         regs[LR] = tmp | 1;
         cycle_tick(3); //2S+1N cycle
+        write_log("[cpu-thumb {:08x}] call {:08x}",tmp,regs[PC]);
     }
 
 }

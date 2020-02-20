@@ -8,6 +8,7 @@ void GBA::reset(std::string filename)
     disass.init(&mem,&cpu);
     disp.init(&mem,&cpu);
     cpu.init(&disp,&mem,&debug,&disass);
+	debug.write_logger("[new gba instance] {}",filename);
 }
 
 

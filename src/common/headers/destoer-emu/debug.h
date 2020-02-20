@@ -34,36 +34,22 @@ class Debug
 {
 public:
 
+    Debug();
+    ~Debug();
+
     // logging function!
     template<typename... Args>
     void write_logger(std::string x,Args... args)
     {
-        if(log.size() > 3000)
+        if(log_enabled)
         {
-            if(!log_full)
-            {
-                log.push_back("Log limit reached!");
-            }
-            log_full = true;
-        }
-
-        else
-        {
-            log.push_back(fmt::format(x,args...));
+            auto str = fmt::format(x,args...);
+            log_file << str << "\n";
+            log_file.flush();
             #ifdef LOG_CONSOLE
-            std::cout << fmt::format(x,args...) << "\n";
+            std::cout << str << "\n";
             #endif
         }
-    }
-
-    const std::vector<std::string>& get_logs()
-    { 
-        return log;
-    }
-
-    void clear_logs()
-    {
-        log.clear();
     }
 
     void wake_up();
@@ -84,10 +70,10 @@ public:
     std::map<uint16_t,Breakpoint> breakpoints;
 
     bool breakpoints_enabled = true;
-
+    bool log_enabled = true;
     
 private:
-    std::vector<std::string> log;
+    std::ofstream log_file;
     bool log_full = false;
     // is debugged instance halted
     bool halted = false;

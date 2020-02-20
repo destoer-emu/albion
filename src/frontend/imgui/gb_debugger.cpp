@@ -263,28 +263,6 @@ void ImguiMainWindow::gameboy_draw_disassembly()
 }
 
 
-// basic logger impl
-void ImguiMainWindow::gameboy_draw_logger()
-{
-    ImGui::Begin("Logger");
-
-    if(ImGui::Button("clear logs"))
-    {
-        gb.debug.clear_logs();
-    }
-
-    ImGui::BeginChild("logger window");
-
-    for(const auto &x: gb.debug.get_logs())
-    {
-        ImGui::Text(x.c_str());
-    }
-    ImGui::EndChild();
-
-    ImGui::End();
-}
-
-
 void ImguiMainWindow::gameboy_draw_memory()
 {
     static uint32_t addr = 0x0;

@@ -961,6 +961,8 @@ void Cpu::service_interrupt()
     cpsr = deset_bit(cpsr,5); // toggle thumb in cpsr
     cpsr = set_bit(cpsr,7); //set the irq bit to mask interrupts
 
+    write_log("[irq {:08x}] interrupt flag: {:02x} ",regs[PC],mem->handle_read<uint16_t>(mem->io,IO_IF));
+
     regs[PC] = 0x18; // irq handler    
 }
 

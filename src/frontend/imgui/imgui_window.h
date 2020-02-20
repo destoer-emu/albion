@@ -82,7 +82,7 @@ private:
 
 
     void file_browser();
-
+    void menu_bar(Debug &debug);
 
     // Gameboy
 
@@ -98,8 +98,6 @@ private:
     void gameboy_draw_disassembly();
     void gameboy_draw_breakpoints();
     void gameboy_draw_memory();
-    void gameboy_draw_logger();
-
 
     // gba
     void gba_stop_instance();
@@ -111,7 +109,6 @@ private:
     void gba_draw_screen();
     void gba_draw_disassembly();
     void gba_draw_registers(); 
-    void gba_draw_logger();
     void gba_draw_breakpoints();
     void gba_draw_memory();
 

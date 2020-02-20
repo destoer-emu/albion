@@ -8,7 +8,7 @@ void Display::init(Mem *mem, Cpu *cpu)
     this->mem = mem;
     this->cpu = cpu;
     screen.resize(X*Y);
-
+    std::fill(screen.begin(),screen.end(),0);
     cyc_cnt = 0; // current number of elapsed cycles
     ly = 0; // current number of cycles
     mode = display_mode::visible;

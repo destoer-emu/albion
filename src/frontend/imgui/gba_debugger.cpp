@@ -71,6 +71,7 @@ void gba_emu_instance(GBA &gba, Texture &screen)
 
     catch(std::exception &ex)
     {
+        gba.debug.write_logger(ex.what());
         std::cout << ex.what() << "\n";
         // halt the emu instance so it can be terminated properly
         gba.debug.halt(); 
@@ -315,27 +316,6 @@ void ImguiMainWindow::gba_draw_disassembly()
     ImGui::End();
 }
 
-
-// basic logger impl
-void ImguiMainWindow::gba_draw_logger()
-{
-    ImGui::Begin("gba-logger");
-
-    if(ImGui::Button("clear logs"))
-    {
-        gba.debug.clear_logs();
-    }
-
-    ImGui::BeginChild("logger window");
-
-    for(const auto &x: gba.debug.get_logs())
-    {
-        ImGui::Text(x.c_str());
-    }
-    ImGui::EndChild();
-
-    ImGui::End();
-}
 
 
 void ImguiMainWindow::gba_draw_breakpoints()

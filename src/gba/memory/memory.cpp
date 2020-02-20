@@ -85,867 +85,39 @@ void Mem::init(std::string filename, Debug *debug,Cpu *cpu,Display *disp)
 }
 
 
-// this definitely needs to be cleaned up!
 void Mem::write_io_regs(uint32_t addr,uint8_t v)
 {
     addr &= IO_MASK;
 
-
-    // unused areas (once we have the full map)
-    // we can just make this be ignored in the default case!
-    if(addr > 0x208 && addr < 0x300)
-    {
-        return;
-    }
-
-
     switch(addr)
     {
-
-        case IO_DISPCNT:
-        {
-            // gba / cgb mode is reserved
-            io[addr] = v & ~8;
-            break;
-        }
-
-        case IO_DISPCNT+1:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // bit one toggle green swap (ingore for now)
-        case IO_GREENSWAP:
-        {
-                
-            break;
-        }
-
-        case IO_GREENSWAP+1:
-        {
-            break;
-        }
-
-
-        case IO_DISPSTAT:
-        {
-            // first 3 bits read only
-            // 6 and 7 are unused
-            io[addr] = v & ~0xc7;
-            break;
-        }
-
-        
-        case IO_DISPSTAT+1: // vcount (lyc)
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // read only!
-        case IO_VCOUNT: // (ly)
-        case IO_VCOUNT+1:
-        {
-            break;
-        }
-
-        // probs should store the bgcnts
-        // in a easy to access array
-        case IO_BG0CNT:
-        case IO_BG0CNT+1:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        case IO_BG1CNT:
-        case IO_BG1CNT+1:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        case IO_BG2CNT:
-        case IO_BG2CNT+1:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        case IO_BG3CNT:
-        case IO_BG3CNT+1:
-        {
-            io[addr] = v;
-            break;
-        }
-
-
-        // all backgrounds function the same so we will group them
-
-        case IO_BG0HOFS: // write only
-        case IO_BG1HOFS:
-        case IO_BG2HOFS:
-        case IO_BG3HOFS:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // only 1st bit used
-        case IO_BG0HOFS+1:
-        case IO_BG1HOFS+1:
-        case IO_BG2HOFS+1:
-        case IO_BG3HOFS+1:
-        {
-            io[addr] = v & 1;
-            break;
-        }
-
-
-        case IO_BG0VOFS: // write only
-        case IO_BG1VOFS:
-        case IO_BG2VOFS:
-        case IO_BG3VOFS:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // only 1st bit used
-        case IO_BG0VOFS+1:
-        case IO_BG1VOFS+1:
-        case IO_BG2VOFS+1:
-        case IO_BG3VOFS+1:
-        {
-            io[addr] = v & 1;
-            break;
-        }
-
-
-
-
-        // both have full write
-        // bg2 scaling param X
-        case IO_BG2PA:
-        case IO_BG2PA+1:
-        case IO_BG2PB:
-        case IO_BG2PB+1:
-        case IO_BG2PC:
-        case IO_BG2PC+1:
-        case IO_BG2PD:
-        case IO_BG2PD+1:                        
-        {
-            io[addr] = v;
-            break;
-        }
-
-
-
-
-        // both have full write
-        // bg3 scaling param X
-        case IO_BG3PA:
-        case IO_BG3PA+1:
-        case IO_BG3PB:
-        case IO_BG3PB+1:
-        case IO_BG3PC:
-        case IO_BG3PC+1:
-        case IO_BG3PD:
-        case IO_BG3PD+1:                        
-        {
-            io[addr] = v;
-            break;
-        }
-
-
-
-
-        // background 2 reference point registers
-        // on write these copy to internal regs
-        case IO_BG2X_L:
-        case IO_BG2X_L+1:
-        case IO_BG2Y_L:
-        case IO_BG2Y_L+1:
-        case IO_BG2X_H:
-        case IO_BG2Y_H:                        
-        {
-            io[addr] = v;
-            disp->load_reference_point_regs();
-            break;
-        }
-
-        case IO_BG2X_H+1:
-        case IO_BG2Y_H+1:        
-        {
-            io[addr] = v & ~0xf0;
-            disp->load_reference_point_regs();
-            break;
-        }
-
-
-
-
-        //rightmost cord of window plus 1
-        case IO_WIN0H:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // leftmost window cord
-        case IO_WIN0H+1:
-        {
-            io[addr] = v;
-            break;
-        }
-
-
-        // DMA 0
-
-        // dma 0 source reg
-        case IO_DMA0SAD: 
-        case IO_DMA0SAD+1:
-        case IO_DMA0SAD+2:
-        case IO_DMA0SAD+3:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // dma 0 dest reg
-        case IO_DMA0DAD: 
-        case IO_DMA0DAD+1:
-        case IO_DMA0DAD+2:
-        case IO_DMA0DAD+3:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // dma 0 transfer len
-        case IO_DMA0CNT_L:
-        case IO_DMA0CNT_L+1:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // dma 0 transfer control
-        case IO_DMA0CNT_H:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // dma 0 transfer control
-        case IO_DMA0CNT_H+1:
-        {
-            if(is_set(v,7) && !is_set(io[addr],7)) // transfer enabeld
-            {
-                cpu->dma_regs[0].src = handle_read<uint32_t>(io,IO_DMA0SAD);
-                cpu->dma_regs[0].dst = handle_read<uint32_t>(io,IO_DMA0DAD);
-                cpu->dma_regs[0].nn = handle_read<uint16_t>(io,IO_DMA0CNT_L);       
-                cpu->handle_dma(dma_type::immediate);
-            }
-            io[addr] = v;
-            break;
-        }
-
-
-
-
-
-
-
-        // DMA 1
-
-        // dma 1 source reg
-        case IO_DMA1SAD: 
-        case IO_DMA1SAD+1:
-        case IO_DMA1SAD+2:
-        case IO_DMA1SAD+3:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // dma 1 dest reg
-        case IO_DMA1DAD: 
-        case IO_DMA1DAD+1:
-        case IO_DMA1DAD+2:
-        case IO_DMA1DAD+3:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // dma 1 transfer len
-        case IO_DMA1CNT_L:
-        case IO_DMA1CNT_L+1:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // dma 1 transfer control
-        case IO_DMA1CNT_H:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // dma 1 transfer control
-        case IO_DMA1CNT_H+1:
-        {
-            if(is_set(v,7) && !is_set(io[addr],7)) // transfer enabeld
-            {
-                cpu->dma_regs[1].src = handle_read<uint32_t>(io,IO_DMA1SAD);
-                cpu->dma_regs[1].dst = handle_read<uint32_t>(io,IO_DMA1DAD);
-                cpu->dma_regs[1].nn = handle_read<uint16_t>(io,IO_DMA1CNT_L);   
-                cpu->handle_dma(dma_type::immediate);
-            }
-            io[addr] = v;
-            break;
-        }
-
-
-
-        // DMA 2
-
-        // dma 2 source reg
-        case IO_DMA2SAD: 
-        case IO_DMA2SAD+1:
-        case IO_DMA2SAD+2:
-        case IO_DMA2SAD+3:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // dma 2 dest reg
-        case IO_DMA2DAD: 
-        case IO_DMA2DAD+1:
-        case IO_DMA2DAD+2:
-        case IO_DMA2DAD+3:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // dma 2 transfer len
-        case IO_DMA2CNT_L:
-        case IO_DMA2CNT_L+1:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // dma 2 transfer control
-        case IO_DMA2CNT_H:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // dma 2 transfer control
-        case IO_DMA2CNT_H+1:
-        {
-            if(is_set(v,7) && !is_set(io[addr],7)) // transfer enabeld
-            {
-                cpu->dma_regs[2].src = handle_read<uint32_t>(io,IO_DMA2SAD);
-                cpu->dma_regs[2].dst = handle_read<uint32_t>(io,IO_DMA2DAD);
-                cpu->dma_regs[2].nn = handle_read<uint16_t>(io,IO_DMA2CNT_L);   
-                cpu->handle_dma(dma_type::immediate);
-            }
-            io[addr] = v;
-            break;
-        }
-
-
-
-        // DMA 3
-
-        // dma 3 source reg
-        case IO_DMA3SAD: 
-        case IO_DMA3SAD+1:
-        case IO_DMA3SAD+2:
-        case IO_DMA3SAD+3:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // dma 3 dest reg
-        case IO_DMA3DAD: 
-        case IO_DMA3DAD+1:
-        case IO_DMA3DAD+2:
-        case IO_DMA3DAD+3:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // dma 3 transfer len
-        case IO_DMA3CNT_L:
-        case IO_DMA3CNT_L+1:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // dma 3 transfer control
-        case IO_DMA3CNT_H:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // dma 3 transfer control
-        case IO_DMA3CNT_H+1:
-        {
-            if(is_set(v,7) && !is_set(io[addr],7)) // transfer enabeld
-            {
-                cpu->dma_regs[3].src = handle_read<uint32_t>(io,IO_DMA3SAD);
-                cpu->dma_regs[3].dst = handle_read<uint32_t>(io,IO_DMA3DAD);
-                cpu->dma_regs[3].nn = handle_read<uint16_t>(io,IO_DMA3CNT_L);                          
-                cpu->handle_dma(dma_type::immediate);
-            }
-            io[addr] = v;
-            break;
-        }
-
-
-
- 
-        // timer 0  reload value
-        case IO_TM0CNT_L:
-        case IO_TM0CNT_L+1:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // timer 0 control
-        case IO_TM0CNT_H:
-        {
-            if(is_set(v,7) && !is_set(io[addr],7))
-            {
-                // reload the timer
-                cpu->set_timer(0,handle_read<uint16_t>(io,IO_TM0CNT_L));
-                break;
-            }
-            io[addr] = v;
-            break;
-        } 
-
-        // unused
-        case IO_TM0CNT_H+1:
-        {
-            break;
-        }
-
-
-        // timer 1  reload value
-        case IO_TM1CNT_L:
-        case IO_TM1CNT_L+1:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // timer 1 control
-        case IO_TM1CNT_H:
-        {
-            if(is_set(v,7) && !is_set(io[addr],7))
-            {
-                cpu->set_timer(1,handle_read<uint16_t>(io,IO_TM1CNT_L));
-            }
-            io[addr] = v;
-            break;
-        } 
-
-        // unused
-        case IO_TM1CNT_H+1:
-        {
-            break;
-        }
-
-
-
-
-        // timer 2  reload value
-        case IO_TM2CNT_L:
-        case IO_TM2CNT_L+1:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // timer 2 control
-        case IO_TM2CNT_H:
-        {
-            if(is_set(v,7) && !is_set(io[addr],7))
-            {
-                cpu->set_timer(2,handle_read<uint16_t>(io,IO_TM2CNT_L));
-            }
-            io[addr] = v;
-            break;
-        } 
-
-        // unused
-        case IO_TM2CNT_H+1:
-        {
-            break;
-        }
-
-
-        // timer 3  reload value
-        case IO_TM3CNT_L:
-        case IO_TM3CNT_L+1:
-        {
-            io[addr] = v;
-            break;
-        }
-
-        // timer 3 control
-        case IO_TM3CNT_H:
-        {
-            if(is_set(v,7) && !is_set(io[addr],7))
-            {
-                //printf("enabled! %08x\n",cpu->get_pc());
-                cpu->set_timer(3,handle_read<uint16_t>(io,IO_TM3CNT_L));
-            }
-            io[addr] = v;
-            break;
-        } 
-
-        // unused
-        case IO_TM3CNT_H+1:
-        {
-            break;
-        }
-
-
-
-        case IO_IME: // 0th bit toggles ime
-        {
-            ime = is_set(v,0);
-            break;
-        }
-        case IO_IME + 1:
-        { 
-            break; // do nothing
-        }
-
-
-        case IO_IE: // interrupt enable
-        {
-            io[addr] = v;
-            break;
-        }
-
-        case IO_IE+1:
-        {
-            io[addr] = v & ~0xc0;
-            break;
-        }
-
-        case IO_IF: // interrupt flag writing a 1 desets the bit
-        {
-            io[addr] &= ~v;
-            break;
-        }
-
-        case IO_IF+1:
-        {
-            io[addr] &= ~(v & ~0xc0);
-            break;
-        }
-
-        case IO_WAITCNT: // configures game pak access times
-        {
-            io[addr] = v;
-            break;
-        }
-
-        case IO_WAITCNT+1: 
-        {
-            io[addr] = v & ~0x20;
-            break;
-        }        
-
-        
-        case IO_WAITCNT+2: // top half not used
-        case IO_WAITCNT+3: 
-        {
-            break;
-        }
-
-
-
-        //unused
-        case 0x400020A&IO_MASK: 
-        case 0x400020B&IO_MASK:
-        { 
-            break;
-        }
-
-        // gba bios inits this to one to know its not in initial boot 
-        case IO_POSTFLG:
-        {
-            io[addr] = v & 1;
-            break;
-        }
-
+        // ime toggle on first bit rest unused
+        case IO_IME: ime = is_set(v,0);  break;
+        case IO_IME+1: case IO_IME+2: case IO_IME+3: break; // unused (remove later)
 
 
         default:
-        {    
-            //printf("unknown io reg write at %08x:%08x\n",addr,cpu->get_pc());
-            io[addr] = v; // get this done fast <--- fix later
-            //exit(1);
+        { 
+            auto err = fmt::format("[memory {:08x}] unhandled write at {:08x}:{:x}",cpu->get_pc(),addr,v);
+            throw std::runtime_error(err);
         }
     }
 }
 
 
-// this will require special handling
+
 uint8_t Mem::read_io_regs(uint32_t addr)
 {
     addr &= IO_MASK;
+
+
     switch(addr)
     {
 
-        // should only be accessible from bios..
-        // handle this later
-        case IO_SOUNDBIAS:
-        case IO_SOUNDBIAS+1:
-        {
-            return io[addr];
-        }
-
-        // unused
-        case IO_SOUNDBIAS+2:
-        case IO_SOUNDBIAS+3:
-        {
-            return 0; 
-        }
-
-        case IO_DISPCNT:
-        {
-            return io[addr];
-            break;
-        }
-
-        case IO_DISPCNT+1:
-        {
-            return io[addr];
-            break;
-        }
-
-        // these two are just stubs atm
-        case IO_DISPSTAT:
-        {
-            return io[addr];
-            break;
-        }
-
-        case IO_DISPSTAT+1:
-        {
-            return io[addr];
-            break;
-        }
-
-
-        case IO_VCOUNT:
-        {
-            return io[addr];
-            break;
-        }
-
-        case IO_VCOUNT+1: // not used
-        {
-            return 0x0;
-            break;
-        }
-
-        // bit one toggle green swap (ingore for now)
-        case IO_GREENSWAP:
-        {
-            return 0; 
-            break;
-        }
-
-        case IO_GREENSWAP+1:
-        {
-            return 0;
-            break;
-        }
-
-
-
-
-
-
-        // dma  word count
-        // read only but may be read from
-        // as a word to access the higher part
-        case IO_DMA0CNT_L:
-        case IO_DMA0CNT_L+1:
-        case IO_DMA1CNT_L:
-        case IO_DMA1CNT_L+1:
-        case IO_DMA2CNT_L:
-        case IO_DMA2CNT_L+1:                        
-        case IO_DMA3CNT_L:
-        case IO_DMA3CNT_L+1:
-        {
-            return 0;
-            break;
-        }
-
-
-        // dma  transfer control
-        case IO_DMA0CNT_H:
-        case IO_DMA0CNT_H+1:
-        case IO_DMA1CNT_H:
-        case IO_DMA1CNT_H+1:
-        case IO_DMA2CNT_H:
-        case IO_DMA2CNT_H+1:                               
-        case IO_DMA3CNT_H:
-        case IO_DMA3CNT_H+1:
-        {
-            return io[addr];
-            break;
-        }
-
-
-        // timer 0  reload value
-        // return current count when read from
-        case IO_TM0CNT_L:
-        case IO_TM0CNT_L+1:
-        {
-            uint16_t timer = cpu->get_timer(0);
-            return addr == IO_TM0CNT_L? timer  & 0xff : (timer >> 8) & 0xff;
-            break;
-        }
-
-
-        // timer 1  reload value
-        case IO_TM1CNT_L:
-        case IO_TM1CNT_L+1:
-        {
-            uint16_t timer  = cpu->get_timer(1);
-            return addr == IO_TM1CNT_L? timer  & 0xff : (timer >> 8) & 0xff;
-            break;
-        }
-
-        // timer 2  reload value
-        case IO_TM2CNT_L:
-        case IO_TM2CNT_L+1:
-        {
-            uint16_t timer =  cpu->get_timer(2);
-            return addr == IO_TM2CNT_L? timer  & 0xff : (timer >> 8) & 0xff;
-            break;
-        }
-
-        // timer 3  reload value
-        case IO_TM3CNT_L:
-        case IO_TM3CNT_L+1:
-        {
-            uint16_t timer = cpu->get_timer(3);
-            return addr == IO_TM3CNT_L? timer  & 0xff : (timer >> 8) & 0xff;
-            break;
-        }
-
-
-
-        case IO_KEYINPUT:
-        {
-            return io[addr];
-            break;
-        }
-
-      
-        case IO_KEYINPUT+1: // 10-15 unused
-        {
-            return io[addr];
-            break;
-        }
-
-
-        case IO_KEYCNT:
-        {
-            return io[addr];
-            break;
-        }
-
-        case IO_KEYCNT+1: // 10-13 not used
-        {
-            return io[addr];
-            break;
-        }
-
-
-        case IO_IME: // 0th bit toggles ime
-        {
-            return ime;
-            break;
-        }
-        case IO_IME + 1:
-        { 
-            return 0; // do nothing
-            break;
-        }
-
-        case IO_IE: // inteerupt enable
-        case IO_IE+1:
-        {
-            return io[addr];
-        }
-
-
-        case IO_IF:
-        case IO_IF+1:
-        {
-            return io[addr];
-        }
-
-
-        case IO_WAITCNT:
-        case IO_WAITCNT+1:
-        {
-            return io[addr];
-        }
-
-        // unused
-        case IO_WAITCNT+2:
-        case IO_WAITCNT+3:
-        {
-            return 0;
-        }
-
-
-        //unused
-        case 0x400020A: 
-        case 0x400020B:
-        { 
-            return 0;
-            break;
-        }
-
-        case IO_POSTFLG:
-        {
-            return io[addr] & 1;
-            break;
-        }
-
         default:
-        {    
-            //printf("unknown io reg read at %08x:%08x\n",addr,cpu->get_pc());
-            //cpu->print_regs();
-            //exit(1);
-            return io[addr];
+        {
+            auto err = fmt::format("[memory {:08x}] unhandled read at {:08x}",cpu->get_pc(),addr);
+            throw std::runtime_error(err);
         }
     }
 }
@@ -988,7 +160,8 @@ access_type Mem::read_mem_handler(uint32_t addr)
     else if(addr < 0x06018000) v = read_vram<access_type>(addr);
     else if(addr < 0x07000000) { mem_region = memory_region::undefined; return 0; }
     else if(addr < 0x08000000) v = read_oam<access_type>(addr);
-    else v = read_external<access_type>(addr);
+    else if(addr < 0x0E010000) v = read_external<access_type>(addr);
+    else { mem_region = memory_region::undefined; return 0; }
 
     return v;
 }
@@ -999,6 +172,9 @@ access_type Mem::read_mem_handler(uint32_t addr)
 template<typename access_type>
 access_type Mem::read_mem(uint32_t addr)
 {
+    // only allow up to 32bit
+    static_assert(sizeof(access_type) <= 4);
+
     // 28 bit bus
     addr &= 0x0fffffff;
 
@@ -1035,6 +211,9 @@ template<typename access_type>
 void Mem::write_mem(uint32_t addr,access_type v)
 {
 
+    // only allow up to 32bit
+    static_assert(sizeof(access_type) <= 4);
+
     // 28 bit bus
     addr &= 0x0fffffff;
 
@@ -1058,7 +237,8 @@ void Mem::write_mem(uint32_t addr,access_type v)
     else if(addr < 0x06018000) write_vram<access_type>(addr,v);
     else if(addr < 0x07000000) { mem_region = memory_region::undefined; return; }
     else if(addr < 0x08000000) write_oam<access_type>(addr,v);
-    else write_external<access_type>(addr,v); // rom is read only but could be flash
+    else if(addr < 0x0E010000) write_external<access_type>(addr,v); // rom is read only but could be flash
+    else { mem_region = memory_region::undefined;  }
 
 }
 
@@ -1072,37 +252,25 @@ void Mem::write_memt(uint32_t addr,access_type v)
 
 
 
-template<>
-void Mem::tick_mem_access<uint8_t>()
+template<typename access_type>
+void Mem::tick_mem_access()
 {
+    // only allow up to 32bit
+    static_assert(sizeof(access_type) <= 4);
+
     // should unmapped addresses still tick a cycle?
     if(mem_region != memory_region::undefined)
     {
-        cpu->cycle_tick(wait_states[static_cast<int>(mem_region)][static_cast<int>(access_size::byte)]);
+        // access type >> 1 to get the value
+        // 4 -> 2 (word)
+        // 2 -> 1 (half)
+        // 1 -> 0 (byte)
+        cpu->cycle_tick(wait_states[static_cast<int>(mem_region)][sizeof(access_type) >> 1]);
     }
 }
 
 
-template<>
-void Mem::tick_mem_access<uint16_t>()
-{
-    // should unmapped addresses still tick a cycle?
-    if(mem_region != memory_region::undefined)
-    {
-        cpu->cycle_tick(wait_states[static_cast<int>(mem_region)][static_cast<int>(access_size::half)]);
-    }
-}
 
-
-template<>
-void Mem::tick_mem_access<uint32_t>()
-{
-    // should unmapped addresses still tick a cycle?
-    if(mem_region != memory_region::undefined)
-    {
-        cpu->cycle_tick(wait_states[static_cast<int>(mem_region)][static_cast<int>(access_size::word)]);
-    }
-}
 
 
 
