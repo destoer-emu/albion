@@ -342,12 +342,13 @@ void Cpu::cycle_tick(int cycles)
     tick_timers(cycles);
 }
 
+// lets ignore timers for now
 void Cpu::tick_timers(int cycles)
 {
 
     static constexpr uint32_t timer_lim[4] = {1,64,256,1024};
     static constexpr interrupt interrupt_table[4] = {interrupt::timer0,interrupt::timer1,interrupt::timer2,interrupt::timer3};
- 
+ /*
     // ignore count up timing for now
     for(int i = 0; i < 4; i++)
     {
@@ -385,7 +386,8 @@ void Cpu::tick_timers(int cycles)
             }
             timer_scale[i] %= lim;
         }
-    }    
+    }  
+*/  
 }
 
 
@@ -915,9 +917,7 @@ uint32_t Cpu::logical_eor(uint32_t v1, uint32_t v2, bool s)
 // write the interrupt req bit
 void Cpu::request_interrupt(interrupt i)
 {
-    uint16_t io_if = mem->handle_read<uint16_t>(mem->io,IO_IF);
-    io_if = set_bit(io_if,static_cast<uint32_t>(i));
-    mem->handle_write<uint16_t>(mem->io,IO_IF,io_if);
+    cpu_io.interrupt_flag = set_bit(cpu_io.interrupt_flag,static_cast<uint32_t>(i));   
 }
 
 
@@ -928,12 +928,8 @@ void Cpu::do_interrupts()
         return;
     }
 
-
-    uint16_t interrupt_enable = mem->handle_read<uint16_t>(mem->io,IO_IE);
-    uint16_t interrupt_flag = mem->handle_read<uint16_t>(mem->io,IO_IF);
-
     // the handler will find out what fired for us!
-    if((mem->get_ime() & interrupt_enable & interrupt_flag) != 0)
+    if((cpu_io.ime & cpu_io.interrupt_enable & cpu_io.interrupt_flag) != 0)
     {
         //printf("interrupt fired!");
         service_interrupt();
@@ -961,7 +957,7 @@ void Cpu::service_interrupt()
     cpsr = deset_bit(cpsr,5); // toggle thumb in cpsr
     cpsr = set_bit(cpsr,7); //set the irq bit to mask interrupts
 
-    write_log("[irq {:08x}] interrupt flag: {:02x} ",regs[PC],mem->handle_read<uint16_t>(mem->io,IO_IF));
+    write_log("[irq {:08x}] interrupt flag: {:02x} ",regs[PC],cpu_io.interrupt_flag);
 
     regs[PC] = 0x18; // irq handler    
 }
@@ -970,6 +966,8 @@ void Cpu::service_interrupt()
 // check if for each dma if any of the start timing conds have been met
 // should store all the dma information in struct so its nice to access
 // also find out when dmas are actually processed?
+
+// ignore dma till after armwrestler we are probably gonna redo the api for the most part anyways
 void Cpu::handle_dma(dma_type req_type, int special_dma)
 {
 
@@ -979,7 +977,7 @@ void Cpu::handle_dma(dma_type req_type, int special_dma)
         return; 
     }
 
-
+/*
     static constexpr uint32_t zero_table[4] = {0x4000,0x4000,0x4000,0x10000};
     for(int i = 0; i < 4; i++)
     {
@@ -1031,6 +1029,7 @@ void Cpu::handle_dma(dma_type req_type, int special_dma)
             }
         }
     }
+*/
 }
 
 
@@ -1050,7 +1049,7 @@ void Cpu::do_dma(uint16_t &dma_cnt,dma_type req_type, int dma_number)
         throw std::runtime_error("[unimplemented] gamepak dma!");
     }
 
-
+/*
     dma_in_progress = true;
 
     Dma_reg &dma_reg = dma_regs[dma_number];
@@ -1151,7 +1150,7 @@ void Cpu::do_dma(uint16_t &dma_cnt,dma_type req_type, int dma_number)
             break;
         }
     }
-
+*/
 
     dma_in_progress = false;
 }

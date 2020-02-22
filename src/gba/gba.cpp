@@ -28,21 +28,17 @@ void GBA::run()
 // for io after the test 
 void GBA::button_event(button b, bool down)
 {
-	uint16_t keyinput = mem.handle_read<uint16_t>(mem.io,IO_KEYINPUT&IO_MASK);
-
 	int idx = static_cast<int>(b);
 
 	// 0 = pressed
 
 	if(down)
 	{
-		keyinput = deset_bit(keyinput,idx); 
+		mem.mem_io.keyinput = deset_bit(mem.mem_io.keyinput,idx); 
 	}
 
 	else
 	{
-		keyinput = set_bit(keyinput,idx);
-	}
-
-	mem.handle_write<uint16_t>(mem.io,IO_KEYINPUT&IO_MASK,keyinput);
+		mem.mem_io.keyinput = set_bit(mem.mem_io.keyinput,idx);
+	}	
 }

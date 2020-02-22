@@ -136,9 +136,6 @@ inline int64_t sign_extend(int64_t x, int64_t b) noexcept
     return r;
 }
 
-
-
-
 // is there a nicer way to do this?
 inline size_t get_remaining_ifstream_size(std::ifstream &fp)
 {

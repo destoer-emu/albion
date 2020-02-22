@@ -50,7 +50,6 @@ void Mem::init(std::string filename, Debug *debug,Cpu *cpu,Display *disp)
     bios_rom.resize(0x4000);
     board_wram.resize(0x40000);
     chip_wram.resize(0x8000);
-    io.resize(0x400);
     pal_ram.resize(0x400);
     vram.resize(0x18000);
     oam.resize(0x400); 
@@ -58,7 +57,6 @@ void Mem::init(std::string filename, Debug *debug,Cpu *cpu,Display *disp)
 
     std::fill(board_wram.begin(),board_wram.end(),0);
     std::fill(chip_wram.begin(),chip_wram.end(),0);
-    std::fill(io.begin(),io.end(),0);
     std::fill(pal_ram.begin(),pal_ram.end(),0);
     std::fill(vram.begin(),vram.end(),0);
     std::fill(oam.begin(),oam.end(),0);
@@ -67,13 +65,6 @@ void Mem::init(std::string filename, Debug *debug,Cpu *cpu,Display *disp)
     
     // read out rom info here...
     std::cout << "rom size: " << rom.size() << "\n";
-
-
-    // all unpressed
-    io[IO_KEYINPUT] = 0xff;
-    io[IO_KEYINPUT+1] = 0x3;
-
-    ime = true;
 
     // read and copy in the bios rom
     read_file("GBA.BIOS",bios_rom);
@@ -91,12 +82,51 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
 
     switch(addr)
     {
-        // ime toggle on first bit rest unused
-        case IO_IME: ime = is_set(v,0);  break;
-        case IO_IME+1: case IO_IME+2: case IO_IME+3: break; // unused (remove later)
+
+        case IO_DISPCNT: disp->disp_io.disp_cnt.write(0,v); break;
+        case IO_DISPCNT+1: disp->disp_io.disp_cnt.write(1,v); break;
+
+        // stubbed
+        case IO_GREENSWAP: break;
+        case IO_GREENSWAP+1: break;
+
+        case IO_BG0CNT: disp->disp_io.bg_cnt[0].write(0,v); break;
+        case IO_BG0CNT+1: disp->disp_io.bg_cnt[0].write(1,v); break;
+
+        case IO_BG1CNT: disp->disp_io.bg_cnt[1].write(0,v); break;
+        case IO_BG1CNT+1: disp->disp_io.bg_cnt[1].write(1,v); break;
+
+        case IO_BG2CNT: disp->disp_io.bg_cnt[2].write(0,v); break;
+        case IO_BG2CNT+1: disp->disp_io.bg_cnt[2].write(1,v); break;
+
+        case IO_BG3CNT: disp->disp_io.bg_cnt[3].write(0,v); break;
+        case IO_BG3CNT+1: disp->disp_io.bg_cnt[3].write(1,v); break;
 
 
-        default:
+        case IO_BG0HOFS: disp->disp_io.bg_offset_x[0].write(0,v); break;
+        case IO_BG0HOFS+1: disp->disp_io.bg_offset_x[0].write(1,v); break;
+        case IO_BG0VOFS: disp->disp_io.bg_offset_y[0].write(0,v); break;
+        case IO_BG0VOFS+1: disp->disp_io.bg_offset_y[0].write(1,v); break;
+
+        case IO_BG1HOFS: disp->disp_io.bg_offset_x[1].write(0,v); break;
+        case IO_BG1HOFS+1: disp->disp_io.bg_offset_x[1].write(1,v); break;
+        case IO_BG1VOFS:  disp->disp_io.bg_offset_y[1].write(0,v); break;
+        case IO_BG1VOFS+1: disp->disp_io.bg_offset_y[1].write(1,v); break;
+
+        case IO_BG2HOFS: disp->disp_io.bg_offset_x[2].write(0,v); break;
+        case IO_BG2HOFS+1: disp->disp_io.bg_offset_x[2].write(1,v); break;
+        case IO_BG2VOFS: disp->disp_io.bg_offset_y[2].write(0,v); break;
+        case IO_BG2VOFS+1: disp->disp_io.bg_offset_y[2].write(1,v); break;
+
+        case IO_BG3HOFS: disp->disp_io.bg_offset_x[3].write(0,v); break;
+        case IO_BG3HOFS+1: disp->disp_io.bg_offset_x[3].write(1,v); break;
+        case IO_BG3VOFS: disp->disp_io.bg_offset_y[3].write(0,v); break;
+        case IO_BG3VOFS+1: disp->disp_io.bg_offset_y[3].write(1,v); break;   
+
+        case IO_IME: cpu->cpu_io.ime = is_set(v,0); break;
+        case IO_IME+1: case IO_IME+2: case IO_IME+3: break; // stub
+
+        default: // here we will handle open bus when we have all our io regs done :)
         { 
             auto err = fmt::format("[memory {:08x}] unhandled write at {:08x}:{:x}",cpu->get_pc(),addr,v);
             throw std::runtime_error(err);
@@ -113,6 +143,14 @@ uint8_t Mem::read_io_regs(uint32_t addr)
 
     switch(addr)
     {
+        case IO_DISPSTAT: return disp->disp_io.disp_stat.read(0);
+        case IO_DISPSTAT+1: return disp->disp_io.disp_stat.read(1);
+
+        case IO_KEYINPUT: return mem_io.keyinput;
+        case IO_KEYINPUT+1: return (mem_io.keyinput >> 8) & 3;
+
+        case IO_VCOUNT: return disp->get_vcount();
+        case IO_VCOUNT+1: return disp->get_vcount();
 
         default:
         {

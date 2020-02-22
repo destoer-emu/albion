@@ -1,8 +1,9 @@
 #pragma once
-#include "forward_def.h"
 #include <destoer-emu/lib.h>
 #include <destoer-emu/debug.h>
-#include "arm.h"
+#include <gba/forward_def.h>
+#include <gba/cpu_io.h>
+#include <gba/arm.h>
 
 
 
@@ -82,6 +83,10 @@ public:
     Dma_reg dma_regs[4];
 
     void handle_dma(dma_type req_type, int special_dma = -1);
+
+
+    // cpu io memory
+    CpuIo cpu_io;
 private:
 
     using ARM_OPCODE_FPTR = void (Cpu::*)(uint32_t opcode);

@@ -16,10 +16,10 @@ void Display::init(Mem *mem, Cpu *cpu)
 }
 
 // need to update these during vblank?
+// bg2pa etc not sure how they work
 void Display::load_reference_point_regs()
 {
-    reference_point_x = mem->handle_read<uint32_t>(mem->io,IO_BG2X_L);
-    reference_point_y = mem->handle_read<uint32_t>(mem->io,IO_BG2Y_L);
+
 }
 
 // renderer helper functions
@@ -72,22 +72,21 @@ void Display::read_tile(uint32_t tile[],bool col_256,uint32_t base,uint32_t pal_
 
 void Display::render_text(int id)
 {
-    uint32_t bg_cnt_addr = IO_BG0CNT + id * ARM_WORD_SIZE;
-    uint16_t bg0_cnt = mem->handle_read<uint16_t>(mem->io,bg_cnt_addr);
-    uint32_t bg_tile_data_base = ((bg0_cnt >> 2) & 0x3) * 0x4000;
-    uint32_t bg_map_base =  ((bg0_cnt >> 8) & 0x1f) * 0x800;
-    uint32_t size = (bg0_cnt >> 14) & 0x3;  // <-- need to take this more into account!
+
+    const auto &cnt = disp_io.bg_cnt[id];
+    const uint32_t bg_tile_data_base = cnt.char_base_block * 0x4000;
+    uint32_t bg_map_base =  cnt.screen_base_block * 0x800;
+    const uint32_t size = cnt.screen_size;  // <-- need to take this more into account!
 
 
     // 256 color one pal 8bpp? or 16 color 16 pal 4bpp 
-    bool col_256 = is_set(bg0_cnt,7); // 4bpp assumed
+    const bool col_256 = cnt.col_256;
         
 
 
-    uint32_t scroll_x_addr = IO_BG0HOFS + id * ARM_WORD_SIZE;
-    uint32_t scroll_y_addr = IO_BG0VOFS + id * ARM_WORD_SIZE;
-    uint32_t scroll_x = mem->handle_read<uint16_t>(mem->io,scroll_x_addr) & 511;
-    uint32_t scroll_y = mem->handle_read<uint16_t>(mem->io,scroll_y_addr) & 511;
+
+    uint32_t scroll_x = disp_io.bg_offset_x[id].offset;
+    uint32_t scroll_y = disp_io.bg_offset_y[id].offset;
 
     uint32_t line = (ly + scroll_y) % 512;
 
@@ -180,10 +179,8 @@ void Display::render_text(int id)
 
 void Display::render()
 {
-    
-
-    uint16_t dispcnt = mem->handle_read<uint16_t>(mem->io,IO_DISPCNT);
-    int render_mode = dispcnt & 0x7;
+    const auto disp_cnt = disp_io.disp_cnt;
+    const int render_mode = disp_cnt.bg_mode; 
 
 
 
@@ -194,7 +191,7 @@ void Display::render()
         {
             for(int i = 0; i < 4; i++)
             {
-                if(is_set(dispcnt,8+i)) // if bg enabled!
+                if(disp_cnt.bg_enable[i]) // if bg enabled!
                 {
                     render_text(i);
                 }
@@ -208,7 +205,7 @@ void Display::render()
         {
             for(int i = 2; i < 4; i++)
             {
-                if(is_set(dispcnt,8+i)) // if bg enabled!
+                if(disp_cnt.bg_enable[i]) // if bg enabled!
                 {
                     render_text(i);
                 }                
@@ -267,17 +264,16 @@ void Display::render()
 void Display::advance_line()
 {
     ly++;
-    mem->io[IO_VCOUNT] = ly; 
 
-    uint8_t lyc = mem->io[IO_DISPSTAT+1];
+    auto &disp_stat = disp_io.disp_stat;
 
     // need to fire an interrupt here if enabled
-    if(ly == lyc)
+    if(ly == disp_stat.lyc)
     {
         // set the v counter flag
-        mem->io[IO_DISPSTAT] = set_bit(mem->io[IO_DISPSTAT],2);
+        disp_stat.lyc_hit = true;
 
-        if(is_set(mem->io[IO_DISPSTAT],5))
+        if(disp_stat.lyc_irq_enable)
         {
             cpu->request_interrupt(interrupt::vcount);
         }
@@ -286,7 +282,7 @@ void Display::advance_line()
 
     else
     {
-        mem->io[IO_DISPSTAT] = deset_bit(mem->io[IO_DISPSTAT],2);
+        disp_stat.lyc_hit = false;
     }
 
 
@@ -297,7 +293,7 @@ void Display::advance_line()
     }
 
     // exit hblank
-    mem->io[IO_DISPSTAT] = deset_bit(mem->io[IO_DISPSTAT],1);
+    disp_stat.hblank = false;
     cyc_cnt = 0; // reset cycle counter
 }
 
@@ -316,11 +312,11 @@ void Display::tick(int cycles)
             if(cyc_cnt >= 960)
             {
                 // enter hblank
-                mem->io[IO_DISPSTAT] = set_bit(mem->io[IO_DISPSTAT],1);
+                disp_io.disp_stat.hblank = false;
                 mode = display_mode::hblank;
 
                 // if hblank irq enabled
-                if(is_set(mem->io[IO_DISPSTAT],4))
+                if(disp_io.disp_stat.hblank_irq_enable)
                 {
                     cpu->request_interrupt(interrupt::hblank);
                 }
@@ -347,10 +343,10 @@ void Display::tick(int cycles)
                 if(ly == 160) // 160 we need to vblank
                 {
                     mode = display_mode::vblank;
-                    mem->io[IO_DISPSTAT] = set_bit(mem->io[IO_DISPSTAT],0); // set vblank flag
+                    disp_io.disp_stat.vblank = true;
 
                     // if vblank irq enabled
-                    if(is_set(mem->io[IO_DISPSTAT],3))
+                    if(disp_io.disp_stat.vblank_irq_enable)
                     {
                         cpu->request_interrupt(interrupt::vblank);
                     }
@@ -378,7 +374,7 @@ void Display::tick(int cycles)
                     // exit vblank
                     new_vblank = true;
                     mode = display_mode::visible;
-                    mem->io[IO_DISPSTAT] = deset_bit(mem->io[IO_DISPSTAT],0);
+                    disp_io.disp_stat.vblank = false;
                     ly = 0;
 
                     render();
@@ -389,17 +385,17 @@ void Display::tick(int cycles)
             else if(cyc_cnt >= 960) // hblank is still active even in vblank
             {
                 // enter hblank (dont set the internal mode here)
-                mem->io[IO_DISPSTAT] = set_bit(mem->io[IO_DISPSTAT],1);
+                disp_io.disp_stat.hblank = true;
 
                 // does the hblank irq & dma fire here?
                 // if hblank irq enabled
-                if(is_set(mem->io[IO_DISPSTAT],4))
+                if(disp_io.disp_stat.hblank_irq_enable)
                 {
                     cpu->request_interrupt(interrupt::hblank);
                 }
                 cpu->handle_dma(dma_type::hblank);
 
-
+                /* just ignore this for now while we get arm wrestler to boot
                 // disable video capture mode dma
                 // does it need to be enabled before a disable?
                 if(ly == 162)
@@ -411,7 +407,7 @@ void Display::tick(int cycles)
                         mem->handle_write<uint16_t>(mem->io,IO_DMA3CNT_H,deset_bit(dma_cnt,15));
                     }
                 }
-
+                */
             }
 
             break;

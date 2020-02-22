@@ -1,9 +1,10 @@
 #pragma once
-#include "forward_def.h"
 #include <destoer-emu/lib.h>
+#include <gba/forward_def.h>
+#include <gba/disp_io.h>
 
 
-enum display_mode
+enum class display_mode
 {
     visible,hblank,vblank
 };
@@ -18,11 +19,13 @@ public:
     void set_mode(display_mode mode) { this->mode = mode; }
     void set_cycles(int cycles) { cyc_cnt = cycles; }
     void load_reference_point_regs();
+    int get_vcount() const { return ly; } 
 
     static constexpr int X = 240;
     static constexpr int Y = 160;    
     std::vector<uint32_t> screen;
     bool new_vblank = false;
+    DispIo disp_io;
 private:
 
     uint32_t reference_point_x;

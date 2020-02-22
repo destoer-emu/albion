@@ -1,9 +1,10 @@
 #pragma once
-#include "forward_def.h"
 #include <destoer-emu/lib.h>
 #include <destoer-emu/debug.h>
-#include "arm.h"
-#include "mem_constants.h"
+#include <gba/arm.h>
+#include <gba/mem_constants.h>
+#include <gba/forward_def.h>
+#include <gba/mem_io.h>
 
 // not really happy with the impl 
 // so think of a better way to model it
@@ -39,13 +40,15 @@ public:
     template<typename access_type>    
     void write_memt(uint32_t addr,access_type v);
 
-    bool get_ime() const { return ime; }
-
+    
     // probablly a better way do this than to just give free reign 
     // over the array (i.e for the video stuff give display class ownership)
 
     // io regs
-    std::vector<uint8_t> io; // 0x400
+    // we split this across various regs
+    // but this is how much it would take up
+    //std::vector<uint8_t> io; // 0x400 
+    MemIo mem_io;
 
     // video ram
     std::vector<uint8_t> vram; // 0x18000
@@ -161,9 +164,6 @@ private:
 
     // cart save ram
     std::vector<uint8_t> sram; // 0xffff
-
-    bool ime = true;
-
 
     // external memory
 

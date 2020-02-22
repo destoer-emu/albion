@@ -13,12 +13,6 @@ enum class cpu_mode
 constexpr int ARM_WORD_SIZE = 4; 
 constexpr int ARM_HALF_SIZE = 2;
 
-enum class access_size
-{
-    byte = 0,half,word
-};
-
-constexpr uint32_t access_sizes[3] = {1,ARM_HALF_SIZE,ARM_WORD_SIZE};
 
 
 enum class shift_type
