@@ -526,9 +526,9 @@ std::string Disass::disass_thumb_mov_reg_shift(uint16_t opcode)
 
     int n = (opcode >> 6) & 0x1f;
 
-    int shift_type = (opcode >> 11) & 0x3;
+    int type = (opcode >> 11) & 0x3;
 
-    return fmt::format("{} {},{},#0x{:x}",shift_names[shift_type],user_regs_names[rd],user_regs_names[rs],n);
+    return fmt::format("{} {},{},#0x{:x}",shift_names[type],user_regs_names[rd],user_regs_names[rs],n);
 
 }
 

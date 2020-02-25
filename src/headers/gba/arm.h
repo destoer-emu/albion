@@ -226,5 +226,6 @@ inline uint32_t barrel_shift(shift_type type,uint32_t v, uint32_t n, bool &carry
         case shift_type::asr: return asr(v,n,carry,immediate); break;
         case shift_type::ror: return ror(v,n,carry,immediate); break;
     }
+    return 0;
 }
 

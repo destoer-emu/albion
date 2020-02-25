@@ -392,7 +392,8 @@ std::string Disass::disass_arm_get_shift_string(uint32_t opcode)
                 }
             }
         }            
-    } 
+    }
+    return ""; 
 }
 
 
@@ -418,26 +419,7 @@ std::string Disass::disass_arm_psr(uint32_t opcode)
 
     bool spsr = is_set(opcode,22);
 
-    std::string sr;
-
-    if(spsr)
-    {
-        cpu_mode mode = cpu->get_mode();
-
-        if(mode == cpu_mode::user || mode == cpu_mode::system)
-        {
-            //return "undefined banked psr register"; <-- not sure what proper syn is
-            sr = "spsr";
-        }
-
-        sr = status_banked_names[static_cast<int>(mode)];
-    }
-
-    else 
-    {
-        sr = "cpsr";
-    }
-
+    std::string sr = spsr? "spsr" : "cpsr";
 
     if(is_msr) //msr (unsure this handles the different write operations eg flag only)
     {
@@ -594,6 +576,7 @@ std::string Disass::disass_arm_data_processing(uint32_t opcode)
             break;            
         }
     }
+    return "";
 }
 
 // negative calc on a branch messes up horribly

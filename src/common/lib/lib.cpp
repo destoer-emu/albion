@@ -1,7 +1,7 @@
 #include <destoer-emu/lib.h>
 
 
-void read_file(std::string filename, std::vector<uint8_t> &buf)
+void read_file(const std::string &filename, std::vector<uint8_t> &buf)
 {
     std::ifstream fp(filename,std::ios::binary);
 
@@ -48,7 +48,7 @@ void sort_alphabetically(std::vector<std::string> &vec)
 }
 
 
-std::vector<std::string> read_directory(std::string file_path)
+std::vector<std::string> read_directory(const std::string &file_path)
 {
 
     std::vector<std::string> dir_list;
@@ -63,7 +63,7 @@ std::vector<std::string> read_directory(std::string file_path)
 
 
 
-std::vector<std::string> read_sorted_directory(std::string file_path)
+std::vector<std::string> read_sorted_directory(const std::string &file_path)
 {
     auto dir_list = read_directory(file_path);
 

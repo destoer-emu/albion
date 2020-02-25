@@ -190,7 +190,17 @@ void ImguiMainWindow::new_instance(std::string filename)
 {
     stop_instance();
 
-    running_type = get_emulator_type(filename);
+
+    try
+    {
+        running_type = get_emulator_type(filename);
+    }
+
+    catch(std::exception &ex)
+    {
+        std::cout << ex.what() << "\n";
+        return;
+    }
 
     switch(running_type)
     {
@@ -352,30 +362,29 @@ void ImguiMainWindow::file_browser()
     ImGui::BeginChild("file view");
 
 
-
-    for(int i = 0; i < dir_list.size(); i++)
+    const int DIR_LIST_SIZE = dir_list.size();
+    for(int i = 0; i < DIR_LIST_SIZE; i++)
     {
         // display only the file name
-        std::string path = dir_list[i];
-        std::string disp_path = std::filesystem::path(path).filename().string();
+        std::string disp_path = std::filesystem::path(dir_list[i]).filename().string();
 
         if(ImGui::Selectable(disp_path.c_str(),selected == i,ImGuiSelectableFlags_AllowDoubleClick))
         {
             selected = i;
-            selected_file = path;
+            selected_file = dir_list[i];
             if (ImGui::IsMouseDoubleClicked(0))
             {
-                if(std::filesystem::is_directory(path))
+                if(std::filesystem::is_directory(dir_list[i]))
                 {
                     selected = -1;
                     selected_file = "";
-                    file_path = path;
+                    file_path = dir_list[i];
                     dir_list = read_sorted_directory(file_path);
                 }
 
-                else if(std::filesystem::is_regular_file(path))
+                else if(std::filesystem::is_regular_file(dir_list[i]))
                 {
-                    new_instance(path);
+                    new_instance(dir_list[i]);
                 }
             }   
         }

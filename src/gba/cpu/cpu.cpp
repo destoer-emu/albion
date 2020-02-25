@@ -41,7 +41,7 @@ void Cpu::init(Display *disp, Mem *mem, Debug *debug, Disass *disass)
 
     dma_in_progress = false;
     cyc_cnt = 0;
-     
+    cpu_io.init();
 }
 
 
@@ -346,8 +346,9 @@ void Cpu::cycle_tick(int cycles)
 void Cpu::tick_timers(int cycles)
 {
 
-    static constexpr uint32_t timer_lim[4] = {1,64,256,1024};
-    static constexpr interrupt interrupt_table[4] = {interrupt::timer0,interrupt::timer1,interrupt::timer2,interrupt::timer3};
+    UNUSED(cycles);
+    //static constexpr uint32_t timer_lim[4] = {1,64,256,1024};
+    //static constexpr interrupt interrupt_table[4] = {interrupt::timer0,interrupt::timer1,interrupt::timer2,interrupt::timer3};
  /*
     // ignore count up timing for now
     for(int i = 0; i < 4; i++)
@@ -756,6 +757,7 @@ bool Cpu::cond_met(int opcode)
         case arm_cond::al: return true;
 
     }
+    return true; // shoud not be reached
 }
 
 // common arithmetic and logical operations
@@ -971,6 +973,8 @@ void Cpu::service_interrupt()
 void Cpu::handle_dma(dma_type req_type, int special_dma)
 {
 
+    UNUSED(special_dma);
+    UNUSED(req_type);
 
     if(dma_in_progress) 
     { 
@@ -1043,6 +1047,8 @@ void Cpu::handle_dma(dma_type req_type, int special_dma)
 void Cpu::do_dma(uint16_t &dma_cnt,dma_type req_type, int dma_number)
 {
 
+    UNUSED(req_type);
+    UNUSED(dma_number);
 
     if(is_set(dma_cnt,11))
     {

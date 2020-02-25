@@ -152,7 +152,6 @@ uint8_t DispCnt::read(int idx) const
         {
             return bg_mode | display_frame << 4 | hblank_free << 5 |
                 obj_vram_mapping << 6 | forced_blank << 7;
-            break;
         }
 
         case 1:
@@ -160,7 +159,6 @@ uint8_t DispCnt::read(int idx) const
             return bg_enable[0]  | bg_enable[1] << 1 | bg_enable[2] << 2 |
                 bg_enable[3] << 3 | obj_enable << 4 | window0_enable << 5 |
                 window1_enable << 6 | obj_window_enable << 7;
-            break;
         }
     }
 
@@ -227,13 +225,11 @@ uint8_t DispStat::read(int idx) const
                 vblank_irq_enable << 3 | 
                 hblank_irq_enable << 4 |
                 lyc_irq_enable << 5;
-            break;
         }
 
         case 1:
         {
             return lyc;
-            break;
         }
     }
 

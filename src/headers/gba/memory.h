@@ -97,8 +97,15 @@ private:
     access_type read_oam(uint32_t addr);
 
     template<typename access_type>
-    access_type read_external(uint32_t addr);
+    access_type read_flash(uint32_t addr);
 
+
+    template<typename access_type>
+    access_type read_sram(uint32_t addr);
+
+
+    template<typename access_type>
+    access_type read_rom(uint32_t addr);
 
     // write mem helpers
     template<typename access_type>
@@ -122,8 +129,15 @@ private:
     template<typename access_type>
     void write_oam(uint32_t addr,access_type v);
 
+
+    // dont know how these work
     template<typename access_type>
-    void write_external(uint32_t addr,access_type v);
+    void write_flash(uint32_t addr,access_type v);
+
+
+    template<typename access_type>
+    void write_sram(uint32_t addr,access_type v);
+
 
     // last accessed memory region
     enum class memory_region
@@ -132,6 +146,29 @@ private:
         io,pal,vram,oam,rom,flash,sram,
         undefined
     };
+
+    // we can just switch on the top 4 bits of the addr
+    // thanks fleroviux
+    static constexpr memory_region memory_region_table[0x10] = 
+    {
+        memory_region::bios, // 
+        memory_region::undefined, // 
+        memory_region::wram_board, // 
+        memory_region::wram_chip,  // 
+        memory_region::io, //  
+        memory_region::pal, // 
+        memory_region::vram, //
+        memory_region::oam, //
+        memory_region::rom, // waitstate 0
+        memory_region::rom, // waitstate 0
+        memory_region::rom, // waitstate 1
+        memory_region::rom, // waitstate 1
+        memory_region::rom, // waitstate 2
+        memory_region::rom, // waitstate 2
+        memory_region::sram, //
+        memory_region::undefined
+    };
+
 
     // memory cycle timings
     // some can be set dynamically

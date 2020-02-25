@@ -13,6 +13,7 @@ void Display::init(Mem *mem, Cpu *cpu)
     ly = 0; // current number of cycles
     mode = display_mode::visible;
     new_vblank = false;
+    disp_io.init();
 }
 
 // need to update these during vblank?

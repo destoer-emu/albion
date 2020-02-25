@@ -79,11 +79,11 @@ inline bool is_valid_hex_string(char *input_str) noexcept
 
 
 #define UNUSED(X) ((void)X)
-void read_file(std::string filename, std::vector<uint8_t> &buf);
+void read_file(const std::string &filename, std::vector<uint8_t> &buf);
 
 
 constexpr char path_seperator = std::filesystem::path::preferred_separator;
-std::vector<std::string> read_sorted_directory(std::string file_path);
+std::vector<std::string> read_sorted_directory(const std::string &file_path);
 
 inline bool is_set(uint64_t reg, int bit) noexcept
 {

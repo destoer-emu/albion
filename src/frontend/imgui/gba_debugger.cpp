@@ -93,7 +93,7 @@ void ImguiMainWindow::gba_draw_registers()
     static reg_window_type window_type = reg_window_type::user_regs;
 
     auto constexpr SIZE = 5;
-    static constexpr char * window_names[SIZE] = 
+    static const char * window_names[SIZE] = 
     {
         "user_regs",
         "current_regs",
@@ -284,7 +284,7 @@ void ImguiMainWindow::gba_draw_disassembly()
     while (clipper.Step())
     {
         uint32_t target = (clipper.DisplayStart*bytes_per_line) + base_addr;
-        for (uint32_t i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
         {
 			// color instr at current pc blue
             bool is_pc = target == gba.cpu.get_pc();
@@ -512,7 +512,7 @@ void ImguiMainWindow::gba_draw_memory()
 
     while (clipper.Step())
     {
-        for (uint32_t i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
         {
             
             ImGui::Text("%08x: ",(base_addr+i*0x10)%MAX_ADDR);
@@ -557,8 +557,17 @@ void ImguiMainWindow::gba_start_instance()
 
 void ImguiMainWindow::gba_new_instance(std::string filename)
 {
-    gba_reset_instance(filename);
-    gba_start_instance();     
+    try
+    {
+        gba_reset_instance(filename);
+        gba_start_instance();
+    }
+
+    catch(std::exception &ex)
+    {
+        std::cout << ex.what()  << "\n";
+        return;
+    }          
 }
 
 
