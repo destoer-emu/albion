@@ -362,8 +362,8 @@ void ImguiMainWindow::file_browser()
     ImGui::BeginChild("file view");
 
 
-    const int DIR_LIST_SIZE = dir_list.size();
-    for(int i = 0; i < DIR_LIST_SIZE; i++)
+    
+    for(auto i = 0; i < dir_list.size(); i++)
     {
         // display only the file name
         std::string disp_path = std::filesystem::path(dir_list[i]).filename().string();
@@ -380,6 +380,7 @@ void ImguiMainWindow::file_browser()
                     selected_file = "";
                     file_path = dir_list[i];
                     dir_list = read_sorted_directory(file_path);
+					break;
                 }
 
                 else if(std::filesystem::is_regular_file(dir_list[i]))

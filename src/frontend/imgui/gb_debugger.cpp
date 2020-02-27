@@ -13,7 +13,8 @@ void gameboy_handle_input(GB &gb)
     static constexpr int scancodes[] = {GLFW_KEY_A,GLFW_KEY_S,GLFW_KEY_ENTER,GLFW_KEY_SPACE,
         GLFW_KEY_RIGHT,GLFW_KEY_LEFT,GLFW_KEY_UP,GLFW_KEY_DOWN};
     
-    static constexpr int gb_key[] = {4,5,7,6,0,1,2,3};
+    static constexpr button gb_key[] = {button::a,button::b,button::start,
+        button::select,button::right,button::left,button::up,button::down};
 
     static constexpr int len = sizeof(scancodes) / sizeof(scancodes[0]);
 
@@ -23,14 +24,14 @@ void gameboy_handle_input(GB &gb)
     {
         if(ImGui::IsKeyDown(scancodes[i]))
         {
-            if(is_set(joypad_state,gb_key[i]))
+            if(is_set(joypad_state,static_cast<int>(gb_key[i])))
             {
                 gb.key_pressed(gb_key[i]);
             }
         }
 
         // aint pressed
-        else if(!is_set(joypad_state,gb_key[i]))
+        else if(!is_set(joypad_state,static_cast<int>(gb_key[i])))
         {
             gb.key_released(gb_key[i]);  
         }

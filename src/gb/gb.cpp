@@ -29,14 +29,14 @@ void GB::key_input(int key, bool pressed)
 	{
 		switch(key)
 		{
-			case emu_key::a: key_pressed(4); break;
-			case emu_key::s: key_pressed(5); break;
-			case emu_key::enter: key_pressed(7); break;
-			case emu_key::space: key_pressed(6); break;
-			case emu_key::right: key_pressed(0); break;
-			case emu_key::left: key_pressed(1); break;
-			case emu_key::up: key_pressed(2);break;
-			case emu_key::down: key_pressed(3); break;
+			case emu_key::a: key_pressed(button::a); break;
+			case emu_key::s: key_pressed(button::b); break;
+			case emu_key::enter: key_pressed(button::start); break;
+			case emu_key::space: key_pressed(button::select); break;
+			case emu_key::right: key_pressed(button::right); break;
+			case emu_key::left: key_pressed(button::left); break;
+			case emu_key::up: key_pressed(button::up); break;
+			case emu_key::down: key_pressed(button::down); break;
 		}
 	}
 
@@ -44,14 +44,14 @@ void GB::key_input(int key, bool pressed)
 	{
 		switch(key)
 		{
-			case emu_key::a: key_released(4); break;
-			case emu_key::s: key_released(5); break;
-			case emu_key::enter: key_released(7); break;
-			case emu_key::space: key_released(6); break;
-			case emu_key::right: key_released(0); break;
-			case emu_key::left: key_released(1); break;
-			case emu_key::up: key_released(2);break;
-			case emu_key::down: key_released(3); break;
+			case emu_key::a: key_released(button::a); break;
+			case emu_key::s: key_released(button::b); break;
+			case emu_key::enter: key_released(button::start); break;
+			case emu_key::space: key_released(button::select); break;
+			case emu_key::right: key_released(button::right); break;
+			case emu_key::left: key_released(button::left); break;
+			case emu_key::up: key_released(button::up); break;
+			case emu_key::down: key_released(button::down); break;
 
 			case emu_key::plus:
 			{
@@ -71,8 +71,9 @@ void GB::key_input(int key, bool pressed)
 }
 
 // our "frontend" will call these
-void GB::key_released(int key)
+void GB::key_released(button b)
 {
+	auto key = static_cast<int>(b); 
 	cpu.joypad_state = set_bit(cpu.joypad_state, key);
 }
 
@@ -125,8 +126,10 @@ catch(std::exception &ex)
 
 }
 
-void GB::key_pressed(int key)
+void GB::key_pressed(button b)
 {
+	auto key = static_cast<int>(b);
+
 	bool previously_unset = false;
 	
 	// if setting from 1 to 0 we may have to req 

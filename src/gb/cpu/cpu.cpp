@@ -253,11 +253,12 @@ void Cpu::do_interrupts() noexcept
 	if(interrupt_enable)
 	{	
 		// get the set requested interrupts
-		const uint8_t req = mem->io[IO_IF];
-		// checked that the interrupt is enabled from the ie reg 
-		const uint8_t enabled = mem->io[IO_IE];
+		uint8_t req = mem->io[IO_IF];
 		
-		if(req > 0)
+		// checked that the interrupt is enabled from the ie reg 
+		uint8_t enabled = mem->io[IO_IE];
+		
+		if(req & enabled)
 		{
 			// priority for servicing starts at interrupt 0
 			for(int i = 0; i < 5; i++)
@@ -266,7 +267,7 @@ void Cpu::do_interrupts() noexcept
 				if(is_set(req,i) && is_set(enabled,i))
 				{
 					service_interrupt(i);
-					cycle_tick(5); // every interrupt service costs 5 M cycles <-- break this up tomorrow
+					cycle_tick(5); // every interrupt service costs 5 M cycles 
 					return;
 				}
 			}
@@ -283,22 +284,23 @@ void Cpu::service_interrupt(int interrupt) noexcept
 		
 	// push the current pc on the stack to save it
 	// it will be pulled off by reti or ret later
-	write_stackw(pc);
+	write_stackwt(pc);
 
 		
 	// set the program counter to the start of the
 	// interrupt handler for the request interrupt
-		
-	switch(interrupt)
+
+	static constexpr uint16_t interrupt_vectors[5] = 
 	{
-		// interrupts are one less than listed in cpu manual
-		// as our bit macros work from bits 0-7 not 1-8
-		case 0: pc = 0x40; break; //vblank
-		case 1: pc = 0x48; break; //lcd-stat 
-		case 2: pc = 0x50; break; // timer 
-		case 3: pc = 0x58; break; //serial (not fully implemented)
-		case 4: pc = 0x60; break; // joypad
-	}	
+		0x40, // vblank
+		0x48, // lcd-stat
+		0x50, // timer
+		0x58, // serial
+		0x60 // joypad
+	};
+
+	pc = interrupt_vectors[interrupt];
+	cycle_tick(1);
 }
 
 

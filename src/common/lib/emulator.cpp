@@ -8,7 +8,7 @@ emu_type get_emulator_type(std::string filename)
 	{
 		std::string ext = filename.substr(ext_idx+1);
 
-        if(ext == "gbc" || ext == "gb")
+        if(ext == "gbc" || ext == "gb" || ext == "sgb")
         {
             return emu_type::gameboy;
         }
