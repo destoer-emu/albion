@@ -98,17 +98,12 @@ void QtMainWindow::keyPressEvent(QKeyEvent *event)
 
     if(event->type() == QEvent::KeyPress)
     {
-        switch(event->key())
+        switch(running_type)
         {
-            case Qt::Key_A: gb.key_pressed(4); break;
-            case Qt::Key_S: gb.key_pressed(5); break;
-            case Qt::Key_Return: gb.key_pressed(7); break;
-            case Qt::Key_Space: gb.key_pressed(6); break;
-            case Qt::Key_Right: gb.key_pressed(0); break;
-            case Qt::Key_Left: gb.key_pressed(1); break;
-            case Qt::Key_Up: gb.key_pressed(2);break;
-            case Qt::Key_Down: gb.key_pressed(3); break;
+            case emu_type::gameboy: gb_instance.key_pressed(event->key()); break;
+            case emu_type::gba: gba_instance.key_pressed(event->key()); break;
         }
+        
     }
 }
 
@@ -129,35 +124,15 @@ void QtMainWindow::keyReleaseEvent(QKeyEvent *event)
         return;
     }
 
-
+    
     if(event->type() == QEvent::KeyRelease)
     {
-        switch(event->key())
+        switch(running_type)
         {
-            case Qt::Key_A: gb.key_released(4); break;
-            case Qt::Key_S: gb.key_released(5); break;
-            case Qt::Key_Return: gb.key_released(7); break;
-            case Qt::Key_Space: gb.key_released(6); break;
-            case Qt::Key_Right: gb.key_released(0); break;
-            case Qt::Key_Left: gb.key_released(1); break;
-            case Qt::Key_Up: gb.key_released(2);break;
-            case Qt::Key_Down: gb.key_released(3); break;
-
-            case Qt::Key_Plus:
-            {
-                gb.apu.stop_audio();
-                gb.throttle_emu = false;
-                break;
-            }
-
-            case Qt::Key_Minus:
-            {
-                gb.apu.start_audio();
-                gb.throttle_emu = true;
-                break;
-            }
-
+            case emu_type::gameboy: gb_instance.key_released(event->key()); break;
+            case emu_type::gba: gba_instance.key_released(event->key()); break;
         }
+        
     }
 }
 
@@ -182,11 +157,32 @@ void QtMainWindow::open()
 
     try
     {
-        // construct our main gb class
-        gb.reset(file_name);
 
-        setMinimumSize(gb.ppu.X,(gb.ppu.Y) + menuBar()->height());
-        resize(gb.ppu.X * 2,(gb.ppu.Y * 2) + menuBar()->height());
+        running_type = get_emulator_type(file_name);
+
+        switch(running_type)
+        {
+            case emu_type::gameboy:
+            {
+                gb_instance.reset(file_name);
+                setMinimumSize(gb_instance.X,(gb_instance.Y) + menuBar()->height());
+                resize(gb_instance.X * 2,(gb_instance.Y * 2) + menuBar()->height());    
+                framebuffer.init(gb_instance.X,gb_instance.Y);
+                gb_instance.init(&framebuffer);                            
+                break;
+            }
+
+            case emu_type::gba:
+            {
+                gba_instance.reset(file_name);
+                setMinimumSize(gba_instance.X,(gba_instance.Y) + menuBar()->height());
+                resize(gba_instance.X * 2,(gba_instance.Y * 2) + menuBar()->height());
+                framebuffer.init(gba_instance.X,gba_instance.Y); 
+                gba_instance.init(&framebuffer);                                 
+                break;
+            }
+        }
+
         // set window name with the rom title
         QString window_tile = QString::fromStdString(fmt::format("destoer-emu: {}",
             file_name.substr(file_name.find_last_of("/\\") + 1)));
@@ -220,14 +216,22 @@ void QtMainWindow::load_state()
     // we didnt quit out
     if(file_name != "" && std::filesystem::is_regular_file(file_name))
     {
-        std::string backup = std::filesystem::current_path().string() + "/backup.state";
-
-        // save a state just before incase they somehow
-        gb.save_state(backup);
-
         try
         {
-            gb.load_state(file_name);
+            switch(running_type)
+            {        
+                case emu_type::gameboy:
+                {
+                    gb_instance.load_state(file_name);
+                    break;
+                }
+
+                case emu_type::gba:
+                {
+                    gba_instance.load_state(file_name);
+                    break;
+                }
+            }
         }
 
         catch(std::exception &ex)
@@ -235,7 +239,6 @@ void QtMainWindow::load_state()
             QMessageBox messageBox;
             messageBox.critical(nullptr,"Error",ex.what());
             messageBox.setFixedSize(500,200);
-            gb.load_state(backup);
         }
     }
 
@@ -259,7 +262,21 @@ void QtMainWindow::save_state()
     {
         try
         {
-            gb.save_state(file_name);
+            switch(running_type)
+            {        
+                case emu_type::gameboy:
+                {
+                    // save a state just before incase they somehow
+                    gb_instance.save_state(file_name);
+                    break;
+                }
+
+                case emu_type::gba:
+                {
+                    gba_instance.save_state(file_name);
+                    break;
+                }
+            }
         }
 
         catch(std::exception &ex)
@@ -277,20 +294,46 @@ void QtMainWindow::stop_emu()
 {
     if(emu_running)
     {
-        gb.quit = true;
-        emu_instance->wait(); // end the thread
-        delete(emu_instance);
-        emu_running = false;
-        gb.quit = false;
-        gb.mem.save_cart_ram();
+        switch(running_type)
+        {
+            case emu_type::gameboy:
+            {
+                gb_instance.stop();
+                gb_instance.wait(); // end the thread
+                emu_running = false;
+                gb_instance.save_backup_ram();
+                break;
+            }
+
+            case emu_type::gba:
+            {
+                gba_instance.stop();
+                gba_instance.wait(); // end the thread
+                emu_running = false;
+                gba_instance.save_backup_ram();                
+                break;
+            }
+        }
+
     }
 }
 
 void QtMainWindow::start_emu()
 {
     emu_running = true;
-    emu_instance = new EmuInstance(nullptr,&gb,&framebuffer);
-    framebuffer.init(gb.ppu.X,gb.ppu.Y);
-    emu_instance->start();
+    switch(running_type)
+    {
+        case emu_type::gameboy:
+        {
+            gb_instance.start();
+            break;
+        }
+
+        case emu_type::gba:
+        {
+            gba_instance.start();            
+            break;
+        }
+    }
 }
 #endif

@@ -7,8 +7,7 @@ void read_file(const std::string &filename, std::vector<uint8_t> &buf)
 
     if(!fp)
     {
-        std::cout << "failed to open file: " << filename;
-        throw std::runtime_error("failed to open file");
+        throw std::runtime_error(fmt::format("failed to open file: {}", filename));
     }
 
 

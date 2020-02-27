@@ -2,6 +2,8 @@
 #include <gba/memory.h>
 #include <gba/disass.h>
 
+namespace gameboyadvance
+{
 
 uint16_t Cpu::fetch_thumb_opcode()
 {
@@ -826,4 +828,6 @@ void Cpu::thumb_ldr_pc(uint16_t opcode)
 
     // takes 2s + 1n cycles
     cycle_tick(3);
+}
+
 }

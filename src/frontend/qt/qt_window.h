@@ -6,10 +6,10 @@
 #include <QLabel>
 #include <QMenu>
 #include <QVBoxLayout>
+#include <destoer-emu/emulator.h>
 #include "framebuffer.h"
-#include "emu_instance.h"
-#include <gb/gb.h>
-#include <destoer-emu/lib.h>
+#include "gameboy_instance.h"
+#include "gba_instance.h"
 
 class QtMainWindow : public QMainWindow
 {
@@ -48,8 +48,9 @@ private:
     void stop_emu();
     void start_emu();
 
-    GB gb;
     bool emu_running = false;
-    EmuInstance *emu_instance;
+    GameboyInstance gb_instance;
+    GbaInstance gba_instance;
+    emu_type running_type = emu_type::gameboy;
 };
 #endif

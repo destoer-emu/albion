@@ -2,6 +2,9 @@
 #include <gba/memory.h>
 #include <gba/disass.h>
 
+namespace gameboyadvance
+{
+
 // if there is a pipeline stall (whenever pc changes besides a fetch)
 void Cpu::arm_fill_pipeline() // need to verify this...
 {
@@ -1061,4 +1064,6 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 
 
     cycle_tick(cycles);
+}
+
 }

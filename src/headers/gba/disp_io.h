@@ -1,6 +1,7 @@
 #pragma once
 #include <destoer-emu/lib.h>
-
+namespace gameboyadvance
+{
 // reference point registers
 // bg2x and bg2y
 // bg3x and bg3y
@@ -109,4 +110,4 @@ struct DispIo
     DispStat disp_stat;
 };
 
-
+}

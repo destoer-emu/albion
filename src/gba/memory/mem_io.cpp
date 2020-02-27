@@ -1,6 +1,7 @@
 #include <gba/mem_io.h>
 
-
+namespace gameboyadvance
+{
 
 KeyCnt::KeyCnt()
 {
@@ -62,4 +63,6 @@ void MemIo::init()
 {
     keyinput = 0x3ff;
     key_control.init();
+}
+
 }

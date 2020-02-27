@@ -2,6 +2,8 @@
 
 #include "forward_def.h"
 #include <destoer-emu/lib.h>
+namespace gameboyadvance
+{
 
 class Disass
 {
@@ -99,3 +101,5 @@ private:
     std::string disass_thumb_sp_add(uint16_t opcode);
     std::string disass_thumb_load_store_sp(uint16_t opcode);
 };
+
+}

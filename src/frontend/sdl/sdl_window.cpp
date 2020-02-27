@@ -1,11 +1,36 @@
 #ifdef FRONTEND_SDL
 #include "sdl_window.h"
+#include <destoer-emu/emulator.h>
 
 
 SDLMainWindow::SDLMainWindow(std::string filename)
 {
-	//gameboy_main(filename);
-	gba_main(filename);
+	emu_type type;
+	try
+	{
+		type = get_emulator_type(filename);
+	}
+
+	catch(std::exception &ex)
+	{
+		std::cout << ex.what() << "\n";
+		return;
+	}
+
+	switch(type)
+	{
+		case emu_type::gameboy:
+		{
+			gameboy_main(filename);
+			break;
+		}
+
+		case emu_type::gba:
+		{
+			gba_main(filename);
+			break;
+		}
+	}
 }
 
 
@@ -15,7 +40,7 @@ void SDLMainWindow::gameboy_main(std::string filename)
 	constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
 	uint64_t next_time = current_time() + screen_ticks_per_frame;
     gb.reset(filename);
-    init_sdl(gb.ppu.X,gb.ppu.Y);
+    init_sdl(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);
 
     for(;;)
     {
@@ -60,48 +85,13 @@ void SDLMainWindow::gameboy_handle_input()
 
 			case SDL_KEYDOWN:
 			{
-				switch(event.key.keysym.sym) // <--- could remove as repeated code
-				{
-					case SDLK_a: gb.key_pressed(4); break;
-					case SDLK_s: gb.key_pressed(5); break;
-					case SDLK_RETURN: gb.key_pressed(7); break;
-					case SDLK_SPACE: gb.key_pressed(6); break;
-					case SDLK_RIGHT: gb.key_pressed(0); break;
-					case SDLK_LEFT: gb.key_pressed(1); break;
-					case SDLK_UP: gb.key_pressed(2);break;
-					case SDLK_DOWN: gb.key_pressed(3); break;
-				}
+				gb.key_input(event.key.keysym.sym,true);
 				break;
 			}
 			
 			case SDL_KEYUP:
 			{
-				switch(event.key.keysym.sym)
-				{
-					case SDLK_a: gb.key_released(4); break;
-					case SDLK_s: gb.key_released(5); break;
-					case SDLK_RETURN: gb.key_released(7); break;
-					case SDLK_SPACE: gb.key_released(6); break;
-					case SDLK_RIGHT: gb.key_released(0); break;
-					case SDLK_LEFT: gb.key_released(1); break;
-					case SDLK_UP: gb.key_released(2); break;
-					case SDLK_DOWN: gb.key_released(3);break;
-
-					case SDLK_KP_PLUS:
-					{
-						gb.apu.stop_audio();
-						gb.throttle_emu = false;
-						break;
-					}
-
-					case SDLK_KP_MINUS:
-					{
-						gb.apu.start_audio();
-						gb.throttle_emu = true;						
-						break;
-					}
-
-				}
+				gb.key_input(event.key.keysym.sym,false);
 				break;
 			}
 
@@ -184,128 +174,13 @@ void SDLMainWindow::gba_handle_input()
 			
 			case SDL_KEYDOWN:
 			{
-				switch(event.key.keysym.sym)
-				{
-
-					case SDLK_RETURN:
-					{
-						gba.button_event(Button::START,true);
-						break;						
-					}
-
-					case SDLK_SPACE:
-					{
-						gba.button_event(Button::SELECT,true);
-						break;
-					}
-
-					case SDLK_DOWN:
-					{
-						gba.button_event(Button::DOWN,true);
-						break;
-					}
-
-					case SDLK_UP:
-					{
-						gba.button_event(Button::UP,true);
-						break;
-					}
-
-					case SDLK_LEFT:
-					{
-						gba.button_event(Button::LEFT,true);
-						break;
-					}
-
-					case SDLK_RIGHT:
-					{
-						gba.button_event(Button::RIGHT,true);
-						break;
-					}
-
-
-					case SDLK_a:
-					{
-						gba.button_event(Button::A,true);
-						break;
-					}
-
-					case SDLK_s:
-					{
-						gba.button_event(Button::B,true);
-						break;
-					}
-
-
-
-                    default:
-                    {
-                        break;
-                    }
-                }
+				gba.key_input(event.key.keysym.sym,true);
                 break;
 			}
 			
 			case SDL_KEYUP:
 			{
-				switch(event.key.keysym.sym)
-				{
-
-					case SDLK_RETURN:
-					{
-						gba.button_event(Button::START,false);
-						break;						
-					}
-
-					case SDLK_SPACE:
-					{
-						gba.button_event(Button::SELECT,false);
-						break;
-					}
-
-					case SDLK_DOWN:
-					{
-						gba.button_event(Button::DOWN,false);
-						break;
-					}
-
-					case SDLK_UP:
-					{
-						gba.button_event(Button::UP,false);
-						break;
-					}
-
-					case SDLK_LEFT:
-					{
-						gba.button_event(Button::LEFT,false);
-						break;
-					}
-
-					case SDLK_RIGHT:
-					{
-						gba.button_event(Button::RIGHT,false);
-						break;
-					}
-
-
-					case SDLK_a:
-					{
-						gba.button_event(Button::A,false);
-						break;
-					}
-
-					case SDLK_s:
-					{
-						gba.button_event(Button::B,false);
-						break;
-					}
-
-
-                    default:
-                    {
-                        break;
-                    }    
-                }
+				gba.key_input(event.key.keysym.sym,false);
                 break;
 			}
 
@@ -323,7 +198,7 @@ void SDLMainWindow::gba_main(std::string filename)
 	constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
 	uint64_t next_time = current_time() + screen_ticks_per_frame;
     gba.reset(filename);
-    init_sdl(gba.disp.X,gba.disp.Y);
+    init_sdl(gameboyadvance::SCREEN_WIDTH,gameboyadvance::SCREEN_HEIGHT);
 
 	for(;;)
 	{

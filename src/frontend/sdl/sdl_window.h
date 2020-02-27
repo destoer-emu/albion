@@ -30,7 +30,7 @@ private:
 
     // main emu instance
     gameboy::GB gb;
-    GBA gba;
+    gameboyadvance::GBA gba;
 
     // sdl gfx
 	SDL_Window * window;

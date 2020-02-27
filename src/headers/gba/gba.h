@@ -5,6 +5,8 @@
 #include "display.h"
 #include <destoer-emu/debug.h>
 
+namespace gameboyadvance
+{
 
 enum class button 
 {
@@ -21,7 +23,8 @@ public:
     
     
     //void handle_input();
-    void button_event(button b, bool down);
+    void button_event(button b, bool down); //actual hanlder
+    void key_input(int key, bool pressed); // takes the input and passes it on
 
     Cpu cpu;
     Mem mem;
@@ -32,3 +35,4 @@ public:
     bool quit = false;
 };
 
+}

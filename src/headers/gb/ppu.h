@@ -6,6 +6,9 @@
 namespace gameboy
 {
 
+static constexpr uint32_t SCREEN_WIDTH = 160;
+static constexpr uint32_t SCREEN_HEIGHT = 144;
+
 enum class ppu_mode
 {
     oam_search = 2,
@@ -38,8 +41,7 @@ public:
 
     std::vector<uint32_t> screen; // 160 by 144
 
-    static constexpr uint32_t X = 160;
-    static constexpr uint32_t Y = 144;
+
 
     ppu_mode mode = ppu_mode::oam_search;
 

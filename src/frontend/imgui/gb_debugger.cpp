@@ -140,7 +140,7 @@ void ImguiMainWindow::gameboy_draw_screen()
 {
     ImGui::Begin("screen"); // <--- figure out why this doesent draw then add syncing and only showing debug info during a pause    
     screen.update_texture();        
-    ImGui::Image((void*)(intptr_t)screen.get_texture(),ImVec2(gb.ppu.X*2,gb.ppu.Y*2));    
+    ImGui::Image((void*)(intptr_t)screen.get_texture(),ImVec2(gameboy::SCREEN_WIDTH*2,gameboy::SCREEN_HEIGHT*2));    
     ImGui::End();
 }
 

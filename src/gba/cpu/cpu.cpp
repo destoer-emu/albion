@@ -4,6 +4,9 @@
 #include <gba/disass.h>
 #include <limits.h>
 
+namespace gameboyadvance
+{
+
 void Cpu::init(Display *disp, Mem *mem, Debug *debug, Disass *disass)
 {
     // init components
@@ -1159,4 +1162,6 @@ void Cpu::do_dma(uint16_t &dma_cnt,dma_type req_type, int dma_number)
 */
 
     dma_in_progress = false;
+}
+
 }

@@ -1,5 +1,7 @@
+#pragma once
 #include <stdint.h>
-
+namespace gameboyadvance
+{
 // memory constants
 constexpr uint32_t IO_MASK = 0x3ff;
 
@@ -85,3 +87,5 @@ constexpr uint32_t IO_POSTFLG = 0x040000300 & IO_MASK;
 
 
 constexpr uint32_t IO_SOUNDBIAS = 0x040000088 & IO_MASK;
+
+}

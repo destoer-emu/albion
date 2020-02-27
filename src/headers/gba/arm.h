@@ -1,5 +1,7 @@
 #pragma once
 #include <destoer-emu/lib.h>
+namespace gameboyadvance
+{
 
 // user and system share the same registers
 enum class cpu_mode 
@@ -229,3 +231,4 @@ inline uint32_t barrel_shift(shift_type type,uint32_t v, uint32_t n, bool &carry
     return 0;
 }
 
+}

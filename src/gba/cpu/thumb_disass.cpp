@@ -3,7 +3,8 @@
 #include <gba/cpu.h>
 #include <gba/memory.h>
 
-
+namespace gameboyadvance
+{
 
 std::string Disass::disass_thumb(uint32_t program_counter)
 {
@@ -552,4 +553,6 @@ std::string Disass::disass_thumb_unknown(uint16_t opcode)
     */
     UNUSED(opcode);
     return "unknown opcode";   
+}
+
 }

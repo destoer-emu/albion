@@ -172,14 +172,14 @@ void ImguiMainWindow::reset_instance(std::string filename)
     {
         case emu_type::gameboy:
         {
-            screen.init_texture(gb.ppu.X,gb.ppu.Y);    
+            screen.init_texture(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);    
             gameboy_reset_instance(filename);
             break;
         }
 
         case emu_type::gba:
         {
-            screen.init_texture(gba.disp.X,gba.disp.Y);
+            screen.init_texture(gameboyadvance::SCREEN_WIDTH,gameboyadvance::SCREEN_HEIGHT);
             gba_reset_instance(filename);
             break;
         }
@@ -206,14 +206,14 @@ void ImguiMainWindow::new_instance(std::string filename)
     {
         case emu_type::gameboy:
         {
-            screen.init_texture(gb.ppu.X,gb.ppu.Y);
+            screen.init_texture(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);
             gameboy_new_instance(filename);
             break;
         }
 
         case emu_type::gba:
         {
-            screen.init_texture(gba.disp.X,gba.disp.Y);
+            screen.init_texture(gameboyadvance::SCREEN_WIDTH,gameboyadvance::SCREEN_HEIGHT);
             gba_new_instance(filename);
         }
     }
@@ -454,7 +454,7 @@ void ImguiMainWindow::mainloop()
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    screen.init_texture(gb.ppu.X,gb.ppu.Y);
+    screen.init_texture(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);
 
 
     

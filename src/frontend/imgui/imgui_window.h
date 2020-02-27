@@ -117,7 +117,7 @@ private:
     
     // underlying emulator instance data
     gameboy::GB gb;
-    GBA gba;
+    gameboyadvance::GBA gba;
 
     
     GLFWwindow* window;

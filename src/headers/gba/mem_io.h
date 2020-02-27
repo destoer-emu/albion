@@ -1,6 +1,7 @@
 #pragma once
 #include <destoer-emu/lib.h>
-
+namespace gameboyadvance
+{
 
 
 struct KeyCnt
@@ -25,3 +26,5 @@ struct MemIo
     uint16_t keyinput;
     KeyCnt key_control;
 };
+
+}

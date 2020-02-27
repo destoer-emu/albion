@@ -1,4 +1,5 @@
 #include <gb/gb.h>
+#include <destoer-emu/key.h>
 
 namespace gameboy
 {
@@ -17,6 +18,56 @@ void GB::reset(std::string rom_name, bool with_rom)
     disass.init(&mem);
 	apu.init(&mem);
 	throttle_emu = true;
+}
+
+
+void GB::key_input(int key, bool pressed)
+{
+
+
+	if(pressed)
+	{
+		switch(key)
+		{
+			case emu_key::a: key_pressed(4); break;
+			case emu_key::s: key_pressed(5); break;
+			case emu_key::enter: key_pressed(7); break;
+			case emu_key::space: key_pressed(6); break;
+			case emu_key::right: key_pressed(0); break;
+			case emu_key::left: key_pressed(1); break;
+			case emu_key::up: key_pressed(2);break;
+			case emu_key::down: key_pressed(3); break;
+		}
+	}
+
+	else // released
+	{
+		switch(key)
+		{
+			case emu_key::a: key_released(4); break;
+			case emu_key::s: key_released(5); break;
+			case emu_key::enter: key_released(7); break;
+			case emu_key::space: key_released(6); break;
+			case emu_key::right: key_released(0); break;
+			case emu_key::left: key_released(1); break;
+			case emu_key::up: key_released(2);break;
+			case emu_key::down: key_released(3); break;
+
+			case emu_key::plus:
+			{
+				apu.stop_audio();
+				throttle_emu = false;
+				break;
+			}
+
+			case emu_key::minus:
+			{
+				apu.start_audio();
+				throttle_emu = true;						
+				break;
+			}
+		}
+	}
 }
 
 // our "frontend" will call these

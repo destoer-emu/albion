@@ -3,6 +3,9 @@
 #include "forward_def.h"
 #include <destoer-emu/lib.h>
 
+namespace gameboyadvance
+{
+
 class Disass
 {
 public:
@@ -29,3 +32,5 @@ private:
     std::string disass_str(uint32_t opcode);
     std::string disass_ldr(uint32_t opcode);
 };
+
+}

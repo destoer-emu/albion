@@ -9,7 +9,6 @@
 
 namespace gameboy
 {
-
 class GB
 {
 public:
@@ -17,6 +16,8 @@ public:
     GB();
     void reset(std::string rom_name, bool with_rom=true);
     void run();
+
+    void key_input(int key,bool pressed);
     void key_released(int key);
     void key_pressed(int key);
 

@@ -2,7 +2,8 @@
 #include <gba/cpu.h>
 #include <gba/display.h>
 
-
+namespace gameboyadvance
+{
 
 // template instantsation for our memory reads
 template uint8_t Mem::handle_read<uint8_t>(std::vector<uint8_t> &buf, uint32_t addr);
@@ -561,4 +562,6 @@ void Mem::write_chip_wram(uint32_t addr,access_type v)
 {
     //chip_wram[addr & 0x7fff] = v;
     handle_write<access_type>(chip_wram,addr&0x7fff,v);
+}
+
 }

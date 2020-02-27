@@ -1,5 +1,7 @@
 #include <gba/arm.h>
 
+namespace gameboyadvance
+{
 
 // register names
 const char *user_regs_names[16] = 
@@ -35,3 +37,5 @@ const char *mode_names[7] =
     "FIQ","SUPERVISOR","ABORT",
     "IRQ", "UNDEFINED", "USER", "SYSTEM"
 };
+
+}

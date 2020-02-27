@@ -1,5 +1,7 @@
 #include <gba/disp_io.h>
 
+namespace gameboyadvance
+{
 
 RefPoint::RefPoint()
 {
@@ -287,4 +289,6 @@ void DispIo::init()
 
     disp_cnt.init();
     disp_stat.init();
+}
+
 }

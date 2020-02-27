@@ -5,7 +5,8 @@
 #include <gba/cpu_io.h>
 #include <gba/arm.h>
 
-
+namespace gameboyadvance
+{
 
 
 enum class interrupt
@@ -224,3 +225,5 @@ private:
 
     int cyc_cnt;
 };
+
+}

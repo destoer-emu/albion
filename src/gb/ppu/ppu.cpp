@@ -31,7 +31,7 @@ void Ppu::init(Cpu *c,Memory *m) noexcept
 {
     cpu = c;
     mem = m;
-	screen.resize(X*Y);
+	screen.resize(SCREEN_WIDTH*SCREEN_HEIGHT);
 	std::fill(screen.begin(),screen.end(),0);
 
     // main ppu state
@@ -323,7 +323,7 @@ bool Ppu::push_pixel() noexcept
 			case dmg_colors::dark_gray: full_color = 0xff777777; break;
 		}
 
-		screen[(scanline*X)+x_cord] = full_color;
+		screen[(scanline*SCREEN_WIDTH)+x_cord] = full_color;
 	}
 	
 	else // gameboy color
@@ -364,7 +364,7 @@ bool Ppu::push_pixel() noexcept
         full_color |= green << 8;
         full_color |= red << 16;
 
-		screen[(scanline*X)+x_cord] = (full_color) | 0xff000000;
+		screen[(scanline*SCREEN_WIDTH)+x_cord] = (full_color) | 0xff000000;
 	}
 	
 	// shift out a pixel

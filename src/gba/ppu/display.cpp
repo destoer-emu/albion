@@ -3,11 +3,14 @@
 #include <gba/memory.h>
 #include <gba/cpu.h>
 
+namespace gameboyadvance
+{
+
 void Display::init(Mem *mem, Cpu *cpu)
 {
     this->mem = mem;
     this->cpu = cpu;
-    screen.resize(X*Y);
+    screen.resize(SCREEN_WIDTH*SCREEN_HEIGHT);
     std::fill(screen.begin(),screen.end(),0);
     cyc_cnt = 0; // current number of elapsed cycles
     ly = 0; // current number of cycles
@@ -104,7 +107,7 @@ void Display::render_text(int id)
     uint32_t tile_data[8];
 
     uint32_t x_drawn = 0; // how many pixels did we draw this time?
-    for(int x = 0; x < X; x += x_drawn)
+    for(int x = 0; x < SCREEN_WIDTH; x += x_drawn)
     {
 
         // 8 for each map but each map takes 2 bytes
@@ -167,11 +170,11 @@ void Display::render_text(int id)
 
         for(int i = 0; i < pixels_to_draw; i++)
         {
-            if(x + i >= X)
+            if(x + i >= SCREEN_WIDTH)
             { 
                 break;
             }
-            screen[(ly*X)+x+i] = buf[i];
+            screen[(ly*SCREEN_WIDTH)+x+i] = buf[i];
         }
         x_drawn = pixels_to_draw;           
     }    
@@ -217,10 +220,10 @@ void Display::render()
         case 0x3: // bg mode 3 
         { 
             // what is the enable for this?
-            for(int x = 0; x < X; x++)
+            for(int x = 0; x < SCREEN_WIDTH; x++)
             {
-                uint32_t c = convert_color(mem->handle_read<uint16_t>(mem->vram,(ly*X*2)+x*2));
-                screen[(ly*X)+x] = c;
+                uint32_t c = convert_color(mem->handle_read<uint16_t>(mem->vram,(ly*SCREEN_WIDTH*2)+x*2));
+                screen[(ly*SCREEN_WIDTH)+x] = c;
             }
             break;
         }
@@ -229,12 +232,12 @@ void Display::render()
         case 0x4: // mode 4 (does not handle scrolling)
         {
             // what is the enable for this
-            for(int x = 0; x < X; x++)
+            for(int x = 0; x < SCREEN_WIDTH; x++)
             {
-                uint8_t idx = mem->vram[(ly*X)+x];
+                uint8_t idx = mem->vram[(ly*SCREEN_WIDTH)+x];
                 uint16_t color = mem->handle_read<uint16_t>(mem->pal_ram,(idx*2));
                 uint32_t c = convert_color(color);
-                screen[(ly*X)+x] = c;
+                screen[(ly*SCREEN_WIDTH)+x] = c;
             }
             break;
         }
@@ -242,9 +245,9 @@ void Display::render()
 /*
         case 0x5: // same as mode 3 but lower screen size?
         {
-            for(int x = 0; x < X; x++)
+            for(int x = 0; x < SCREEN_WIDTH; x++)
             {
-                uint32_t c = convert_color(mem->handle_read<uint16_t>(mem->vram,(ly*X*2)+x*2));
+                uint32_t c = convert_color(mem->handle_read<uint16_t>(mem->vram,(ly*SCREEN_WIDTH*2)+x*2));
                 screen[ly][x] = c;
             }
             break;            
@@ -414,4 +417,6 @@ void Display::tick(int cycles)
             break;
         }
     }
+}
+
 }

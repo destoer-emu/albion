@@ -3,6 +3,10 @@
 #include <gba/forward_def.h>
 #include <gba/disp_io.h>
 
+namespace gameboyadvance
+{
+static constexpr uint32_t SCREEN_WIDTH = 240;
+static constexpr uint32_t SCREEN_HEIGHT = 160;
 
 enum class display_mode
 {
@@ -21,8 +25,7 @@ public:
     void load_reference_point_regs();
     int get_vcount() const { return ly; } 
 
-    static constexpr int X = 240;
-    static constexpr int Y = 160;    
+    
     std::vector<uint32_t> screen;
     bool new_vblank = false;
     DispIo disp_io;
@@ -62,4 +65,6 @@ inline uint32_t convert_color(uint16_t color)
 
 
     return b << 19 |  g << 11 | r << 3 | 0xFF000000;
+}
+
 }

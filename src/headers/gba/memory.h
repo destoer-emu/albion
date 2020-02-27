@@ -5,6 +5,8 @@
 #include <gba/mem_constants.h>
 #include <gba/forward_def.h>
 #include <gba/mem_io.h>
+namespace gameboyadvance
+{
 
 // not really happy with the impl 
 // so think of a better way to model it
@@ -237,3 +239,5 @@ extern template void Mem::write_mem<uint32_t>(uint32_t addr, uint32_t v);
 extern template void Mem::write_memt<uint8_t>(uint32_t addr, uint8_t v);
 extern template void Mem::write_memt<uint16_t>(uint32_t addr, uint16_t v);
 extern template void Mem::write_memt<uint32_t>(uint32_t addr, uint32_t v);
+
+}

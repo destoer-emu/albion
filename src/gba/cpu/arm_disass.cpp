@@ -3,7 +3,8 @@
 #include <gba/cpu.h>
 #include <gba/memory.h>
 
-
+namespace gameboyadvance
+{
 
 
 void Disass::init_arm_disass_table()
@@ -676,4 +677,6 @@ std::string Disass::disass_arm_unknown(uint32_t opcode)
     */
     UNUSED(opcode);
     return "unknown opcode";      
+}
+
 }
