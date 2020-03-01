@@ -578,7 +578,7 @@ void Ppu::tile_fetch() noexcept
 	if(is_cgb) // we are drawing in cgb mode 
 	{
 		// bg attributes allways in bank 1
-		uint8_t attr = mem->vram[1][tile_address];
+		const uint8_t attr = mem->vram[1][tile_address];
 		cgb_pal = attr & 0x7; // get the pal number
 				
 				

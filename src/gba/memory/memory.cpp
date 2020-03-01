@@ -128,12 +128,96 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_BG3VOFS: disp->disp_io.bg_offset_y[3].write(0,v); break;
         case IO_BG3VOFS+1: disp->disp_io.bg_offset_y[3].write(1,v); break;   
 
+        // dma 0
+        case IO_DMA0SAD: cpu->dma.write_src(0,0,v); break;
+        case IO_DMA0SAD+1: cpu->dma.write_src(0,1,v); break;
+        case IO_DMA0SAD+2: cpu->dma.write_src(0,2,v); break;
+        case IO_DMA0SAD+3: cpu->dma.write_src(0,3,v); break;
+
+        case IO_DMA0DAD: cpu->dma.write_dst(0,0,v); break;
+        case IO_DMA0DAD+1: cpu->dma.write_dst(0,1,v); break;
+        case IO_DMA0DAD+2: cpu->dma.write_dst(0,2,v); break;
+        case IO_DMA0DAD+3: cpu->dma.write_dst(0,3,v); break;
+
+        case IO_DMA0CNT_L: cpu->dma.write_count(0,0,v); break;
+        case IO_DMA0CNT_L+1: cpu->dma.write_count(0,1,v); break;
+
+        case IO_DMA0CNT_H: cpu->dma.write_control(0,0,v); break;
+        case IO_DMA0CNT_H+1: cpu->dma.write_control(0,1,v); break;
+
+
+        // dma 1
+        case IO_DMA1SAD: cpu->dma.write_src(1,0,v); break;
+        case IO_DMA1SAD+1: cpu->dma.write_src(1,1,v); break;
+        case IO_DMA1SAD+2: cpu->dma.write_src(1,2,v); break;
+        case IO_DMA1SAD+3: cpu->dma.write_src(1,3,v); break;
+
+        case IO_DMA1DAD: cpu->dma.write_dst(1,0,v); break;
+        case IO_DMA1DAD+1: cpu->dma.write_dst(1,1,v); break;
+        case IO_DMA1DAD+2: cpu->dma.write_dst(1,2,v); break;
+        case IO_DMA1DAD+3: cpu->dma.write_dst(1,3,v); break;
+
+        case IO_DMA1CNT_L: cpu->dma.write_count(1,0,v); break;
+        case IO_DMA1CNT_L+1: cpu->dma.write_count(1,1,v); break;
+
+        case IO_DMA1CNT_H: cpu->dma.write_control(1,0,v); break;
+        case IO_DMA1CNT_H+1: cpu->dma.write_control(1,1,v); break;
+
+        // dma 2
+        case IO_DMA2SAD: cpu->dma.write_src(2,0,v); break;
+        case IO_DMA2SAD+1: cpu->dma.write_src(2,1,v); break;
+        case IO_DMA2SAD+2: cpu->dma.write_src(2,2,v); break;
+        case IO_DMA2SAD+3: cpu->dma.write_src(2,3,v); break;
+
+        case IO_DMA2DAD: cpu->dma.write_dst(2,0,v); break;
+        case IO_DMA2DAD+1: cpu->dma.write_dst(2,1,v); break;
+        case IO_DMA2DAD+2: cpu->dma.write_dst(2,2,v); break;
+        case IO_DMA2DAD+3: cpu->dma.write_dst(2,3,v); break;
+
+        case IO_DMA2CNT_L: cpu->dma.write_count(2,0,v); break;
+        case IO_DMA2CNT_L+1: cpu->dma.write_count(2,1,v); break;
+
+        case IO_DMA2CNT_H: cpu->dma.write_control(2,0,v); break;
+        case IO_DMA2CNT_H+1: cpu->dma.write_control(2,1,v); break;
+
+        // dma 3
+        case IO_DMA3SAD: cpu->dma.write_src(3,0,v); break;
+        case IO_DMA3SAD+1: cpu->dma.write_src(3,1,v); break;
+        case IO_DMA3SAD+2: cpu->dma.write_src(3,2,v); break;
+        case IO_DMA3SAD+3: cpu->dma.write_src(3,3,v); break;
+
+        case IO_DMA3DAD: cpu->dma.write_dst(3,0,v); break;
+        case IO_DMA3DAD+1: cpu->dma.write_dst(3,1,v); break;
+        case IO_DMA3DAD+2: cpu->dma.write_dst(3,2,v); break;
+        case IO_DMA3DAD+3: cpu->dma.write_dst(3,3,v); break;
+
+        case IO_DMA3CNT_L: cpu->dma.write_count(3,0,v); break;
+        case IO_DMA3CNT_L+1: cpu->dma.write_count(3,1,v); break;
+
+        case IO_DMA3CNT_H: cpu->dma.write_control(3,0,v); break;
+        case IO_DMA3CNT_H+1: cpu->dma.write_control(3,1,v); break;
+
+        // stubbed
+        case IO_SOUNDCNT_H: break;
+        case IO_SOUNDCNT_H+1: break;
+
+        // stubbed
+        case IO_SOUNDCNT_X: break;
+        case IO_SOUNDCNT_X+1: break;
+        case IO_SOUNDCNT_X+2: break;
+        case IO_SOUNDCNT_X+3: break;
+
         case IO_IME: cpu->cpu_io.ime = is_set(v,0); break;
         case IO_IME+1: case IO_IME+2: case IO_IME+3: break; // stub
 
         case IO_IE: cpu->cpu_io.interrupt_enable = (cpu->cpu_io.interrupt_enable & ~0xff) | v; break;
         case IO_IE+1: cpu->cpu_io.interrupt_enable = (cpu->cpu_io.interrupt_enable & ~0xff00) | (v & 0x3f);  break;
 
+        case IO_IF: cpu->cpu_io.interrupt_flag = (cpu->cpu_io.interrupt_flag & ~0xff) | v; break;
+        case IO_IF+1: cpu->cpu_io.interrupt_flag = (cpu->cpu_io.interrupt_flag & ~0xff00) | (v & 0x3f);  break;
+
+
+        case IO_HALTCNT: cpu->cpu_io.halt_cnt.write(v); break;
 
         default: // here we will handle open bus when we have all our io regs done :)
         { 
@@ -171,6 +255,10 @@ uint8_t Mem::read_io_regs(uint32_t addr)
 
         case IO_IE: return cpu->cpu_io.interrupt_enable & 0xff;
         case IO_IE+1: return (cpu->cpu_io.interrupt_enable >> 8) & 0x3f; 
+
+        case IO_IF: return cpu->cpu_io.interrupt_flag & 0xff;
+        case IO_IF+1: return (cpu->cpu_io.interrupt_flag >> 8) & 0x3f;         
+
 
         default:
         {

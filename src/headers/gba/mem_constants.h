@@ -85,7 +85,12 @@ constexpr uint32_t IO_KEYINPUT = 0x04000130 & IO_MASK;
 constexpr uint32_t IO_KEYCNT = 0x04000132 & IO_MASK;
 constexpr uint32_t IO_POSTFLG = 0x040000300 & IO_MASK;
 
+constexpr uint32_t IO_HALTCNT = 0x04000301 & IO_MASK;
 
+
+
+constexpr uint32_t IO_SOUNDCNT_H = 0x004000082 & IO_MASK;
 constexpr uint32_t IO_SOUNDBIAS = 0x040000088 & IO_MASK;
+constexpr uint32_t IO_SOUNDCNT_X = 0x4000084 & IO_MASK;
 
 }

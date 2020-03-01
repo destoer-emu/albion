@@ -245,9 +245,7 @@ void DispStat::write(int idx, uint8_t v)
     {
         case 0:
         {
-            vblank = is_set(v,0);
-            hblank = is_set(v,1);
-            lyc_hit = is_set(v,2);
+            // first 3 bits are read only
             vblank_irq_enable = is_set(v,3);
             hblank_irq_enable = is_set(v,4);
             lyc_irq_enable = is_set(v,5);

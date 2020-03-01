@@ -324,13 +324,13 @@ void Display::tick(int cycles)
                 {
                     cpu->request_interrupt(interrupt::hblank);
                 }
-                cpu->handle_dma(dma_type::hblank);
+                cpu->dma.handle_dma(dma_type::hblank);
 
 
 
                 if(ly >= 2)
                 {
-                    cpu->handle_dma(dma_type::special,3);
+                    cpu->dma.handle_dma(dma_type::special,3);
                 }
 
             }
@@ -354,7 +354,7 @@ void Display::tick(int cycles)
                     {
                         cpu->request_interrupt(interrupt::vblank);
                     }
-                    cpu->handle_dma(dma_type::vblank);
+                    cpu->dma.handle_dma(dma_type::vblank);
                 }
 
                 else
@@ -397,7 +397,7 @@ void Display::tick(int cycles)
                 {
                     cpu->request_interrupt(interrupt::hblank);
                 }
-                cpu->handle_dma(dma_type::hblank);
+                cpu->dma.handle_dma(dma_type::hblank);
 
                 /* just ignore this for now while we get arm wrestler to boot
                 // disable video capture mode dma

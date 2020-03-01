@@ -42,9 +42,9 @@ void Cpu::init(Display *disp, Mem *mem, Debug *debug, Disass *disass)
     switch_mode(cpu_mode::system);
     init_opcode_table();
 
-    dma_in_progress = false;
     cyc_cnt = 0;
     cpu_io.init();
+    dma.init(mem,this);
 }
 
 
@@ -422,9 +422,51 @@ void Cpu::step()
         exec_arm();
     }
 
+    handle_power_state();
+
     // handle interrupts
     do_interrupts();
 }
+
+
+
+void Cpu::handle_power_state()
+{
+        // check halt and stop here?
+    switch(cpu_io.halt_cnt.state)
+    {
+        // normal (just run as normal)
+        case HaltCnt::power_state::normal:
+        {
+            break;
+        }
+
+        case HaltCnt::power_state::halt:
+        {
+            // need a better check here to prevent the emulator just locking up
+            if(!cpu_io.interrupt_enable)
+            {
+                throw std::runtime_error(fmt::format("[halt] halt locked up at {:08x}",regs[PC]));
+            }
+
+            // tick cycles until we an interrupt fires
+            // this is gonna be slow as hell
+            while(!(cpu_io.interrupt_flag & cpu_io.interrupt_enable))
+            {
+                cycle_tick(1);
+            }
+            cpu_io.halt_cnt.state = HaltCnt::power_state::normal;
+            break;
+        }
+
+        // i think this halts actions until buttons are pressed?
+        case HaltCnt::power_state::stop:
+        {
+            break;
+        }
+    }
+}
+
 
 // start here
 // debug register printing
@@ -922,7 +964,7 @@ uint32_t Cpu::logical_eor(uint32_t v1, uint32_t v2, bool s)
 // write the interrupt req bit
 void Cpu::request_interrupt(interrupt i)
 {
-    cpu_io.interrupt_flag = set_bit(cpu_io.interrupt_flag,static_cast<uint32_t>(i));   
+    cpu_io.interrupt_flag = set_bit(cpu_io.interrupt_flag,static_cast<int>(i));   
 }
 
 
@@ -966,202 +1008,4 @@ void Cpu::service_interrupt()
 
     regs[PC] = 0x18; // irq handler    
 }
-
-
-// check if for each dma if any of the start timing conds have been met
-// should store all the dma information in struct so its nice to access
-// also find out when dmas are actually processed?
-
-// ignore dma till after armwrestler we are probably gonna redo the api for the most part anyways
-void Cpu::handle_dma(dma_type req_type, int special_dma)
-{
-
-    UNUSED(special_dma);
-    UNUSED(req_type);
-
-    if(dma_in_progress) 
-    { 
-        return; 
-    }
-
-/*
-    static constexpr uint32_t zero_table[4] = {0x4000,0x4000,0x4000,0x10000};
-    for(int i = 0; i < 4; i++)
-    {
-
-        uint32_t cnt_addr = IO_DMA0CNT_H+i*12;
-        uint16_t dma_cnt = mem->handle_read<uint16_t>(mem->io,cnt_addr);
-
-        if(is_set(dma_cnt,15)) // dma is enabled
-        {
-            auto type = static_cast<dma_type>((dma_cnt >> 12) & 0x3);
-
-
-            bool is_triggered = false;
-
-            // speical dma modes on trigger for their respective dma modes
-            if(type == dma_type::special)
-            {
-                if(i == special_dma)
-                {
-                    is_triggered = true;
-                }
-            }
-
-            else
-            {
-                is_triggered = true;
-            }
-
-            if(is_triggered)
-            {
-                uint32_t word_count_addr = IO_DMA0CNT_L + i * 12;
-
-
-                if(is_set(dma_cnt,9)) // repeat bit so reload word count
-                {
-                    dma_regs[i].nn = mem->handle_read<uint16_t>(mem->io,word_count_addr);
-                }
-
-                 // if a zero len transfer it uses the max len for that dma
-                if(dma_regs[i].nn == 0)
-                {
-                    dma_regs[i].nn = zero_table[i];
-                }
-
-
-
-                do_dma(dma_cnt,req_type,i);
-                mem->handle_write<uint16_t>(mem->io,cnt_addr,dma_cnt); // write back the control reg!
-            }
-        }
-    }
-*/
-}
-
-
-// what kind of side affects can we have here!?
-// need to handle an n of 0 above in the calle
-// also need to handle repeats!
-
-// this needs to know the dma number aswell as the type of dma
-// <-- how does gamepak dma work
-// this seriously needs a refeactor
-void Cpu::do_dma(uint16_t &dma_cnt,dma_type req_type, int dma_number)
-{
-
-    UNUSED(req_type);
-    UNUSED(dma_number);
-
-    if(is_set(dma_cnt,11))
-    {
-        throw std::runtime_error("[unimplemented] gamepak dma!");
-    }
-
-/*
-    dma_in_progress = true;
-
-    Dma_reg &dma_reg = dma_regs[dma_number];
-
-    uint32_t source = dma_reg.src;
-    uint32_t dest = dma_reg.dst;
-
-
-    bool is_half = !is_set(dma_cnt,10);
-    uint32_t size = is_half? ARM_HALF_SIZE : ARM_WORD_SIZE;
-
-    source &= 0x0fffffff;
-    dest &= 0x0fffffff;
-
-    for(size_t i = 0; i < dma_reg.nn; i++)
-    {
-        uint32_t offset = i * size;
-
-        if(is_half)
-        {
-            uint16_t v = mem->read_memt<uint16_t>(source+offset);
-            mem->write_memt<uint16_t>(dest+offset,v);
-        }
-
-        else
-        {
-            uint32_t v = mem->read_memt<uint32_t>(source+offset);
-            mem->write_memt<uint32_t>(dest+offset,v);
-        }
-    }
-
-    static constexpr interrupt dma_interrupt[4] = {interrupt::dma0,interrupt::dma1,interrupt::dma2,interrupt::dma3}; 
-    if(is_set(dma_cnt,14)) // do irq on finish
-    {
-        request_interrupt(dma_interrupt[dma_number]);
-    }
-
-
-    if(!is_set(dma_cnt,9) || req_type == dma_type::immediate || is_set(dma_cnt,11) ) // dma does not repeat
-    {
-        dma_cnt = deset_bit(dma_cnt,15); // disable it
-    }
-
-    int sad_mode = (dma_cnt >> 8) & 3;
-    int dad_mode = (dma_cnt >> 6) & 3;
-
-
-    switch(sad_mode)
-    {
-        case 0: // increment
-        {
-            dma_reg.src += dma_reg.nn * size;
-            break;
-        }
-
-        case 1: // decrement
-        {
-            dma_reg.src -= dma_reg.nn * size;
-            break;
-        }
-
-        case 2: // fixed (do nothing)
-        {
-            break;
-        }
-
-        case 3: // invalid
-        {
-            throw std::runtime_error("sad mode of 3!");
-        }
-    }
-
-
-    switch(dad_mode)
-    {
-        case 0: // increment
-        {
-            dma_reg.dst += dma_reg.nn * size;
-            break;
-        }
-
-        case 1: // decrement
-        {
-            dma_reg.dst -= dma_reg.nn * size;
-            break;
-        }
-
-        case 2: // fixed (do nothing)
-        {
-            break;
-        }
-
-        case 3: // incremnt + reload
-        {
-            uint32_t dad_addr = IO_DMA0DAD + dma_number * 12;
-            dma_reg.dst = mem->handle_read<uint32_t>(mem->io,dad_addr);
-            dma_reg.dst += dma_reg.nn * size;
-            break;
-        }
-    }
-*/
-
-    dma_in_progress = false;
-}
-
 }

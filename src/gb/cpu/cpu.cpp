@@ -17,9 +17,7 @@ void Cpu::init(Memory *m, Ppu *p,Apu *ap, Disass *dis, Debug *debugger)
 
 	write_log("[INFO] new instance started!");
 
-	uint8_t test = mem->read_mem(0x143);
-
-	switch(test)
+	switch(mem->read_mem(0x143))
 	{
 		case 0x80: is_cgb = true; break; // add options to run cgb in dmg1
 		case 0xc0: is_cgb = true; break;
@@ -284,7 +282,7 @@ void Cpu::service_interrupt(int interrupt) noexcept
 		
 	// push the current pc on the stack to save it
 	// it will be pulled off by reti or ret later
-	write_stackwt(pc);
+	write_stackw(pc);
 
 		
 	// set the program counter to the start of the
@@ -300,7 +298,6 @@ void Cpu::service_interrupt(int interrupt) noexcept
 	};
 
 	pc = interrupt_vectors[interrupt];
-	cycle_tick(1);
 }
 
 

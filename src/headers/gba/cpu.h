@@ -4,6 +4,7 @@
 #include <gba/forward_def.h>
 #include <gba/cpu_io.h>
 #include <gba/arm.h>
+#include <gba/dma.h>
 
 namespace gameboyadvance
 {
@@ -25,13 +26,6 @@ enum class interrupt
     dma3 = 11,
     keypad = 12,
     gamepak = 13
-};
-
-// add proper names for the special class later
-enum class dma_type
-{
-    immediate = 0 ,vblank = 1,
-    hblank = 2, special = 3 
 };
 
 
@@ -74,20 +68,9 @@ public:
     void request_interrupt(interrupt i);
 
 
-    struct Dma_reg
-    {
-        uint32_t src; // source addr
-        uint32_t dst; // dest addr
-        uint32_t nn; // word count
-    };
-
-    Dma_reg dma_regs[4];
-
-    void handle_dma(dma_type req_type, int special_dma = -1);
-
-
     // cpu io memory
     CpuIo cpu_io;
+    Dma dma;
 private:
 
     using ARM_OPCODE_FPTR = void (Cpu::*)(uint32_t opcode);
@@ -108,6 +91,9 @@ private:
     void arm_fill_pipeline();
 
     bool cond_met(int opcode);
+
+    
+    void handle_power_state();
 
     //arm cpu instructions
     void arm_unknown(uint32_t opcode);
@@ -159,10 +145,6 @@ private:
     //void request_interrupt(Interrupt interrupt);
     void do_interrupts();
     void service_interrupt();
-
-    // dma
-    //handle_dma(Dma_type req_type, int special_dma = -1);
-    void do_dma(uint16_t &dma_cnt,dma_type req_type, int dma_number);
 
     // timers
     void tick_timers(int cycles);

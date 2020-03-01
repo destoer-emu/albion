@@ -19,6 +19,7 @@ void Texture::init_texture(const int X, const int Y)
     x = X;
     y = Y;
     buf.resize(x*y);
+    std::fill(buf.begin(),buf.end(),0);
 
     glEnable(GL_TEXTURE_2D); 
     if(first_time)
