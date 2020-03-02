@@ -75,8 +75,8 @@ private:
 
     void start_instance();
     void stop_instance();
-    void reset_instance(std::string filename);
-    void new_instance(std::string filename);
+    void reset_instance(std::string filename, bool use_bios = false);
+    void new_instance(std::string filename, bool use_bios = false);
     void load_state(std::string filename);
     void save_state(std::string filename);
 
@@ -89,8 +89,8 @@ private:
     // emulator managment
     void gameboy_stop_instance();
     void gameboy_start_instance();
-    void gameboy_new_instance(std::string filename);
-    void gameboy_reset_instance(std::string filename);
+    void gameboy_new_instance(std::string filename, bool use_bios);
+    void gameboy_reset_instance(std::string filename, bool use_bios);
 
     // frontend drawing
     void gameboy_draw_screen();

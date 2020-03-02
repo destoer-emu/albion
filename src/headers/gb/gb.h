@@ -27,7 +27,7 @@ class GB
 public:
     // sets up a new emulator state!
     GB();
-    void reset(std::string rom_name, bool with_rom=true);
+    void reset(std::string rom_name, bool with_rom=true, bool use_bios = false);
     void run();
 
     void key_input(int key,bool pressed);

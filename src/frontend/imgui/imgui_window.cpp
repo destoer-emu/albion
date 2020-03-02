@@ -165,7 +165,7 @@ void ImguiMainWindow::stop_instance()
     }
 }
 
-void ImguiMainWindow::reset_instance(std::string filename)
+void ImguiMainWindow::reset_instance(std::string filename, bool use_bios)
 {
     running_type = get_emulator_type(filename);
 
@@ -174,7 +174,7 @@ void ImguiMainWindow::reset_instance(std::string filename)
         case emu_type::gameboy:
         {
             screen.init_texture(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);    
-            gameboy_reset_instance(filename);
+            gameboy_reset_instance(filename,use_bios);
             break;
         }
 
@@ -187,7 +187,7 @@ void ImguiMainWindow::reset_instance(std::string filename)
     }
 }
 
-void ImguiMainWindow::new_instance(std::string filename)
+void ImguiMainWindow::new_instance(std::string filename, bool use_bios)
 {
     stop_instance();
 
@@ -208,7 +208,7 @@ void ImguiMainWindow::new_instance(std::string filename)
         case emu_type::gameboy:
         {
             screen.init_texture(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);
-            gameboy_new_instance(filename);
+            gameboy_new_instance(filename,use_bios);
             break;
         }
 
@@ -263,6 +263,8 @@ void ImguiMainWindow::file_browser()
     static std::string selected_file = "";
     static std::vector<std::string> dir_list = read_sorted_directory(file_path);
     static char input_path[128] = "";
+    static bool use_bios = false;
+
 
     ImGui::Begin("file browser");
 
@@ -275,7 +277,7 @@ void ImguiMainWindow::file_browser()
         {
             if(std::filesystem::is_regular_file(selected_file))
             {
-                new_instance(selected_file);
+                new_instance(selected_file,use_bios);
             }
         }
     }
@@ -341,6 +343,12 @@ void ImguiMainWindow::file_browser()
         dir_list = read_sorted_directory(file_path);
 	}
 
+
+    ImGui::SameLine();
+
+    ImGui::Checkbox("use bios",&use_bios);
+
+
 	
 	if (ImGui::Button("change dir"))
 	{  
@@ -386,7 +394,7 @@ void ImguiMainWindow::file_browser()
 
                 else if(std::filesystem::is_regular_file(dir_list[i]))
                 {
-                    new_instance(dir_list[i]);
+                    new_instance(dir_list[i],use_bios);
                 }
             }   
         }

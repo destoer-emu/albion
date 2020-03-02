@@ -47,6 +47,7 @@ constexpr int IO_IE = 0xff;
 constexpr int IO_JOYPAD = 0x00;
 constexpr int IO_SB = 0x01;
 constexpr int IO_SC = 0x02;
+constexpr int IO_BIOS = 0x50;
 
 constexpr int IO_SCX = 0x43;
 constexpr int IO_SVBK = 0x70;

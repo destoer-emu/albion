@@ -66,8 +66,17 @@ void Memory::load_cart_ram()
     fp.close();	
 }
 
+bool Memory::rom_cgb_enabled() const noexcept
+{
+	switch(rom[0x143])
+	{
+		case 0x80: return true; // add options to run cgb in dmg1
+		case 0xc0: return true;
+		default: return false;
+	}
+}
 
-void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_rom)
+void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_rom, bool use_bios)
 {
     cpu = c; // init our cpu pointer
     ppu = p;
@@ -89,6 +98,21 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
 	else
 	{
 		rom.resize(0x4000);
+	}
+
+	if(use_bios)
+	{
+		std::string bios_file = rom_cgb_enabled() ? "gbc_bios.bin" : "dmg_bios.bin";
+		try
+		{
+			read_file(bios_file,bios);
+		}
+
+		catch(std::exception &ex)
+		{
+			UNUSED(ex);
+			throw std::runtime_error(fmt::format("could not load bios file: {}!",bios_file));
+		}
 	}
 
     // reserve our underlying memory
@@ -243,29 +267,31 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
 		}
 	}
 
-    // init io
-	io[0x10] = 0x80;
-	io[0x11] = 0xBF;	
-	io[0x12] = 0xF3;
-	io[0x14] = 0xBF;
-	io[0x16] = 0x3F;
-	io[0x19] = 0xBF;
-	io[0x1A] = 0x7F;
-	io[0x1B] = 0xFF;
-	io[0x1C] = 0x9F;
-	io[0x1E] = 0xBF;
-	io[0x20] = 0xFF;
-	io[0x23] = 0xBF;
-	io[0x24] = 0x77;
-	io[0x25] = 0xF3;
-	io[0x26] = 0xF1;
-	io[0x40] = 0x91;
-	io[0x47] = 0xFC;
-	io[0x48] = 0xFF;
-	io[0x49] = 0xFF;
-	
-	
-	
+	if(!use_bios)
+	{
+		// init io
+		io[0x10] = 0x80;
+		io[0x11] = 0xBF;	
+		io[0x12] = 0xF3;
+		io[0x14] = 0xBF;
+		io[0x16] = 0x3F;
+		io[0x19] = 0xBF;
+		io[0x1A] = 0x7F;
+		io[0x1B] = 0xFF;
+		io[0x1C] = 0x9F;
+		io[0x1E] = 0xBF;
+		io[0x20] = 0xFF;
+		io[0x23] = 0xBF;
+		io[0x24] = 0x77;
+		io[0x25] = 0xF3;
+		io[0x26] = 0xF1;
+		io[0x40] = 0x91;
+		io[0x47] = 0xFC;
+		io[0x48] = 0xFF;
+		io[0x49] = 0xFF;
+	}
+		
+		
 	
 	// init unused hwio
 	io[0x03] = 0xff;
@@ -282,7 +308,7 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
 	io[0x28] = 0xff;
 	io[0x29] = 0xff;
 	io[0x20] = 0xff;
-
+	
 
     // banking vars
     enable_ram = false; // is ram banking enabled
@@ -306,6 +332,52 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
 }
 
 
+
+uint8_t Memory::read_bios(uint16_t addr) const noexcept
+{
+	if(cpu->get_cgb())
+	{
+		if(addr < bios.size() && (addr < 0x100  || addr >= 0x200))
+		{
+			return bios[addr];
+		}
+
+
+		else
+		{
+			return rom[addr];
+		}
+	}
+
+	else
+	{
+		if(addr < bios.size() && addr < 0x100)
+		{
+			return bios[addr];
+		}
+
+		else
+		{
+			return rom[addr];
+		}		
+	}
+}
+
+void Memory::bios_enable() noexcept
+{
+	memory_table[0x0].read_memf = &Memory::read_bios;
+	memory_table[0x1].read_memf = &Memory::read_bios;
+	memory_table[0x2].read_memf = &Memory::read_bios;
+	memory_table[0x3].read_memf = &Memory::read_bios;
+}
+
+void Memory::bios_disable() noexcept
+{
+	memory_table[0x0].read_memf = &Memory::read_bank_zero;
+	memory_table[0x1].read_memf = &Memory::read_bank_zero;
+	memory_table[0x2].read_memf = &Memory::read_bank_zero;
+	memory_table[0x3].read_memf = &Memory::read_bank_zero;
+}
 
 void Memory::raw_write(uint16_t addr, uint8_t v) noexcept
 {
@@ -1036,6 +1108,12 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			break;
 		}
 
+		// as soon as this is written to disable the bios
+		case IO_BIOS:
+		{
+			bios_disable();
+			break;
+		}
 
 		// cgb regs
 		

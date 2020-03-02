@@ -115,18 +115,18 @@ void ImguiMainWindow::gameboy_start_instance()
     gb.debug.breakpoints_enabled = true;
 }
 
-void ImguiMainWindow::gameboy_new_instance(std::string filename)
+void ImguiMainWindow::gameboy_new_instance(std::string filename, bool use_bios)
 {
-    gameboy_reset_instance(filename);
+    gameboy_reset_instance(filename,use_bios);
     gameboy_start_instance();     
 }
 
 
-void ImguiMainWindow::gameboy_reset_instance(std::string filename)
+void ImguiMainWindow::gameboy_reset_instance(std::string filename,bool use_bios)
 {
     try
     {
-        gb.reset(filename);
+        gb.reset(filename,true,use_bios);
     }
 
     catch(std::exception &ex)

@@ -11,7 +11,14 @@ namespace gameboy
 class Memory
 {
 public:
-    void init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_rom=true);
+    void init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_rom=true, bool use_bios=false);
+
+    // disable and enable reads from the bios
+    // fiddles the bank zero pointe
+    bool rom_cgb_enabled() const noexcept;
+    void bios_enable() noexcept;
+    void bios_disable() noexcept;
+
 
     bool is_lcd_enabled() const noexcept;
 
@@ -82,6 +89,9 @@ private:
     void ram_bank_enable(uint16_t address, uint8_t v) noexcept;
     void banking_unused(uint16_t addr, uint8_t v) noexcept;
 
+    // read out of the bios
+    uint8_t read_bios(uint16_t addr) const noexcept;
+
     // mbc1
     void change_lo_rom_bank_mbc1(uint16_t address, uint8_t v) noexcept;
     void mbc1_banking_change(uint16_t address, uint8_t v) noexcept; 
@@ -120,6 +130,7 @@ private:
 	bool rom_banking = true; // is rom banking enabled
 
 	// underlying memory
+    std::vector<uint8_t> bios;
     std::vector<uint8_t> wram; // 0x1000
     std::vector<std::vector<uint8_t>> cgb_wram_bank; // 0x7000 
     std::vector<uint8_t> rom; // variable

@@ -47,8 +47,8 @@ void Ppu::init(Cpu *c,Memory *m) noexcept
 	sp_pal_idx = 0;
 	bg_pal_idx = 0; // index into the bg pal (entry takes two bytes)
 
-	memset(bg_pal,0xff,sizeof(bg_pal)); // bg palette data
-	memset(sp_pal,0xff,sizeof(sp_pal)); // sprite pallete data 
+	memset(bg_pal,0x00,sizeof(bg_pal)); // bg palette data
+	memset(sp_pal,0x00,sizeof(sp_pal)); // sprite pallete data 
 
 }
 

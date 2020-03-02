@@ -7,7 +7,7 @@
 namespace gameboy
 {
 
-void Cpu::init(Memory *m, Ppu *p,Apu *ap, Disass *dis, Debug *debugger)
+void Cpu::init(Memory *m, Ppu *p,Apu *ap, Disass *dis, Debug *debugger, bool use_bios)
 {
     mem = m;
     ppu = p;
@@ -17,35 +17,47 @@ void Cpu::init(Memory *m, Ppu *p,Apu *ap, Disass *dis, Debug *debugger)
 
 	write_log("[INFO] new instance started!");
 
-	switch(mem->read_mem(0x143))
+
+	is_cgb = mem->rom_cgb_enabled();
+
+	// setup regs to skip the bios
+	if(!use_bios)
 	{
-		case 0x80: is_cgb = true; break; // add options to run cgb in dmg1
-		case 0xc0: is_cgb = true; break;
-		default: is_cgb = false; break;
-	}
-	
-	// set the cgb initial registers 
-	if(is_cgb)
-	{
-		a = 0x11; f = 0x80; // af = 0x1180;
-		b = 0x00; c = 0x00; // bc = 0x0000;
-		d = 0xff; e = 0x56; // de = 0xff56;
-		h = 0x00; l = 0x0d; // hl = 0x000d;
-		sp = 0xfffe;
-		pc = 0x100;
+		// set the cgb initial registers 
+		if(is_cgb)
+		{
+			a = 0x11; f = 0x80; // af = 0x1180;
+			b = 0x00; c = 0x00; // bc = 0x0000;
+			d = 0xff; e = 0x56; // de = 0xff56;
+			h = 0x00; l = 0x0d; // hl = 0x000d;
+			sp = 0xfffe;
+			pc = 0x0100;
+		}
+
+		// dmg
+		else 
+		{
+			// set our initial register state
+			a = 0x01; f = 0xb0; // af = 0x01b0
+			b = 0x00; c = 0x13; // bc = 0x0013
+			d = 0x00; e = 0xd8; // de = 0x00d8
+			h = 0x01; l = 0x4d; // hl = 0x014d
+			sp = 0xfffe;
+			pc = 0x0100;
+		}
 	}
 
-	// dmg
-	else 
+	// bios all set to zero
+	else
 	{
-		// set our initial register state
-		a = 0x01; f = 0xb0; // af = 0x01b0
-		b = 0x00; c = 0x13; // bc = 0x0013
-		d = 0x00; e = 0xd8; // de = 0x00d8
-		h = 0x01; l = 0x4d; // hl = 0x014d
-		sp = 0xfffe;
-		pc = 0x0100;
+		a = 0x00; f = 0x00; // af = 0x0000
+		b = 0x00; c = 0x00; // bc = 0x0000
+		d = 0x00; e = 0x00; // de = 0x0000
+		h = 0x00; l = 0x00; // hl = 0x0000
+		sp = 0x0000;
+		pc = 0x0000;		
 	}
+
 
 	is_double = false;
     internal_timer = 0;
@@ -187,7 +199,7 @@ void Cpu::handle_instr_effects()
 			break;
 		}
 				
-		case instr_state::di: // di
+		case instr_state::di:  // di
 		{
 			instr_side_effect = instr_state::normal;
 			interrupt_enable = false; // di should disable immediately unlike ei!
@@ -215,7 +227,6 @@ void Cpu::handle_instr_effects()
 			else 
 			{
 				// sanity check to check if this thing will actually fire
-
 				const uint8_t stat = mem->io[IO_STAT];
 				if(enabled == 0 || ((((stat >> 3) & 0x7) == 0) && enabled == val_bit(enabled,1)))
 				{
@@ -233,6 +244,7 @@ void Cpu::handle_instr_effects()
 					req = mem->io[IO_IF];
 					enabled = mem->io[IO_IE];
 				}
+
 				do_interrupts(); // handle interrupts
 			}
 			break;

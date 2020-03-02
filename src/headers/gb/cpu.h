@@ -20,7 +20,7 @@ enum class instr_state
 class Cpu
 {
 public:
-    void init(Memory *m, Ppu *p,Apu *ap, Disass *d, Debug *debugger);
+    void init(Memory *m, Ppu *p,Apu *ap, Disass *d, Debug *debugger,bool use_bios = false);
     void step();
     void cycle_tick(int cycles) noexcept; 
 
