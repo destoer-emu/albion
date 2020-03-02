@@ -6,6 +6,17 @@
 namespace gameboy
 {
 
+// did the last instr have a side effect
+// that happens after the instr has executed
+enum class instr_state
+{
+    normal,
+    halt,
+    ei,
+    di
+};
+
+
 class Cpu
 {
 public:
@@ -55,9 +66,7 @@ private:
 
 
     // interrupts
-    bool halt = false;
-    bool ei = false;
-    bool di = false;
+    instr_state instr_side_effect = instr_state::normal;
     bool interrupt_enable = false;
     bool halt_bug = false;
 

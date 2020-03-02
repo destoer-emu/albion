@@ -644,7 +644,7 @@ void Cpu::exec_instr()
 		
 		case 0x76: // halt 
 			// caller will handle
-			halt = true;
+			instr_side_effect = instr_state::halt;
 			break;
 		
 		case 0x77: // ld (hl), a 
@@ -1220,7 +1220,7 @@ void Cpu::exec_instr()
 		case 0xf3: // disable interrupt
 			// needs to be executed after the next instr
 			// main routine will handle
-			di = true;
+			instr_side_effect = instr_state::di;
 			break;
 		
 		case 0xf5: // push af
@@ -1256,7 +1256,7 @@ void Cpu::exec_instr()
 		
 		case 0xfb: 
 			// caller will check opcode and handle it
-			ei = true;
+			instr_side_effect = instr_state::ei;
 			break;
 		
 		case 0xFE: // cp a, nn (do a sub and discard result)

@@ -53,9 +53,7 @@ void Cpu::init(Memory *m, Ppu *p,Apu *ap, Disass *dis, Debug *debugger)
     joypad_state = 0xff;
 
     // interrupts
-    halt = false;
-    ei = false;
-   	di = false;
+	instr_side_effect = instr_state::normal;
     interrupt_enable = false;
     halt_bug = false;
 
@@ -163,69 +161,81 @@ void Cpu::update_timers(int cycles) noexcept
 // handle the side affects of instructions
 void Cpu::handle_instr_effects()
 {
-	if(ei) // ei
+
+	switch(instr_side_effect)
 	{
-		ei = false; // assume a di was executed next instr
-		exec_instr(); 
-		// we have done an instruction now set ime
-		// needs to be just after the instruction service
-		// but before we service interrupts
-		
-		if(!di) // if we have just executed di do not renable interrupts
-		{	
-			interrupt_enable = true;
+		// no instr side effects
+		case instr_state::normal:
+		{
+			break;
 		}
-				
-		do_interrupts(); // handle interrupts 
-	}
+
+		case instr_state::ei: // ei
+		{
+			exec_instr(); 
+			// we have done an instruction now set ime
+			// needs to be just after the instruction service
+			// but before we service interrupts
 			
-	else if(di) // di
-	{
-		di = false;
-		interrupt_enable = false; // di should disable immediately unlike ei!
-	}
-		
-	// this will make the cpu stop executing instr
-	// until an interrupt occurs and wakes it up 			
-	else if(halt) // halt occured in prev instruction
-	{		
-		halt = false;
-
-		uint8_t req = mem->io[IO_IF]; // requested ints 
-		uint8_t enabled = mem->io[IO_IE]; // enabled interrutps
-		
-		// halt bug
-		// halt state not entered and the pc fails to increment for
-		// one instruction read 			
-		if( (interrupt_enable == false) &&  (req & enabled & 0x1f) != 0)
-		{
-			halt_bug = true;
-		}
-		
-		// normal halt
-				
-		else 
-		{
-			// sanity check to check if this thing will actually fire
-
-			const uint8_t stat = mem->io[IO_STAT];
-			if(enabled == 0 || ((((stat >> 3) & 0x7) == 0) && enabled == val_bit(enabled,1)))
-			{
-				write_log("[ERROR] halt infinite loop");
-				throw std::runtime_error("halt infinite loop");
+			if(instr_side_effect != instr_state::di) // if we have just executed di do not renable interrupts
+			{	
+				interrupt_enable = true;
 			}
-
-
-
-			while( ( req & enabled & 0x1f) == 0) 
-			{
-				// just tick it
-				cycle_tick(1);
 					
-				req = mem->io[IO_IF];
-				enabled = mem->io[IO_IE];
+			do_interrupts(); // handle interrupts 
+			instr_side_effect = instr_state::normal;
+			break;
+		}
+				
+		case instr_state::di: // di
+		{
+			instr_side_effect = instr_state::normal;
+			interrupt_enable = false; // di should disable immediately unlike ei!
+			break;
+		}
+			
+		// this will make the cpu stop executing instr
+		// until an interrupt occurs and wakes it up 			
+		case instr_state::halt: // halt occured in prev instruction
+		{		
+			instr_side_effect = instr_state::normal;
+			uint8_t req = mem->io[IO_IF]; // requested ints 
+			uint8_t enabled = mem->io[IO_IE]; // enabled interrutps
+			
+			// halt bug
+			// halt state not entered and the pc fails to increment for
+			// one instruction read 			
+			if( (interrupt_enable == false) &&  (req & enabled & 0x1f) != 0)
+			{
+				halt_bug = true;
 			}
-			do_interrupts(); // handle interrupts
+			
+			// normal halt
+					
+			else 
+			{
+				// sanity check to check if this thing will actually fire
+
+				const uint8_t stat = mem->io[IO_STAT];
+				if(enabled == 0 || ((((stat >> 3) & 0x7) == 0) && enabled == val_bit(enabled,1)))
+				{
+					write_log("[ERROR] halt infinite loop");
+					throw std::runtime_error("halt infinite loop");
+				}
+
+
+
+				while( ( req & enabled & 0x1f) == 0) 
+				{
+					// just tick it
+					cycle_tick(1);
+						
+					req = mem->io[IO_IF];
+					enabled = mem->io[IO_IE];
+				}
+				do_interrupts(); // handle interrupts
+			}
+			break;
 		}
 	}
 }
