@@ -9,27 +9,28 @@ SDLMainWindow::SDLMainWindow(std::string filename)
 	try
 	{
 		type = get_emulator_type(filename);
+	
+
+		switch(type)
+		{
+			case emu_type::gameboy:
+			{
+				gameboy_main(filename);
+				break;
+			}
+
+			case emu_type::gba:
+			{
+				gba_main(filename);
+				break;
+			}
+		}
 	}
 
 	catch(std::exception &ex)
 	{
 		std::cout << ex.what() << "\n";
 		return;
-	}
-
-	switch(type)
-	{
-		case emu_type::gameboy:
-		{
-			gameboy_main(filename);
-			break;
-		}
-
-		case emu_type::gba:
-		{
-			gba_main(filename);
-			break;
-		}
 	}
 }
 

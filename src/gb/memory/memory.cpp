@@ -191,6 +191,12 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
 		// mbc1 rom
 		case rom_type::mbc1:
 		{
+			
+			memory_table[0x0].read_memf = &Memory::read_rom_lower_mbc1;
+			memory_table[0x1].read_memf = &Memory::read_rom_lower_mbc1;
+			memory_table[0x2].read_memf = &Memory::read_rom_lower_mbc1;
+			memory_table[0x3].read_memf = &Memory::read_rom_lower_mbc1;
+
 			memory_table[0x0].write_memf = &Memory::ram_bank_enable;
 			memory_table[0x1].write_memf = &Memory::ram_bank_enable;
 			memory_table[0x2].write_memf = &Memory::change_lo_rom_bank_mbc1;
@@ -206,28 +212,31 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
 		// mbc2 rom
 		case rom_type::mbc2:
 		{
-			memory_table[0x0].write_memf = &Memory::ram_bank_enable_mbc2;
-			memory_table[0x1].write_memf = &Memory::ram_bank_enable_mbc2;
-
-			// same impl as mbc1
-			memory_table[0x2].write_memf = &Memory::change_lo_rom_bank_mbc2;
-			memory_table[0x3].write_memf = &Memory::change_lo_rom_bank_mbc2;
+			memory_table[0x0].write_memf = &Memory::lower_bank_write_mbc2;
+			memory_table[0x1].write_memf = &Memory::lower_bank_write_mbc2;
+			memory_table[0x2].write_memf = &Memory::lower_bank_write_mbc2;
+			memory_table[0x3].write_memf = &Memory::lower_bank_write_mbc2;
 			
 			// no ram bank changing
 			memory_table[0x4].write_memf = &Memory::banking_unused;
 			memory_table[0x5].write_memf = &Memory::banking_unused;
-			
-			// unused
 			memory_table[0x6].write_memf = &Memory::banking_unused;
 			memory_table[0x7].write_memf = &Memory::banking_unused;
+
+
+			// mbc2 memory needs special handlers for its built in sram
+			memory_table[0xa].write_memf = &Memory::write_cart_ram_mbc2;
+			memory_table[0xb].write_memf = &Memory::write_cart_ram_mbc2;
+			memory_table[0xa].read_memf = &Memory::read_cart_ram_mbc2;
+			memory_table[0xb].read_memf = &Memory::read_cart_ram_mbc2;
 			break;
 		}
 
 		// mbc3 rom
 		case rom_type::mbc3:
 		{
-			memory_table[0x0].write_memf = &Memory::ram_bank_enable;
-			memory_table[0x1].write_memf = &Memory::ram_bank_enable;
+			memory_table[0x0].write_memf = &Memory::ram_bank_enable_mbc5;
+			memory_table[0x1].write_memf = &Memory::ram_bank_enable_mbc5;
 			memory_table[0x2].write_memf = &Memory::change_rom_bank_mbc3;
 			memory_table[0x3].write_memf = &Memory::change_rom_bank_mbc3;
 			memory_table[0x4].write_memf = &Memory::mbc3_ram_bank_change;
@@ -315,6 +324,7 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
     cart_ram_bank = (rom_info.no_ram_banks > 0) ? 0 : CART_RAM_BANK_INVALID;
 	cart_rom_bank = 1; // currently selected rom bank
 	rom_banking = true; // is rom banking enabled
+	mbc1_bank2 = 0;
 
     // oam dma
 	oam_dma_active = false; // indicate a dma is active and to lock memory
@@ -329,6 +339,10 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
 	dma_src = 0;
 	dma_dst = 0;
 	hdma_active = false;
+
+	test_result = emu_test::running;
+	gekkio_pass_count = 0;
+	gekkio_fail_count = 0;
 }
 
 
@@ -393,14 +407,14 @@ void Memory::raw_write(uint16_t addr, uint8_t v) noexcept
 		// rom (banked)
 		case 4: case 5: case 6: case 7:
 		{
-			rom[(cart_rom_bank*0x4000)+addr-0x4000] = v;
+			rom[cart_rom_bank*0x4000+(addr&0x3fff)] = v;
 			break;
 		}
 
 		// vram
 		case 8: case 9: 
 		{
-			vram[vram_bank][addr - 0x8000] = v;
+			vram[vram_bank][addr & 0x1fff] = v;
 			break;
 		}
 
@@ -409,8 +423,7 @@ void Memory::raw_write(uint16_t addr, uint8_t v) noexcept
 		{
 			if(cart_ram_bank != CART_RAM_BANK_INVALID)
 			{
-				addr -= 0xa000;
-				cart_ram_banks[cart_ram_bank][addr] = v;
+				cart_ram_banks[cart_ram_bank][addr & 0x1fff] = v;
 			}
 			break;
 		}
@@ -480,14 +493,14 @@ uint8_t Memory::raw_read(uint16_t addr) noexcept
 		// rom (banked)
 		case 4: case 5: case 6: case 7:
 		{
-			return rom[(cart_rom_bank*0x4000)+(addr-0x4000)];
+			return rom[cart_rom_bank*0x4000+(addr&0x3fff)];
 			break;
 		}
 
 		// vram
 		case 8: case 9: 
 		{
-			return vram[vram_bank][addr - 0x8000];
+			return vram[vram_bank][addr & 0x1fff];
 			break;
 		}
 
@@ -496,8 +509,7 @@ uint8_t Memory::raw_read(uint16_t addr) noexcept
 		{
 			if(cart_ram_bank != CART_RAM_BANK_INVALID)
 			{
-				addr -= 0xa000;
-				return cart_ram_banks[cart_ram_bank][addr];
+				return cart_ram_banks[cart_ram_bank][addr & 0x1fff];
 			}
 
 			else
@@ -657,7 +669,7 @@ uint8_t Memory::read_vram(uint16_t addr) const noexcept
     // vram is used in pixel transfer cannot access
     if(ppu->mode != ppu_mode::pixel_transfer)
     {
-        return vram[vram_bank][addr - 0x8000];
+        return vram[vram_bank][addr & 0x1fff];
     }
 
     else
@@ -671,7 +683,7 @@ uint8_t Memory::read_cart_ram(uint16_t addr) const noexcept
 { 
     if(enable_ram && cart_ram_bank != CART_RAM_BANK_INVALID)
     {
-        return cart_ram_banks[cart_ram_bank][addr-0xa000];
+        return cart_ram_banks[cart_ram_bank][addr & 0x1fff];
     }
 
     else
@@ -680,12 +692,27 @@ uint8_t Memory::read_cart_ram(uint16_t addr) const noexcept
     }
 }
 
+// only bottom 4 bits are readable
+// cart  memory 0xa000 - 0xc000
+uint8_t Memory::read_cart_ram_mbc2(uint16_t addr) const noexcept
+{
+    if(enable_ram) // fixed for 512by4 bits
+    {
+        return cart_ram_banks[0][addr & 0x1ff];
+    }
+
+	else
+	{
+		return 0xff;
+	}
+}
+
+
 // 0xff00 io regs (has side affects)
 uint8_t Memory::read_io(uint16_t addr) const noexcept
 {
     switch(addr & 0xff)
     {
-
         // joypad control reg <-- used for sgb command packets too
 		case IO_JOYPAD:
 		{		
@@ -885,10 +912,31 @@ uint8_t Memory::read_iot(uint16_t addr) noexcept
 // for now we will just return the rom
 // 0x4000 - 0x8000 return current rom bank
 uint8_t Memory::read_rom_bank(uint16_t addr) const noexcept
-{   
-    return rom[(cart_rom_bank*0x4000)+addr-0x4000];
+{  
+	return rom[cart_rom_bank * 0x4000 + (addr & 0x3fff)];
 }
 
+
+
+uint8_t Memory::read_rom_lower_mbc1(uint16_t addr) const noexcept
+{
+	if(rom_banking) // in rom banking its allways bank zero
+	{
+		return rom[addr & 0x3fff];
+	}
+
+	// if not the bank2 reg is used (shifted right by 5 bits)
+	// which we do anyways because its the only way its ever used
+	else // TODO optimise this bank read
+	{
+		int bank = mbc1_bank2 << 5;
+		if(bank >= rom_info.no_rom_banks) 
+		{
+			bank %= rom_info.no_rom_banks;
+		}
+		return rom[(bank * 0x4000) +  (addr & 0x3fff)];
+	}
+}
 
 //0x0000 - 0x4000 return rom bank zero
 uint8_t Memory::read_bank_zero(uint16_t addr) const noexcept
@@ -964,8 +1012,7 @@ void Memory::write_vram(uint16_t addr,uint8_t v) noexcept
     // vram is used in pixel transfer cannot access
     if(ppu->mode != ppu_mode::pixel_transfer)
     {
-        addr -= 0x8000;
-        vram[vram_bank][addr] = v;
+        vram[vram_bank][addr & 0x1fff] = v;
     }
 }
 
@@ -1021,6 +1068,32 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 {
     switch(addr & 0xff)
     {
+		// serial data (current we just use this for testing purposes)
+		case IO_SB:
+		{
+			if(test_result == emu_test::running)
+			{
+				// handle gekkios
+				if(v == 0x42)
+				{
+					if(++gekkio_fail_count == 6)
+					{
+						test_result = emu_test::fail;
+					}
+				}
+
+				else if(gekkio_pass_count < 6 && v == gekkio_pass_magic[gekkio_pass_count])
+				{
+					gekkio_pass_count++;
+					if(gekkio_pass_count == 6)
+					{
+						test_result = emu_test::pass;
+					}
+				}
+			}
+			break;
+		}
+
 		// unused io
 		case 0x03:
 		{
@@ -1040,7 +1113,26 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// update the timer freq (tac in gb docs)
 		case IO_TMC:
 		{
+			bool is_set = cpu->internal_tima_bit_set();
+
+			bool enabled = cpu->tima_enabled();
+
 			io[IO_TMC] = v | 248;
+
+			// as our edge is anded with the enable
+			// disalbing it when enabled can cause a drop from
+			// high to low
+			if(enabled && is_set && !cpu->tima_enabled())
+			{
+				cpu->tima_inc();
+			}
+
+			// changing the freq can cause the bit to drop from high to low
+			if((is_set && !cpu->internal_tima_bit_set() && cpu->tima_enabled()))
+			{
+				cpu->tima_inc();
+			}
+
 			break;
 		}		
 
@@ -1048,6 +1140,11 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// should account for this internal behavior
 		case IO_DIV:
 		{
+			if(cpu->internal_tima_bit_set() && cpu->tima_enabled())
+			{
+				cpu->tima_inc();
+			}
+
 			cpu->internal_timer = 0;
 			break;
 		}
@@ -1072,10 +1169,10 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			{
 				ppu->set_scanline_counter(0);
 				io[IO_STAT] |= 2; // mode 2?
-				ppu->mode = ppu_mode::oam_search;
+				ppu->mode = ppu_mode::oam_search;	
 			}
-			
 			io[IO_LCDC] = v;
+			ppu->stat_update();
 			break;
 		}
 
@@ -1091,6 +1188,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			
 			// set unused bit
 			io[IO_STAT] |= 0x80;
+			ppu->write_stat();
 			break;
 		}
 
@@ -1098,6 +1196,13 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// block ly writes
 		case IO_LY:
 		{
+			break;
+		}
+
+		case IO_LYC:
+		{
+			io[IO_LYC] = v;
+			ppu->stat_update();
 			break;
 		}
 
@@ -1752,9 +1857,18 @@ void Memory::write_cart_ram(uint16_t addr, uint8_t v) noexcept
 {
     if(enable_ram && cart_ram_bank != CART_RAM_BANK_INVALID)
     {
-        addr -= 0xa000;
-        cart_ram_banks[cart_ram_bank][addr] = v;
+        cart_ram_banks[cart_ram_bank][addr & 0x1fff] = v;
     }
 }
+
+// only bottom 4 bits are readable
+void Memory::write_cart_ram_mbc2(uint16_t addr, uint8_t v) noexcept
+{
+    if(enable_ram) // fixed for 512by4 bits
+    {
+        cart_ram_banks[0][addr & 0x1ff] = ((v & 0xf) | 0xf0);
+    }
+}
+
 
 }

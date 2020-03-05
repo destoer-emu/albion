@@ -17,6 +17,20 @@ void Memory::ram_bank_enable(uint16_t address, uint8_t v) noexcept
 	enable_ram = ((v & 0xf) == 0xa);	
 }
 
+// whole 8 bits matter for mbc5
+void Memory::ram_bank_enable_mbc5(uint16_t address, uint8_t v) noexcept 
+{
+	UNUSED(address);
+	// no ram banks present dont enable them
+	if(!rom_info.no_ram_banks) 
+    {
+		return;
+	}
+	
+	// if data is = 0xa enable ram
+	enable_ram = (v == 0xa);	
+}
+
 
 // MBC1
 
@@ -26,24 +40,14 @@ void Memory::ram_bank_enable(uint16_t address, uint8_t v) noexcept
 void Memory::change_lo_rom_bank_mbc1(uint16_t address, uint8_t v) noexcept 
 {
 	UNUSED(address);
-	const uint8_t lower5 = v & 31; // get lower 5 bits 
-	cart_rom_bank &= 224; // turn off bits lower than 5
-	cart_rom_bank |= lower5;
-	
-	// if the current rom bank its 0,0x20,0x40,0x60 set it to one 
-	if(cart_rom_bank == 0 || cart_rom_bank == 0x20
-		|| cart_rom_bank == 0x40 || cart_rom_bank == 0x60) 
-    {
-		
-		cart_rom_bank += 1;
-	}
+	const uint8_t data = ((v & 0x1f) == 0) ? 1 : (v & 0x1f);
+	cart_rom_bank = (mbc1_bank2 << 5) | data;
 	
 	// bank greater than the current number of rom banks wraps back round
 	if(cart_rom_bank >= rom_info.no_rom_banks) 
     {
 		cart_rom_bank %= rom_info.no_rom_banks;
 	}
-
 }
 
 // 0x4000 - 0x5fff
@@ -53,14 +57,16 @@ void Memory::mbc1_banking_change(uint16_t address, uint8_t v) noexcept
 {
 	UNUSED(address);
 	
+	mbc1_bank2 = (v & 3);
+
 	if(rom_banking) 
     {
-		change_hi_rom_bank_mbc1(v);
+		change_hi_rom_bank_mbc1();
 	} 
 	
 	else 
     {
-		ram_bank_change_mbc1(v);
+		ram_bank_change_mbc1();
 	}
 }
 
@@ -69,12 +75,17 @@ void Memory::change_mode_mbc1(uint16_t address, uint8_t v) noexcept
 {
 	UNUSED(address);
 	
-	rom_banking = (v & 0x1);
+	rom_banking = !is_set(v,0);
 	
 	// only access banking zero in rom banking mode
 	if(rom_banking) 
     {
 		cart_ram_bank = 0;
+	}
+
+	else
+	{
+		ram_bank_change_mbc1();
 	}
 }
 
@@ -88,32 +99,22 @@ void Memory::banking_unused(uint16_t address, uint8_t v) noexcept
 
 
 // mbc1 mode banking funcs
-void Memory::change_hi_rom_bank_mbc1(uint8_t v) noexcept
+void Memory::change_hi_rom_bank_mbc1() noexcept
 {
-	cart_rom_bank &= 0x1f;
-	cart_rom_bank |= (v & 0xe0);
+	cart_rom_bank = (cart_rom_bank & 0x1f) | (mbc1_bank2 << 5);
 	
-	// if the current rom bank its 0,0x20,0x40,0x60 set it to one 
-	if(cart_rom_bank == 0 || cart_rom_bank == 0x20
-		|| cart_rom_bank == 0x40 || cart_rom_bank == 0x60) 
-    {
-		
-		cart_rom_bank += 1;
-	}	
-
 	// bank greater than the current number of rom banks wraps back round
 	if(cart_rom_bank >= rom_info.no_rom_banks) 
 	{
 		cart_rom_bank %= rom_info.no_rom_banks;
 	}
-
 }
 
 
-void Memory::ram_bank_change_mbc1(uint8_t v) noexcept 
+void Memory::ram_bank_change_mbc1() noexcept 
 {
-	cart_ram_bank = v & 0x3; //  max 3 banks in mbc1
-	
+	cart_ram_bank = mbc1_bank2;
+
 	if(rom_info.no_ram_banks <= 1) 
 	{
 		cart_ram_bank = 0;
@@ -134,29 +135,26 @@ void Memory::ram_bank_change_mbc1(uint8_t v) noexcept
 
 
 //mbc2
-//0x2000 - 0x4000
-void Memory::change_lo_rom_bank_mbc2(uint16_t address,uint8_t data) noexcept
+// this is the outlier and both registers are accessible
+// on alternating on the 9th bit being set of addr
+//0x0000 - 0x4000
+void Memory::lower_bank_write_mbc2(uint16_t address, uint8_t v) noexcept
 {
-	UNUSED(address);
-	cart_rom_bank = data & 0xf;
-	if(cart_rom_bank == 0) 
+	// ram bank enable
+	// 
+	if(!is_set(address,8)) 
 	{
-		cart_rom_bank = 1;
-	}
-	return;
-}
-
-// 0x0000 - 0x2000
-void Memory::ram_bank_enable_mbc2(uint16_t address,uint8_t v) noexcept
-{
-	UNUSED(address);
-
-	if(is_set(address,4)) // dont enabel if bit 4 of address written to is set
-	{
-		return;
+		ram_bank_enable(address,v);
 	}
 
-	ram_bank_enable(address,v);
+	else // not set rom bank
+	{
+		cart_rom_bank = ((v & 0xf) == 0)? 1 : v & 0xf;
+		if(cart_rom_bank >= rom_info.no_rom_banks)
+		{
+			cart_rom_bank %= rom_info.no_rom_banks;
+		}	
+	}
 }
 
 
@@ -169,8 +167,7 @@ void Memory::change_rom_bank_mbc3(uint16_t address,uint8_t v) noexcept
 {
 	UNUSED(address);
 	cart_rom_bank = v & 127;
-	cart_rom_bank &= 127;
-			
+	
 	if(cart_rom_bank >= rom_info.no_rom_banks)
 	{
 		cart_rom_bank %= rom_info.no_rom_banks;
@@ -179,7 +176,7 @@ void Memory::change_rom_bank_mbc3(uint16_t address,uint8_t v) noexcept
 	if(cart_rom_bank == 0)
 	{
 		cart_rom_bank = 1;
-	}	
+	}
 }
 
 // 0x4000 - 0x6000
@@ -211,17 +208,15 @@ void Memory::mbc3_ram_bank_change(uint16_t address,uint8_t v) noexcept
 
 // mbc5
 
-// 0x2000 - 0x4000
+// 0x2000 - 0x3000 (lower 8 bits)
 void Memory::change_lo_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept
 {
 	UNUSED(address);
-	cart_rom_bank &= 0x100;
-	cart_rom_bank |= data;
-				
+	cart_rom_bank = (cart_rom_bank & ~0xff) | data;
+			
 	if(cart_rom_bank >= rom_info.no_rom_banks)
 	{
 		cart_rom_bank %= rom_info.no_rom_banks;
-
 	}			
 	// bank zero actually acceses bank 0
 }
@@ -231,8 +226,7 @@ void Memory::change_lo_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept
 void Memory::change_hi_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept
 {
 	UNUSED(address);
-	cart_rom_bank &= 0xff;
-	cart_rom_bank |= (data & 1) << 8; // 9th bank bit
+	cart_rom_bank = (cart_rom_bank & 0xff) |  (data & 1) << 8;
 	if(cart_rom_bank >= rom_info.no_rom_banks)
 	{
 		cart_rom_bank %= rom_info.no_rom_banks;

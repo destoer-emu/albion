@@ -2,6 +2,9 @@
 #include <gb/cpu.h>
 #include <gb/memory.h>
 
+/* todo add tile & sprite caching? */
+// also figure out why stat irq blocking no longer passes
+
 namespace gameboy
 {
 
@@ -100,12 +103,79 @@ void Ppu::write_bgpd(uint8_t v) noexcept
 
 uint8_t Ppu::get_sppd() const noexcept
 {
-	return sp_pal[sp_pal_idx];
+	if(mode != ppu_mode::pixel_transfer)
+	{
+		return sp_pal[sp_pal_idx];
+	}
+
+	return 0xff;
 }
 
 uint8_t Ppu::get_bgpd() const noexcept
 {
-	return bg_pal[bg_pal_idx];	
+	if(mode != ppu_mode::pixel_transfer)
+	{
+		return bg_pal[bg_pal_idx];
+	}
+
+	return 0xff;	
+}
+
+
+void Ppu::write_stat()
+{
+	stat_update();
+}
+
+// mode change, write, or line change
+// will trigger this
+void Ppu::stat_update()
+{
+	if(!mem->is_lcd_enabled())
+	{
+		return;
+	}
+
+	// read stat and mask the mode
+	uint8_t status = mem->io[IO_STAT];
+	status &= ~0x3;
+
+	// save our current signal state
+	const bool signal_old = signal;
+
+	// check interrupts
+	switch(mode)
+	{
+		case ppu_mode::hblank: signal = is_set(status,3); break;
+		case ppu_mode::vblank: signal = is_set(status,4); break;
+		case ppu_mode::oam_search: signal = is_set(status,5); break;
+		case ppu_mode::pixel_transfer: signal = false; break;
+	}
+	
+
+	// check coincidence  (lyc == ly)
+	// line 153 can be treated as zero 
+	// see https://forums.nesdev.com/viewtopic.php?f=20&t=13727
+	//if( lyc == ly || (lyc == 0 && ly == 153) )
+	// if lyc is current line set coincidence bit else deset it
+	status = (mem->io[IO_LYC] == current_line)? set_bit(status,2) : deset_bit(status,2);
+
+	// still not 100% on lyc interacts with the signal edge
+	if(is_set(status,6) && is_set(status,2))
+	{
+		signal = true;
+	}	
+	
+
+	// if we have changed from 0 to 1 for signal(signal edge)
+	// request a stat interrupt
+	if(!signal_old && signal)
+	{
+		cpu->request_interrupt(1);	
+	}
+	
+	// update our status reg
+	mem->io[IO_STAT] = status | 128 | static_cast<int>(mode);
 }
 
 void Ppu::update_graphics(int cycles) noexcept
@@ -117,9 +187,12 @@ void Ppu::update_graphics(int cycles) noexcept
 	// read out current stat reg and mask the mode
 	uint8_t status = mem->io[IO_STAT];
 	status &= ~0x3;
+
+
 	// mode is one if lcd is disabled
 	if(!mem->is_lcd_enabled()) // <-- should re enable on a delay?
 	{
+
 		scanline_counter = 0; // counter is reset?
 		current_line = 0; // reset ly
 		mem->io[IO_STAT] = status; 
@@ -128,9 +201,6 @@ void Ppu::update_graphics(int cycles) noexcept
 		return; // can exit if ppu is disabled nothing else to do
 	}
 	
-	// save our current signal state
-	const bool signal_old = signal;
-
 	scanline_counter += cycles; // advance the cycle counter
 
 	switch(mode)
@@ -153,18 +223,19 @@ void Ppu::update_graphics(int cycles) noexcept
 					// edge case oam stat interrupt is triggered here if enabled
 					if(is_set(status,5))
 					{
-						if(signal_old == false)
+						if(signal == false)
 						{
 							cpu->request_interrupt(1);
-						}
-						signal = true;
-					}					
+							signal = true;
+						}	
+					}				
 				}
 				
 				else 
 				{
 					mode = ppu_mode::oam_search;
-				}		
+				}
+				stat_update();		
 			}
 			break;
 		}
@@ -185,7 +256,8 @@ void Ppu::update_graphics(int cycles) noexcept
 					current_line = 0;
 					// enter oam search on the first line :)
 					mode = ppu_mode::oam_search; 				
-				}	
+				}
+				stat_update();		
 			}
 			break;
 		}
@@ -203,7 +275,8 @@ void Ppu::update_graphics(int cycles) noexcept
 				read_sprites();
 
 				scx_cnt = (mem->io[IO_SCX] & 0x7);
-				x_scroll_tick = scx_cnt > 0;			
+				x_scroll_tick = scx_cnt > 0;
+				stat_update();				
 			}
 			break;
 		}
@@ -224,58 +297,13 @@ void Ppu::update_graphics(int cycles) noexcept
 				{
 					mem->do_hdma();
 				}
-			}	
+				stat_update();
+			}
+
 			break;
 		}	
-	}
-
-	
-	// check interrupts
-	switch(mode)
-	{
-		case ppu_mode::hblank: signal = is_set(status,3); break;
-		case ppu_mode::vblank: signal = is_set(status,4); break;
-		case ppu_mode::oam_search: signal = is_set(status,5); break;
-		case ppu_mode::pixel_transfer: signal = false; break;
-	}
-	
-
-	// check coincidence  (lyc == ly)
-	uint8_t lyc = mem->io[IO_LYC];
-	
-
-	// line 153 can be treated as zero 
-	// see https://forums.nesdev.com/viewtopic.php?f=20&t=13727
-	//if( lyc == ly || (lyc == 0 && ly == 153) )
-	if(lyc == current_line)
-	{
-		status = set_bit(status,2); // toggle coincidence bit
-	}
-	
-	else
-	{
-		status = deset_bit(status,2); // deset coincidence bit
-	}
-	
-
-	if(is_set(status,6) && is_set(status,2))
-	{
-		signal = true;
 	}	
-	
-
-	// if we have changed from 0 to 1 for signal(signal edge)
-	// request a stat interrupt
-	if(!signal_old && signal)
-	{
-		cpu->request_interrupt(1);	
-	}
-	
-	// update our status reg
-	mem->io[IO_STAT] = status | 128 | static_cast<int>(mode);		
 }
-
-
 
 
 // shift a pixel out of the array and smash it to the screen 
@@ -613,8 +641,7 @@ void Ppu::tile_fetch() noexcept
 	{
 		// combine data 2 and data 1 to get the color id for the pixel
 		// in the tile
-		int colour_num = val_bit(data2,color_bit);
-		colour_num <<= 1;
+		int colour_num = val_bit(data2,color_bit) << 1;
 		colour_num |= val_bit(data1,color_bit);
 			
 			

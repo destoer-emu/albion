@@ -104,7 +104,34 @@ void Cpu::cycle_tick(int cycles) noexcept
 	apu->tick((cycles*4) / factor); // advance the apu state
 }
 
+void Cpu::tima_inc() noexcept
+{
+	// timer about to overflow
+	if(mem->io[IO_TIMA] == 255)
+	{	
+		mem->io[IO_TIMA] = mem->io[IO_TMA]; // reset to value in tma
+		request_interrupt(2); // timer overflow interrupt			
+	}
+			
+	else
+	{
+		mem->io[IO_TIMA]++;
+	}	
+}
 
+bool Cpu::internal_tima_bit_set() const noexcept
+{
+	const uint8_t freq = mem->io[IO_TMC] & 0x3;
+
+	const int bit = freq_arr[freq];
+
+	return is_set(internal_timer,bit);
+}
+
+bool Cpu::tima_enabled() const noexcept
+{
+	return is_set(mem->io[IO_TMC],2);	
+}
 
 void Cpu::update_timers(int cycles) noexcept
 {
@@ -116,32 +143,15 @@ void Cpu::update_timers(int cycles) noexcept
 
 	// if our bit is deset and it was before (falling edge)
 	// and the timer is enabled of course
-	if(is_set(mem->io[IO_TMC],2))
+	if(tima_enabled())
 	{
-		const uint8_t freq = mem->io[IO_TMC] & 0x3;
-
-		static constexpr int freq_arr[4] = {9,3,5,7};
-
-		const int bit = freq_arr[freq];
-
-		const bool bit_set = is_set(internal_timer,bit);
+		bool bit_set = internal_tima_bit_set();
 
 		internal_timer += cycles;
 
-		if(!is_set(internal_timer,bit) && bit_set)
+		if(!internal_tima_bit_set() && bit_set)
 		{
-
-			// timer about to overflow
-			if(mem->io[IO_TIMA] == 255)
-			{	
-				mem->io[IO_TIMA] = mem->io[IO_TMA]; // reset to value in tma
-				request_interrupt(2); // timer overflow interrupt			
-			}
-					
-			else
-			{
-			    mem->io[IO_TIMA]++;
-			}
+			tima_inc();
 		}
         
 		// we repeat this here because we have to add the cycles
@@ -170,10 +180,11 @@ void Cpu::update_timers(int cycles) noexcept
        
 }
 
+
+
 // handle the side affects of instructions
 void Cpu::handle_instr_effects()
 {
-
 	switch(instr_side_effect)
 	{
 		// no instr side effects
@@ -184,6 +195,7 @@ void Cpu::handle_instr_effects()
 
 		case instr_state::ei: // ei
 		{
+			instr_side_effect = instr_state::normal;
 			exec_instr(); 
 			// we have done an instruction now set ime
 			// needs to be just after the instruction service
@@ -195,7 +207,6 @@ void Cpu::handle_instr_effects()
 			}
 					
 			do_interrupts(); // handle interrupts 
-			instr_side_effect = instr_state::normal;
 			break;
 		}
 				
@@ -220,38 +231,63 @@ void Cpu::handle_instr_effects()
 			if( (interrupt_enable == false) &&  (req & enabled & 0x1f) != 0)
 			{
 				halt_bug = true;
+				return;
 			}
 			
-			// normal halt
-					
-			else 
+
+			// sanity check to check if this thing will actually fire
+			const uint8_t stat = mem->io[IO_STAT];
+			if(enabled == 0 || ((((stat >> 3) & 0x7) == 0) && enabled == val_bit(enabled,1)))
 			{
-				// sanity check to check if this thing will actually fire
-				const uint8_t stat = mem->io[IO_STAT];
-				if(enabled == 0 || ((((stat >> 3) & 0x7) == 0) && enabled == val_bit(enabled,1)))
-				{
-					write_log("[ERROR] halt infinite loop");
-					throw std::runtime_error("halt infinite loop");
-				}
-
-
-
-				while( ( req & enabled & 0x1f) == 0) 
-				{
-					// just tick it
-					cycle_tick(1);
-						
-					req = mem->io[IO_IF];
-					enabled = mem->io[IO_IE];
-				}
-
-				do_interrupts(); // handle interrupts
+				write_log("[ERROR] halt infinite loop");
+				throw std::runtime_error("halt infinite loop");
 			}
+
+			
+			while( ( req & enabled & 0x1f) == 0) 
+			{
+				// just tick it
+				cycle_tick(1);
+					
+				req = mem->io[IO_IF];
+			}
+
+
+			/*
+			// ideally we should just figure out how many cycles to the next interrupt
+
+			// halt is immediatly over we are done
+			if(req & enabled & 0x1f)
+			{
+				do_interrupts();
+				return;
+			}
+
+			int cycles_to_event;
+
+			// check if timer interrupt enabled (and the timer is enabled) if it is
+			// determine when it will fire
+			if(is_set(mem->io[IO_TMC],2) && is_set(enabled,2))
+			{
+
+			}
+
+			// determine when next stat inerrupt will fire
+			// because of the irq stat glitches if its on we have to figure out when it first goes off
+			// and then re run the check additonally if our target ends in hblank we need to step it manually
+			// as pixel transfer -> hblank takes a variable number of cycles
+			// (allthough try to come up with a method to actually calculate it based on number of sprites scx etc)
+
+
+			// whichever interrupt hits first tick until it :)
+			*/
+
+			
+			do_interrupts(); // handle interrupts
 			break;
 		}
 	}
 }
-
 
 
 // interrupts
@@ -270,29 +306,33 @@ void Cpu::request_interrupt(int interrupt) noexcept
 void Cpu::do_interrupts() noexcept
 {
 	// if interrupts are enabled
-	if(interrupt_enable)
-	{	
-		// get the set requested interrupts
-		uint8_t req = mem->io[IO_IF];
-		
-		// checked that the interrupt is enabled from the ie reg 
-		uint8_t enabled = mem->io[IO_IE];
-		
-		if(req & enabled)
-		{
-			// priority for servicing starts at interrupt 0
-			for(int i = 0; i < 5; i++)
-			{
-				// if requested & is enabled
-				if(is_set(req,i) && is_set(enabled,i))
-				{
-					service_interrupt(i);
-					cycle_tick(5); // every interrupt service costs 5 M cycles 
-					return;
-				}
-			}
-		}
+	if(!interrupt_enable)
+	{
+		return;
+	}	
+
+	// get the set requested interrupts
+	uint8_t req = mem->io[IO_IF];
+	
+	// checked that the interrupt is enabled from the ie reg 
+	uint8_t enabled = mem->io[IO_IE];
+	
+	if(!(req & enabled))
+	{
+		return;
 	}
+
+	// priority for servicing starts at interrupt 0
+	for(int i = 0; i < 5; i++)
+	{
+		// if requested & is enabled
+		if(is_set(req,i) && is_set(enabled,i))
+		{
+			service_interrupt(i);
+			cycle_tick(5); // every interrupt service costs 5 M cycles 
+			break;
+		}
+	}	
 }
 
 void Cpu::service_interrupt(int interrupt) noexcept

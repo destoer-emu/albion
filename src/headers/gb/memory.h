@@ -2,6 +2,7 @@
 #include "forward_def.h"
 #include <destoer-emu/lib.h>
 #include <destoer-emu/debug.h>
+#include <destoer-emu/emulator.h>
 #include "rom.h"
 #include "mem_constants.h"
 
@@ -58,6 +59,18 @@ public:
     void load_state(std::ifstream &fp);
 
     void do_hdma() noexcept;
+
+
+    // serial tests
+    emu_test test_result = emu_test::running;
+
+	int gekkio_pass_count = 0;
+    static constexpr int GEKKIO_PASS_SIZE = 6;
+	static constexpr int gekkio_pass_magic[GEKKIO_PASS_SIZE] = {3,5,8,13,21,34};
+
+	int gekkio_fail_count = 0;
+	static constexpr int GEKKIO_FAIL_SIZE = 6;
+
 private:
     Cpu *cpu = nullptr;
     Ppu *ppu = nullptr;
@@ -96,22 +109,24 @@ private:
     void change_lo_rom_bank_mbc1(uint16_t address, uint8_t v) noexcept;
     void mbc1_banking_change(uint16_t address, uint8_t v) noexcept; 
     void change_mode_mbc1(uint16_t address, uint8_t v) noexcept;
-    void change_hi_rom_bank_mbc1(uint8_t v) noexcept;
-    void ram_bank_change_mbc1(uint8_t v) noexcept;   
-    
+    void change_hi_rom_bank_mbc1() noexcept;
+    void ram_bank_change_mbc1() noexcept;   
+    uint8_t read_rom_lower_mbc1(uint16_t addr) const noexcept;
 
     // mbc3
     void change_rom_bank_mbc3(uint16_t address,uint8_t v) noexcept;
     void mbc3_ram_bank_change(uint16_t address,uint8_t v) noexcept;
 
     // mbc2
-    void change_lo_rom_bank_mbc2(uint16_t address,uint8_t v) noexcept;
-    void ram_bank_enable_mbc2(uint16_t address,uint8_t v) noexcept;
+    void lower_bank_write_mbc2(uint16_t address, uint8_t v) noexcept;
+    void write_cart_ram_mbc2(uint16_t addr, uint8_t v) noexcept;
+    uint8_t read_cart_ram_mbc2(uint16_t addr) const noexcept;
 
     //mbc5
     void mbc5_ram_bank_change(uint16_t address,uint8_t data) noexcept;
     void change_hi_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept;
     void change_lo_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept;
+    void ram_bank_enable_mbc5(uint16_t address, uint8_t v) noexcept;
 
 
     // cgb
@@ -128,6 +143,7 @@ private:
     int cart_ram_bank = 0;
 	int cart_rom_bank = 1; // currently selected rom bank
 	bool rom_banking = true; // is rom banking enabled
+    int mbc1_bank2 = 0;
 
 	// underlying memory
     std::vector<uint8_t> bios;

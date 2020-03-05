@@ -50,6 +50,7 @@ void Rom_info::init(std::vector<uint8_t> &rom, std::string romname)
         case 5: no_rom_banks = 64; break;
         case 6: no_rom_banks = 128; break;
         case 7: no_rom_banks = 256; break;
+        case 8: no_rom_banks = 512; break;
         case 0x52: no_rom_banks = 72; break;
         case 0x53: no_rom_banks = 80; break;
         case 0x54: no_rom_banks = 96; break;
@@ -71,6 +72,13 @@ void Rom_info::init(std::vector<uint8_t> &rom, std::string romname)
     }
 
     no_ram_banks = ram_table[ram_type];
+
+    // mbc2 fixed one bank 
+    if(type == rom_type::mbc2)
+    {
+        no_ram_banks = 1;
+    }
+
 }
 
 }

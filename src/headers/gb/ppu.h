@@ -55,6 +55,15 @@ public:
         scanline_counter = v;
     }
 
+
+    void write_stat();
+
+
+    // mode change, write, or line change
+    // will trigger this
+    void stat_update();
+
+
     // cgb 
     void set_bg_pal_idx(uint8_t v) noexcept;
     void set_sp_pal_idx(uint8_t v) noexcept;

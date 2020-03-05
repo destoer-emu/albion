@@ -23,7 +23,9 @@ public:
     void init(Memory *m, Ppu *p,Apu *ap, Disass *d, Debug *debugger,bool use_bios = false);
     void step();
     void cycle_tick(int cycles) noexcept; 
-
+    void tima_inc() noexcept;
+    bool internal_tima_bit_set() const noexcept;
+    bool tima_enabled() const noexcept;
 
     void request_interrupt(int interrupt) noexcept;
     bool get_cgb() const noexcept {return is_cgb;}
@@ -43,11 +45,21 @@ public:
     uint16_t get_af() const noexcept { return read_af(); }
     uint16_t get_bc() const noexcept { return read_bc(); }
     uint16_t get_de() const noexcept { return read_de(); }
+    uint8_t get_h() const noexcept { return h; }
+    uint8_t get_l() const noexcept { return l; }
+    uint8_t get_a() const noexcept { return a; }
+    uint8_t get_f() const noexcept { return f; }
+    uint8_t get_b() const noexcept { return b; }
+    uint8_t get_c() const noexcept { return c; }
+    uint8_t get_d() const noexcept { return d; }
+    uint8_t get_e() const noexcept { return e ;}
 
     // save states
     void save_state(std::ofstream &fp);
     void load_state(std::ifstream &fp);
 
+    // freq bits for internal timer
+    static constexpr int freq_arr[4] = {9,3,5,7};
 private:
     Memory *mem = nullptr;
     Ppu *ppu = nullptr;
