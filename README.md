@@ -1,9 +1,9 @@
 multi system emulator written using c++17 with support for gameboy and wip support for gba
 
 
-![alt text](https://raw.githubusercontent.com/destoer/gb/master/pics/qt.png)
-![alt text](https://raw.githubusercontent.com/destoer/gb/master/pics/sdl)
-![alt text](https://raw.githubusercontent.com/destoer/gb/master/pics/imgui.png)
+![alt text](https://raw.githubusercontent.com/destoer/destoer-emu/master/pics/qt.png)
+![alt text](https://raw.githubusercontent.com/destoer/destoer-emu/master/pics/sdl.png)
+![alt text](https://raw.githubusercontent.com/destoer/destoer-emu/master/pics/imgui.png)
 
 # Frontends:
 
