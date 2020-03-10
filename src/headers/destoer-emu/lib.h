@@ -16,6 +16,7 @@
 #include <map>
 #include <fstream>
 #include <type_traits>
+#include <atomic>
 #include <stdint.h>
 #include <assert.h>
 #include <stdio.h>

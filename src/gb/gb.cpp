@@ -59,14 +59,14 @@ void GB::key_input(int key, bool pressed)
 
 			case emu_key::plus:
 			{
-				apu.stop_audio();
+				apu.playback.stop();
 				throttle_emu = false;
 				break;
 			}
 
 			case emu_key::minus:
 			{
-				apu.start_audio();
+				apu.playback.start();
 				throttle_emu = true;						
 				break;
 			}

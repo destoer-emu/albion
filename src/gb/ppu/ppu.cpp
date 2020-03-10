@@ -624,6 +624,7 @@ void Ppu::tile_fetch() noexcept
 	// find the correct vertical line we are on of the
 	// tile to get the tile data		
 	// read the sprite backwards in y axis if y flipped
+	// tile is 0-7 for line so 14 to propagate the constant
 	const int line = y_flip? 14 - (y_pos*2) : (y_pos*2);
 		
 			
@@ -692,25 +693,6 @@ dmg_colors Ppu::get_colour(uint8_t colour_num, uint16_t address) noexcept
 }
 
 
-
-
-bool cmpfunc(const Obj &a, const Obj &b) noexcept
-{
-	// sort by the oam index
-	if(a.x_pos == b.x_pos)
-	{
-		return (a.index > b.index);
-	}
-
-	// sort by the x posistion
-	else
-	{
-		return (a.x_pos < b.x_pos);
-	}
-}
-
-
-
 // read the up to 10 sprites for the scanline
 // called when when enter pixel transfer
 void Ppu::read_sprites() noexcept
@@ -742,7 +724,22 @@ void Ppu::read_sprites() noexcept
 	// if x cords are same use oam as priority lower indexes draw last
 	// else use the x cordinate again lower indexes draw last
 	// this means they will draw on top of other sprites
-	std::sort(&objects_priority[0],&objects_priority[x],cmpfunc);	
+	std::sort(&objects_priority[0],&objects_priority[x],
+		[](const Obj &a, const Obj &b)
+		{
+			// sort by the oam index
+			if(a.x_pos == b.x_pos)
+			{
+				return (a.index > b.index);
+			}
+
+			// sort by the x posistion
+			else
+			{
+				return (a.x_pos < b.x_pos);
+			}
+		}
+	);	
 	
 	no_sprites = x; // save how many sprites we have	
 }
@@ -832,7 +829,7 @@ bool Ppu::sprite_fetch() noexcept
 				line = y_size - (line + 1);
 			}
 			
-			line *= 2; // same as for tiles
+			line *= 2; // each line of sprite data is two bytes
 			uint16_t data_address = ((sprite_location * 16 )) + line; // in realitly this is offset into vram at 0x8000
 			if(is_set(attributes,3) && is_cgb) // if in cgb and attr has bit 3 set 
 			{

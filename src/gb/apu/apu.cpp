@@ -20,25 +20,16 @@ void Apu::init(Memory *m) noexcept
     // init our audio playback
     if(!audio_setup)
     {
-        init_audio();
+        playback.init(44100,sample_size);
     }
+	playback.start();
 
     down_sample_cnt = 23;
     audio_buf_idx = 0;
 	is_double = false;
-	play_audio = true;
 }
 
-void Apu::start_audio() noexcept
-{
-	play_audio = true;
-}
 
-void Apu::stop_audio() noexcept
-{
-	play_audio = false;
-	SDL_ClearQueuedAudio(1);
-}
 
 void Apu::advance_sequencer() noexcept
 {
@@ -167,22 +158,6 @@ void Apu::set_double(bool d) noexcept
 	is_double = d;
 }
 
-void Apu::init_audio() noexcept
-{
-	memset(&audio_spec,0,sizeof(audio_spec));
-
-	audio_spec.freq = 44100;
-	audio_spec.format = AUDIO_F32SYS;
-	audio_spec.channels = 2;
-	audio_spec.samples = sample_size;	
-	audio_spec.callback = NULL; // we will use SDL_QueueAudio()  rather than 
-	audio_spec.userdata = NULL; // using a callback :)
-
-
-    SDL_OpenAudio(&audio_spec,NULL);
-	SDL_PauseAudio(0);
-}
-
 void Apu::push_samples() noexcept
 {
 	// handle audio output 
@@ -197,7 +172,7 @@ void Apu::push_samples() noexcept
 			down_sample_cnt *= 2;
 		}
 
-		if(!play_audio) 
+		if(!playback.is_playing()) 
 		{ 
 			return; 
 		}
@@ -223,7 +198,7 @@ void Apu::push_samples() noexcept
             if(is_set(sound_select,i))
             {
                 bufferin1 = output[i];
-                SDL_MixAudioFormat((Uint8*)&bufferin0,(Uint8*)&bufferin1,AUDIO_F32SYS,sizeof(float),volume);
+                playback.mix_samples(bufferin0,bufferin1,volume);
             }            
         }
 
@@ -236,7 +211,7 @@ void Apu::push_samples() noexcept
             if(is_set(sound_select,i+4))
             {
                 bufferin1 = output[i];
-                SDL_MixAudioFormat((Uint8*)&bufferin0,(Uint8*)&bufferin1,AUDIO_F32SYS,sizeof(float),volume);
+                playback.mix_samples(bufferin0,bufferin1,volume);
             }            
         }
 
@@ -244,28 +219,11 @@ void Apu::push_samples() noexcept
         audio_buf_idx += 2;
     }
 
-    // push audio to sdl
+    // push audi
 	if(audio_buf_idx >= sample_size)
 	{
 		audio_buf_idx = 0;
-		
-
-		// legacy interface
-		static constexpr SDL_AudioDeviceID dev = 1;
-		
-		auto buffer_size = (sample_size * sizeof(float));
-
-		// delay execution and let the que drain
-		while(SDL_GetQueuedAudioSize(dev) > buffer_size)
-		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
-		}			
-
-	
-		if(SDL_QueueAudio(dev,audio_buf,buffer_size) < 0)
-		{
-			printf("%s\n",SDL_GetError()); exit(1);
-		}
+		playback.push_samples(audio_buf,sample_size);
     }
 }
 

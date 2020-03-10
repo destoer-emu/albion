@@ -44,7 +44,7 @@ public:
     Disass disass;
     Debug debug;
 
-    bool quit = false;
+    std::atomic_bool quit = false;
     bool throttle_emu = true;
 };
 

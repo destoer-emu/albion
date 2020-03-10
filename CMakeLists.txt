@@ -13,6 +13,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 #set(FRONTEND "SDL")
 set(FRONTEND "IMGUI")
 
+
+add_definitions(-DAUDIO_SDL)
 if(${FRONTEND} STREQUAL "IMGUI")
 	add_definitions(-DFRONTEND_IMGUI -DIMGUI_IMPL_OPENGL_LOADER_GLEW -DDEBUG)
 endif()
@@ -99,7 +101,7 @@ file(GLOB src_files
 	"src/*.cpp"
 	"src/common/lib/*.cpp"
 	"src/common/debug/*.cpp"
-	"src/common/headers/destoer-emu/*.h"
+	"src/headers/destoer-emu/*.h"
 	"src/common/lib/fmt/*.cpp"
 	"src/common/lib/fmt/*.h"	
     "src/gb/*.cpp"	
@@ -113,6 +115,8 @@ file(GLOB src_files
 	"src/gba/memory/*.cpp"
 	"src/gba/ppu/*.cpp"
 	"src/gba/headers/gba/*.h"
+	"src/frontend/gb/*.cpp"
+	"src/frontend/gb/*.h"
 )
 
 # add some includes

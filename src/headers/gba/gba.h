@@ -32,7 +32,7 @@ public:
     Display disp;
     Debug debug;
 
-    bool quit = false;
+   std::atomic_bool quit = false;
 };
 
 }

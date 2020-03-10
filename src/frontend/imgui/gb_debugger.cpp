@@ -39,13 +39,13 @@ void gameboy_handle_input(GB &gb)
 
     if(ImGui::IsKeyDown(GLFW_KEY_KP_ADD))
     {
-        gb.apu.stop_audio();
+        gb.apu.playback.stop();
         gb.throttle_emu = false;
     }
 
     else if(ImGui::IsKeyDown(GLFW_KEY_KP_SUBTRACT))
     {
-        gb.apu.start_audio();
+        gb.apu.playback.start();
         gb.throttle_emu = true;						
     }
 }

@@ -1,13 +1,8 @@
 #pragma once
 #include <destoer-emu/lib.h>
-#include "forward_def.h"
-#include "mem_constants.h"
-#define SDL_MAIN_HANDLED
-#ifdef _WIN32
-#include <SDL.H>
-#else
-#include <SDL2/SDL.h>
-#endif
+#include <frontend/gb/playback.h>
+#include <gb/forward_def.h>
+#include <gb/mem_constants.h>
 
 namespace gameboy
 {
@@ -187,11 +182,6 @@ private:
 class Apu
 {
 public:
-	void stop_audio() noexcept;
-	void start_audio() noexcept;
-
-
-	void init_audio() noexcept;
 	void push_samples() noexcept;
 
 	void init(Memory *m) noexcept;
@@ -219,6 +209,7 @@ public:
 	Square c2;
 	Wave c3;
 	Noise c4;
+	GbPlayback playback;
 private:
 
 	void tick_length_counters() noexcept;
@@ -228,15 +219,12 @@ private:
 
 	bool sound_enabled = true;
 
-	bool play_audio = true;
-
 	bool is_double = false;
 
 	// sound playback
 	static constexpr int sample_size = 2048;
 
-	// SDL SOUND
-	SDL_AudioSpec audio_spec;
+	//  internal sound playback
 	float audio_buf[sample_size] = {0};
 	int audio_buf_idx = 0; // how filled up is the buffer
 	int down_sample_cnt = 0; // counter used to down sample	
