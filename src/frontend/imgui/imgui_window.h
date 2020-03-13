@@ -85,6 +85,7 @@ private:
 
     void start_instance();
     void stop_instance();
+    void debug_halt();
     void reset_instance(std::string filename, bool use_bios = false);
     void new_instance(std::string filename, bool use_bios = false);
     void load_state(std::string filename);

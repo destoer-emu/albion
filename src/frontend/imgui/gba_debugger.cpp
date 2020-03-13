@@ -562,12 +562,10 @@ void ImguiMainWindow::gba_stop_instance()
 
 void ImguiMainWindow::gba_start_instance()
 {
+    gba.debug.disable_everything();
     if(!emu_running)
     {
         gba.quit = false;
-        gba.debug.breakpoints_enabled = true;
-        gba.debug.step_instr = false;
-        gb.debug.wake_up();
         std::thread emulator(gba_emu_instance,std::ref(gba), std::ref(screen));
         emu_running = true;
         std::swap(emulator,emu_thread);    

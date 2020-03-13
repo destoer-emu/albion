@@ -116,12 +116,10 @@ void ImguiMainWindow::gameboy_stop_instance()
 
 void ImguiMainWindow::gameboy_start_instance()
 {
+    gb.debug.disable_everything();
     if(!emu_running)
     {
         gb.quit = false;
-        gb.debug.breakpoints_enabled = true;
-        gb.debug.wake_up();
-        gb.debug.step_instr = false;
         std::thread emulator(gameboy_emu_instance,std::ref(gb), std::ref(screen));
         emu_running = true;
         std::swap(emulator,emu_thread);    
@@ -220,8 +218,8 @@ void ImguiMainWindow::gameboy_draw_disassembly_child()
 
     if(ImGui::Button("Step"))
     {
-        gb.debug.wake_up();
         gb.debug.step_instr = true;
+        gb.debug.wake_up();
     }
 
 
@@ -231,7 +229,6 @@ void ImguiMainWindow::gameboy_draw_disassembly_child()
     {
         gb.debug.step_instr = false;
         gb.debug.wake_up();
-        start_instance();
     }
 
 

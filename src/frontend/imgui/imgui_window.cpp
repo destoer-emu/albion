@@ -187,6 +187,24 @@ void ImguiMainWindow::reset_instance(std::string filename, bool use_bios)
     }
 }
 
+void ImguiMainWindow::debug_halt()
+{
+    switch(running_type)
+    {
+        case emu_type::gameboy:
+        {       
+            gb.debug.step_instr = true;
+            break;
+        }
+
+        case emu_type::gba:
+        {
+            gba.debug.step_instr = true;
+            break;
+        }
+    }    
+}
+
 void ImguiMainWindow::new_instance(std::string filename, bool use_bios)
 {
     stop_instance();
@@ -449,7 +467,7 @@ void ImguiMainWindow::menu_bar(Debug &debug)
         {
             if (ImGui::MenuItem("Cpu"))
             {
-                stop_instance();
+                debug_halt();
                 selected_window = current_window::cpu;
             }
 
@@ -591,7 +609,7 @@ void ImguiMainWindow::mainloop()
                 case current_window::cpu:
                 {
                     gba_draw_cpu_info();
-                    gameboy_draw_screen();
+                    gba_draw_screen();
                     break;
                 }
 
