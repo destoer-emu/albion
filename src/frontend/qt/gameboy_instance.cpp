@@ -3,16 +3,16 @@
 
 void GameboyInstance::init(FrameBuffer *f)
 {
-    assert(f != nullptr);
+    if(f == nullptr)
+    {
+        throw std::runtime_error("[gb-init] Warning framebuffer is invalid (we likely have a bug somewhere)\n");
+    }
 
     framebuffer = f;    
 }
 
 void GameboyInstance::run()
 {
-    assert(framebuffer != nullptr);
-
-
     constexpr uint32_t fps = 60;
     constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
     uint64_t next_time = current_time() + screen_ticks_per_frame;
@@ -22,6 +22,12 @@ void GameboyInstance::run()
 
     try
     {
+
+        if(framebuffer == nullptr)
+        {
+            throw std::runtime_error("[gb-run] Warning framebuffer is invalid (we likely have a bug somewhere)\n");
+        }
+
 
         GbControllerInput controller;
 	    controller.init();
@@ -66,6 +72,18 @@ void GameboyInstance::stop()
 {
     gb.quit = true;
 }
+
+
+void GameboyInstance::disable_audio()
+{
+    gb.apu.playback.stop();
+}
+
+void GameboyInstance::enable_audio()
+{
+    gb.apu.playback.start();
+}
+
 
 // we are gonna define our own custom key set that is done at compile time based on the frontend if 
 // we generalize this

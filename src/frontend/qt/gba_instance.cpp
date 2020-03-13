@@ -4,7 +4,10 @@ using namespace gameboyadvance;
 
 void GbaInstance::init(FrameBuffer *f)
 {
-    assert(f != nullptr);
+    if(f == nullptr)
+    {
+        throw std::runtime_error("[gb-init] Warning framebuffer is invalid (we likely have a bug somewhere)\n");
+    }
 
     framebuffer = f;    
 }
@@ -12,9 +15,6 @@ void GbaInstance::init(FrameBuffer *f)
 // the qt build is being incredibly slow somewhere and i have no idea why yet
 void GbaInstance::run()
 {
-    assert(framebuffer != nullptr);
-
-
     constexpr uint32_t fps = 60;
     constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
     uint64_t next_time = current_time() + screen_ticks_per_frame;
@@ -23,6 +23,13 @@ void GbaInstance::run()
 
     try
     {
+
+        if(framebuffer == nullptr)
+        {
+            throw std::runtime_error("[gba-run] Warning framebuffer is invalid (we likely have a bug somewhere)\n");
+        }
+
+
         while(!gba.quit)
         {
             gba.run();

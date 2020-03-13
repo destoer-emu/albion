@@ -20,13 +20,13 @@ emu_type get_emulator_type(std::string filename)
 
         else
         {
-            throw std::runtime_error("unknown rom type!");
+            return emu_type::none;
         }
 
 	}
 
     else 
     {
-        throw std::runtime_error("unknown rom type!");
+        return emu_type::none;
     }
 }

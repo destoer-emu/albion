@@ -85,6 +85,8 @@ private:
 
     void start_instance();
     void stop_instance();
+    void disable_audio();
+    void enable_audio();
     void debug_halt();
     void reset_instance(std::string filename, bool use_bios = false);
     void new_instance(std::string filename, bool use_bios = false);
@@ -137,7 +139,7 @@ private:
     GLFWwindow* window;
     std::thread emu_thread;
     bool emu_running = false;  
-    emu_type running_type = emu_type::gameboy;
+    emu_type running_type = emu_type::none;
     Texture screen;
 };
 #endif

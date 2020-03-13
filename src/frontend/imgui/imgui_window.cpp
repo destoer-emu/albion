@@ -144,6 +144,11 @@ void ImguiMainWindow::start_instance()
             gba_start_instance();
             break;
         }
+
+        case emu_type::none:
+        {
+            break;
+        }
     }
 }
 
@@ -162,6 +167,11 @@ void ImguiMainWindow::stop_instance()
             gba_stop_instance();
             break;
         }
+
+        case emu_type::none:
+        {
+            break;
+        }        
     }
 }
 
@@ -184,6 +194,12 @@ void ImguiMainWindow::reset_instance(std::string filename, bool use_bios)
             gba_reset_instance(filename);
             break;
         }
+
+        case emu_type::none:
+        {
+            break;
+        }
+
     }
 }
 
@@ -200,6 +216,11 @@ void ImguiMainWindow::debug_halt()
         case emu_type::gba:
         {
             gba.debug.step_instr = true;
+            break;
+        }
+
+        case emu_type::none:
+        {
             break;
         }
     }    
@@ -234,6 +255,11 @@ void ImguiMainWindow::new_instance(std::string filename, bool use_bios)
         {
             screen.init_texture(gameboyadvance::SCREEN_WIDTH,gameboyadvance::SCREEN_HEIGHT);
             gba_new_instance(filename);
+        }
+
+        case emu_type::none:
+        {
+            break;
         }
     }
 }
@@ -271,6 +297,12 @@ void ImguiMainWindow::save_state(std::string filename)
             //ignore unsupported
             break;
         }
+
+        case emu_type::none:
+        {
+            break;
+        }
+
     }
 }
 
@@ -427,6 +459,53 @@ void ImguiMainWindow::file_browser()
 
 
 
+void ImguiMainWindow::enable_audio()
+{
+    switch(running_type)
+    {
+        case emu_type::gameboy:
+        {
+            gb.apu.playback.start();
+            break;
+        }
+
+        case emu_type::gba:
+        {
+            break;
+        }
+
+        case emu_type::none:
+        {
+            break;
+        }
+
+    }
+}
+
+
+void ImguiMainWindow::disable_audio()
+{
+    switch(running_type)
+    {
+        case emu_type::gameboy:
+        {
+            gb.apu.playback.stop();
+            break;
+        }
+
+        case emu_type::gba:
+        {
+            break;
+        }
+
+        case emu_type::none:
+        {
+            break;
+        }
+
+    }
+}
+
 void ImguiMainWindow::menu_bar(Debug &debug)
 {
     if (ImGui::BeginMainMenuBar())
@@ -441,6 +520,16 @@ void ImguiMainWindow::menu_bar(Debug &debug)
             if (ImGui::MenuItem("Continue")) 
             {
                 start_instance();
+            }
+
+            if(ImGui::MenuItem("Enable audio"))
+            {
+                enable_audio();
+            }
+
+            if(ImGui::MenuItem("Disable audio"))
+            {
+                disable_audio();
             }
 
             if(debug.log_enabled)
@@ -635,6 +724,10 @@ void ImguiMainWindow::mainloop()
             }
         }
 
+        else if(running_type == emu_type::none)
+        {
+            file_browser();
+        }
 
         // Rendering
         ImGui::Render();

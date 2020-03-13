@@ -35,22 +35,29 @@ private:
     void create_menus();
 
 
-    QMenu *emu_menu;
-    QActionGroup *alignment_group;
+    QMenu *file_menu;
     QAction *open_act;
     QAction *load_state_act;
     QAction *save_state_act;
-    QAction *disassembler_act;
+
+    QMenu *emu_menu;
+    QAction *pause_emulator_act;
+    QAction *continue_emulator_act;
+    QAction *disable_audio_act;
+    QAction *enable_audio_act;
+
     QLabel *info_label;
     QThread *emu_thread;
 
 
     void stop_emu();
     void start_emu();
+    void disable_audio();
+    void enable_audio();
 
     bool emu_running = false;
     GameboyInstance gb_instance;
     GbaInstance gba_instance;
-    emu_type running_type = emu_type::gameboy;
+    emu_type running_type = emu_type::none;
 };
 #endif

@@ -7,7 +7,7 @@ namespace gameboy
 GB::GB()
 {
 	// setup a dummy state
-	reset("",false);
+	reset("no rom",false,false);
 }
 
 void GB::reset(std::string rom_name, bool with_rom, bool use_bios)

@@ -6,10 +6,9 @@
 
 SDLMainWindow::SDLMainWindow(std::string filename)
 {
-	emu_type type;
 	try
 	{
-		type = get_emulator_type(filename);
+		auto type = get_emulator_type(filename);
 	
 
 		switch(type)
@@ -24,6 +23,12 @@ SDLMainWindow::SDLMainWindow(std::string filename)
 			{
 				gba_main(filename);
 				break;
+			}
+
+			case emu_type::none:
+			{
+				printf("unrecognised rom type: %s\n",filename);
+				return;
 			}
 		}
 	}

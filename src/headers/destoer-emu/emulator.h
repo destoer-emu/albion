@@ -4,7 +4,7 @@
 
 enum class emu_type
 {
-    gameboy, gba
+    gameboy, gba, none
 };
 
 enum class emu_test

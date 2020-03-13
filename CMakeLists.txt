@@ -10,8 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 
 #set(FRONTEND "QT")
-#set(FRONTEND "SDL")
-set(FRONTEND "IMGUI")
+set(FRONTEND "SDL")
+#set(FRONTEND "IMGUI")
 
 
 add_definitions(-DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL)
@@ -152,6 +152,8 @@ endif()
 if(${FRONTEND} STREQUAL "QT")
 	if(WIN32)
 		add_executable(destoer-emu  WIN32 ${src_files} ${frontend_files})
+	else()
+		add_executable(destoer-emu  ${src_files} ${frontend_files})
 	endif()
 else()
 	add_executable(destoer-emu ${src_files} ${frontend_files})

@@ -18,10 +18,9 @@ QtMainWindow::QtMainWindow()
     create_actions();
     create_menus();
 
-
-    setWindowTitle(tr("Menus"));
-    setMinimumSize(160,144);
     setCentralWidget(&framebuffer);
+    setMinimumSize(gb_instance.X,(gb_instance.Y) + menuBar()->height());
+    resize(gb_instance.X * 2,(gb_instance.Y * 2) + menuBar()->height());  
 }
 
 // if any of our emulator threads are still running terminate them gracefully
@@ -34,17 +33,11 @@ QtMainWindow::~QtMainWindow()
 // create our actions for our menu
 void QtMainWindow::create_actions()
 {
+    // FILE
     open_act = new QAction(tr("&open rom"), this);
     open_act->setShortcuts(QKeySequence::New);
     open_act->setStatusTip(tr("open a rom file"));
     connect(open_act,&QAction::triggered, this, &QtMainWindow::open);
-
-/*
-    disassembler_act = new QAction(tr("&open disassembler"),this);
-    open_act->setShortcuts(QKeySequence::New);
-    open_act->setStatusTip(tr("open the debugger"));
-    connect(disassembler_act,&QAction::triggered, this, &QtMainWindow::disassembler);
-*/
 
     load_state_act = new QAction(tr("&load state"), this);
     load_state_act->setShortcuts(QKeySequence::New);
@@ -56,24 +49,91 @@ void QtMainWindow::create_actions()
     save_state_act->setStatusTip(tr("save a save state"));
     connect(save_state_act,&QAction::triggered, this, &QtMainWindow::save_state);
 
-    alignment_group = new QActionGroup(this);
-    alignment_group->addAction(open_act);
-    alignment_group->addAction(load_state_act);
-    alignment_group->addAction(save_state_act);
+
+    // emulator
+    pause_emulator_act = new QAction(tr("&pause"), this);
+    pause_emulator_act->setShortcuts(QKeySequence::New);
+    pause_emulator_act->setStatusTip(tr("pause the emulator"));
+    connect(pause_emulator_act,&QAction::triggered, this, &QtMainWindow::stop_emu);
+
+    continue_emulator_act = new QAction(tr("&continue"), this);
+    continue_emulator_act->setShortcuts(QKeySequence::New);
+    continue_emulator_act->setStatusTip(tr("resume emulation"));
+    connect(continue_emulator_act,&QAction::triggered, this, &QtMainWindow::start_emu);
+
+    disable_audio_act = new QAction(tr("&disable audio"), this);
+    disable_audio_act->setShortcuts(QKeySequence::New);
+    disable_audio_act->setStatusTip(tr("turn off audio playback"));
+    connect(disable_audio_act,&QAction::triggered, this, &QtMainWindow::disable_audio);
+
+    enable_audio_act = new QAction(tr("&enable audio"), this);
+    enable_audio_act->setShortcuts(QKeySequence::New);
+    enable_audio_act->setStatusTip(tr("turn on audio playback"));
+    connect(enable_audio_act,&QAction::triggered, this, &QtMainWindow::enable_audio);
+
+
 }
 
+void QtMainWindow::enable_audio()
+{
+    switch(running_type)
+    {
+        case emu_type::gameboy:
+        {
+            gb_instance.enable_audio();
+            break;
+        }
+
+        case emu_type::gba:
+        {
+            break;
+        }
+
+        case emu_type::none:
+        {
+            break;
+        }
+
+    }    
+}
+
+
+void QtMainWindow::disable_audio()
+{
+    switch(running_type)
+    {
+        case emu_type::gameboy:
+        {
+            gb_instance.disable_audio();
+            break;
+        }
+
+        case emu_type::gba:
+        {
+            break;
+        }
+
+        case emu_type::none:
+        {
+            break;
+        }
+
+    }    
+}
 
 // create our top bar menu
 void QtMainWindow::create_menus()
 {
-    emu_menu = menuBar()->addMenu(tr("&File"));
-    emu_menu->addAction(open_act);
-    emu_menu->addAction(load_state_act);
-    emu_menu->addAction(save_state_act);
-/*
-    emu_menu = menuBar()->addMenu(tr("&Debug"));
-    emu_menu->addAction(disassembler_act);
-*/
+    file_menu = menuBar()->addMenu(tr("&File"));
+    file_menu->addAction(open_act);
+    file_menu->addAction(load_state_act);
+    file_menu->addAction(save_state_act);
+
+    emu_menu = menuBar()->addMenu(tr("&Emulator"));
+    emu_menu->addAction(pause_emulator_act);
+    emu_menu->addAction(continue_emulator_act);
+    emu_menu->addAction(disable_audio_act);
+    emu_menu->addAction(enable_audio_act);
 }
 
 
@@ -102,6 +162,7 @@ void QtMainWindow::keyPressEvent(QKeyEvent *event)
         {
             case emu_type::gameboy: gb_instance.key_pressed(event->key()); break;
             case emu_type::gba: gba_instance.key_pressed(event->key()); break;
+            case emu_type::none: break;
         }
         
     }
@@ -131,6 +192,7 @@ void QtMainWindow::keyReleaseEvent(QKeyEvent *event)
         {
             case emu_type::gameboy: gb_instance.key_released(event->key()); break;
             case emu_type::gba: gba_instance.key_released(event->key()); break;
+            case emu_type::none: break;
         }
         
     }
@@ -149,7 +211,7 @@ void QtMainWindow::open()
     std::string file_name = QFileDialog::getOpenFileName(this,tr("open rom"),".","").toStdString();
     
     // we quit out
-    if(file_name == "" || !std::filesystem::is_regular_file(file_name))
+    if(!std::filesystem::is_regular_file(file_name))
     {
         start_emu();
         return;
@@ -166,9 +228,7 @@ void QtMainWindow::open()
             {
                 gb_instance.reset(file_name);
                 setMinimumSize(gb_instance.X,(gb_instance.Y) + menuBar()->height());
-                resize(gb_instance.X * 2,(gb_instance.Y * 2) + menuBar()->height());    
-                framebuffer.init(gb_instance.X,gb_instance.Y);
-                gb_instance.init(&framebuffer);                            
+                resize(gb_instance.X * 2,(gb_instance.Y * 2) + menuBar()->height());                           
                 break;
             }
 
@@ -176,17 +236,22 @@ void QtMainWindow::open()
             {
                 gba_instance.reset(file_name);
                 setMinimumSize(gba_instance.X,(gba_instance.Y) + menuBar()->height());
-                resize(gba_instance.X * 2,(gba_instance.Y * 2) + menuBar()->height());
-                framebuffer.init(gba_instance.X,gba_instance.Y); 
-                gba_instance.init(&framebuffer);                                 
+                resize(gba_instance.X * 2,(gba_instance.Y * 2) + menuBar()->height());                               
                 break;
             }
+
+            case emu_type::none:
+            {
+                return;
+            }
+
         }
 
         // set window name with the rom title
         QString window_tile = QString::fromStdString(fmt::format("destoer-emu: {}",
             file_name.substr(file_name.find_last_of("/\\") + 1)));
         setWindowTitle(window_tile);
+        start_emu();
     }
 
     catch(std::exception &ex)
@@ -197,7 +262,6 @@ void QtMainWindow::open()
         setWindowTitle("destoer-emu: no rom");        
         return;
     }
-    start_emu();
 }
 
 
@@ -231,7 +295,13 @@ void QtMainWindow::load_state()
                     gba_instance.load_state(file_name);
                     break;
                 }
+
+                case emu_type::none:
+                {
+                    return;
+                }
             }
+            start_emu();
         }
 
         catch(std::exception &ex)
@@ -241,9 +311,6 @@ void QtMainWindow::load_state()
             messageBox.setFixedSize(500,200);
         }
     }
-
-    
-    start_emu();
 }
 
 
@@ -276,7 +343,14 @@ void QtMainWindow::save_state()
                     gba_instance.save_state(file_name);
                     break;
                 }
+
+                case emu_type::none:
+                {
+                    return;
+                }
+
             }
+            start_emu();
         }
 
         catch(std::exception &ex)
@@ -286,8 +360,6 @@ void QtMainWindow::save_state()
             messageBox.setFixedSize(500,200);
         }
     }
-
-    start_emu();
 }
 
 void QtMainWindow::stop_emu()
@@ -313,25 +385,40 @@ void QtMainWindow::stop_emu()
                 gba_instance.save_backup_ram();                
                 break;
             }
-        }
 
+            case emu_type::none:
+            {
+                break;
+            }
+        }
     }
 }
 
 void QtMainWindow::start_emu()
 {
-    emu_running = true;
+    
     switch(running_type)
     {
         case emu_type::gameboy:
         {
+            framebuffer.init(gb_instance.X,gb_instance.Y); 
+            gb_instance.init(&framebuffer);  
             gb_instance.start();
+            emu_running = true;
             break;
         }
 
         case emu_type::gba:
         {
-            gba_instance.start();            
+            framebuffer.init(gba_instance.X,gba_instance.Y); 
+            gba_instance.init(&framebuffer);  
+            gba_instance.start();
+            emu_running = true;            
+            break;
+        }
+
+        case emu_type::none:
+        {
             break;
         }
     }

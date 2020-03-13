@@ -19,6 +19,8 @@ public:
     void stop();
     void key_pressed(int key);
     void key_released(int key);
+    void disable_audio();
+    void enable_audio();
 
     // all of these will pause the emulation
     // and then resume it

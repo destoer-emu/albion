@@ -142,6 +142,7 @@ private:
 	int sp_pal_idx = 0;
 	int bg_pal_idx = 0; // index into the bg pal (entry takes two bytes)
 
+
 };
 
 }
