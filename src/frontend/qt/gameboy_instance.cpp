@@ -1,4 +1,5 @@
-#include "gameboy_instance.h"
+#include <frontend/qt/gameboy_instance.h>
+#include <frontend/gb/controller.h>
 
 void GameboyInstance::init(FrameBuffer *f)
 {
@@ -18,10 +19,17 @@ void GameboyInstance::run()
 
     gb.quit = false;
 
+
     try
     {
+
+        GbControllerInput controller;
+	    controller.init();
+
         while(!gb.quit)
         {
+            controller.update(gb);
+
             gb.run();
 
 

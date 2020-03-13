@@ -13,6 +13,8 @@ public:
     void push_samples(const float *samples, int sample_size);
     void start() noexcept;
     void stop() noexcept;
+
+    ~GbPlayback();
 private:
     bool play_audio = false;
 

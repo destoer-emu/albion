@@ -1,5 +1,6 @@
 #include "imgui_window.h"
 #include <gb/gb.h>
+#include <frontend/gb/controller.h>
 using namespace gameboy;
 
 
@@ -20,20 +21,24 @@ void gameboy_handle_input(GB &gb)
 
     static_assert(sizeof(scancodes) == sizeof(gb_key));
 
+    // cache last state so we can filter by state change
+    static bool pressed[len] = {false};
+
     for(int i = 0; i < len; i++)
     {
-        if(ImGui::IsKeyDown(scancodes[i]))
+        bool down = ImGui::IsKeyDown(scancodes[i]);
+
+        if(down && !pressed[i]) // just pressed
         {
-            if(is_set(joypad_state,static_cast<int>(gb_key[i])))
-            {
-                gb.key_pressed(gb_key[i]);
-            }
+            gb.key_pressed(gb_key[i]);
+            pressed[i] = true;
         }
 
-        // aint pressed
-        else if(!is_set(joypad_state,static_cast<int>(gb_key[i])))
+        // just released
+        else if(!down && pressed[i])
         {
-            gb.key_released(gb_key[i]);  
+            gb.key_released(gb_key[i]); 
+            pressed[i] = false; 
         }
     }
 
@@ -59,10 +64,13 @@ void gameboy_emu_instance(GB &gb, Texture &screen)
 
     try
     {
+        GbControllerInput controller;
+	    controller.init();
         while(!gb.quit)
         {
+            controller.update(gb);
+
             gameboy_handle_input(gb);
-            
             
             gb.run();
 
@@ -108,11 +116,16 @@ void ImguiMainWindow::gameboy_stop_instance()
 
 void ImguiMainWindow::gameboy_start_instance()
 {
-    std::thread emulator(gameboy_emu_instance,std::ref(gb), std::ref(screen));
-    emu_running = true;
-    std::swap(emulator,emu_thread);    
-    gb.quit = false;
-    gb.debug.breakpoints_enabled = true;
+    if(!emu_running)
+    {
+        gb.quit = false;
+        gb.debug.breakpoints_enabled = true;
+        gb.debug.wake_up();
+        gb.debug.step_instr = false;
+        std::thread emulator(gameboy_emu_instance,std::ref(gb), std::ref(screen));
+        emu_running = true;
+        std::swap(emulator,emu_thread);    
+    }
 }
 
 void ImguiMainWindow::gameboy_new_instance(std::string filename, bool use_bios)
@@ -145,28 +158,39 @@ void ImguiMainWindow::gameboy_draw_screen()
     ImGui::End();
 }
 
-void ImguiMainWindow::gameboy_draw_regs()
+
+void ImguiMainWindow::gameboy_draw_cpu_info()
+{
+    ImGui::Begin("Cpu");
+    ImGui::BeginChild("left pane", ImVec2(150, 0), true);
+    gameboy_draw_regs_child();
+    ImGui::EndChild();
+    ImGui::SameLine();
+
+    ImGui::BeginChild("right pane");
+    gameboy_draw_disassembly_child();
+    ImGui::EndChild();
+    ImGui::End();
+}
+
+void ImguiMainWindow::gameboy_draw_regs_child()
 {
     // print regs
-    ImGui::Begin("registers");
     ImGui::Text("pc: %04x",gb.cpu.get_pc());
     ImGui::Text("af: %04x",gb.cpu.get_af());
     ImGui::Text("bc: %04x",gb.cpu.get_bc());
     ImGui::Text("de: %04x",gb.cpu.get_de());
     ImGui::Text("hl: %04x",gb.cpu.get_hl());
-    ImGui::Text("sp: %04x",gb.cpu.get_sp());
-    ImGui::End();            
+    ImGui::Text("sp: %04x",gb.cpu.get_sp());          
 }
 
 
-void ImguiMainWindow::gameboy_draw_disassembly()
+void ImguiMainWindow::gameboy_draw_disassembly_child()
 {
     static uint32_t addr = 0x100; // make this resync when a breakpoint is hit :)
     static int selected = -1;
     static uint32_t selected_addr = 0x0;
     static bool update = false;
-
-    ImGui::Begin("disassembly");
 
 	static char input_disass[12] = "";
 	if (ImGui::Button("Goto"))
@@ -205,9 +229,13 @@ void ImguiMainWindow::gameboy_draw_disassembly()
 
     if(ImGui::Button("Continue"))
     {
-        gb.debug.wake_up();
         gb.debug.step_instr = false;
+        gb.debug.wake_up();
+        start_instance();
     }
+
+
+    ImGui::SameLine();
 
     if(ImGui::Button("Goto pc"))
     {
@@ -260,7 +288,6 @@ void ImguiMainWindow::gameboy_draw_disassembly()
     }
 
     ImGui::EndChild();
-    ImGui::End();
 }
 
 
@@ -377,7 +404,7 @@ void ImguiMainWindow::gameboy_draw_breakpoints()
 	ImGui::SameLine(); ImGui::Checkbox("execute", &break_x);
 
 
-    ImGui::Checkbox("enable_all",&gb.debug.breakpoints_enabled);
+    ImGui::SameLine(); ImGui::Checkbox("enable_all",&gb.debug.breakpoints_enabled);
 
 	ImGui::InputText("", input_breakpoint, IM_ARRAYSIZE(input_breakpoint));
 

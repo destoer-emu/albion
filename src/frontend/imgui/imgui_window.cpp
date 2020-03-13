@@ -78,7 +78,7 @@ ImguiMainWindow::ImguiMainWindow()
 #endif
 
     // Create window with graphics context
-    window = glfwCreateWindow(1280, 720, "destoer-emu", NULL, NULL);
+    window = glfwCreateWindow(800, 600, "destoer-emu", NULL, NULL);
     if (window == NULL)
         exit(1);
     glfwMakeContextCurrent(window);
@@ -278,6 +278,7 @@ void ImguiMainWindow::file_browser()
             if(std::filesystem::is_regular_file(selected_file))
             {
                 new_instance(selected_file,use_bios);
+                selected_window = current_window::screen;
             }
         }
     }
@@ -395,6 +396,7 @@ void ImguiMainWindow::file_browser()
                 else if(std::filesystem::is_regular_file(dir_list[i]))
                 {
                     new_instance(dir_list[i],use_bios);
+                    selected_window = current_window::screen;
                 }
             }   
         }
@@ -441,6 +443,47 @@ void ImguiMainWindow::menu_bar(Debug &debug)
 
             ImGui::EndMenu();
         }
+
+
+        if(ImGui::BeginMenu("Debug"))
+        {
+            if (ImGui::MenuItem("Cpu"))
+            {
+                stop_instance();
+                selected_window = current_window::cpu;
+            }
+
+            if (ImGui::MenuItem("Memory")) 
+            {
+                stop_instance();
+                selected_window = current_window::memory;
+            }
+
+            if(ImGui::MenuItem("Breakpoints")) 
+            {
+                stop_instance();
+                selected_window = current_window::breakpoint;
+            }
+            
+
+
+            ImGui::EndMenu();
+        }
+
+        if(ImGui::BeginMenu("File"))
+        {
+            selected_window = current_window::file;
+            stop_instance();
+            ImGui::EndMenu();
+        }
+
+        if(ImGui::BeginMenu("Screen"))
+        {
+            selected_window = current_window::screen;
+            start_instance();
+            ImGui::EndMenu();
+        }
+
         ImGui::EndMainMenuBar();
     }
 }
@@ -494,24 +537,84 @@ void ImguiMainWindow::mainloop()
 
         if(running_type == emu_type::gameboy) 
         {
-            gameboy_draw_screen();
-            gameboy_draw_regs();
-            gameboy_draw_disassembly();
-            gameboy_draw_breakpoints();
-            gameboy_draw_memory();
             menu_bar(gb.debug);
-            file_browser();
+
+            switch(selected_window)
+            {
+                case current_window::file:
+                {
+                    file_browser();
+                    break;
+                }
+
+                case current_window::cpu:
+                {
+                    gameboy_draw_cpu_info();
+                    gameboy_draw_screen();
+                    break;
+                }
+
+
+                case current_window::breakpoint:
+                {
+                    gameboy_draw_breakpoints();
+                    break;
+                }
+
+
+                case current_window::memory:
+                {
+                    gameboy_draw_memory();
+                    break;
+                }
+
+                case current_window::screen:
+                {
+                    gameboy_draw_screen();
+                    break;
+                }
+            }
         }
 
         else if(running_type == emu_type::gba)
         { 
-            gba_draw_screen();
-            gba_draw_disassembly();
-            gba_draw_registers();
             menu_bar(gba.debug);
-            gba_draw_breakpoints();
-            gba_draw_memory();
-            file_browser();
+
+            switch(selected_window)
+            {
+                case current_window::file:
+                {
+                    file_browser();
+                    break;
+                }
+
+                case current_window::cpu:
+                {
+                    gba_draw_cpu_info();
+                    gameboy_draw_screen();
+                    break;
+                }
+
+
+                case current_window::breakpoint:
+                {
+                    gba_draw_breakpoints();
+                    break;
+                }
+
+
+                case current_window::memory:
+                {
+                    gba_draw_memory();
+                    break;
+                }
+
+                case current_window::screen:
+                {
+                    gba_draw_screen();
+                    break;
+                }
+            }
         }
 
 

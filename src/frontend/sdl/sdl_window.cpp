@@ -1,5 +1,6 @@
 #ifdef FRONTEND_SDL
-#include "sdl_window.h"
+#include <frontend/sdl/sdl_window.h>
+#include <frontend/gb/controller.h>
 #include <destoer-emu/emulator.h>
 
 
@@ -43,9 +44,18 @@ void SDLMainWindow::gameboy_main(std::string filename)
     gb.reset(filename);
     init_sdl(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);
 
+
+
+
+	/* setup our controller */
+	GbControllerInput controller;
+	controller.init();
+
     for(;;)
     {
         gameboy_handle_input();
+
+		controller.update(gb);
 
         gb.run();
 
@@ -110,12 +120,6 @@ void SDLMainWindow::init_sdl(int x, int y)
 {
 	X = x;
 	Y = y;
-
-	if(SDL_Init(SDL_INIT_EVERYTHING) != 0)
-	{
-		std::string err = fmt::format("Unable to initialize SDL: {}", SDL_GetError());
-		throw std::runtime_error(err);
-	}
 
 	// initialize our window
 	window = SDL_CreateWindow("destoer-emu",
@@ -216,7 +220,6 @@ SDLMainWindow::~SDLMainWindow()
 {
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
-    SDL_QuitSubSystem(SDL_INIT_EVERYTHING);
-    SDL_Quit();    
+    SDL_QuitSubSystem(SDL_INIT_EVERYTHING);  
 }
 #endif

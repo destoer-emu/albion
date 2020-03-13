@@ -924,7 +924,6 @@ bool Ppu::sprite_fetch() noexcept
 			did_draw = true;
 		}
 	}
-
 	return did_draw;
 }
 

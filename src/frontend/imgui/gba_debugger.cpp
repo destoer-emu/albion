@@ -78,8 +78,25 @@ void gba_emu_instance(GBA &gba, Texture &screen)
     }    
 }
 
+
+void ImguiMainWindow::gba_draw_cpu_info()
+{
+    ImGui::Begin("Gba cpu");
+
+    ImGui::BeginChild("gba cpu left pane", ImVec2(150, 0), true);
+    gba_draw_registers_child();
+    ImGui::EndChild();
+    ImGui::SameLine();
+
+    ImGui::BeginChild("gba cpu right pane");
+    gba_draw_disassembly_child();
+    ImGui::EndChild();
+
+    ImGui::End();   
+}
+
 // add switching between different register windows :P
-void ImguiMainWindow::gba_draw_registers()
+void ImguiMainWindow::gba_draw_registers_child()
 {
     enum class reg_window_type
     {
@@ -103,7 +120,6 @@ void ImguiMainWindow::gba_draw_registers()
     };
 
     static int selected = 0;
-    ImGui::Begin("gba-registers");
 
     // combo box to select view type
     if(ImGui::BeginCombo("",window_names[selected]))
@@ -169,7 +185,6 @@ void ImguiMainWindow::gba_draw_registers()
 	}
 
 	ImGui::Text("cpsr: %08x ", gba.cpu.get_cpsr());
-	ImGui::End();
 }
 
 void ImguiMainWindow::gba_draw_screen()
@@ -182,7 +197,7 @@ void ImguiMainWindow::gba_draw_screen()
 
 
 
-void ImguiMainWindow::gba_draw_disassembly() 
+void ImguiMainWindow::gba_draw_disassembly_child() 
 {
 	static constexpr uint32_t MAX_ADDR = 0x0E010000;
 	static uint32_t base_addr = 0;
@@ -191,9 +206,6 @@ void ImguiMainWindow::gba_draw_disassembly()
 	static uint32_t selected_addr = 0x0;
 	static bool update = true;
     static bool is_thumb = false;
-
-
-	ImGui::Begin("gba-disassembly");
 
 	static char input_disass[12] = "";
 	if (ImGui::Button("Goto"))
@@ -219,16 +231,19 @@ void ImguiMainWindow::gba_draw_disassembly()
 
 	if (ImGui::Button("Step"))
 	{
+        gba.debug.step_instr = true;
 		gba.debug.wake_up();
-		gba.debug.step_instr = true;
 	}
 	ImGui::SameLine();
 
 	if (ImGui::Button("Continue"))
 	{
+        gba.debug.step_instr = false;
 		gba.debug.wake_up();
-		gba.debug.step_instr = false;
 	}
+
+    ImGui::SameLine();
+
 
 	if (ImGui::Button("Goto pc"))
 	{
@@ -313,7 +328,6 @@ void ImguiMainWindow::gba_draw_disassembly()
     }
 
     ImGui::EndChild();
-    ImGui::End();
 }
 
 
@@ -337,7 +351,7 @@ void ImguiMainWindow::gba_draw_breakpoints()
 	ImGui::SameLine(); ImGui::Checkbox("execute", &break_x);
 
 
-    ImGui::Checkbox("enable_all",&gba.debug.breakpoints_enabled);
+    ImGui::SameLine(); ImGui::Checkbox("enable_all",&gba.debug.breakpoints_enabled);
 
 	ImGui::InputText("", input_breakpoint, IM_ARRAYSIZE(input_breakpoint));
 
@@ -548,11 +562,16 @@ void ImguiMainWindow::gba_stop_instance()
 
 void ImguiMainWindow::gba_start_instance()
 {
-    std::thread emulator(gba_emu_instance,std::ref(gba), std::ref(screen));
-    emu_running = true;
-    std::swap(emulator,emu_thread);    
-    gba.quit = false;
-    gba.debug.breakpoints_enabled = true;
+    if(!emu_running)
+    {
+        gba.quit = false;
+        gba.debug.breakpoints_enabled = true;
+        gba.debug.step_instr = false;
+        gb.debug.wake_up();
+        std::thread emulator(gba_emu_instance,std::ref(gba), std::ref(screen));
+        emu_running = true;
+        std::swap(emulator,emu_thread);    
+    }
 }
 
 void ImguiMainWindow::gba_new_instance(std::string filename)

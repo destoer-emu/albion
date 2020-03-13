@@ -64,6 +64,16 @@ private:
     bool first_time = true;
 };
 
+enum class current_window
+{
+    screen,
+    cpu,
+    memory,
+    file,
+    breakpoint,
+    full_debugger
+};
+
 
 class ImguiMainWindow
 {
@@ -94,10 +104,11 @@ private:
 
     // frontend drawing
     void gameboy_draw_screen();
-    void gameboy_draw_regs();
-    void gameboy_draw_disassembly();
+    void gameboy_draw_regs_child();
+    void gameboy_draw_disassembly_child();
     void gameboy_draw_breakpoints();
     void gameboy_draw_memory();
+    void gameboy_draw_cpu_info();
 
     // gba
     void gba_stop_instance();
@@ -107,18 +118,20 @@ private:
 
     // frotend drawing
     void gba_draw_screen();
-    void gba_draw_disassembly();
-    void gba_draw_registers(); 
+    void gba_draw_disassembly_child();
+    void gba_draw_registers_child(); 
+    void gba_draw_cpu_info();
     void gba_draw_breakpoints();
     void gba_draw_memory();
 
 
-
+     
     
     // underlying emulator instance data
     gameboy::GB gb;
     gameboyadvance::GBA gba;
 
+    current_window selected_window = current_window::file;
     
     GLFWwindow* window;
     std::thread emu_thread;

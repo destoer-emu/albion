@@ -2,6 +2,14 @@
 #include <frontend/sdl/sdl_window.h>
 #include <frontend/imgui/imgui_window.h>
 
+
+#define SDL_MAIN_HANDLED
+#ifdef _WIN32
+#include <SDL.H>
+#else
+#include <SDL2/SDL.h>
+#endif
+
 // gameboy test running
 void gb_run_test_helper(const std::vector<std::string> &tests, int seconds)
 {
@@ -96,6 +104,19 @@ int main(int argc, char *argv[])
             return 0;
         }
     }
+
+// if sdl is used for anything we need to init it here
+#ifdef SDL_REQUIRED
+    // sdl required for audio
+    SDL_SetMainReady();
+	if(SDL_Init(SDL_INIT_EVERYTHING) != 0)
+	{
+		printf("Unable to initialize SDL: %s\n", SDL_GetError());
+		exit(1);
+	}
+#endif
+
+
 #ifdef FRONTEND_QT 
     QApplication app(argc, argv);
 
@@ -114,8 +135,6 @@ int main(int argc, char *argv[])
         printf("usage: %s <rom_name>\n",argv[0]);
         return 0;
     }
-
-    SDL_SetMainReady();
     SDLMainWindow window(argv[1]);
 #endif
 
@@ -124,6 +143,10 @@ int main(int argc, char *argv[])
 
     ImguiMainWindow window;
     window.mainloop();
+#endif
+
+#ifdef SDL_REQUIRED
+    SDL_Quit();
 #endif
 
     return 0;

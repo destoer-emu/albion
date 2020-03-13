@@ -12,15 +12,6 @@
 
 void GbPlayback::init(int frequency, int sample_size) noexcept
 {
-
-    // sdl required for audio
-    SDL_SetMainReady();
-	if(SDL_Init(SDL_INIT_EVERYTHING) != 0)
-	{
-		printf("Unable to initialize SDL: %s\n", SDL_GetError());
-		exit(1);
-	}
-
     SDL_AudioSpec audio_spec;
 
 	memset(&audio_spec,0,sizeof(audio_spec));
@@ -75,6 +66,10 @@ void GbPlayback::stop() noexcept
 	SDL_ClearQueuedAudio(1);
 }
 
+GbPlayback::~GbPlayback()
+{
+    SDL_CloseAudio();
+}
 
 
 #else
