@@ -28,7 +28,7 @@ void Cpu::instr_dec(uint8_t reg) noexcept
 
 
 	// check the carry 
-	if(!(((((reg+1) & 0xf) + (-1 & 0xf)) & 0x10) == 0x10))
+	if(is_set(((reg+1)&0xf)-1,4))
 	{
 		f = set_bit(f,H);
 	}
@@ -45,7 +45,7 @@ void Cpu::instr_inc(uint8_t reg) noexcept
 
 	// test carry from bit 3
 	// set the half carry if there is
-	if(((((reg-1)&0xf) + (1&0xf))&0x10) == 0x10)
+	if(is_set(((reg-1)&0xf) + 1,4))
 	{
 		f = set_bit(f,H);
 	}
@@ -118,7 +118,7 @@ void Cpu::instr_sub(uint8_t num) noexcept
 	}
 
 	// check half carry
-	if((( static_cast<int>((a & 0xf)) - static_cast<int>((num & 0xf)) ) < 0))
+	if(((a & 0x0f) - (num & 0x0f)) < 0)
 	{
 		f = set_bit(f,H);
 	}
@@ -143,7 +143,7 @@ void Cpu::instr_cp(uint8_t num) noexcept
 	}
 	
 	// check half carry
-	if((( static_cast<int>((a & 0xf)) - static_cast<int>((num & 0xf)) ) < 0))
+	if(((a & 0x0f) - (num & 0x0f)) < 0)
 	{
 		f = set_bit(f,H);
 	}
@@ -189,7 +189,7 @@ void Cpu::instr_add(uint8_t num) noexcept
 	
 	// test carry from bit 3
 	// set the half carry if there is
-	if((((a&0xf) + (num&0xf))&0x10) == 0x10)
+	if(is_set((a & 0x0f) + (num & 0x0f),4))
 	{
 		f = set_bit(f,H);
 	}
@@ -211,12 +211,12 @@ uint16_t Cpu::instr_addi(uint16_t reg, int8_t num) noexcept
 	f = 0; // reset flags
 	// test carry from bit 3
 	// set the half carry if there is
-	if( (( static_cast<int>((reg&0xf)) + static_cast<int>((num&0xf))) & 0x10) == 0x10)
+	if(is_set((reg & 0x0f) + (num & 0x0f),4))
 	{
 		f = set_bit(f,H);
 	}
 	
-	if( (( static_cast<int>((reg & 0xff)) + static_cast<int>((num&0xff)) ) & 0x100) == 0x100)
+	if(is_set((reg & 0xff) + (num & 0xff),8))
 	{
 		f = set_bit(f,C);
 	}	
@@ -241,7 +241,7 @@ void Cpu::instr_adc(uint8_t num)  noexcept
 		f = set_bit(f,C);
 	}	
 	
-	if((reg & 0x0f) + (num & 0x0f) + carry > 0x0f)
+	if(is_set((reg & 0x0f) + (num & 0x0f) + carry,4))
 	{
 		f = set_bit(f,H);
 	}
@@ -256,13 +256,13 @@ uint16_t Cpu::instr_addw(uint16_t reg, uint16_t num) noexcept
 	f &= (1 << Z); // only preserve the Z flag 
 
 	// check for carry from bit 11
-	if((((reg & 0x0fff) + (num&0x0fff)) & 0x1000) == 0x1000)
+	if(is_set((reg & 0x0fff) + (num & 0x0fff),12))
 	{
 		f = set_bit(f, H);
 	}
 	
 	// check for full carry 
-	if(reg + num > 0xffff)
+	if(is_set(reg + num,16))
 	{
 		f = set_bit(f,C);
 	}

@@ -87,7 +87,8 @@ private:
     void update_timers(int cycles) noexcept;
     
 
-
+    // next opcode
+    uint8_t opcode = 0;
 
     // cgb
     bool is_cgb = false;

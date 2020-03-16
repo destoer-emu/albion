@@ -56,12 +56,13 @@ public:
     }
 
 
-    void write_stat();
+    void write_stat() noexcept;
 
+    void turn_lcd_off() noexcept;
 
     // mode change, write, or line change
     // will trigger this
-    void stat_update();
+    void stat_update() noexcept;
 
 
     // cgb 

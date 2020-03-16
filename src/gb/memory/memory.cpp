@@ -1159,10 +1159,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		{
 			if(!is_set(v,7) && is_lcd_enabled()) // lcd switched off this write
 			{
-				ppu->set_scanline_counter(0); // counter is reset
-				ppu->current_line = 0; // reset ly
-				io[IO_STAT] &= ~3; // mode 0
-				ppu->mode = ppu_mode::hblank;
+				ppu->turn_lcd_off();
 			}
 			
 			if(is_set(v,7) && !is_lcd_enabled())

@@ -13,10 +13,10 @@ GB::GB()
 void GB::reset(std::string rom_name, bool with_rom, bool use_bios)
 {
     mem.init(&cpu,&ppu,&debug,&apu,rom_name,with_rom,use_bios);
-    cpu.init(&mem,&ppu,&apu,&disass,&debug,use_bios);
     ppu.init(&cpu,&mem);
     disass.init(&mem);
 	apu.init(&mem);
+	cpu.init(&mem,&ppu,&apu,&disass,&debug,use_bios);
 	throttle_emu = true;
 	if(use_bios)
 	{
