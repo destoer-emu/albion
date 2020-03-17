@@ -54,6 +54,7 @@ public:
     void update_texture();
     void swap_buffer(std::vector<uint32_t> &other);
     GLuint get_texture() const;
+    void draw_texture();
     std::mutex &get_mutex();
 private:
     std::mutex buf_mutex;
@@ -106,7 +107,7 @@ private:
     void gameboy_reset_instance(std::string filename, bool use_bios);
 
     // frontend drawing
-    void gameboy_draw_screen();
+    //void gameboy_draw_screen(); // unused now we just render to back of window
     void gameboy_draw_regs_child();
     void gameboy_draw_disassembly_child();
     void gameboy_draw_breakpoints();
@@ -120,13 +121,15 @@ private:
     void gba_reset_instance(std::string filename);
 
     // frotend drawing
-    void gba_draw_screen();
+    //void gba_draw_screen();
     void gba_draw_disassembly_child();
     void gba_draw_registers_child(); 
     void gba_draw_cpu_info();
     void gba_draw_breakpoints();
     void gba_draw_memory();
 
+
+    ImVec2 menubar_size;
 
      
     

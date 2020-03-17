@@ -35,6 +35,7 @@ void Texture::init_texture(const int X, const int Y)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 1);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,x,y,0,GL_RGBA, GL_UNSIGNED_BYTE,buf.data());
+
     glBindTexture(GL_TEXTURE_2D,0);
     glDisable(GL_TEXTURE_2D); 
 }
@@ -43,6 +44,23 @@ void Texture::swap_buffer(std::vector<uint32_t> &other)
 {
     std::scoped_lock<std::mutex> guard(buf_mutex);
     std::swap(other,buf);
+}
+
+
+void Texture::draw_texture()
+{
+    glEnable(GL_TEXTURE_2D); 
+    glBindTexture(GL_TEXTURE_2D,texture);
+
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0, 1.0);
+        glTexCoord2f(1.0f, 0.0f); glVertex2f( 1.0, 1.0);
+        glTexCoord2f(1.0f, 1.0f); glVertex2f( 1.0, -1.0);
+        glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0, -1.0);
+    glEnd();
+
+    glBindTexture(GL_TEXTURE_2D,0);
+    glDisable(GL_TEXTURE_2D);    
 }
 
 GLuint Texture::get_texture() const
@@ -591,6 +609,9 @@ void ImguiMainWindow::menu_bar(Debug &debug)
             ImGui::EndMenu();
         }
 
+
+        menubar_size = ImGui::GetWindowSize();
+
         ImGui::EndMainMenuBar();
     }
 }
@@ -657,7 +678,6 @@ void ImguiMainWindow::mainloop()
                 case current_window::cpu:
                 {
                     gameboy_draw_cpu_info();
-                    gameboy_draw_screen();
                     break;
                 }
 
@@ -677,7 +697,6 @@ void ImguiMainWindow::mainloop()
 
                 case current_window::screen:
                 {
-                    gameboy_draw_screen();
                     break;
                 }
             }
@@ -698,7 +717,6 @@ void ImguiMainWindow::mainloop()
                 case current_window::cpu:
                 {
                     gba_draw_cpu_info();
-                    gba_draw_screen();
                     break;
                 }
 
@@ -718,7 +736,6 @@ void ImguiMainWindow::mainloop()
 
                 case current_window::screen:
                 {
-                    gba_draw_screen();
                     break;
                 }
             }
@@ -736,6 +753,16 @@ void ImguiMainWindow::mainloop()
         glViewport(0, 0, display_w, display_h);
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        // setup the viewport so it will stop drawing just below the menubar
+        glViewport(0, 0, display_w, display_h-static_cast<GLsizei>(menubar_size.y));
+
+        screen.update_texture();
+        screen.draw_texture();
+
+        // and set it back to how imgui expects it
+        glViewport(0, 0, display_w, display_h);
+
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);

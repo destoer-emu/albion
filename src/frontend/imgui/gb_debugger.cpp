@@ -147,7 +147,7 @@ void ImguiMainWindow::gameboy_reset_instance(std::string filename,bool use_bios)
     }    
 }
 
-
+/*
 void ImguiMainWindow::gameboy_draw_screen()
 {
     ImGui::Begin("screen"); // <--- figure out why this doesent draw then add syncing and only showing debug info during a pause    
@@ -155,7 +155,7 @@ void ImguiMainWindow::gameboy_draw_screen()
     ImGui::Image((void*)(intptr_t)screen.get_texture(),ImVec2(gameboy::SCREEN_WIDTH*2,gameboy::SCREEN_HEIGHT*2));    
     ImGui::End();
 }
-
+*/
 
 void ImguiMainWindow::gameboy_draw_cpu_info()
 {

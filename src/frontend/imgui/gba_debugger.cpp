@@ -187,14 +187,15 @@ void ImguiMainWindow::gba_draw_registers_child()
 	ImGui::Text("cpsr: %08x ", gba.cpu.get_cpsr());
 }
 
+/*
 void ImguiMainWindow::gba_draw_screen()
 {
-	ImGui::Begin("gba-screen"); // <--- figure out why this doesent draw then add syncing and only showing debug info during a pause    
+	ImGui::Begin("gba-screen");
 	screen.update_texture();
 	ImGui::Image((void*)(intptr_t)screen.get_texture(), ImVec2(gameboyadvance::SCREEN_WIDTH * 2, gameboyadvance::SCREEN_HEIGHT * 2));
 	ImGui::End();
 }
-
+*/
 
 
 void ImguiMainWindow::gba_draw_disassembly_child() 
