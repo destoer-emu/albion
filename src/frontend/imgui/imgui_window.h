@@ -15,6 +15,7 @@
 #include <destoer-emu/emulator.h>
 
 
+
 // About OpenGL function loaders: modern OpenGL doesn't have a standard header file and requires individual function pointers to be loaded manually.
 // Helper libraries are often used for this purpose! Here we are supporting a few common ones: gl3w, glew, glad.
 // You may use another loader/header of your choice (glext, glLoadGen, etc.), or chose to manually implement your own.
@@ -56,6 +57,8 @@ public:
     GLuint get_texture() const;
     void draw_texture();
     std::mutex &get_mutex();
+    int get_width() const { return x; } 
+    int get_height() const { return y; } 
 private:
     std::mutex buf_mutex;
     int x;
@@ -65,14 +68,18 @@ private:
     bool first_time = true;
 };
 
-enum class current_window
+
+struct GameboyDisplayViewer
 {
-    screen,
-    cpu,
-    memory,
-    file,
-    breakpoint,
-    full_debugger
+    void init();
+    void update(gameboy::GB &gb);
+
+    void draw_bg_map();
+    void draw_tiles();
+
+    std::atomic_bool enabled = false;
+    Texture bg_map;
+    Texture tiles;
 };
 
 
@@ -107,7 +114,10 @@ private:
     void gameboy_reset_instance(std::string filename, bool use_bios);
 
     // frontend drawing
-    //void gameboy_draw_screen(); // unused now we just render to back of window
+    void gameboy_draw_screen(); // unused now we just render to back of window
+
+    // display viewer handled by seperate class
+
     void gameboy_draw_regs_child();
     void gameboy_draw_disassembly_child();
     void gameboy_draw_breakpoints();
@@ -137,12 +147,28 @@ private:
     gameboy::GB gb;
     gameboyadvance::GBA gba;
 
+
+    enum class current_window
+    {
+        screen,
+        display_viewer,
+        cpu,
+        memory,
+        file,
+        breakpoint,
+        full_debugger
+    };
+
+
     current_window selected_window = current_window::file;
     
     GLFWwindow* window;
     std::thread emu_thread;
     bool emu_running = false;  
     emu_type running_type = emu_type::none;
+
     Texture screen;
+    GameboyDisplayViewer gb_display_viewer;
 };
+
 #endif

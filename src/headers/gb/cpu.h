@@ -23,6 +23,7 @@ public:
     void init(Memory *m, Ppu *p,Apu *ap, Disass *d, Debug *debugger,bool use_bios = false);
     void step();
     void cycle_tick(int cycles) noexcept; 
+    void cycle_tick_t(int cycles) noexcept;
     void tima_inc() noexcept;
     bool internal_tima_bit_set() const noexcept;
     bool tima_enabled() const noexcept;
@@ -112,7 +113,6 @@ private:
 
 
     // interrupts
-    void service_interrupt(int interrupt) noexcept;
     void do_interrupts() noexcept;
 
     // instr helpers

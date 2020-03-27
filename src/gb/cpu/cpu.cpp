@@ -86,22 +86,83 @@ void Cpu::step()
 }
 
 
-
-// just a stub for now
+// m cycle tick
 void Cpu::cycle_tick(int cycles) noexcept
+{
+	//  convert to t cycles and tick
+	cycle_tick_t(cycles * 4);
+}
+
+
+
+
+
+/* 	
+so inside t cycle tick i need to impl a scheduler 
+probably using a std::list of sorted events (as they have to happen in order) which each has a cycle
+counter till the event and we subtract it from each... if it hits zero we tick the event
+with the pixel fifo and possibly others we need to constantly push the event
+we could do something like constantly resetting the tick period to zero
+but that seems kidna jank
+
+
+
+	something like  
+	for(auto &x: event_list)
+	{
+		x.cycle_limit -= cycles;
+		if(x.cycle_limit <= 0)
+		{
+			// will re dump the event into the list
+			// in a way we cant iter over it
+			// possibly by dumping it at the front or probably
+			// just in a seperate list that we merge at the end
+			x.service_event();
+		}
+
+		// regardless of how we reque for effiency while things are off we wont requeue them
+		// and we will have to call a manual inserter for the event when they are turned back on
+		// this will need to insert the event in a sorted place as for how we will insert several events sorted at a single time
+		// .....
+		// likely we will just need store to dump them to external storage before we merge them sorted with the main list
+		// if its empty or cycle is zero we will just dump the thing at the front
+
+		//event_list.requeue_events();
+	}
+
+	// dont know if we should sort the list and just use one counter..
+	// we also cant just have a service_event for each event in realitly it would be something more like
+	// maybye we can get away with the above if we used std::function
+	service_event(x.type);
+	where type is some event_enum type and we just switch on the event or something like that
+
+
+	
+	// to start we will only implement it for the timer event
+	// as it is probably the most straight forward to schdule for
+
+
+	
+
+*/
+
+
+
+// t cycle tick
+void Cpu::cycle_tick_t(int cycles) noexcept
 {
 	// should operate at double speed
 	const int factor = is_double ? 2 : 1;
 
 	// timers act at constant speed
-	update_timers(cycles*4); 
+	update_timers(cycles); 
 
 	// handler will check if its enabled
-	mem->tick_dma(cycles*factor);
+	mem->tick_dma(cycles * factor);
 	
 	// in double speed mode gfx and apu should operate at half
-	ppu->update_graphics((cycles*4) / factor); // handle the lcd emulation
-	apu->tick((cycles*4) / factor); // advance the apu state
+	ppu->update_graphics(cycles / factor); // handle the lcd emulation
+	apu->tick(cycles / factor); // advance the apu state	
 }
 
 void Cpu::tima_inc() noexcept
@@ -302,65 +363,44 @@ void Cpu::request_interrupt(int interrupt) noexcept
 }
 
 
-
 void Cpu::do_interrupts() noexcept
 {
-	// if interrupts are enabled
-	if(!interrupt_enable)
-	{
-		return;
-	}	
 
-	// get the set requested interrupts
-	uint8_t req = mem->io[IO_IF];
-	
-	// checked that the interrupt is enabled from the ie reg 
-	uint8_t enabled = mem->io[IO_IE];
-	
-	if(!(req & enabled))
+	// if not interrupts fired or not enabled return
+	if(!(mem->io[IO_IF] & mem->io[IO_IE] & 0x1f) || !interrupt_enable)
 	{
 		return;
 	}
 
+
+	// interrupt has fired disable ime
+	interrupt_enable = false;
+
+	// some internal work is done in each of these cycles
+	cycle_tick(2);
+	
+
+	write_stackwt(pc); // save pc
+
+	cycle_tick(1);
+
+
 	// priority for servicing starts at interrupt 0
+	// figure out what interrupt has fired
+	// if any at this point
 	for(int i = 0; i < 5; i++)
 	{
 		// if requested & is enabled
-		if(is_set(req,i) && is_set(enabled,i))
+		if(is_set(mem->io[IO_IF],i) && is_set(mem->io[IO_IE],i))
 		{
-			service_interrupt(i);
-			cycle_tick(5); // every interrupt service costs 5 M cycles 
-			break;
+			mem->io[IO_IF] = deset_bit(mem->io[IO_IF],i); // mark interrupt as serviced
+			pc = 0x40 + (i * 8); // set pc to interrupt vector
+			return;
 		}
-	}	
+	}
 }
 
-void Cpu::service_interrupt(int interrupt) noexcept
-{
-	interrupt_enable = false; // disable interrupts now one is serviced
-		
-	// reset the bit of in the if to indicate it has been serviced
-	mem->io[IO_IF] = deset_bit(mem->io[IO_IF],interrupt);
-		
-	// push the current pc on the stack to save it
-	// it will be pulled off by reti or ret later
-	write_stackw(pc);
 
-		
-	// set the program counter to the start of the
-	// interrupt handler for the request interrupt
-
-	static constexpr uint16_t interrupt_vectors[5] = 
-	{
-		0x40, // vblank
-		0x48, // lcd-stat
-		0x50, // timer
-		0x58, // serial
-		0x60 // joypad
-	};
-
-	pc = interrupt_vectors[interrupt];
-}
 
 
 

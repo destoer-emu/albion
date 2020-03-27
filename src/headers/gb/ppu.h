@@ -80,7 +80,21 @@ public:
     void save_state(std::ofstream &fp);
     void load_state(std::ifstream &fp);
 
+
+    // display viewer
+    std::vector<uint32_t> render_bg() noexcept;
+    std::vector<uint32_t> render_tiles() noexcept;
+
 private:
+
+    enum class pixel_source
+    {
+        tile = 0,
+        tile_cgbd = 3, // priority over everything when set in tile attr
+        sprite_zero = 1,
+        sprite_one = 2
+    };
+
 
     Cpu *cpu = nullptr;
     Memory *mem = nullptr;
@@ -90,6 +104,8 @@ private:
     void draw_scanline(int cycles) noexcept;
     void tile_fetch() noexcept;
     dmg_colors get_colour(uint8_t colour_num, uint16_t address) noexcept;
+    uint32_t get_cgb_color(int color_num, int cgb_pal, pixel_source source) noexcept;
+    uint32_t get_dmg_color(int color_num, pixel_source source) noexcept;
     void read_sprites() noexcept;
     bool sprite_fetch() noexcept;  
 
@@ -102,13 +118,7 @@ private:
 
 
 
-    enum class pixel_source
-    {
-        tile = 0,
-        tile_cgbd = 3, // priority over everything when set in tile attr
-        sprite_zero = 1,
-        sprite_one = 2
-    };
+
 
     struct Pixel_Obj // pod type to hold pixels in the fifo
     {

@@ -1055,7 +1055,8 @@ void Memory::tick_dma(int cycles) noexcept
 
 	oam_dma_index += cycles;
 	// We are done with our dma
-	if(oam_dma_index >= 0xa2) 
+	// 0xa2 is number of m cycles
+	if(oam_dma_index >= 0x288) 
 	{
 		oam_dma_active = false;
 		return;

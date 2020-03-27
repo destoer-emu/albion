@@ -70,7 +70,7 @@ public:
     std::map<uint16_t,Breakpoint> breakpoints;
 
     bool breakpoints_enabled = true;
-    bool log_enabled = true;
+    bool log_enabled = false;
     
 private:
     std::ofstream log_file;

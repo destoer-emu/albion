@@ -4,6 +4,36 @@
 using namespace gameboy;
 
 
+void GameboyDisplayViewer::update(GB &gb)
+{
+    bg_map.swap_buffer(gb.ppu.render_bg());
+    tiles.swap_buffer(gb.ppu.render_tiles());    
+}
+
+void GameboyDisplayViewer::init()
+{
+    bg_map.init_texture(256,256);
+    tiles.init_texture(0x10*8*2,0x18*8);
+}
+
+void GameboyDisplayViewer::draw_bg_map()
+{
+    ImGui::Begin("gameboy bg map");
+    bg_map.update_texture();
+    ImGui::Image((void*)(intptr_t)bg_map.get_texture(),ImVec2(bg_map.get_width(),bg_map.get_height()));    
+    ImGui::End();    
+}
+
+void GameboyDisplayViewer::draw_tiles()
+{
+    ImGui::Begin("gameboy tiles");
+    tiles.update_texture();
+    ImGui::Image((void*)(intptr_t)tiles.get_texture(),ImVec2(tiles.get_width(),tiles.get_height()));    
+    ImGui::End();    
+}
+
+
+
 // looks like we need to use imgui for the key input :P
 void gameboy_handle_input(GB &gb)
 {
@@ -56,7 +86,7 @@ void gameboy_handle_input(GB &gb)
 }
 
 // we will switch them in and out but for now its faster to just copy it
-void gameboy_emu_instance(GB &gb, Texture &screen)
+void gameboy_emu_instance(GB &gb, Texture &screen, GameboyDisplayViewer &viewer)
 {
 	constexpr uint32_t fps = 60; 
 	constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
@@ -76,6 +106,12 @@ void gameboy_emu_instance(GB &gb, Texture &screen)
 
             // swap the buffer so the frontend can render it
             screen.swap_buffer(gb.ppu.screen);
+            
+            if(viewer.enabled)
+            {
+                viewer.update(gb);
+            }
+
 
             // throttle the emulation
             if(gb.throttle_emu)
@@ -120,7 +156,7 @@ void ImguiMainWindow::gameboy_start_instance()
     if(!emu_running)
     {
         gb.quit = false;
-        std::thread emulator(gameboy_emu_instance,std::ref(gb), std::ref(screen));
+        std::thread emulator(gameboy_emu_instance,std::ref(gb), std::ref(screen),std::ref(gb_display_viewer));
         emu_running = true;
         std::swap(emulator,emu_thread);    
     }
@@ -147,15 +183,15 @@ void ImguiMainWindow::gameboy_reset_instance(std::string filename,bool use_bios)
     }    
 }
 
-/*
+
 void ImguiMainWindow::gameboy_draw_screen()
 {
-    ImGui::Begin("screen"); // <--- figure out why this doesent draw then add syncing and only showing debug info during a pause    
+    ImGui::Begin("gameboy screen"); // <--- figure out why this doesent draw then add syncing and only showing debug info during a pause    
     screen.update_texture();        
-    ImGui::Image((void*)(intptr_t)screen.get_texture(),ImVec2(gameboy::SCREEN_WIDTH*2,gameboy::SCREEN_HEIGHT*2));    
+    ImGui::Image((void*)(intptr_t)screen.get_texture(),ImVec2(screen.get_width(),screen.get_height()));    
     ImGui::End();
 }
-*/
+
 
 void ImguiMainWindow::gameboy_draw_cpu_info()
 {

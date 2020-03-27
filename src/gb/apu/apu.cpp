@@ -219,7 +219,7 @@ void Apu::push_samples() noexcept
         audio_buf_idx += 2;
     }
 
-    // push audi
+    // push audi0
 	if(audio_buf_idx >= sample_size)
 	{
 		audio_buf_idx = 0;

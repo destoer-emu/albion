@@ -309,6 +309,67 @@ void Ppu::update_graphics(int cycles) noexcept
 }
 
 
+uint32_t Ppu::get_dmg_color(int color_num, pixel_source source) noexcept
+{
+	int colour_address = static_cast<uint16_t>(source) + 0xff47;	
+	dmg_colors col = get_colour(color_num,colour_address); 
+
+	// black is default
+	uint32_t full_color = 0xff000000;
+
+	switch(col)
+	{
+		case dmg_colors::black: /*full_color = 0x000000ff;*/ break;
+		case dmg_colors::white: full_color = 0xffffffff; break;
+		case dmg_colors::light_gray: full_color = 0xffcccccc;  break;
+		case dmg_colors::dark_gray: full_color = 0xff777777; break;
+	}
+
+	return full_color;	
+}
+
+uint32_t Ppu::get_cgb_color(int color_num, int cgb_pal, pixel_source source) noexcept
+{
+
+	// each  rgb value takes two bytes in the pallete for cgb
+	const int offset = (cgb_pal*8) + (color_num * 2); 
+
+	int col;
+	if(source == pixel_source::tile ||
+		source == pixel_source::tile_cgbd)
+	{
+		col = bg_pal[offset];
+		col |= bg_pal[offset + 1] << 8;
+	}
+	
+	
+	else // is a sprite
+	{
+		col = sp_pal[offset];
+		col |= sp_pal[offset + 1] << 8;			
+	}
+	
+
+	// gameboy stores palletes in bgr format?
+	int blue = col & 0x1f;
+	int green = (col >> 5) & 0x1f;
+	int red = (col >> 10) & 0x1f;
+	
+	// convert rgb15 to rgb888
+	red = (red << 3) | (red >> 2);
+	blue = (blue << 3) | (blue >> 2);
+	green = (green << 3) | (green >> 2);
+
+
+	uint32_t full_color = blue;
+	full_color |= green << 8;
+	full_color |= red << 16;
+
+	return full_color | 0xff000000;
+}
+
+
+
 // shift a pixel out of the array and smash it to the screen 
 // increment x afterwards
 
@@ -336,66 +397,19 @@ bool Ppu::push_pixel() noexcept
 	
 	
 	const int col_num = ppu_fifo[pixel_idx].colour_num; // save the pixel we will shift
+	pixel_source source = ppu_fifo[pixel_idx].source;
 	const int scanline = current_line;
 	
 	if(!cpu->get_cgb())
 	{
-		int colour_address = static_cast<uint16_t>(ppu_fifo[pixel_idx].source) + 0xff47;	
-		dmg_colors col = get_colour(col_num,colour_address); 
-
-        // black is default
-        uint32_t full_color = 0xff000000;
-
-		switch(col)
-		{
-            case dmg_colors::black: /*full_color = 0x000000ff;*/ break;
-			case dmg_colors::white: full_color = 0xffffffff; break;
-			case dmg_colors::light_gray: full_color = 0xffcccccc;  break;
-			case dmg_colors::dark_gray: full_color = 0xff777777; break;
-		}
-
+		const uint32_t full_color = get_dmg_color(col_num,source);
 		screen[(scanline*SCREEN_WIDTH)+x_cord] = full_color;
 	}
 	
 	else // gameboy color
 	{
-		// for now we will assume tile just for arugments sake 
-		const int cgb_pal = ppu_fifo[pixel_idx].cgb_pal;
-		// each  rgb value takes two bytes in the pallete for cgb
-		const int offset = (cgb_pal*8) + (col_num * 2); 
-
-		int col;
-		if(ppu_fifo[pixel_idx].source == pixel_source::tile ||
-			ppu_fifo[pixel_idx].source == pixel_source::tile_cgbd)
-		{
-			col = bg_pal[offset];
-			col |= bg_pal[offset + 1] << 8;
-		}
-		
-		
-		else // is a sprite
-		{
-			col = sp_pal[offset];
-			col |= sp_pal[offset + 1] << 8;			
-		}
-		
-	
-		// gameboy stores palletes in bgr format?
-		int blue = col & 0x1f;
-		int green = (col >> 5) & 0x1f;
-		int red = (col >> 10) & 0x1f;
-		
-		// convert rgb15 to rgb888
-		red = (red << 3) | (red >> 2);
-		blue = (blue << 3) | (blue >> 2);
-		green = (green << 3) | (green >> 2);
-
-
-		uint32_t full_color = blue;
-        full_color |= green << 8;
-        full_color |= red << 16;
-
-		screen[(scanline*SCREEN_WIDTH)+x_cord] = full_color | 0xff000000;
+		const uint32_t full_color = get_cgb_color(col_num, ppu_fifo[pixel_idx].cgb_pal, source);
+		screen[(scanline*SCREEN_WIDTH)+x_cord] = full_color;
 	}
 	
 	// shift out a pixel
@@ -418,10 +432,11 @@ bool Ppu::push_pixel() noexcept
 // todo proper scx and window timings
 // as we current do not implement them at all 
 // window should restart the fetcher when triggered 
-// and take 6 cycles (this is now done)
+// and take 6 cycles 
 
-// and we should implement scx properly with the fetcher...
-// ^ this needs researching and implementing
+// fetcher operates at half of base clock
+// therefore all cycle timings counts are doubled
+// (as this just works out nicer than dividing the inputs by two)
 
 // need to handle bugs with the window
 void Ppu::tick_fetcher(int cycles) noexcept
@@ -440,7 +455,7 @@ void Ppu::tick_fetcher(int cycles) noexcept
 
 		ppu_cyc += cycles; // further along 
 
-		if(ppu_cyc >= 3) // takes 3 cycles to fetch 8 pixels
+		if(ppu_cyc >= 6) // takes 3 cycles to fetch 8 pixels
 		{
 			tile_fetch();
 			tile_ready = true;
@@ -474,8 +489,8 @@ void Ppu::draw_scanline(int cycles) noexcept
 	// get lcd control reg
 	const int control = mem->io[IO_LCDC];
 	
-	// fetcher operates at half of base clock
-	tick_fetcher(cycles/2);
+	
+	tick_fetcher(cycles);
 	
 	// push out of fifo
 	if(pixel_count > 8)
@@ -875,6 +890,210 @@ bool Ppu::sprite_fetch() noexcept
 		}
 	}
 	return did_draw;
+}
+
+
+
+// -----------
+// ppu viewer
+// only used by the some frontends but its
+// not code dependant on a frontend so its best placed here
+
+std::vector<uint32_t> Ppu::render_bg() noexcept
+{
+
+	std::vector<uint32_t> bg_map(256*256);
+
+	const uint8_t lcd_control = mem->io[IO_LCDC]; // get lcd control reg
+	int background_mem = is_set(lcd_control,3) ? 0x1c00 : 0x1800;
+
+	bool is_cgb = cpu->get_cgb();
+
+	// for each line
+	for(int tile_y = 0; tile_y < 32; tile_y++)
+	{
+		// for each tile in the line
+		for(int tile_x = 0; tile_x < 32; tile_x++)
+		{
+			const int bg_location =  background_mem + ((tile_y*32)+tile_x);
+
+			int tile_location;
+
+			// tile number is allways bank 0
+			if(is_set(lcd_control,4)) // unsigned
+			{
+				const auto tile_num =  mem->vram[0][bg_location];
+				tile_location = tile_num * 16;
+			}
+			
+			else // signed tile index 0x1000 is used as base pointer relative to start of vram
+			{
+				const auto tile_num = static_cast<int8_t>(mem->vram[0][bg_location]);
+				tile_location = 0x1000 + (tile_num * 16);
+			}
+
+
+			int buf_offset = (tile_y * 256 * 8) + (tile_x * 8);
+
+
+
+			int cgb_pal = -1;
+			bool priority = false;
+			bool x_flip = false;
+			bool y_flip = false;
+			int vram_bank = 0;
+
+
+			if(is_cgb) // we are drawing in cgb mode 
+			{
+				// bg attributes allways in bank 1
+				const uint8_t attr = mem->vram[1][bg_location];
+				cgb_pal = attr & 0x7; // get the pal number
+						
+						
+				// draw over sprites
+				priority = is_set(attr,7);
+						
+				x_flip = is_set(attr,5);
+				y_flip = is_set(attr,6);
+
+				// decide what bank data is coming out of
+				// allready one so dont check the other condition
+				vram_bank = is_set(attr,3) ? 1 : 0;
+			}
+
+
+
+
+
+			// for each line in the tile
+			for(int y = 0; y < 8; y++)
+			{
+
+				const int line = y_flip? (7 - y) * 2 : y*2;
+
+				// 2 bytes per line in vram
+				uint16_t data_address = tile_location + line;
+
+				const uint8_t data1 = mem->vram[vram_bank][data_address];
+				const uint8_t data2 = mem->vram[vram_bank][data_address+1];
+
+
+				int color_bit = x_flip? 0 : 7;
+				
+				const int shift = x_flip ? 1 : -1;
+
+				// for each pixel in the line of the tile
+				for(int x = 0; x < 8; x++, color_bit += shift)
+				{
+
+					// rest same as tiles
+					int color_num = val_bit(data2,color_bit) << 1;
+					color_num |= val_bit(data1,color_bit);
+
+					if(!is_cgb)
+					{
+						const uint32_t full_color = get_dmg_color(color_num,pixel_source::tile);
+						bg_map[buf_offset + (y * 256) + x] = full_color;
+					}
+
+
+					else
+					{
+						const uint32_t full_color = get_cgb_color(color_num,cgb_pal ,pixel_source::tile);
+						bg_map[buf_offset + (y * 256) + x] = full_color;
+					}
+					
+				}
+			}
+		}
+	}
+
+
+
+	// now render a black box over the viewing area
+
+	const uint8_t scy = mem->io[IO_SCY];
+	const uint8_t scx = mem->io[IO_SCX];
+
+	// draw x bounds
+	// draw two vertical lines to indicate scx start
+	// and scx + screen width
+	for(int y = 0; y < SCREEN_HEIGHT; y++)
+	{
+		const int y_offset = ((scy + y) & 0xff) * 256;
+
+		bg_map[scx + y_offset] = 0xff0000ff;
+		bg_map[((scx + SCREEN_WIDTH) & 0xff) +  y_offset] = 0xff0000ff;
+	}
+
+	// draw y bounds
+	// draw two horizontal lines to indicate scy start
+	// and scy + screen HEIGHT
+	for(int x = 0; x < SCREEN_WIDTH; x++)
+	{
+		const int x_offset = (scx + x) & 0xff; 
+
+		bg_map[(scy * 256) + x_offset] = 0xff0000ff;
+		bg_map[(((scy + SCREEN_HEIGHT) & 0xff)*256) + x_offset] = 0xff0000ff;		
+	}
+
+
+	return bg_map;
+}
+
+
+std::vector<uint32_t> Ppu::render_tiles() noexcept
+{
+
+	std::vector<uint32_t> tiles(384*8*8*2);
+
+	int banks = cpu->get_cgb()? 2 : 1;
+
+
+	for(int bank = 0; bank < banks; bank++)
+	{
+		// 384 tiles total
+		for(int tile_y = 0; tile_y < 0x18; tile_y++)
+		{
+			for(int tile_x = 0; tile_x < 0x10; tile_x++)
+			{
+				const int tile_num  = (tile_y * 0x10) + tile_x;
+
+				// 0x80 bytes in a single line
+				// however we do 8 at a time (8 by 8 tiles)
+				// * 2 because there can be two banks
+				const int buf_offset = (tile_y * 0x80 * 8 * 2) + (tile_x * 8) + (bank * 0x80);
+
+				// for each line in the tile
+				for(int y = 0; y < 8; y++)
+				{
+
+					// 2 bytes per line in vram
+					const uint16_t data_address = (tile_num * 16) + (y * 2);
+
+					const uint8_t data1 = mem->vram[bank][data_address];
+					const uint8_t data2 = mem->vram[bank][data_address+1];
+
+					// for each pixel in the line of the tile
+					for(int x = 7; x >= 0; x--)
+					{
+
+						// rest same as tiles
+						int color_num = val_bit(data2,x) << 1;
+						color_num |= val_bit(data1,x);
+
+
+						const uint32_t full_color = get_dmg_color(color_num,pixel_source::tile);
+						tiles[buf_offset + (y * 0x80 * 2) + (7-x)] = full_color;
+										
+					}
+				}		
+			}
+		}
+	}
+
+	return tiles;
 }
 
 }

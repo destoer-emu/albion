@@ -1,6 +1,5 @@
 #ifdef FRONTEND_IMGUI
 #include "imgui_window.h"
-#include "gb_debugger.h"
 
 
 void Texture::update_texture()
@@ -590,7 +589,17 @@ void ImguiMainWindow::menu_bar(Debug &debug)
                 selected_window = current_window::breakpoint;
             }
             
+            if(ImGui::MenuItem("Display Viewer"))
+            {
+                start_instance();
+                selected_window = current_window::display_viewer;
+                gb_display_viewer.enabled = true;
+            }
 
+            else
+            {
+                gb_display_viewer.enabled = false;
+            }
 
             ImGui::EndMenu();
         }
@@ -636,6 +645,7 @@ void ImguiMainWindow::mainloop()
     //IM_ASSERT(font != NULL);
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     screen.init_texture(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);
+    gb_display_viewer.init();
 
 
     
@@ -695,6 +705,14 @@ void ImguiMainWindow::mainloop()
                     break;
                 }
 
+                case current_window::display_viewer:
+                {
+                    gb_display_viewer.draw_bg_map();
+                    gb_display_viewer.draw_tiles();
+                    gameboy_draw_screen();
+                    break;
+                }
+
                 case current_window::screen:
                 {
                     break;
@@ -731,6 +749,11 @@ void ImguiMainWindow::mainloop()
                 case current_window::memory:
                 {
                     gba_draw_memory();
+                    break;
+                }
+
+                case current_window::display_viewer:
+                {
                     break;
                 }
 
