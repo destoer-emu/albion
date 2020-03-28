@@ -56,7 +56,7 @@ mooneye-gb_hwtests\acceptance\call_cc_timing2.gb: pass
 mooneye-gb_hwtests\acceptance\call_timing.gb: pass
 mooneye-gb_hwtests\acceptance\call_timing2.gb: pass
 mooneye-gb_hwtests\acceptance\div_timing.gb: pass
-mooneye-gb_hwtests\acceptance\di_timing-GS.gb: fail
+mooneye-gb_hwtests\acceptance\di_timing-GS.gb: pass
 mooneye-gb_hwtests\acceptance\ei_sequence.gb: pass
 mooneye-gb_hwtests\acceptance\ei_timing.gb: pass
 mooneye-gb_hwtests\acceptance\halt_ime0_ei.gb: fail
@@ -108,13 +108,13 @@ mooneye-gb_hwtests\acceptance\ppu\vblank_stat_intr-GS.gb: pass
 mooneye-gb_hwtests\acceptance\oam_dma\basic.gb: fail
 mooneye-gb_hwtests\acceptance\oam_dma\reg_read.gb: pass
 mooneye-gb_hwtests\acceptance\oam_dma\sources-GS.gb: fail
-mooneye-gb_hwtests\acceptance\interrupts\ie_push.gb: fail
+mooneye-gb_hwtests\acceptance\interrupts\ie_push.gb: pass
 mooneye-gb_hwtests\acceptance\instr\daa.gb: pass
 mooneye-gb_hwtests\acceptance\bits\mem_oam.gb: fail
 mooneye-gb_hwtests\acceptance\bits\reg_f.gb: pass
 mooneye-gb_hwtests\acceptance\bits\unused_hwio-GS.gb: fail
 total: 114
-pass: 65
-fail: 39
+pass: 67
+fail: 37
 abort: 9
 timeout: 1

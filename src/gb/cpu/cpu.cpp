@@ -74,10 +74,9 @@ void Cpu::init(Memory *m, Ppu *p,Apu *ap, Disass *dis, Debug *debugger, bool use
 
 void Cpu::step()
 {
+	// interrupts checked before the opcode fetch
     exec_instr();
 
-	// handle interrupts
-	do_interrupts();
 
 	// now we need to test if an ei or di instruction
 	// has just occured if it has step a cpu instr and then 
@@ -85,6 +84,29 @@ void Cpu::step()
 	handle_instr_effects();
 }
 
+
+uint8_t Cpu::fetch_opcode() noexcept
+{
+	// at midpoint of instr fetch interrupts are checked
+	// and if so the opcode is thrown away and interrupt dispatch started
+	cycle_tick_t(2);
+	bool fired = ((mem->io[IO_IF] & mem->io[IO_IE] & 0x1f) && interrupt_enable);
+	cycle_tick_t(2);
+
+	if(fired)
+	{
+		do_interrupts();
+
+		// have to re fetch the opcode this costs a cycle
+		return mem->read_memt(pc++);
+	}
+
+	else // return the opcode we have just fetched
+	{
+		return mem->read_mem(pc++);
+	}
+	
+}
 
 // m cycle tick
 void Cpu::cycle_tick(int cycles) noexcept
@@ -182,6 +204,9 @@ void Cpu::tima_inc() noexcept
 
 bool Cpu::internal_tima_bit_set() const noexcept
 {
+    // freq bits for internal timer
+    static constexpr int freq_arr[4] = {9,3,5,7};
+
 	const uint8_t freq = mem->io[IO_TMC] & 0x3;
 
 	const int bit = freq_arr[freq];
@@ -267,7 +292,6 @@ void Cpu::handle_instr_effects()
 				interrupt_enable = true;
 			}
 					
-			do_interrupts(); // handle interrupts 
 			break;
 		}
 				
@@ -320,7 +344,6 @@ void Cpu::handle_instr_effects()
 			// halt is immediatly over we are done
 			if(req & enabled & 0x1f)
 			{
-				do_interrupts();
 				return;
 			}
 
@@ -344,7 +367,6 @@ void Cpu::handle_instr_effects()
 			*/
 
 			
-			do_interrupts(); // handle interrupts
 			break;
 		}
 	}
@@ -366,24 +388,26 @@ void Cpu::request_interrupt(int interrupt) noexcept
 void Cpu::do_interrupts() noexcept
 {
 
-	// if not interrupts fired or not enabled return
-	if(!(mem->io[IO_IF] & mem->io[IO_IE] & 0x1f) || !interrupt_enable)
-	{
-		return;
-	}
-
-
 	// interrupt has fired disable ime
 	interrupt_enable = false;
 
-	// some internal work is done in each of these cycles
+	// sp deced in 3rd cycle not sure what happens in 2nd
 	cycle_tick(2);
-	
 
-	write_stackwt(pc); // save pc
+	// first sp push on 4th cycle
+	write_stackt((pc & 0xff00) >> 8);
 
-	cycle_tick(1);
+	// 5th cycle in middle of stack push ie and if are checked to  get the 
+	// fired interrupt
+	cycle_tick_t(2);
+	uint8_t req = mem->io[IO_IF];
+	uint8_t enabled = mem->io[IO_IE];
+	cycle_tick_t(2);
 
+	write_stack(pc & 0xff);
+
+	// 6th cycle the opcode prefetch will happen
+	// we handle this after this function
 
 	// priority for servicing starts at interrupt 0
 	// figure out what interrupt has fired
@@ -391,13 +415,17 @@ void Cpu::do_interrupts() noexcept
 	for(int i = 0; i < 5; i++)
 	{
 		// if requested & is enabled
-		if(is_set(mem->io[IO_IF],i) && is_set(mem->io[IO_IE],i))
+		if(is_set(req,i) && is_set(enabled,i))
 		{
 			mem->io[IO_IF] = deset_bit(mem->io[IO_IF],i); // mark interrupt as serviced
 			pc = 0x40 + (i * 8); // set pc to interrupt vector
 			return;
 		}
 	}
+
+	// interrupt did fire but now is no longer requested
+	// pc gets set to zero
+	pc = 0;
 }
 
 

@@ -32,7 +32,7 @@ void Cpu::exec_instr()
 #endif
 
 
-    uint8_t opcode = mem->read_memt(pc++);
+    uint8_t opcode = fetch_opcode();
 
 	// pc fails to increment if halt bug happens
 	if(halt_bug)

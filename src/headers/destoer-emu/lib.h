@@ -14,6 +14,7 @@
 #include <mutex>
 #include <chrono>
 #include <map>
+#include <list>
 #include <fstream>
 #include <type_traits>
 #include <atomic>

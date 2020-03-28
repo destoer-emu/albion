@@ -17,6 +17,42 @@ enum class instr_state
 };
 
 
+enum class gameboy_event
+{
+    timer_increment
+};
+
+
+class EventQueue
+{
+public:
+
+    struct EventNode
+    {
+        // how many cycles until the event
+        int cycles_limit;
+        gameboy_event type;
+    };
+
+    // add an event to be queued later
+    void insert_event(const EventNode &event);
+
+    // call the appropiate event handler
+    void service_event(gameboy_event type);
+
+    // push pending events to be added into the main list
+    // sorted
+    void queue_events();
+
+private:
+    // sorted list of events to be serviced
+    std::list<EventNode> event_list;
+
+    // list of events to queue up
+    std::list<EventNode> pending_events;
+};
+
+
 class Cpu
 {
 public:
@@ -59,8 +95,6 @@ public:
     void save_state(std::ofstream &fp);
     void load_state(std::ifstream &fp);
 
-    // freq bits for internal timer
-    static constexpr int freq_arr[4] = {9,3,5,7};
 private:
     Memory *mem = nullptr;
     Ppu *ppu = nullptr;
@@ -111,6 +145,8 @@ private:
     void exec_cb(uint8_t cbop);
     void handle_instr_effects();
 
+
+    uint8_t fetch_opcode() noexcept;
 
     // interrupts
     void do_interrupts() noexcept;
