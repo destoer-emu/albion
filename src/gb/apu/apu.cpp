@@ -166,11 +166,6 @@ void Apu::push_samples(int cycles) noexcept
 	{
 		
 		down_sample_cnt = 95;
-	
-		if(is_double) // if in double speed the function is called twice as often 
-		{					// so to adjust the down sample count must be double
-			down_sample_cnt *= 2;
-		}
 
 		if(!playback.is_playing()) 
 		{ 
