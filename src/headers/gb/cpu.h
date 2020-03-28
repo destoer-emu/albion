@@ -48,8 +48,8 @@ private:
     // sorted list of events to be serviced
     std::list<EventNode> event_list;
 
-    // list of events to queue up
-    std::list<EventNode> pending_events;
+    //events to queue up
+    std::vector<EventNode> pending_events;
 };
 
 

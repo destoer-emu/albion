@@ -182,7 +182,7 @@ private:
 class Apu
 {
 public:
-	void push_samples() noexcept;
+	void push_samples(int cycles) noexcept;
 
 	void init(Memory *m) noexcept;
 

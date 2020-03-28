@@ -102,7 +102,7 @@ void Apu::tick(int cycles) noexcept
     c4.tick_period(cycles);
     
 
-    push_samples();
+    push_samples(cycles);
 }
 
 void Apu::tick_length_counters() noexcept
@@ -158,14 +158,14 @@ void Apu::set_double(bool d) noexcept
 	is_double = d;
 }
 
-void Apu::push_samples() noexcept
+void Apu::push_samples(int cycles) noexcept
 {
 	// handle audio output 
-	if(!--down_sample_cnt)
+    down_sample_cnt -= cycles;
+	if(down_sample_cnt <= 0)
 	{
-		// while our counts are in T cycles the update function is called 
-		// ever M cycle so its 23
-		down_sample_cnt = 23; // may need adjusting for m cycles (95)
+		
+		down_sample_cnt = 95;
 	
 		if(is_double) // if in double speed the function is called twice as often 
 		{					// so to adjust the down sample count must be double
