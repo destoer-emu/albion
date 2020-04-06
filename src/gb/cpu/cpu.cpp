@@ -115,61 +115,6 @@ void Cpu::cycle_tick(int cycles) noexcept
 	cycle_tick_t(cycles * 4);
 }
 
-
-
-
-
-/* 	
-so inside t cycle tick i need to impl a scheduler 
-probably using a std::list of sorted events (as they have to happen in order) which each has a cycle
-counter till the event and we subtract it from each... if it hits zero we tick the event
-with the pixel fifo and possibly others we need to constantly push the event
-we could do something like constantly resetting the tick period to zero
-but that seems kidna jank
-
-
-
-	something like  
-	for(auto &x: event_list)
-	{
-		x.cycle_limit -= cycles;
-		if(x.cycle_limit <= 0)
-		{
-			// will re dump the event into the list
-			// in a way we cant iter over it
-			// possibly by dumping it at the front or probably
-			// just in a seperate list that we merge at the end
-			x.service_event();
-		}
-
-		// regardless of how we reque for effiency while things are off we wont requeue them
-		// and we will have to call a manual inserter for the event when they are turned back on
-		// this will need to insert the event in a sorted place as for how we will insert several events sorted at a single time
-		// .....
-		// likely we will just need store to dump them to external storage before we merge them sorted with the main list
-		// if its empty or cycle is zero we will just dump the thing at the front
-
-		//event_list.requeue_events();
-	}
-
-	// dont know if we should sort the list and just use one counter..
-	// we also cant just have a service_event for each event in realitly it would be something more like
-	// maybye we can get away with the above if we used std::function
-	service_event(x.type);
-	where type is some event_enum type and we just switch on the event or something like that
-
-
-	
-	// to start we will only implement it for the timer event
-	// as it is probably the most straight forward to schdule for
-
-
-	
-
-*/
-
-
-
 // t cycle tick
 void Cpu::cycle_tick_t(int cycles) noexcept
 {

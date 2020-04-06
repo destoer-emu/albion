@@ -976,7 +976,7 @@ void Cpu::do_interrupts()
     }
 
     // the handler will find out what fired for us!
-    if((cpu_io.ime & cpu_io.interrupt_enable & cpu_io.interrupt_flag) != 0)
+    if((cpu_io.ime & cpu_io.interrupt_enable) != 0 && cpu_io.interrupt_flag)
     {
         //printf("interrupt fired!");
         service_interrupt();
