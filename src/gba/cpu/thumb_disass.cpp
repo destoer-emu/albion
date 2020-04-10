@@ -222,8 +222,10 @@ std::string Disass::disass_thumb_get_rel_addr(uint16_t opcode)
 
 std::string Disass::disass_thumb_branch(uint16_t opcode)
 {
-    int offset = sign_extend((opcode & 0x3ff) * 2,11);
-    return fmt::format("b #0x{:08x}",pc+2+offset);
+    int32_t offset = sign_extend<int32_t>(opcode & 0x7ff,11) * 2;
+    uint32_t res = pc+offset+ARM_HALF_SIZE;
+
+    return fmt::format("b #0x{:08x}, {:08x}",res, offset);
 }
 
 std::string Disass::disass_thumb_load_store_half(uint16_t opcode)
@@ -481,14 +483,14 @@ std::string Disass::disass_thumb_long_bl(uint16_t opcode)
     bool first = !is_set(opcode,11);
 
     // 4 byte instr made up of two "sub ops"
-    int offset1 = opcode & 0x7ff;
+    int32_t offset1 = opcode & 0x7ff;
     uint16_t opcode2 = mem->read_mem<uint16_t>(pc);
     pc += ARM_HALF_SIZE;
     int offset2 = opcode2 & 0x7ff;
 
     // sign extend the first offset
     offset1 <<= 12;
-    offset1 = sign_extend(offset1,23);
+    offset1 = sign_extend<int32_t>(offset1,23);
 
     uint32_t addr = (offset2 << 1) + (pc + offset1);
     return fmt::format("bl #0x{:08x} ; {}",addr, first? "first" : "second");

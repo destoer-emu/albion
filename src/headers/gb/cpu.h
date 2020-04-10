@@ -144,6 +144,7 @@ private:
     void exec_instr();
     void exec_cb(uint8_t cbop);
     void handle_instr_effects();
+    void handle_halt();
 
 
     uint8_t fetch_opcode() noexcept;

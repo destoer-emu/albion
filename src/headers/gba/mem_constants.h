@@ -40,7 +40,15 @@ constexpr uint32_t IO_BG2X_L = 0x04000028 & IO_MASK;
 constexpr uint32_t IO_BG2X_H = 0x0400002a & IO_MASK;
 constexpr uint32_t IO_BG2Y_L = 0x0400002c & IO_MASK;
 constexpr uint32_t IO_BG2Y_H = 0x0400002e & IO_MASK;
+constexpr uint32_t IO_BG3X_L = 0x04000038 & IO_MASK;
+constexpr uint32_t IO_BG3X_H = 0x0400003a & IO_MASK;
+constexpr uint32_t IO_BG3Y_L = 0x0400003c & IO_MASK;
+constexpr uint32_t IO_BG3Y_H = 0x0400003e & IO_MASK;
 constexpr uint32_t IO_WIN0H = 0x04000040 & IO_MASK; // window 0 horizontal dimensions
+constexpr uint32_t IO_WIN1H = 0x04000042 & IO_MASK; // window 0 horizontal dimensions
+constexpr uint32_t IO_WIN0V = 0x04000044 & IO_MASK; // window 0 horizontal dimensions
+constexpr uint32_t IO_WIN1V = 0x04000046 & IO_MASK; // window 0 horizontal dimensions
+
 
 // dma 0
 constexpr uint32_t IO_DMA0SAD = 0x040000b0 & IO_MASK;
@@ -92,5 +100,7 @@ constexpr uint32_t IO_HALTCNT = 0x04000301 & IO_MASK;
 constexpr uint32_t IO_SOUNDCNT_H = 0x004000082 & IO_MASK;
 constexpr uint32_t IO_SOUNDBIAS = 0x040000088 & IO_MASK;
 constexpr uint32_t IO_SOUNDCNT_X = 0x4000084 & IO_MASK;
+constexpr uint32_t IO_FIFO_A = 0x040000A0 & IO_MASK;
+constexpr uint32_t IO_FIFO_B = 0x040000A4 & IO_MASK;
 
 }

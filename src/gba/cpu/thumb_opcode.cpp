@@ -143,7 +143,7 @@ void Cpu::thumb_load_store_sbh(uint16_t opcode)
 
         case 1: // ldsb
         {
-            regs[rd] = sign_extend(mem->read_memt<uint8_t>(addr),8);
+            regs[rd] = sign_extend<uint32_t>(mem->read_memt<uint8_t>(addr),8);
             cycle_tick(3); // 1s + 1n + 1i
             break;
         }
@@ -162,12 +162,12 @@ void Cpu::thumb_load_store_sbh(uint16_t opcode)
         {
             if(!(addr & 1)) // is aligned
             {
-                regs[rd] = sign_extend(mem->read_memt<uint16_t>(addr),16);
+                regs[rd] = sign_extend<uint32_t>(mem->read_memt<uint16_t>(addr),16);
             }
 
             else // unaligned
             {
-                regs[rd] = sign_extend(mem->read_memt<uint8_t>(addr),8);
+                regs[rd] = sign_extend<uint32_t>(mem->read_memt<uint8_t>(addr),8);
             }
 
             cycle_tick(3); // 1s + 1n + 1i
@@ -218,10 +218,10 @@ void Cpu::thumb_load_store_reg(uint16_t opcode)
     }
 }
 
+
 void Cpu::thumb_branch(uint16_t opcode)
 {
-    uint32_t offset = (opcode & 0x3ff)*2;
-    offset = sign_extend(offset,11);
+    auto offset = sign_extend<int32_t>(opcode & 0x7ff,11) * 2;
     regs[PC] += offset+ARM_HALF_SIZE;
 
     cycle_tick(3); // 2s +1n 
@@ -564,10 +564,13 @@ void Cpu::thumb_multiple_load_store(uint16_t opcode)
 
     int n = 0;
 
+
     // empty r list store pc sb += 0x40
     if(reg_range == 0)
     {
         n++;
+
+
         // ldmia
         if(load)
         {
@@ -712,7 +715,7 @@ void Cpu::thumb_long_bl(uint16_t opcode)
         // sign extend offset shifted by 12
         // add to pc plus 4 store in lr
         offset <<= 12;
-        offset = sign_extend(offset,23);
+        offset = sign_extend<int32_t>(offset,23);
         regs[LR] = (regs[PC]+2) + offset;
         cycle_tick(1); // 1S
     }

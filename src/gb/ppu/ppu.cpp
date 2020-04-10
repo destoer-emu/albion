@@ -131,6 +131,7 @@ void Ppu::write_stat() noexcept
 // will trigger this
 void Ppu::stat_update() noexcept
 {
+	// if the lcd is not on then dont do anything
 	if(!mem->is_lcd_enabled())
 	{
 		return;
@@ -144,6 +145,8 @@ void Ppu::stat_update() noexcept
 	const bool signal_old = signal;
 
 	// check interrupts
+	// stat irq interrupt reqed when we go from no stat conditions met
+	// to any stat condition met
 	switch(mode)
 	{
 		case ppu_mode::hblank: signal = is_set(status,3); break;
@@ -160,11 +163,9 @@ void Ppu::stat_update() noexcept
 	// if lyc is current line set coincidence bit else deset it
 	status = (mem->io[IO_LYC] == current_line)? set_bit(status,2) : deset_bit(status,2);
 
-	// still not 100% on lyc interacts with the signal edge
-	if(is_set(status,6) && is_set(status,2))
-	{
-		signal = true;
-	}	
+	// if conicidence set and interrupt enabled fire an interrupt
+	signal |= (is_set(status,6) && is_set(status,2));
+
 	
 
 	// if we have changed from 0 to 1 for signal(signal edge)
@@ -178,15 +179,35 @@ void Ppu::stat_update() noexcept
 	mem->io[IO_STAT] = status | 128 | static_cast<int>(mode);
 }
 
+
+// cant really find much information on the lcd on off behavior....
+
 void Ppu::turn_lcd_off() noexcept
 {
 	scanline_counter = 0; // counter is reset?
 	current_line = 0; // reset ly
-	mem->io[IO_STAT] &= ~3; 
-	mode = ppu_mode::oam_search;
-	signal = false; 
+
+	// i think the behavior is this but im honestly not sure
+	//mode = ppu_mode::hblank;
+	//mem->io[IO_STAT] = (mem->io[IO_STAT] & ~3) | static_cast<int>(mode);
+	//signal = is_set(mem->io[IO_STAT],3);
+
+	//printf("stat off: %x\n",mem->io[IO_STAT]);
 }
 
+
+void Ppu::turn_lcd_on() noexcept
+{
+	//printf("lcd enabled %x\n",mem->is_lcd_enabled());
+	//printf("%x:%x:%x\n",scanline_counter,current_line,mem->io[IO_LYC]);
+
+	// again not sure what the behavior is when the ppu goes back on
+	//mode = ppu_mode::oam_search;
+	stat_update();
+
+	//printf("lyc bit %x\n",is_set(mem->io[IO_STAT],2));
+	//printf("stat on: %x\n",mem->io[IO_STAT]);
+}
 
 void Ppu::update_graphics(int cycles) noexcept
 {
@@ -255,8 +276,6 @@ void Ppu::update_graphics(int cycles) noexcept
 				// vblank is over
 				if(current_line > 153)
 				{
-					mem->io[IO_STAT] &= ~3;
-					mem->io[IO_STAT] |= 2;
 					current_line = 0;
 					// enter oam search on the first line :)
 					mode = ppu_mode::oam_search; 				

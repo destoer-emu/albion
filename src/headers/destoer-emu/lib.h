@@ -51,7 +51,7 @@ inline uint64_t time_left(uint64_t next_time)
 
 inline bool ishex(char x) noexcept
 {
-	return (x >= 'a' && x <= 'f');
+	return (x >= 'a' && x <= 'f' || x >= 'A' && x <= 'F');
 }
 
 inline bool is_valid_hex_string(char *input_str) noexcept
@@ -128,16 +128,13 @@ inline uint32_t rotr(uint32_t n, unsigned int c) noexcept
     return (n>>c) | (n<<( (-c)&mask ));
 }
 
- // https://stackoverflow.com/questions/5814072/sign-extend-a-nine-bit-number-in-c
-inline int64_t sign_extend(int64_t x, int64_t b) noexcept
+//https://stackoverflow.com/questions/42534749/signed-extension-from-24-bit-to-32-bit-in-c
+template<typename T>
+T sign_extend(T x, int b)
 {
-    /* generate the sign bit mask. 'b' is the extracted number of bits */
-    int m = 1U << (b - 1);  
-
-    /* Transform a 'b' bits unsigned number 'x' into a signed number 'r' */
-    int r = (x ^ m) - m; 
-
-    return r;
+	T res = 1;
+	res <<= b - 1;
+	return (x ^ res) - res;
 }
 
 // is there a nicer way to do this?

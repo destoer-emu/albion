@@ -5,6 +5,7 @@
 #include <gba/mem_constants.h>
 #include <gba/forward_def.h>
 #include <gba/mem_io.h>
+#include <gba/dma.h>
 namespace gameboyadvance
 {
 
@@ -13,7 +14,7 @@ namespace gameboyadvance
 class Mem
 {
 public:
-    void init(std::string filename,Debug *debug, Cpu *cpu, Display *disp);
+    void init(std::string filename,Debug *debug, Cpu *cpu, Display *disp, Apu *apu);
 
 
 
@@ -63,11 +64,12 @@ public:
     // object attribute map
     std::vector<uint8_t> oam; // 0x400 
 
-
+    Dma dma;
 private:
     Debug *debug = nullptr;
     Cpu *cpu = nullptr;
     Display *disp = nullptr;
+    Apu *apu = nullptr;
 
     template<typename access_type>
     void tick_mem_access();

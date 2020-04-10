@@ -46,7 +46,15 @@ bool Debug::breakpoint_hit(uint32_t addr, uint32_t value, break_type type)
 
     Breakpoint b = breakpoints[addr];
 
-    return b.is_hit(addr,type,value);
+    bool hit =  b.is_hit(addr,type,value);
+
+
+    if(hit)
+    {
+        printf("%x breakpoint hit at %x:%x\n",static_cast<int>(type),addr,value);
+    }
+
+    return hit;
 }
 
 void Debug::set_breakpoint(uint32_t addr,bool r, bool w, bool x, bool value_enabled, uint32_t value)

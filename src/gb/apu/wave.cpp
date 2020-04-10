@@ -14,6 +14,8 @@ void Wave::init(Memory *m, int c) noexcept
 	freq_init();
     freq_lower_mask = freq_lower_masks[chan_number];
     period_scale = freq_period_scales[chan_number];
+
+
 }
 
 

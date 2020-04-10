@@ -76,10 +76,16 @@ struct GameboyDisplayViewer
 
     void draw_bg_map();
     void draw_tiles();
+    void draw_palette();
 
     std::atomic_bool enabled = false;
     Texture bg_map;
     Texture tiles;
+
+    // implement a dumper for the ppu sprite and bg palette 
+    // tomorrow and pass more tests
+    uint32_t pallette_bg[32];
+    uint32_t pallette_sp[32];
 };
 
 
@@ -91,7 +97,7 @@ public:
     void mainloop(); 
 private:
 
-    void start_instance();
+    void start_instance(bool step = false);
     void stop_instance();
     void disable_audio();
     void enable_audio();
@@ -109,9 +115,10 @@ private:
 
     // emulator managment
     void gameboy_stop_instance();
-    void gameboy_start_instance();
+    void gameboy_start_instance(bool step = false);
     void gameboy_new_instance(std::string filename, bool use_bios);
     void gameboy_reset_instance(std::string filename, bool use_bios);
+    void gameboy_emu_instance();
 
     // frontend drawing
     void gameboy_draw_screen(); // unused now we just render to back of window
@@ -126,9 +133,10 @@ private:
 
     // gba
     void gba_stop_instance();
-    void gba_start_instance();
+    void gba_start_instance(bool step = false);
     void gba_new_instance(std::string filename);
     void gba_reset_instance(std::string filename);
+    void gba_emu_instance();
 
     // frotend drawing
     //void gba_draw_screen();

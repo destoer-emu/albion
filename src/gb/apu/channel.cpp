@@ -33,6 +33,11 @@ void Channel::tick_lengthc() noexcept
     }
 }
 
+void Channel::reset_length() noexcept
+{
+    lengthc = 0;
+}
+
 void Channel::init_channel(Memory *m, int c) noexcept
 {
     mem = m;

@@ -146,19 +146,19 @@ ImguiMainWindow::~ImguiMainWindow()
 }
 
 // assume its allways running a gb instance for now
-void ImguiMainWindow::start_instance()
+void ImguiMainWindow::start_instance(bool step)
 {
     switch(running_type)
     {
         case emu_type::gameboy:
         {
-            gameboy_start_instance();
+            gameboy_start_instance(step);
             break;
         }
 
         case emu_type::gba:
         {
-            gba_start_instance();
+            gba_start_instance(step);
             break;
         }
 
@@ -568,30 +568,27 @@ void ImguiMainWindow::menu_bar(Debug &debug)
             ImGui::EndMenu();
         }
 
+        auto old = selected_window;
 
         if(ImGui::BeginMenu("Debug"))
         {
             if (ImGui::MenuItem("Cpu"))
             {
-                debug_halt();
                 selected_window = current_window::cpu;
             }
 
             if (ImGui::MenuItem("Memory")) 
             {
-                stop_instance();
                 selected_window = current_window::memory;
             }
 
             if(ImGui::MenuItem("Breakpoints")) 
             {
-                stop_instance();
                 selected_window = current_window::breakpoint;
             }
             
             if(ImGui::MenuItem("Display Viewer"))
             {
-                start_instance();
                 selected_window = current_window::display_viewer;
                 gb_display_viewer.enabled = true;
             }
@@ -607,17 +604,19 @@ void ImguiMainWindow::menu_bar(Debug &debug)
         if(ImGui::BeginMenu("File"))
         {
             selected_window = current_window::file;
-            stop_instance();
             ImGui::EndMenu();
         }
 
         if(ImGui::BeginMenu("Screen"))
         {
             selected_window = current_window::screen;
-            start_instance();
             ImGui::EndMenu();
         }
 
+        if(old != selected_window)
+        {
+            stop_instance();
+        }
 
         menubar_size = ImGui::GetWindowSize();
 

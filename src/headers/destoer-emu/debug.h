@@ -67,7 +67,7 @@ public:
 
 
     // map to hold breakpoints (lookup by addr)
-    std::map<uint16_t,Breakpoint> breakpoints;
+    std::unordered_map<uint32_t,Breakpoint> breakpoints;
 
     bool breakpoints_enabled = true;
     bool log_enabled = false;

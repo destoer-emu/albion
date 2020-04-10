@@ -17,6 +17,11 @@ struct KeyCnt
     bool irq_cond; // 0 at least one is pressed, 1 all pressed
 };
 
+
+
+
+
+
 struct MemIo
 {
     MemIo();

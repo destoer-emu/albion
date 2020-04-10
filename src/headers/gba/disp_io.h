@@ -90,17 +90,72 @@ struct DispStat
     int lyc;
 };
 
+// eg bg2pa
+struct ScalingParam
+{
+    ScalingParam();
+    void init();
+
+    uint8_t read(int idx) const;
+    void write(int idx, uint8_t v);
+
+    int fract;
+    int integer;
+    bool sign;
+};
+
+struct WindowDimensionH
+{
+    WindowDimensionH();
+    void init();
+
+    void write(int idx, uint8_t v);
+
+    uint8_t x2; // rightmost + 1
+    uint8_t x1; // leftmost
+};
+
+
+struct WindowDimensionV
+{
+    WindowDimensionV();
+    void init();
+
+
+    void write(int idx, uint8_t v);
+
+    uint8_t y2; // bottommost + 1
+    uint8_t y1; // leftmost
+};
+
+
 struct DispIo
 {
     DispIo();
     void init();
 
 
+    ScalingParam bg2pa; // dx
+    ScalingParam bg2pb; // dmx
+    ScalingParam bg2pc; // dy
+    ScalingParam bg2pd; // dmy
 
-
+    ScalingParam bg3pa; // dx
+    ScalingParam bg3pb; // dmx
+    ScalingParam bg3pc; // dy
+    ScalingParam bg3pd; // dmy
 
     RefPoint bg2x;
     RefPoint bg2y; 
+
+    RefPoint bg3x;
+    RefPoint bg3y;
+
+    WindowDimensionH win0h;
+    WindowDimensionH win1h;
+
+    WindowDimensionV win0v;
+    WindowDimensionV win1v;
 
     std::array<BgCnt,4> bg_cnt;
     std::array<BgOffset,4> bg_offset_x;
@@ -109,5 +164,4 @@ struct DispIo
     DispCnt disp_cnt;
     DispStat disp_stat;
 };
-
 }

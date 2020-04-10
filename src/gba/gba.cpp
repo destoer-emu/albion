@@ -8,10 +8,11 @@ namespace gameboyadvance
 // init all sup compenents
 void GBA::reset(std::string filename)
 {
-    mem.init(filename,&debug,&cpu,&disp);
+    mem.init(filename,&debug,&cpu,&disp,&apu);
     disass.init(&mem,&cpu);
     disp.init(&mem,&cpu);
-    cpu.init(&disp,&mem,&debug,&disass);
+	apu.init(&mem,&cpu);
+    cpu.init(&disp,&mem,&apu,&debug,&disass);
 	debug.write_logger("[new gba instance] {}",filename);
 }
 

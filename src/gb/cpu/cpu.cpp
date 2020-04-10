@@ -118,18 +118,16 @@ void Cpu::cycle_tick(int cycles) noexcept
 // t cycle tick
 void Cpu::cycle_tick_t(int cycles) noexcept
 {
-	// should operate at double speed
-	const int factor = is_double ? 2 : 1;
 
 	// timers act at constant speed
 	update_timers(cycles); 
 
 	// handler will check if its enabled
-	mem->tick_dma(cycles * factor);
+	mem->tick_dma(cycles << is_double);
 	
 	// in double speed mode gfx and apu should operate at half
-	ppu->update_graphics(cycles / factor); // handle the lcd emulation
-	apu->tick(cycles / factor); // advance the apu state	
+	ppu->update_graphics(cycles >> is_double); // handle the lcd emulation
+	apu->tick(cycles >> is_double); // advance the apu state	
 }
 
 void Cpu::tima_inc() noexcept
@@ -212,6 +210,69 @@ void Cpu::update_timers(int cycles) noexcept
 }
 
 
+void Cpu::handle_halt()
+{
+	instr_side_effect = instr_state::normal;
+	uint8_t req = mem->io[IO_IF]; // requested ints 
+	uint8_t enabled = mem->io[IO_IE]; // enabled interrutps
+	
+	// halt bug
+	// halt state not entered and the pc fails to increment for
+	// one instruction read 			
+	if( (interrupt_enable == false) &&  (req & enabled & 0x1f) != 0)
+	{
+		halt_bug = true;
+		return;
+	}
+	
+
+	// sanity check to check if this thing will actually fire
+	const uint8_t stat = mem->io[IO_STAT];
+	if(enabled == 0 || ((((stat >> 3) & 0x7) == 0) && enabled == val_bit(enabled,1)))
+	{
+		write_log("[ERROR] halt infinite loop");
+		throw std::runtime_error("halt infinite loop");
+	}
+
+	
+	while( ( req & enabled & 0x1f) == 0) 
+	{
+		// just tick it
+		cycle_tick(1);
+			
+		req = mem->io[IO_IF];
+	}
+
+
+	/*
+	// ideally we should just figure out how many cycles to the next interrupt
+
+	// halt is immediatly over we are done
+	if(req & enabled & 0x1f)
+	{
+		return;
+	}
+
+	int cycles_to_event;
+
+	// check if timer interrupt enabled (and the timer is enabled) if it is
+	// determine when it will fire
+	if(is_set(mem->io[IO_TMC],2) && is_set(enabled,2))
+	{
+
+	}
+
+	// determine when next stat inerrupt will fire
+	// because of the irq stat glitches if its on we have to figure out when it first goes off
+	// and then re run the check additonally if our target ends in hblank we need to step it manually
+	// as pixel transfer -> hblank takes a variable number of cycles
+	// (allthough try to come up with a method to actually calculate it based on number of sprites scx etc)
+
+
+	// whichever interrupt hits first tick until it :)
+	*/
+
+}
 
 // handle the side affects of instructions
 void Cpu::handle_instr_effects()
@@ -237,6 +298,11 @@ void Cpu::handle_instr_effects()
 				interrupt_enable = true;
 			}
 					
+			if(instr_side_effect == instr_state::halt)
+			{
+				handle_halt();
+			}
+
 			break;
 		}
 				
@@ -251,67 +317,7 @@ void Cpu::handle_instr_effects()
 		// until an interrupt occurs and wakes it up 			
 		case instr_state::halt: // halt occured in prev instruction
 		{		
-			instr_side_effect = instr_state::normal;
-			uint8_t req = mem->io[IO_IF]; // requested ints 
-			uint8_t enabled = mem->io[IO_IE]; // enabled interrutps
-			
-			// halt bug
-			// halt state not entered and the pc fails to increment for
-			// one instruction read 			
-			if( (interrupt_enable == false) &&  (req & enabled & 0x1f) != 0)
-			{
-				halt_bug = true;
-				return;
-			}
-			
-
-			// sanity check to check if this thing will actually fire
-			const uint8_t stat = mem->io[IO_STAT];
-			if(enabled == 0 || ((((stat >> 3) & 0x7) == 0) && enabled == val_bit(enabled,1)))
-			{
-				write_log("[ERROR] halt infinite loop");
-				throw std::runtime_error("halt infinite loop");
-			}
-
-			
-			while( ( req & enabled & 0x1f) == 0) 
-			{
-				// just tick it
-				cycle_tick(1);
-					
-				req = mem->io[IO_IF];
-			}
-
-
-			/*
-			// ideally we should just figure out how many cycles to the next interrupt
-
-			// halt is immediatly over we are done
-			if(req & enabled & 0x1f)
-			{
-				return;
-			}
-
-			int cycles_to_event;
-
-			// check if timer interrupt enabled (and the timer is enabled) if it is
-			// determine when it will fire
-			if(is_set(mem->io[IO_TMC],2) && is_set(enabled,2))
-			{
-
-			}
-
-			// determine when next stat inerrupt will fire
-			// because of the irq stat glitches if its on we have to figure out when it first goes off
-			// and then re run the check additonally if our target ends in hblank we need to step it manually
-			// as pixel transfer -> hblank takes a variable number of cycles
-			// (allthough try to come up with a method to actually calculate it based on number of sprites scx etc)
-
-
-			// whichever interrupt hits first tick until it :)
-			*/
-
-			
+			handle_halt();
 			break;
 		}
 	}

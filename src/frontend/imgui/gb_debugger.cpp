@@ -86,7 +86,7 @@ void gameboy_handle_input(GB &gb)
 }
 
 // we will switch them in and out but for now its faster to just copy it
-void gameboy_emu_instance(GB &gb, Texture &screen, GameboyDisplayViewer &viewer)
+void ImguiMainWindow::gameboy_emu_instance()
 {
 	constexpr uint32_t fps = 60; 
 	constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
@@ -107,9 +107,9 @@ void gameboy_emu_instance(GB &gb, Texture &screen, GameboyDisplayViewer &viewer)
             // swap the buffer so the frontend can render it
             screen.swap_buffer(gb.ppu.screen);
             
-            if(viewer.enabled)
+            if(gb_display_viewer.enabled)
             {
-                viewer.update(gb);
+                gb_display_viewer.update(gb);
             }
 
 
@@ -131,8 +131,6 @@ void gameboy_emu_instance(GB &gb, Texture &screen, GameboyDisplayViewer &viewer)
     catch(std::exception &ex)
     {
         std::cout << ex.what() << "\n";
-        // halt the emu instance so it can be terminated properly
-        gb.debug.halt(); 
     }
 }
 
@@ -142,21 +140,25 @@ void ImguiMainWindow::gameboy_stop_instance()
     if(emu_running)
     {
         gb.quit = true;
+        // save the breakpoint state so we can restore it later
+        bool break_enabled = gb.debug.breakpoints_enabled;
         gb.debug.disable_everything();
         emu_thread.join(); // end the thread
         emu_running = false;
         gb.quit = false;
         gb.mem.save_cart_ram();
+        gb.debug.breakpoints_enabled = break_enabled;
     }
 }
 
-void ImguiMainWindow::gameboy_start_instance()
+void ImguiMainWindow::gameboy_start_instance(bool step)
 {
-    gb.debug.disable_everything();
+    gameboy_stop_instance();
+    gb.debug.step_instr = step;
     if(!emu_running)
     {
         gb.quit = false;
-        std::thread emulator(gameboy_emu_instance,std::ref(gb), std::ref(screen),std::ref(gb_display_viewer));
+        std::thread emulator(&ImguiMainWindow::gameboy_emu_instance,this);
         emu_running = true;
         std::swap(emulator,emu_thread);    
     }
@@ -254,8 +256,7 @@ void ImguiMainWindow::gameboy_draw_disassembly_child()
 
     if(ImGui::Button("Step"))
     {
-        gb.debug.step_instr = true;
-        gb.debug.wake_up();
+        start_instance(true);
     }
 
 
@@ -263,8 +264,7 @@ void ImguiMainWindow::gameboy_draw_disassembly_child()
 
     if(ImGui::Button("Continue"))
     {
-        gb.debug.step_instr = false;
-        gb.debug.wake_up();
+        start_instance();
     }
 
 

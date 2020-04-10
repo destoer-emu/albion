@@ -262,6 +262,100 @@ void DispStat::write(int idx, uint8_t v)
 
 
 
+
+ScalingParam::ScalingParam()
+{
+    init();
+}
+    
+void ScalingParam::init()
+{
+    fract = 0;
+    integer = 0;
+    sign = false;
+}
+
+
+uint8_t ScalingParam::read(int idx) const
+{
+    switch(idx)
+    {
+        case 0:
+        {
+            return fract;
+            break;
+        }
+
+        case 1:
+        {
+            return integer & 0x7f | sign << 7;
+            break;
+        }
+    }
+}
+
+
+void ScalingParam::write(int idx, uint8_t v)
+{
+    switch(idx)
+    {
+        case 0:
+        {
+            fract = v;
+            break;
+        }
+
+        case 1:
+        {
+            integer = (v & 0x7f);
+            sign = is_set(v,7);
+            break;
+        }
+    }
+}
+
+WindowDimensionH::WindowDimensionH()
+{
+    init();
+}
+
+void WindowDimensionH::init()
+{
+    x2 = 0;
+    x1 = 0;
+}
+
+void WindowDimensionH::write(int idx, uint8_t v)
+{
+    switch(idx)
+    {
+        case 0: x2 = v; break;
+        case 1: x1 = v; break;
+    }
+}
+
+
+WindowDimensionV::WindowDimensionV()
+{
+    init();
+}
+
+void WindowDimensionV::init()
+{
+    y2 = 0;
+    y1 = 0;
+}
+
+void WindowDimensionV::write(int idx, uint8_t v)
+{
+    switch(idx)
+    {
+        case 0: y2 = v; break;
+        case 1: y1 = v; break;
+    }
+}
+
+
 DispIo::DispIo()
 {
     init();
@@ -272,6 +366,8 @@ void DispIo::init()
     // reference points
     bg2x.init();
     bg2y.init();
+    bg3x.init();
+    bg3y.init();
 
     // background control
     for(auto &x: bg_cnt)
@@ -287,6 +383,24 @@ void DispIo::init()
 
     disp_cnt.init();
     disp_stat.init();
+
+
+    bg2pa.init(); // dx
+    bg2pb.init(); // dmx
+    bg2pc.init(); // dy
+    bg2pd.init(); // dmy
+
+    bg3pa.init(); // dx
+    bg3pb.init(); // dmx
+    bg3pc.init(); // dy
+    bg3pd.init(); // dmy
+
+    win0h.init();
+    win1h.init();
+
+    win0v.init();
+    win1v.init();
+
 }
 
 }

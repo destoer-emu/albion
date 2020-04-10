@@ -324,13 +324,13 @@ void Display::tick(int cycles)
                 {
                     cpu->request_interrupt(interrupt::hblank);
                 }
-                cpu->dma.handle_dma(dma_type::hblank);
+                mem->dma.handle_dma(dma_type::hblank);
 
 
 
                 if(ly >= 2)
                 {
-                    cpu->dma.handle_dma(dma_type::special,3);
+                    mem->dma.handle_dma(dma_type::video_capture);
                 }
 
             }
@@ -354,7 +354,7 @@ void Display::tick(int cycles)
                     {
                         cpu->request_interrupt(interrupt::vblank);
                     }
-                    cpu->dma.handle_dma(dma_type::vblank);
+                    mem->dma.handle_dma(dma_type::vblank);
                 }
 
                 else
@@ -391,27 +391,12 @@ void Display::tick(int cycles)
                 // enter hblank (dont set the internal mode here)
                 disp_io.disp_stat.hblank = true;
 
-                // does the hblank irq & dma fire here?
-                // if hblank irq enabled
+                // does the hblank irq & dma fire during vblank?
                 if(disp_io.disp_stat.hblank_irq_enable)
                 {
                     cpu->request_interrupt(interrupt::hblank);
                 }
-                cpu->dma.handle_dma(dma_type::hblank);
-
-                /* just ignore this for now while we get arm wrestler to boot
-                // disable video capture mode dma
-                // does it need to be enabled before a disable?
-                if(ly == 162)
-                {
-                    uint16_t dma_cnt = mem->handle_read<uint16_t>(mem->io,IO_DMA3CNT_H);
-                    auto type = static_cast<dma_type>((dma_cnt >> 12) & 0x3);
-                    if(type == dma_type::special)
-                    {
-                        mem->handle_write<uint16_t>(mem->io,IO_DMA3CNT_H,deset_bit(dma_cnt,15));
-                    }
-                }
-                */
+                mem->dma.handle_dma(dma_type::hblank);
             }
 
             break;

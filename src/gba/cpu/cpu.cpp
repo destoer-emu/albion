@@ -1,19 +1,21 @@
 #include <gba/cpu.h>
 #include <gba/memory.h>
 #include <gba/display.h>
+#include <gba/apu.h>
 #include <gba/disass.h>
 #include <limits.h>
 
 namespace gameboyadvance
 {
 
-void Cpu::init(Display *disp, Mem *mem, Debug *debug, Disass *disass)
+void Cpu::init(Display *disp, Mem *mem,Apu *apu, Debug *debug, Disass *disass)
 {
     // init components
     this->disp = disp;
     this->mem = mem;
     this->debug = debug;
     this->disass = disass;
+    this->apu = apu;
 
     // backup stores
     memset(user_regs,0,sizeof(user_regs));
@@ -44,7 +46,6 @@ void Cpu::init(Display *disp, Mem *mem, Debug *debug, Disass *disass)
 
     cyc_cnt = 0;
     cpu_io.init();
-    dma.init(mem,this);
 }
 
 
@@ -342,58 +343,95 @@ void Cpu::init_arm_opcode_table()
 void Cpu::cycle_tick(int cycles)
 {
     disp->tick(cycles);
+    apu->tick(cycles);
     tick_timers(cycles);
 }
 
-// lets ignore timers for now
+
 void Cpu::tick_timers(int cycles)
 {
-
-    UNUSED(cycles);
-    //static constexpr uint32_t timer_lim[4] = {1,64,256,1024};
-    //static constexpr interrupt interrupt_table[4] = {interrupt::timer0,interrupt::timer1,interrupt::timer2,interrupt::timer3};
- /*
-    // ignore count up timing for now
+    // for each timer
     for(int i = 0; i < 4; i++)
     {
-        int offset = i*ARM_WORD_SIZE;
-        uint16_t cnt = mem->handle_read<uint16_t>(mem->io,IO_TM0CNT_H+offset);
+        auto &timer = cpu_io.timers[i];
 
-        if(!is_set(cnt,7)) // timer is not enabled
+
+        if(timer.count_up)
+        {
+            printf("cascading timers unimplemented");
+            exit(1);
+        }
+
+        // timer is not enabled we dont care
+        if(!timer.enable)
         {
             continue;
         }
 
-        if(is_set(cnt,2)) // count up timer
+
+        timer.cycle_count += cycles;
+
+        auto limit = timer.cycle_limit[timer.scale];
+
+        // if its above the threshold
+        if(timer.cycle_count > limit)
         {
-            throw std::runtime_error("[unimplemented] count up timer!");
-        }
+            auto old = timer.counter;
 
-        uint32_t lim = timer_lim[cnt & 0x3];
+            // timer += how many limits passed
+            timer.counter += timer.cycle_count / limit;
 
-       // printf("%08x\n",lim);
+            // adjust cycle count accordingly
+            timer.cycle_count &= limit-1;
 
-        timer_scale[i] += cycles;
-
-        if(timer_scale[i] >= lim)
-        {
-            timers[i] += timer_scale[i] / lim;
-            uint32_t max_cyc = std::numeric_limits<uint16_t>::max();
-            if(timers[i] >= max_cyc) // overflowed
+            // timer overflowed
+            if(timer.counter < old)
             {
-                // add the reload values
-                timers[i] = mem->handle_read<uint16_t>(mem->io,IO_TM0CNT_L+offset);
-                if(is_set(cnt,6))
-                {
-                    request_interrupt(interrupt_table[i]);
-                }
+                timer_overflow(i);
             }
-            timer_scale[i] %= lim;
         }
-    }  
-*/  
+    }
 }
 
+void Cpu::timer_overflow(int timer_num)
+{
+    auto &timer = cpu_io.timers[timer_num];
+
+    timer.counter = timer.reload;
+
+    // if fire irq on timer overflow
+    if(timer.irq) 
+    {
+        request_interrupt(timer.timer_interrupt[timer_num]);
+    }
+
+
+    // if the timer num is equal to the dma sound channels dma
+    // then push a fifo byte to the apu
+    // then request a fifo dma if it doesent have 16 bytes
+    if(timer_num == apu->apu_io.sound_cnt.timer_num_a)
+    {
+        uint8_t x = apu->apu_io.fifo_a.read();
+        //printf("fifo a %x\n",x);
+        apu->push_dma_a(x);
+        if(apu->apu_io.fifo_a.len < 16)
+        {
+            mem->dma.handle_dma(dma_type::sound);
+        }
+    }
+
+    if(timer_num == apu->apu_io.sound_cnt.timer_num_b)
+    {
+        uint8_t x = apu->apu_io.fifo_b.read();
+        //printf("fifo b %x\n",x);
+        apu->push_dma_b(x);
+        if(apu->apu_io.fifo_b.len < 16)
+        {
+            mem->dma.handle_dma(dma_type::sound);
+        }
+    }
+
+}
 
 // get this booting into armwrestler
 // by skipping the state forward

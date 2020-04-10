@@ -32,7 +32,7 @@ void gba_handle_input(GBA &gba)
     }
 }
 
-void gba_emu_instance(GBA &gba, Texture &screen)
+void ImguiMainWindow::gba_emu_instance()
 {
 	constexpr uint32_t fps = 60; 
 	constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
@@ -73,8 +73,6 @@ void gba_emu_instance(GBA &gba, Texture &screen)
     {
         gba.debug.write_logger(ex.what());
         std::cout << ex.what() << "\n";
-        // halt the emu instance so it can be terminated properly
-        gba.debug.halt(); 
     }    
 }
 
@@ -82,6 +80,8 @@ void gba_emu_instance(GBA &gba, Texture &screen)
 void ImguiMainWindow::gba_draw_cpu_info()
 {
     ImGui::Begin("Gba cpu");
+
+    ImGui::Text("current instr: %s",gba.cpu.is_cpu_thumb()? "thumb" : "arm");
 
     ImGui::BeginChild("gba cpu left pane", ImVec2(150, 0), true);
     gba_draw_registers_child();
@@ -232,15 +232,13 @@ void ImguiMainWindow::gba_draw_disassembly_child()
 
 	if (ImGui::Button("Step"))
 	{
-        gba.debug.step_instr = true;
-		gba.debug.wake_up();
+        start_instance(true);
 	}
 	ImGui::SameLine();
 
 	if (ImGui::Button("Continue"))
 	{
-        gba.debug.step_instr = false;
-		gba.debug.wake_up();
+        start_instance();
 	}
 
     ImGui::SameLine();
@@ -370,6 +368,11 @@ void ImguiMainWindow::gba_draw_breakpoints()
 
 			*input_breakpoint = '\0';
 		}
+
+        else
+        {
+            printf("invalid breakpoint %s\n",input_breakpoint);
+        }
 	}
 
 
@@ -553,21 +556,26 @@ void ImguiMainWindow::gba_stop_instance()
     if(emu_running)
     {
         gba.quit = true;
+        // save the breakpoint enable state so we can restore it later
+        bool break_enabled = gba.debug.breakpoints_enabled;
         gba.debug.disable_everything();
+
         emu_thread.join(); // end the thread
         emu_running = false;
         gba.quit = false;
+        gba.debug.breakpoints_enabled = break_enabled;
         //gba.mem.save_cart_ram(); <-- ignore saving for now
     }
 }
 
-void ImguiMainWindow::gba_start_instance()
+void ImguiMainWindow::gba_start_instance(bool step)
 {
-    gba.debug.disable_everything();
+    gba_stop_instance();
+    gba.debug.step_instr = step;
     if(!emu_running)
     {
         gba.quit = false;
-        std::thread emulator(gba_emu_instance,std::ref(gba), std::ref(screen));
+        std::thread emulator(&ImguiMainWindow::gba_emu_instance,this);
         emu_running = true;
         std::swap(emulator,emu_thread);    
     }

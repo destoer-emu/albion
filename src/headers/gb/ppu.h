@@ -59,6 +59,7 @@ public:
     void write_stat() noexcept;
 
     void turn_lcd_off() noexcept;
+    void turn_lcd_on() noexcept; 
 
     // mode change, write, or line change
     // will trigger this

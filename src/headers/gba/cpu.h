@@ -5,34 +5,17 @@
 #include <gba/cpu_io.h>
 #include <gba/arm.h>
 #include <gba/dma.h>
+#include <gba/interrupt.h>
+
 
 namespace gameboyadvance
 {
 
 
-enum class interrupt
-{
-    vblank = 0,
-    hblank = 1,
-    vcount = 2,
-    timer0 = 3,
-    timer1 = 4,
-    timer2 = 5,
-    timer3 = 6,
-    serial = 7,
-    dma0 = 8,
-    dma1 = 9,
-    dma2 = 10,
-    dma3 = 11,
-    keypad = 12,
-    gamepak = 13
-};
-
-
 class Cpu
 {
 public:
-    void init(Display *disp, Mem *mem, Debug *debug, Disass *disass);
+    void init(Display *disp, Mem *mem,Apu *apu, Debug *debug, Disass *disass);
     void step();
     void cycle_tick(int cylces); // advance the system state
 
@@ -70,7 +53,6 @@ public:
 
     // cpu io memory
     CpuIo cpu_io;
-    Dma dma;
 private:
 
     using ARM_OPCODE_FPTR = void (Cpu::*)(uint32_t opcode);
@@ -148,6 +130,7 @@ private:
 
     // timers
     void tick_timers(int cycles);
+    void timer_overflow(int timer);
     uint32_t timers[4] = {0};
     uint32_t timer_scale[4] = {0};
 
@@ -171,6 +154,7 @@ private:
     Mem *mem = nullptr;
     Debug *debug = nullptr;
     Disass *disass = nullptr;
+    Apu *apu = nullptr;
 
     // underlying registers
 

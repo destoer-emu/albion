@@ -155,6 +155,9 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
 
 
 
+
+
+
     // init our function table
 
     // read_mem
@@ -249,8 +252,8 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
 		// mbc5 rom
 		case rom_type::mbc5:
 		{
-			memory_table[0x0].write_memf = &Memory::ram_bank_enable;
-			memory_table[0x1].write_memf = &Memory::ram_bank_enable;
+			memory_table[0x0].write_memf = &Memory::ram_bank_enable_mbc5;
+			memory_table[0x1].write_memf = &Memory::ram_bank_enable_mbc5;
 			memory_table[0x2].write_memf = &Memory::change_lo_rom_bank_mbc5;
 			memory_table[0x3].write_memf = &Memory::change_hi_rom_bank_mbc5;
 			memory_table[0x4].write_memf = &Memory::mbc5_ram_bank_change;
@@ -318,6 +321,23 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
 	io[0x29] = 0xff;
 	io[0x20] = 0xff;
 	
+
+	// on cgb wave ram is
+	if(rom_cgb_enabled())
+	{
+		static constexpr uint8_t wave_ram_initial[] =
+		{
+			0x00, 0xFF, 0x00, 0xFF, 0x00,
+			0xFF, 0x00, 0xFF, 0x00, 0xFF,
+			0x00, 0xFF, 0x00, 0xFF, 0x00,
+		}; 
+
+		for(int i = 0; i < 16; i++)
+		{
+			io[0x30 + i] = wave_ram_initial[i];
+		}
+	}
+
 
     // banking vars
     enable_ram = false; // is ram banking enabled
@@ -1158,24 +1178,27 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_LCDC: // lcdc
 		{
-			if(!is_set(v,7) && is_lcd_enabled()) // lcd switched off this write
+			const uint8_t lcdc_old = io[IO_LCDC];
+
+			io[IO_LCDC] = v;
+
+			// lcd switched off this write
+			if(!is_set(v,7) && is_set(lcdc_old,7)) 
 			{
 				ppu->turn_lcd_off();
 			}
 			
-			if(is_set(v,7) && !is_lcd_enabled())
+			// lcdc turned on this write
+			else if(is_set(v,7) && !is_set(lcdc_old,7))
 			{
-				ppu->set_scanline_counter(0);
-				io[IO_STAT] |= 2; // mode 2?
-				ppu->mode = ppu_mode::oam_search;	
+				ppu->turn_lcd_on();
 			}
-			io[IO_LCDC] = v;
-			ppu->stat_update();
 			break;
 		}
 
 
-		// lcd stat <-- writes can trigger interrupts?
+		// lcd stat
+		// writes can trigger interrupts on dmg?
 		case IO_STAT:
 		{
 			// delete writeable bits
@@ -1684,24 +1707,22 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		{
 			io[IO_NR52] |= 112;
 			
-			if(is_set(io[IO_NR52] ^ v,7)) // if we are going from on to off reset the sequencer
-			{
-				apu->reset_sequencer();
-			}
-
 
 
 			// if we have disabled sound we should
 			// zero all the registers (nr10-nr51) 
 			// and lock writes until its on
-			if(!is_set(v,7))
+			if(is_set(io[IO_NR52],7) && !is_set(v,7))
 			{
 				apu->disable_sound();
 			}
 			
-			else // its enabled
+			// enabled
+			else if(!is_set(io[IO_NR52],7) && is_set(v,7))
 			{
 				apu->enable_sound();
+				// power up resets the fetcher
+				apu->reset_sequencer();
 			}			
 			break;
 		}

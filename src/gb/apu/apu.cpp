@@ -21,6 +21,7 @@ void Apu::init(Memory *m) noexcept
     if(!audio_setup)
     {
         playback.init(44100,sample_size);
+        audio_setup = true;
     }
 	playback.start();
 
@@ -131,6 +132,16 @@ void Apu::enable_sound() noexcept
 {
     sound_enabled = true;
     mem->io[IO_NR52] |= 0x80; // data had 0x80 so write back  
+
+    // reset length coutners when powerd up
+    // if on cgb
+    //if(cpu->get_cgb())
+    {
+        c1.reset_length();
+        c2.reset_length();
+        c3.reset_length();
+        c4.reset_length();
+    }
 }
 
 void Apu::reset_sequencer() noexcept

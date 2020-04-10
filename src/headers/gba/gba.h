@@ -1,8 +1,9 @@
 #pragma once
-#include "cpu.h"
-#include "memory.h"
-#include "disass.h"
-#include "display.h"
+#include <gba/cpu.h>
+#include <gba/memory.h>
+#include <gba/disass.h>
+#include <gba/display.h>
+#include <gba/apu.h>
 #include <destoer-emu/debug.h>
 
 namespace gameboyadvance
@@ -31,6 +32,7 @@ public:
     Disass disass;
     Display disp;
     Debug debug;
+    Apu apu;
 
    std::atomic_bool quit = false;
 };

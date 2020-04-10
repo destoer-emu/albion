@@ -15,6 +15,8 @@ public:
 	void length_trigger() noexcept;
 	void length_write(uint8_t v, int sequencer_step) noexcept;
 
+	void reset_length() noexcept;
+
 	void enable_chan() noexcept;
 	void disable_chan() noexcept;
 	void check_dac() noexcept;

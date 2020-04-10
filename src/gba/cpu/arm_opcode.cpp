@@ -96,8 +96,8 @@ void Cpu::arm_mull(uint32_t opcode)
     else // signed
     {
         int64_t ans;
-        int64_t v1 = sign_extend(regs[rs],32);
-        int64_t v2 = sign_extend(regs[rm],32);
+        int64_t v1 = sign_extend<int64_t>(regs[rs],32);
+        int64_t v2 = sign_extend<int64_t>(regs[rm],32);
         if(a)
         {
             int64_t oper = ((int64_t)regs[rdhi] << 32) | (int64_t)regs[rdlo];
@@ -363,10 +363,10 @@ void Cpu::arm_branch(uint32_t opcode)
     // account for prefetch operation
     uint32_t pc = regs[PC] + ARM_WORD_SIZE;
 
-    // 24 bit offset is shifted left 2
-    // and extended to a 32 bit int
-    int32_t offset = (opcode & 0xffffff) << 2;
-    offset = sign_extend(offset,26);
+    // 24 bit offset is sign extended to 32 bit
+    // and shifted left by two
+    int32_t offset = sign_extend<int32_t>(opcode & 0xffffff,24) << 2;
+
 
     // if the link bit is set this acts as a call instr
     if(is_set(opcode,24))
@@ -872,14 +872,14 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
             case 2: // ldrsb
             {
-                regs[rd] = sign_extend(mem->read_memt<uint8_t>(addr),8);
+                regs[rd] = sign_extend<uint32_t>(mem->read_memt<uint8_t>(addr),8);
                 cycle_tick(cycles+3); // 1s + 1n + 1i
                 break;
             }
 
             case 3: // ldrsh
             {
-                regs[rd] = sign_extend(mem->read_memt<uint16_t>(addr),16);
+                regs[rd] = sign_extend<uint32_t>(mem->read_memt<uint16_t>(addr),16);
                 cycle_tick(cycles+3); // 1s + 1n + 1i
                 break;
             }

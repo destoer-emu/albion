@@ -586,10 +586,9 @@ std::string Disass::disass_arm_branch(uint32_t opcode)
     std::string output;
 
 
-    // 24 bit offset is shifted left 2
-    // and extended to a 32 bit int
-    int32_t offset = (opcode & 0xffffff) << 2;
-    offset = sign_extend(offset,26);
+    // 24 bit offset is sign extended to 32 bit
+    // and shifted left by two
+    int32_t offset = sign_extend(opcode & 0xffffff,24) << 2;
 
     uint32_t addr = (pc+ARM_WORD_SIZE) + offset;
 

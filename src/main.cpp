@@ -82,11 +82,8 @@ void gb_run_tests()
     gb_run_test_helper(filter_ext(get_dir_tree("mooneye-gb_hwtests"),"gb"),10);
 }
 
-
-
-
 int main(int argc, char *argv[])
-{
+{  
     if(argc == 2)
     {
         if(std::string(argv[1]) == "-t")
