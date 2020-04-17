@@ -51,7 +51,7 @@ inline uint64_t time_left(uint64_t next_time)
 
 inline bool ishex(char x) noexcept
 {
-	return (x >= 'a' && x <= 'f' || x >= 'A' && x <= 'F');
+	return ( (x >= 'a' && x <= 'f') || (x >= 'A' && x <= 'F') );
 }
 
 inline bool is_valid_hex_string(char *input_str) noexcept

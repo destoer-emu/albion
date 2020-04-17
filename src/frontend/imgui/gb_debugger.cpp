@@ -6,8 +6,12 @@ using namespace gameboy;
 
 void GameboyDisplayViewer::update(GB &gb)
 {
-    bg_map.swap_buffer(gb.ppu.render_bg());
-    tiles.swap_buffer(gb.ppu.render_tiles());    
+    auto t = gb.ppu.render_tiles();
+    auto b = gb.ppu.render_bg(bg_map_higher);
+    tiles.swap_buffer(t);
+    bg_map.swap_buffer(b);
+    std::scoped_lock<std::mutex> guard(pal_mutex);
+    gb.ppu.render_palette(palette_bg,palette_sp);    
 }
 
 void GameboyDisplayViewer::init()
@@ -18,7 +22,11 @@ void GameboyDisplayViewer::init()
 
 void GameboyDisplayViewer::draw_bg_map()
 {
-    ImGui::Begin("gameboy bg map");
+    ImGui::Begin("gameboy bg map"); 
+    if(ImGui::Button(bg_map_higher? "9C00" : "9800"))
+    {
+        bg_map_higher = !bg_map_higher;
+    }
     bg_map.update_texture();
     ImGui::Image((void*)(intptr_t)bg_map.get_texture(),ImVec2(bg_map.get_width(),bg_map.get_height()));    
     ImGui::End();    
@@ -32,15 +40,34 @@ void GameboyDisplayViewer::draw_tiles()
     ImGui::End();    
 }
 
+void GameboyDisplayViewer::draw_palette()
+{
+    std::scoped_lock<std::mutex> guard(pal_mutex);
+    ImGui::Begin("cgb palette");
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    auto p = ImGui::GetCursorScreenPos();
+	for(int cgb_pal = 0; cgb_pal < 8; cgb_pal++)
+	{
+		for(int color_num = 0; color_num < 4; color_num++)
+		{
+            // smash a colored box here somehow...
+            // think we need to conver it to float first
+            // i cant find the api call to draw the box
+            float sz = 20.0;
+            float x = (p.x + (color_num * sz));
+            float y = (p.y + (cgb_pal * sz));
+            //uint32_t col = palette_bg[(cgb_pal*4)+color_num];
+            draw_list->AddRectFilled(ImVec2(x+4.0, y+4.0), ImVec2(x+sz, y + sz),  palette_bg[(cgb_pal*4)+color_num]);
+            draw_list->AddRectFilled(ImVec2(x+4.0+(sz*5), y+4.0), ImVec2(x+(sz*6), y + sz),  palette_sp[(cgb_pal*4)+color_num]);
+		}
+	}
+    ImGui::End();        
+}
 
 
 // looks like we need to use imgui for the key input :P
 void gameboy_handle_input(GB &gb)
 {
-    // buggy causes movement stutters in metroid but thats probably to be expected
-    // taking input on a thread like this from imgui...
-    const uint8_t joypad_state = gb.cpu.joypad_state;
-
     static constexpr int scancodes[] = {GLFW_KEY_A,GLFW_KEY_S,GLFW_KEY_ENTER,GLFW_KEY_SPACE,
         GLFW_KEY_RIGHT,GLFW_KEY_LEFT,GLFW_KEY_UP,GLFW_KEY_DOWN};
     
@@ -92,6 +119,8 @@ void ImguiMainWindow::gameboy_emu_instance()
 	constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
 	uint64_t next_time = current_time() + screen_ticks_per_frame;
 
+    emu_running = true;
+
     try
     {
         GbControllerInput controller;
@@ -131,7 +160,10 @@ void ImguiMainWindow::gameboy_emu_instance()
     catch(std::exception &ex)
     {
         std::cout << ex.what() << "\n";
+        emu_running = false;
     }
+    
+    emu_running = false;
 }
 
 
@@ -144,7 +176,6 @@ void ImguiMainWindow::gameboy_stop_instance()
         bool break_enabled = gb.debug.breakpoints_enabled;
         gb.debug.disable_everything();
         emu_thread.join(); // end the thread
-        emu_running = false;
         gb.quit = false;
         gb.mem.save_cart_ram();
         gb.debug.breakpoints_enabled = break_enabled;
@@ -153,14 +184,17 @@ void ImguiMainWindow::gameboy_stop_instance()
 
 void ImguiMainWindow::gameboy_start_instance(bool step)
 {
-    gameboy_stop_instance();
     gb.debug.step_instr = step;
     if(!emu_running)
     {
         gb.quit = false;
         std::thread emulator(&ImguiMainWindow::gameboy_emu_instance,this);
-        emu_running = true;
         std::swap(emulator,emu_thread);    
+    }
+
+    else
+    {
+        gb.debug.wake_up();
     }
 }
 

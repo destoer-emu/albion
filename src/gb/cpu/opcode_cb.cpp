@@ -1,5 +1,4 @@
-#include <gb/cpu.h>
-#include <gb/memory.h>
+#include<gb/gb.h>
 
 namespace gameboy
 {
@@ -34,9 +33,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
             
         case 0x6: // rlc (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = instr_rlc(cbop);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
             
         case 0x7: // rlc a
@@ -68,9 +67,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0xe: // rrc (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = instr_rrc(cbop);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0xf: // rrc a
@@ -102,9 +101,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0x16: // rl (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = instr_rl(cbop);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0x17: // rl a
@@ -136,9 +135,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0x1e: // rr (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = instr_rr(cbop);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0x1f: // rr a
@@ -171,9 +170,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0x26: // sla (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = instr_sla(cbop);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0x27: // sla a
@@ -205,9 +204,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0x2e: // sra (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = instr_sra(cbop);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
             
         case 0x2f: // sra a
@@ -239,9 +238,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
             
         case 0x36: // swap (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = instr_swap(cbop);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0x37: // swap a 
@@ -273,9 +272,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0x3e: // srl (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = instr_srl(cbop);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0x3f: // srl a
@@ -308,7 +307,7 @@ void Cpu::exec_cb(uint8_t cbop)
             
         
         case 0x46: // bit 0, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             instr_bit(cbop,0);
             break;
         
@@ -341,7 +340,7 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0x4e: // bit 1, (hl)
-            instr_bit(mem->read_memt(read_hl()),1);
+            instr_bit(mem.read_memt(read_hl()),1);
             break;
         
         case 0x4f: // bit 1, a
@@ -373,7 +372,7 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0x56: // bit 2, (hl)
-            instr_bit(mem->read_memt(read_hl()),2);
+            instr_bit(mem.read_memt(read_hl()),2);
             break;
         
         case 0x57: // bit 2, a
@@ -406,7 +405,7 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0x5e: // bit 3, (hl)
-            instr_bit(mem->read_memt(read_hl()),3);
+            instr_bit(mem.read_memt(read_hl()),3);
             break;
         
         
@@ -441,7 +440,7 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0x66: // bit 4, (hl)
-            instr_bit(mem->read_memt(read_hl()),4);
+            instr_bit(mem.read_memt(read_hl()),4);
             break;
         
         case 0x67: // bit 4, a  
@@ -474,7 +473,7 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0x6e: // bit 5, (hl) 
-            instr_bit(mem->read_memt(read_hl()),5);
+            instr_bit(mem.read_memt(read_hl()),5);
             break;
         
         case 0x6f: // bit 5, a
@@ -506,7 +505,7 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0x76: // bit 6, (hl)
-            instr_bit(mem->read_memt(read_hl()),6);
+            instr_bit(mem.read_memt(read_hl()),6);
             break;
         
         case 0x77: // bit 6, a
@@ -539,7 +538,7 @@ void Cpu::exec_cb(uint8_t cbop)
 
 
         case 0x7e: // bit 7, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             instr_bit(cbop,7);
             break;
             
@@ -573,9 +572,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;	
             
         case 0x86: // res 0, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = deset_bit(cbop,0);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0x87: //res 0,a
@@ -609,9 +608,9 @@ void Cpu::exec_cb(uint8_t cbop)
         
         
         case 0x8e: // res 1, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = deset_bit(cbop,1);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0x8f: // res 1, a 
@@ -643,9 +642,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0x96: // res 2, (hl) 
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = deset_bit(cbop,2);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0x97: // res 2, a  
@@ -680,9 +679,9 @@ void Cpu::exec_cb(uint8_t cbop)
 
         
         case 0x9e: // res 3, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = deset_bit(cbop,3);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break; 				
         
         case 0x9f: // res 3, a
@@ -714,9 +713,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
             
         case 0xa6: // res 4, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = deset_bit(cbop,4);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0xa7: // res 4, a 
@@ -748,9 +747,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0xae: // res 5, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = deset_bit(cbop,5);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0xaf: // res 5, a 
@@ -782,9 +781,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0xb6: // res 6, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = deset_bit(cbop,6);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0xb7: // res 6,a 
@@ -816,9 +815,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0xbe: // res 7, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = deset_bit(cbop,7);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break; 
         
         case 0xbf: // res 7, a  
@@ -850,9 +849,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0xc6: // set 0, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = set_bit(cbop,0);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0xc7: // set 0, a 
@@ -884,9 +883,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0xce: // set 1, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = set_bit(cbop,1);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0xcf: // set 1, a 
@@ -918,9 +917,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
             
         case 0xd6: // set 2, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = set_bit(cbop,2);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0xd7: // set 2 a 
@@ -952,9 +951,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0xde: // set 3, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = set_bit(cbop,3);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0xdf: // set 3, a 
@@ -986,9 +985,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0xe6: // set 4, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = set_bit(cbop,4);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0xe7: // set 4, a 
@@ -1020,9 +1019,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0xee: // set 5, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = set_bit(cbop,5);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0xef: // set 5, a
@@ -1054,9 +1053,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0xf6: // set 6, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = set_bit(cbop,6);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0xf7: // set 6, a 
@@ -1088,9 +1087,9 @@ void Cpu::exec_cb(uint8_t cbop)
             break;
         
         case 0xfe: // set 7, (hl)
-            cbop = mem->read_memt(read_hl());
+            cbop = mem.read_memt(read_hl());
             cbop = set_bit(cbop,7);
-            mem->write_memt(read_hl(),cbop);
+            mem.write_memt(read_hl(),cbop);
             break;
         
         case 0xff: // set 7,a 

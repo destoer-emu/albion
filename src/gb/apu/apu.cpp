@@ -1,33 +1,32 @@
-#include <gb/apu.h>
-#include <gb/memory.h>
- 
+#include <gb/gb.h>
+
+
+
 namespace gameboy
 {
 
-void Apu::init(Memory *m) noexcept
+Apu::Apu(GB &gb) : c1{gb,0}, c2{gb,1}, c3{gb,2},c4{gb,3}, 
+    mem(gb.mem)
 {
-    mem = m;
+    // init our audio playback
+    playback.init(freq_playback,2048);
+}
 
+void Apu::init() noexcept
+{
     // init every channel
-    c1.init(mem,0); c1.sweep_init();
-    c2.init(mem,1);
-    c3.init(mem,2);
-    c4.init(mem,3);
+    c1.init(); c1.sweep_init();
+    c2.init();
+    c3.init();
+    c4.init();
 
 	sequencer_step = 0;
 	sound_enabled = true;
 
-    // init our audio playback
-    if(!audio_setup)
-    {
-        playback.init(44100,sample_size);
-        audio_setup = true;
-    }
+
 	playback.start();
 
-    down_sample_cnt = 23;
-    audio_buf_idx = 0;
-	is_double = false;
+    down_sample_cnt = down_sample_lim;
 }
 
 
@@ -119,10 +118,10 @@ void Apu::disable_sound() noexcept
     // set nr10-nr51 regs to 0
     for(int i = 0x10; i < 0x26; i++)
     {
-        mem->write_io(i,0);	
+        mem.write_io(i,0);	
     } 
     
-    mem->io[IO_NR52] = 112; // need to write the unused bits and just zero everything else
+    mem.io[IO_NR52] = 112; // need to write the unused bits and just zero everything else
 
     // now lock writes
     sound_enabled = false;  
@@ -131,7 +130,7 @@ void Apu::disable_sound() noexcept
 void Apu::enable_sound() noexcept
 {
     sound_enabled = true;
-    mem->io[IO_NR52] |= 0x80; // data had 0x80 so write back  
+    mem.io[IO_NR52] |= 0x80; // data had 0x80 so write back  
 
     // reset length coutners when powerd up
     // if on cgb
@@ -156,7 +155,7 @@ int Apu::get_sequencer_step() const noexcept
 
 bool Apu::chan_enabled(int chan) const noexcept
 {
-    return is_set(mem->io[IO_NR52],chan);
+    return is_set(mem.io[IO_NR52],chan);
 }
 
 bool Apu::enabled() const noexcept
@@ -164,10 +163,6 @@ bool Apu::enabled() const noexcept
     return sound_enabled;
 }
 
-void Apu::set_double(bool d) noexcept
-{
-	is_double = d;
-}
 
 void Apu::push_samples(int cycles) noexcept
 {
@@ -176,7 +171,7 @@ void Apu::push_samples(int cycles) noexcept
 	if(down_sample_cnt <= 0)
 	{
 		
-		down_sample_cnt = 95;
+		down_sample_cnt = down_sample_lim;
 
 		if(!playback.is_playing()) 
 		{ 
@@ -184,11 +179,12 @@ void Apu::push_samples(int cycles) noexcept
 		}
 
 		
-		float bufferin0 = 0;
-		float bufferin1 = 0;
+        float left = 0;
+        float right = 0;
+
 		
 		// left output
-		int volume = (128 *(mem->io[IO_NR50] & 7)) / 7 ;
+		
 
         float output[4];
         output[0] = static_cast<float>(c1.get_output()) / 100;
@@ -196,40 +192,37 @@ void Apu::push_samples(int cycles) noexcept
         output[2] = static_cast<float>(c3.get_output()) / 100;
         output[3] = static_cast<float>(c4.get_output()) / 100;
 
-		uint8_t sound_select = mem->io[IO_NR51];
+		uint8_t sound_select = mem.io[IO_NR51];
 
         // mix left and right channels
+        float bufferin0 = 0;
+        int volume = 20*((mem.io[IO_NR50] & 7)+1);
         for(int i = 0; i < 4; i++)
         {
             if(is_set(sound_select,i))
             {
-                bufferin1 = output[i];
+                float bufferin1 = output[i];
                 playback.mix_samples(bufferin0,bufferin1,volume);
             }            
         }
-
-        audio_buf[audio_buf_idx] = bufferin0;
+        left = bufferin0;
 
 		// right output
 		bufferin0 = 0;
+        volume = 20*(((mem.io[IO_NR50] >> 4) & 7)+1);
         for(int i = 0; i < 4; i++)
         {
             if(is_set(sound_select,i+4))
             {
-                bufferin1 = output[i];
+                float bufferin1 = output[i];
                 playback.mix_samples(bufferin0,bufferin1,volume);
             }            
         }
+        right = bufferin0;
 
-        audio_buf[audio_buf_idx+1] = bufferin0;
-        audio_buf_idx += 2;
-    }
 
-    // push audi0
-	if(audio_buf_idx >= sample_size)
-	{
-		audio_buf_idx = 0;
-		playback.push_samples(audio_buf,sample_size);
+        // push our samples!
+        playback.push_sample(left,right);
     }
 }
 

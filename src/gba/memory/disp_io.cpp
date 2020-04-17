@@ -288,10 +288,11 @@ uint8_t ScalingParam::read(int idx) const
 
         case 1:
         {
-            return integer & 0x7f | sign << 7;
+            return (integer & 0x7f) | sign << 7;
             break;
         }
     }
+    return 0;
 }
 
 

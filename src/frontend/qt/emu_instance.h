@@ -9,11 +9,11 @@ class EmuInstance : public QThread
 {
     Q_OBJECT
 public:
-    EmuInstance(QObject *parent = nullptr, GB *g = nullptr, FrameBuffer *f = nullptr);
+    EmuInstance(QObject *parent = nullptr, gameboy::GB *g = nullptr, FrameBuffer *f = nullptr);
     void run();
 
 private:
-    GB *gb;
+    gameboy::GB *gb;
     FrameBuffer *framebuffer;
 };
 #endif

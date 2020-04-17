@@ -8,11 +8,11 @@ namespace gameboyadvance
 // init all sup compenents
 void GBA::reset(std::string filename)
 {
-    mem.init(filename,&debug,&cpu,&disp,&apu);
-    disass.init(&mem,&cpu);
-    disp.init(&mem,&cpu);
-	apu.init(&mem,&cpu);
-    cpu.init(&disp,&mem,&apu,&debug,&disass);
+    mem.init(filename);
+    //disass.init();
+    disp.init();
+	apu.init();
+    cpu.init();
 	debug.write_logger("[new gba instance] {}",filename);
 }
 
@@ -33,7 +33,7 @@ void GBA::run()
 
 void GBA::key_input(int key, bool pressed)
 {
-	switch(key)
+	switch(static_cast<emu_key>(key))
 	{
 		case emu_key::enter: button_event(button::start,pressed); break;		
 		case emu_key::space: button_event(button::select,pressed); break;

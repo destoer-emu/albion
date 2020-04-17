@@ -27,12 +27,12 @@ public:
     void button_event(button b, bool down); //actual hanlder
     void key_input(int key, bool pressed); // takes the input and passes it on
 
-    Cpu cpu;
-    Mem mem;
-    Disass disass;
-    Display disp;
+    Cpu cpu{*this};
+    Mem mem{*this};
+    Disass disass{*this};
+    Display disp{*this};
+    Apu apu{*this};
     Debug debug;
-    Apu apu;
 
    std::atomic_bool quit = false;
 };

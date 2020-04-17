@@ -1,22 +1,17 @@
-#include <gba/cpu.h>
-#include <gba/memory.h>
-#include <gba/display.h>
-#include <gba/apu.h>
-#include <gba/disass.h>
+#include <gba/gba.h>
 #include <limits.h>
 
 namespace gameboyadvance
 {
 
-void Cpu::init(Display *disp, Mem *mem,Apu *apu, Debug *debug, Disass *disass)
+Cpu::Cpu(GBA &gba) : disp(gba.disp), mem(gba.mem), debug(gba.debug), 
+    disass(gba.disass), apu(gba.apu)
 {
-    // init components
-    this->disp = disp;
-    this->mem = mem;
-    this->debug = debug;
-    this->disass = disass;
-    this->apu = apu;
+    init_opcode_table();
+}   
 
+void Cpu::init()
+{
     // backup stores
     memset(user_regs,0,sizeof(user_regs));
 
@@ -42,7 +37,7 @@ void Cpu::init(Display *disp, Mem *mem,Apu *apu, Debug *debug, Disass *disass)
     //regs[PC] = 0;
     arm_mode = cpu_mode::system;
     switch_mode(cpu_mode::system);
-    init_opcode_table();
+    
 
     cyc_cnt = 0;
     cpu_io.init();
@@ -342,8 +337,8 @@ void Cpu::init_arm_opcode_table()
 
 void Cpu::cycle_tick(int cycles)
 {
-    disp->tick(cycles);
-    apu->tick(cycles);
+    disp.tick(cycles);
+    apu.tick(cycles);
     tick_timers(cycles);
 }
 
@@ -409,25 +404,25 @@ void Cpu::timer_overflow(int timer_num)
     // if the timer num is equal to the dma sound channels dma
     // then push a fifo byte to the apu
     // then request a fifo dma if it doesent have 16 bytes
-    if(timer_num == apu->apu_io.sound_cnt.timer_num_a)
+    if(timer_num == apu.apu_io.sound_cnt.timer_num_a)
     {
-        uint8_t x = apu->apu_io.fifo_a.read();
+        uint8_t x = apu.apu_io.fifo_a.read();
         //printf("fifo a %x\n",x);
-        apu->push_dma_a(x);
-        if(apu->apu_io.fifo_a.len < 16)
+        apu.push_dma_a(x);
+        if(apu.apu_io.fifo_a.len < 16)
         {
-            mem->dma.handle_dma(dma_type::sound);
+            mem.dma.handle_dma(dma_type::sound);
         }
     }
 
-    if(timer_num == apu->apu_io.sound_cnt.timer_num_b)
+    if(timer_num == apu.apu_io.sound_cnt.timer_num_b)
     {
-        uint8_t x = apu->apu_io.fifo_b.read();
+        uint8_t x = apu.apu_io.fifo_b.read();
         //printf("fifo b %x\n",x);
-        apu->push_dma_b(x);
-        if(apu->apu_io.fifo_b.len < 16)
+        apu.push_dma_b(x);
+        if(apu.apu_io.fifo_b.len < 16)
         {
-            mem->dma.handle_dma(dma_type::sound);
+            mem.dma.handle_dma(dma_type::sound);
         }
     }
 
@@ -440,12 +435,12 @@ void Cpu::step()
 
 #ifdef DEBUG
     const uint32_t pc = regs[PC];
-    uint32_t v = is_thumb? mem->read_mem<uint16_t>(pc) : mem->read_mem<uint32_t>(pc);
-	if(debug->step_instr || debug->breakpoint_hit(pc,v,break_type::execute))
+    uint32_t v = is_thumb? mem.read_mem<uint16_t>(pc) : mem.read_mem<uint32_t>(pc);
+	if(debug.step_instr || debug.breakpoint_hit(pc,v,break_type::execute))
 	{
 		// halt until told otherwhise :)
-		write_log("[DEBUG] execute breakpoint hit ({:x}:{:x})",pc,v);
-		debug->halt();
+		write_log(debug,"[DEBUG] execute breakpoint hit ({:x}:{:x})",pc,v);
+		debug.halt();
 	}
 #endif
 
@@ -1042,7 +1037,7 @@ void Cpu::service_interrupt()
     cpsr = deset_bit(cpsr,5); // toggle thumb in cpsr
     cpsr = set_bit(cpsr,7); //set the irq bit to mask interrupts
 
-    write_log("[irq {:08x}] interrupt flag: {:02x} ",regs[PC],cpu_io.interrupt_flag);
+    write_log(debug,"[irq {:08x}] interrupt flag: {:02x} ",regs[PC],cpu_io.interrupt_flag);
 
     regs[PC] = 0x18; // irq handler    
 }

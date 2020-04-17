@@ -1,7 +1,4 @@
-#include <gba/memory.h>
-#include <gba/cpu.h>
-#include <gba/display.h>
-#include <gba/apu.h>
+#include <gba/gba.h>
 
 namespace gameboyadvance
 {
@@ -35,20 +32,9 @@ template void Mem::write_memt<uint16_t>(uint32_t addr, uint16_t v);
 template void Mem::write_memt<uint32_t>(uint32_t addr, uint32_t v);
 
 
-
-void Mem::init(std::string filename, Debug *debug,Cpu *cpu,Display *disp, Apu *apu)
+Mem::Mem(GBA &gba) : dma{gba}, debug(gba.debug), cpu(gba.cpu), 
+    disp(gba.disp), apu(gba.apu)
 {
-    // init component
-    this->debug = debug;
-    this->cpu = cpu;
-    this->disp = disp;
-    this->apu = apu;
-
-    // read out rom
-    read_file(filename,rom);
-
-    
-
     // alloc our underlying system memory
     bios_rom.resize(0x4000);
     board_wram.resize(0x40000);
@@ -57,6 +43,20 @@ void Mem::init(std::string filename, Debug *debug,Cpu *cpu,Display *disp, Apu *a
     vram.resize(0x18000);
     oam.resize(0x400); 
     sram.resize(0xffff);
+    std::fill(board_wram.begin(),board_wram.end(),0);
+    std::fill(chip_wram.begin(),chip_wram.end(),0);
+    std::fill(pal_ram.begin(),pal_ram.end(),0);
+    std::fill(vram.begin(),vram.end(),0);
+    std::fill(oam.begin(),oam.end(),0);
+    std::fill(sram.begin(),sram.end(),0);
+}
+
+void Mem::init(std::string filename)
+{
+    // read out rom
+    read_file(filename,rom);
+
+    
 
     std::fill(board_wram.begin(),board_wram.end(),0);
     std::fill(chip_wram.begin(),chip_wram.end(),0);
@@ -77,7 +77,7 @@ void Mem::init(std::string filename, Debug *debug,Cpu *cpu,Display *disp, Apu *a
         throw std::runtime_error("invalid bios size!");
     }
     mem_io.init();
-    dma.init(this,this->cpu);
+    dma.init();
 }
 
 
@@ -96,138 +96,138 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
     switch(addr)
     {
 
-        case IO_DISPCNT: disp->disp_io.disp_cnt.write(0,v); break;
-        case IO_DISPCNT+1: disp->disp_io.disp_cnt.write(1,v); break;
+        case IO_DISPCNT: disp.disp_io.disp_cnt.write(0,v); break;
+        case IO_DISPCNT+1: disp.disp_io.disp_cnt.write(1,v); break;
 
         // read only remove later!
         case IO_VCOUNT: break;
         case IO_VCOUNT+1: break;
 
-        case IO_DISPSTAT: disp->disp_io.disp_stat.write(0,v); break;
-        case IO_DISPSTAT+1: disp->disp_io.disp_stat.write(1,v); break;
+        case IO_DISPSTAT: disp.disp_io.disp_stat.write(0,v); break;
+        case IO_DISPSTAT+1: disp.disp_io.disp_stat.write(1,v); break;
 
         // stubbed
         case IO_GREENSWAP: break;
         case IO_GREENSWAP+1: break;
 
-        case IO_BG0CNT: disp->disp_io.bg_cnt[0].write(0,v); break;
-        case IO_BG0CNT+1: disp->disp_io.bg_cnt[0].write(1,v); break;
+        case IO_BG0CNT: disp.disp_io.bg_cnt[0].write(0,v); break;
+        case IO_BG0CNT+1: disp.disp_io.bg_cnt[0].write(1,v); break;
 
-        case IO_BG1CNT: disp->disp_io.bg_cnt[1].write(0,v); break;
-        case IO_BG1CNT+1: disp->disp_io.bg_cnt[1].write(1,v); break;
+        case IO_BG1CNT: disp.disp_io.bg_cnt[1].write(0,v); break;
+        case IO_BG1CNT+1: disp.disp_io.bg_cnt[1].write(1,v); break;
 
-        case IO_BG2CNT: disp->disp_io.bg_cnt[2].write(0,v); break;
-        case IO_BG2CNT+1: disp->disp_io.bg_cnt[2].write(1,v); break;
+        case IO_BG2CNT: disp.disp_io.bg_cnt[2].write(0,v); break;
+        case IO_BG2CNT+1: disp.disp_io.bg_cnt[2].write(1,v); break;
 
-        case IO_BG3CNT: disp->disp_io.bg_cnt[3].write(0,v); break;
-        case IO_BG3CNT+1: disp->disp_io.bg_cnt[3].write(1,v); break;
+        case IO_BG3CNT: disp.disp_io.bg_cnt[3].write(0,v); break;
+        case IO_BG3CNT+1: disp.disp_io.bg_cnt[3].write(1,v); break;
 
 
         // bg 2 scalaing / rotation params
-        case IO_BG2PA: disp->disp_io.bg2pa.write(0,v); break;
-        case IO_BG2PA+1: disp->disp_io.bg2pa.write(1,v); break;
+        case IO_BG2PA: disp.disp_io.bg2pa.write(0,v); break;
+        case IO_BG2PA+1: disp.disp_io.bg2pa.write(1,v); break;
 
-        case IO_BG2PB: disp->disp_io.bg2pb.write(0,v); break;
-        case IO_BG2PB+1: disp->disp_io.bg2pb.write(1,v); break;
+        case IO_BG2PB: disp.disp_io.bg2pb.write(0,v); break;
+        case IO_BG2PB+1: disp.disp_io.bg2pb.write(1,v); break;
 
-        case IO_BG2PC: disp->disp_io.bg2pc.write(0,v); break;
-        case IO_BG2PC+1: disp->disp_io.bg2pc.write(1,v); break;
+        case IO_BG2PC: disp.disp_io.bg2pc.write(0,v); break;
+        case IO_BG2PC+1: disp.disp_io.bg2pc.write(1,v); break;
 
-        case IO_BG2PD: disp->disp_io.bg2pd.write(0,v); break;
-        case IO_BG2PD+1: disp->disp_io.bg2pd.write(1,v); break;
+        case IO_BG2PD: disp.disp_io.bg2pd.write(0,v); break;
+        case IO_BG2PD+1: disp.disp_io.bg2pd.write(1,v); break;
 
         // bg2 reference point
-        case IO_BG2X_L: disp->disp_io.bg2x.write(0,v); break;
-        case IO_BG2X_L+1: disp->disp_io.bg2x.write(1,v); break;
-        case IO_BG2X_H: disp->disp_io.bg2x.write(2,v); break;
-        case IO_BG2X_H+1: disp->disp_io.bg2x.write(3,v); break;
+        case IO_BG2X_L: disp.disp_io.bg2x.write(0,v); break;
+        case IO_BG2X_L+1: disp.disp_io.bg2x.write(1,v); break;
+        case IO_BG2X_H: disp.disp_io.bg2x.write(2,v); break;
+        case IO_BG2X_H+1: disp.disp_io.bg2x.write(3,v); break;
 
-        case IO_BG2Y_L: disp->disp_io.bg2y.write(0,v); break;
-        case IO_BG2Y_L+1: disp->disp_io.bg2y.write(1,v); break;
-        case IO_BG2Y_H: disp->disp_io.bg2y.write(2,v); break;
-        case IO_BG2Y_H+1: disp->disp_io.bg2y.write(3,v); break;
+        case IO_BG2Y_L: disp.disp_io.bg2y.write(0,v); break;
+        case IO_BG2Y_L+1: disp.disp_io.bg2y.write(1,v); break;
+        case IO_BG2Y_H: disp.disp_io.bg2y.write(2,v); break;
+        case IO_BG2Y_H+1: disp.disp_io.bg2y.write(3,v); break;
 
 
         // bg 3 scalaing / rotation params
-        case IO_BG3PA: disp->disp_io.bg3pa.write(0,v); break;
-        case IO_BG3PA+1: disp->disp_io.bg3pa.write(1,v); break;
+        case IO_BG3PA: disp.disp_io.bg3pa.write(0,v); break;
+        case IO_BG3PA+1: disp.disp_io.bg3pa.write(1,v); break;
 
-        case IO_BG3PB: disp->disp_io.bg3pb.write(0,v); break;
-        case IO_BG3PB+1: disp->disp_io.bg3pb.write(1,v); break;
+        case IO_BG3PB: disp.disp_io.bg3pb.write(0,v); break;
+        case IO_BG3PB+1: disp.disp_io.bg3pb.write(1,v); break;
 
-        case IO_BG3PC: disp->disp_io.bg3pc.write(0,v); break;
-        case IO_BG3PC+1: disp->disp_io.bg3pc.write(1,v); break;
+        case IO_BG3PC: disp.disp_io.bg3pc.write(0,v); break;
+        case IO_BG3PC+1: disp.disp_io.bg3pc.write(1,v); break;
 
-        case IO_BG3PD: disp->disp_io.bg3pd.write(0,v); break;
-        case IO_BG3PD+1: disp->disp_io.bg3pd.write(1,v); break;
+        case IO_BG3PD: disp.disp_io.bg3pd.write(0,v); break;
+        case IO_BG3PD+1: disp.disp_io.bg3pd.write(1,v); break;
 
 
         // bg3 reference point
-        case IO_BG3X_L: disp->disp_io.bg3x.write(0,v); break;
-        case IO_BG3X_L+1: disp->disp_io.bg3x.write(1,v); break;
-        case IO_BG3X_H: disp->disp_io.bg3x.write(2,v); break;
-        case IO_BG3X_H+1: disp->disp_io.bg3x.write(3,v); break;
+        case IO_BG3X_L: disp.disp_io.bg3x.write(0,v); break;
+        case IO_BG3X_L+1: disp.disp_io.bg3x.write(1,v); break;
+        case IO_BG3X_H: disp.disp_io.bg3x.write(2,v); break;
+        case IO_BG3X_H+1: disp.disp_io.bg3x.write(3,v); break;
 
-        case IO_BG3Y_L: disp->disp_io.bg3y.write(0,v); break;
-        case IO_BG3Y_L+1: disp->disp_io.bg3y.write(1,v); break;
-        case IO_BG3Y_H: disp->disp_io.bg3y.write(2,v); break;
-        case IO_BG3Y_H+1: disp->disp_io.bg3y.write(3,v); break;
+        case IO_BG3Y_L: disp.disp_io.bg3y.write(0,v); break;
+        case IO_BG3Y_L+1: disp.disp_io.bg3y.write(1,v); break;
+        case IO_BG3Y_H: disp.disp_io.bg3y.write(2,v); break;
+        case IO_BG3Y_H+1: disp.disp_io.bg3y.write(3,v); break;
 
 
-        case IO_WIN0H: disp->disp_io.win0h.write(0,v); break;
-        case IO_WIN0H+1: disp->disp_io.win0h.write(1,v); break;
+        case IO_WIN0H: disp.disp_io.win0h.write(0,v); break;
+        case IO_WIN0H+1: disp.disp_io.win0h.write(1,v); break;
 
-        case IO_WIN1H: disp->disp_io.win1h.write(0,v); break;
-        case IO_WIN1H+1: disp->disp_io.win1h.write(1,v); break;
+        case IO_WIN1H: disp.disp_io.win1h.write(0,v); break;
+        case IO_WIN1H+1: disp.disp_io.win1h.write(1,v); break;
 
-        case IO_WIN0V: disp->disp_io.win0v.write(0,v); break;
-        case IO_WIN0V+1: disp->disp_io.win0v.write(1,v); break;
+        case IO_WIN0V: disp.disp_io.win0v.write(0,v); break;
+        case IO_WIN0V+1: disp.disp_io.win0v.write(1,v); break;
 
-        case IO_WIN1V: disp->disp_io.win1v.write(0,v); break;
-        case IO_WIN1V+1: disp->disp_io.win1v.write(1,v); break;
+        case IO_WIN1V: disp.disp_io.win1v.write(0,v); break;
+        case IO_WIN1V+1: disp.disp_io.win1v.write(1,v); break;
 
-        case IO_BG0HOFS: disp->disp_io.bg_offset_x[0].write(0,v); break;
-        case IO_BG0HOFS+1: disp->disp_io.bg_offset_x[0].write(1,v); break;
-        case IO_BG0VOFS: disp->disp_io.bg_offset_y[0].write(0,v); break;
-        case IO_BG0VOFS+1: disp->disp_io.bg_offset_y[0].write(1,v); break;
+        case IO_BG0HOFS: disp.disp_io.bg_offset_x[0].write(0,v); break;
+        case IO_BG0HOFS+1: disp.disp_io.bg_offset_x[0].write(1,v); break;
+        case IO_BG0VOFS: disp.disp_io.bg_offset_y[0].write(0,v); break;
+        case IO_BG0VOFS+1: disp.disp_io.bg_offset_y[0].write(1,v); break;
 
-        case IO_BG1HOFS: disp->disp_io.bg_offset_x[1].write(0,v); break;
-        case IO_BG1HOFS+1: disp->disp_io.bg_offset_x[1].write(1,v); break;
-        case IO_BG1VOFS:  disp->disp_io.bg_offset_y[1].write(0,v); break;
-        case IO_BG1VOFS+1: disp->disp_io.bg_offset_y[1].write(1,v); break;
+        case IO_BG1HOFS: disp.disp_io.bg_offset_x[1].write(0,v); break;
+        case IO_BG1HOFS+1: disp.disp_io.bg_offset_x[1].write(1,v); break;
+        case IO_BG1VOFS:  disp.disp_io.bg_offset_y[1].write(0,v); break;
+        case IO_BG1VOFS+1: disp.disp_io.bg_offset_y[1].write(1,v); break;
 
-        case IO_BG2HOFS: disp->disp_io.bg_offset_x[2].write(0,v); break;
-        case IO_BG2HOFS+1: disp->disp_io.bg_offset_x[2].write(1,v); break;
-        case IO_BG2VOFS: disp->disp_io.bg_offset_y[2].write(0,v); break;
-        case IO_BG2VOFS+1: disp->disp_io.bg_offset_y[2].write(1,v); break;
+        case IO_BG2HOFS: disp.disp_io.bg_offset_x[2].write(0,v); break;
+        case IO_BG2HOFS+1: disp.disp_io.bg_offset_x[2].write(1,v); break;
+        case IO_BG2VOFS: disp.disp_io.bg_offset_y[2].write(0,v); break;
+        case IO_BG2VOFS+1: disp.disp_io.bg_offset_y[2].write(1,v); break;
 
-        case IO_BG3HOFS: disp->disp_io.bg_offset_x[3].write(0,v); break;
-        case IO_BG3HOFS+1: disp->disp_io.bg_offset_x[3].write(1,v); break;
-        case IO_BG3VOFS: disp->disp_io.bg_offset_y[3].write(0,v); break;
-        case IO_BG3VOFS+1: disp->disp_io.bg_offset_y[3].write(1,v); break;   
+        case IO_BG3HOFS: disp.disp_io.bg_offset_x[3].write(0,v); break;
+        case IO_BG3HOFS+1: disp.disp_io.bg_offset_x[3].write(1,v); break;
+        case IO_BG3VOFS: disp.disp_io.bg_offset_y[3].write(0,v); break;
+        case IO_BG3VOFS+1: disp.disp_io.bg_offset_y[3].write(1,v); break;   
 
 
 
         // timers
 
-        case IO_TM0CNT_L: cpu->cpu_io.timers[0].write_counter(0,v); break;
-        case IO_TM0CNT_L+1: cpu->cpu_io.timers[0].write_counter(1,v); break;
-        case IO_TM0CNT_H: cpu->cpu_io.timers[0].write_control(v); break;
+        case IO_TM0CNT_L: cpu.cpu_io.timers[0].write_counter(0,v); break;
+        case IO_TM0CNT_L+1: cpu.cpu_io.timers[0].write_counter(1,v); break;
+        case IO_TM0CNT_H: cpu.cpu_io.timers[0].write_control(v); break;
         case IO_TM0CNT_H+1: break; // upper byte not used
 
-        case IO_TM1CNT_L: cpu->cpu_io.timers[1].write_counter(0,v); break;
-        case IO_TM1CNT_L+1: cpu->cpu_io.timers[1].write_counter(1,v); break;
-        case IO_TM1CNT_H: cpu->cpu_io.timers[1].write_control(v); break;
+        case IO_TM1CNT_L: cpu.cpu_io.timers[1].write_counter(0,v); break;
+        case IO_TM1CNT_L+1: cpu.cpu_io.timers[1].write_counter(1,v); break;
+        case IO_TM1CNT_H: cpu.cpu_io.timers[1].write_control(v); break;
         case IO_TM1CNT_H+1: break; // upper byte not used
 
-        case IO_TM2CNT_L: cpu->cpu_io.timers[2].write_counter(0,v); break;
-        case IO_TM2CNT_L+1: cpu->cpu_io.timers[2].write_counter(1,v); break;
-        case IO_TM2CNT_H: cpu->cpu_io.timers[2].write_control(v); break;
+        case IO_TM2CNT_L: cpu.cpu_io.timers[2].write_counter(0,v); break;
+        case IO_TM2CNT_L+1: cpu.cpu_io.timers[2].write_counter(1,v); break;
+        case IO_TM2CNT_H: cpu.cpu_io.timers[2].write_control(v); break;
         case IO_TM2CNT_H+1: break; // upper byte not used
 
-        case IO_TM3CNT_L: cpu->cpu_io.timers[3].write_counter(0,v); break;
-        case IO_TM3CNT_L+1: cpu->cpu_io.timers[3].write_counter(1,v); break;
-        case IO_TM3CNT_H: cpu->cpu_io.timers[3].write_control(v); break;
+        case IO_TM3CNT_L: cpu.cpu_io.timers[3].write_counter(0,v); break;
+        case IO_TM3CNT_L+1: cpu.cpu_io.timers[3].write_counter(1,v); break;
+        case IO_TM3CNT_H: cpu.cpu_io.timers[3].write_control(v); break;
         case IO_TM3CNT_H+1: break; // upper byte not used
 
 
@@ -307,8 +307,8 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
 
 
         // stubbed
-        case IO_SOUNDCNT_H: apu->apu_io.sound_cnt.write_h(0,v); break;
-        case IO_SOUNDCNT_H+1: apu->apu_io.sound_cnt.write_h(1,v); break;
+        case IO_SOUNDCNT_H: apu.apu_io.sound_cnt.write_h(0,v); break;
+        case IO_SOUNDCNT_H+1: apu.apu_io.sound_cnt.write_h(1,v); break;
 
         // stubbed
         case IO_SOUNDCNT_X: break;
@@ -317,29 +317,29 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_SOUNDCNT_X+3: break; // unused
 
         // fifo a
-        case IO_FIFO_A: apu->apu_io.fifo_a.write(v); break;
-        case IO_FIFO_A+1: apu->apu_io.fifo_a.write(v); break;
-        case IO_FIFO_A+2: apu->apu_io.fifo_a.write(v); break;
-        case IO_FIFO_A+3: apu->apu_io.fifo_a.write(v); break;
+        case IO_FIFO_A: apu.apu_io.fifo_a.write(v); break;
+        case IO_FIFO_A+1: apu.apu_io.fifo_a.write(v); break;
+        case IO_FIFO_A+2: apu.apu_io.fifo_a.write(v); break;
+        case IO_FIFO_A+3: apu.apu_io.fifo_a.write(v); break;
 
         // fifo b
-        case IO_FIFO_B: apu->apu_io.fifo_b.write(v); break;
-        case IO_FIFO_B+1: apu->apu_io.fifo_b.write(v); break;
-        case IO_FIFO_B+2: apu->apu_io.fifo_b.write(v); break;
-        case IO_FIFO_B+3: apu->apu_io.fifo_b.write(v); break;
+        case IO_FIFO_B: apu.apu_io.fifo_b.write(v); break;
+        case IO_FIFO_B+1: apu.apu_io.fifo_b.write(v); break;
+        case IO_FIFO_B+2: apu.apu_io.fifo_b.write(v); break;
+        case IO_FIFO_B+3: apu.apu_io.fifo_b.write(v); break;
 
 
-        case IO_IME: cpu->cpu_io.ime = is_set(v,0); break;
+        case IO_IME: cpu.cpu_io.ime = is_set(v,0); break;
         case IO_IME+1: case IO_IME+2: case IO_IME+3: break; // unused
 
-        case IO_IE: cpu->cpu_io.interrupt_enable = (cpu->cpu_io.interrupt_enable & ~0xff) | v; break;
-        case IO_IE+1: cpu->cpu_io.interrupt_enable = (cpu->cpu_io.interrupt_enable & ~0xff00) | (v & 0x3f);  break;
+        case IO_IE: cpu.cpu_io.interrupt_enable = (cpu.cpu_io.interrupt_enable & ~0xff) | v; break;
+        case IO_IE+1: cpu.cpu_io.interrupt_enable = (cpu.cpu_io.interrupt_enable & ~0xff00) | (v & 0x3f);  break;
 
-        case IO_IF: cpu->cpu_io.interrupt_flag = (cpu->cpu_io.interrupt_flag & ~0xff) | v; break;
-        case IO_IF+1: cpu->cpu_io.interrupt_flag = (cpu->cpu_io.interrupt_flag & ~0xff00) | (v & 0x3f);  break;
+        case IO_IF: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & ~0xff) | v; break;
+        case IO_IF+1: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & ~0xff00) | (v & 0x3f);  break;
 
 
-        case IO_HALTCNT: cpu->cpu_io.halt_cnt.write(v); break;
+        case IO_HALTCNT: cpu.cpu_io.halt_cnt.write(v); break;
 
         // gamepak wait timings ignore for now
         case IO_WAITCNT: break;
@@ -349,7 +349,7 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
 
         default: // here we will handle open bus when we have all our io regs done :)
         { 
-            auto err = fmt::format("[io {:08x}] unhandled write at {:08x}:{:x}",cpu->get_pc(),addr,v);
+            auto err = fmt::format("[io {:08x}] unhandled write at {:08x}:{:x}",cpu.get_pc(),addr,v);
             throw std::runtime_error(err);
         }
     }
@@ -365,16 +365,16 @@ uint8_t Mem::read_io_regs(uint32_t addr)
     switch(addr)
     {
         
-        case IO_DISPCNT: return disp->disp_io.disp_cnt.read(0);
-        case IO_DISPCNT+1: return disp->disp_io.disp_cnt.read(1); 
+        case IO_DISPCNT: return disp.disp_io.disp_cnt.read(0);
+        case IO_DISPCNT+1: return disp.disp_io.disp_cnt.read(1); 
 
         // stubbed for now
         case IO_GREENSWAP: return 0;
         case IO_GREENSWAP+1: return 0;
 
 
-        case IO_DISPSTAT: return disp->disp_io.disp_stat.read(0);
-        case IO_DISPSTAT+1: return disp->disp_io.disp_stat.read(1);
+        case IO_DISPSTAT: return disp.disp_io.disp_stat.read(0);
+        case IO_DISPSTAT+1: return disp.disp_io.disp_stat.read(1);
 
         case IO_KEYINPUT: return mem_io.keyinput;
         case IO_KEYINPUT+1: return (mem_io.keyinput >> 8) & 3;
@@ -383,47 +383,47 @@ uint8_t Mem::read_io_regs(uint32_t addr)
         case IO_KEYCNT+1: return mem_io.key_control.read(1);
 
 
-        case IO_VCOUNT: return disp->get_vcount();
-        case IO_VCOUNT+1: return disp->get_vcount();
+        case IO_VCOUNT: return disp.get_vcount();
+        case IO_VCOUNT+1: return disp.get_vcount();
 
 
         // timers
 
-        case IO_TM0CNT_L: return cpu->cpu_io.timers[0].read_counter(0);
-        case IO_TM0CNT_L+1: return cpu->cpu_io.timers[0].read_counter(1);
-        case IO_TM0CNT_H: return cpu->cpu_io.timers[0].read_control(); 
+        case IO_TM0CNT_L: return cpu.cpu_io.timers[0].read_counter(0);
+        case IO_TM0CNT_L+1: return cpu.cpu_io.timers[0].read_counter(1);
+        case IO_TM0CNT_H: return cpu.cpu_io.timers[0].read_control(); 
         case IO_TM0CNT_H+1: return 0; break; // upper byte not used
 
-        case IO_TM1CNT_L: return cpu->cpu_io.timers[1].read_counter(0); 
-        case IO_TM1CNT_L+1: return cpu->cpu_io.timers[1].read_counter(1); 
-        case IO_TM1CNT_H: return cpu->cpu_io.timers[1].read_control();
+        case IO_TM1CNT_L: return cpu.cpu_io.timers[1].read_counter(0); 
+        case IO_TM1CNT_L+1: return cpu.cpu_io.timers[1].read_counter(1); 
+        case IO_TM1CNT_H: return cpu.cpu_io.timers[1].read_control();
         case IO_TM1CNT_H+1: return 0; // upper byte not used
 
-        case IO_TM2CNT_L: return cpu->cpu_io.timers[2].read_counter(0); 
-        case IO_TM2CNT_L+1: return cpu->cpu_io.timers[2].read_counter(1); 
-        case IO_TM2CNT_H: return cpu->cpu_io.timers[2].read_control(); 
+        case IO_TM2CNT_L: return cpu.cpu_io.timers[2].read_counter(0); 
+        case IO_TM2CNT_L+1: return cpu.cpu_io.timers[2].read_counter(1); 
+        case IO_TM2CNT_H: return cpu.cpu_io.timers[2].read_control(); 
         case IO_TM2CNT_H+1: return 0; // upper byte not used
 
-        case IO_TM3CNT_L: return cpu->cpu_io.timers[3].read_counter(0); 
-        case IO_TM3CNT_L+1: return cpu->cpu_io.timers[3].read_counter(1);
-        case IO_TM3CNT_H: return cpu->cpu_io.timers[3].read_control(); 
+        case IO_TM3CNT_L: return cpu.cpu_io.timers[3].read_counter(0); 
+        case IO_TM3CNT_L+1: return cpu.cpu_io.timers[3].read_counter(1);
+        case IO_TM3CNT_H: return cpu.cpu_io.timers[3].read_control(); 
         case IO_TM3CNT_H+1: return 0; // upper byte not used
 
 
-        case IO_IME: return is_set(cpu->cpu_io.ime,0); 
+        case IO_IME: return is_set(cpu.cpu_io.ime,0); 
         case IO_IME+1: case IO_IME+2: case IO_IME+3: return 0; // stub
 
-        case IO_IE: return cpu->cpu_io.interrupt_enable & 0xff;
-        case IO_IE+1: return (cpu->cpu_io.interrupt_enable >> 8) & 0x3f; 
+        case IO_IE: return cpu.cpu_io.interrupt_enable & 0xff;
+        case IO_IE+1: return (cpu.cpu_io.interrupt_enable >> 8) & 0x3f; 
 
-        case IO_IF: return cpu->cpu_io.interrupt_flag & 0xff;
-        case IO_IF+1: return (cpu->cpu_io.interrupt_flag >> 8) & 0x3f;         
+        case IO_IF: return cpu.cpu_io.interrupt_flag & 0xff;
+        case IO_IF+1: return (cpu.cpu_io.interrupt_flag >> 8) & 0x3f;         
 
 
 
         default:
         {
-            auto err = fmt::format("[io {:08x}] unhandled read at {:08x}",cpu->get_pc(),addr);
+            auto err = fmt::format("[io {:08x}] unhandled read at {:08x}",cpu.get_pc(),addr);
             throw std::runtime_error(err);
         }
     }
@@ -443,7 +443,7 @@ access_type Mem::handle_read(std::vector<uint8_t> &buf,uint32_t addr)
     if(buf.size() < addr + sizeof(access_type))
     {
         auto err = fmt::format("out of range handle read at: {:08x}:{:08x}\n",
-            cpu->get_pc(),addr);
+            cpu.get_pc(),addr);
         throw std::runtime_error(err);
     }
 #endif
@@ -500,10 +500,10 @@ access_type Mem::read_mem(uint32_t addr)
 
 #ifdef DEBUG
     uint32_t value = read_mem_handler<access_type>(addr);
-    if(debug->breakpoint_hit(addr,value,break_type::read))
+    if(debug.breakpoint_hit(addr,value,break_type::read))
     {
-        write_log("write breakpoint hit at {:08x}:{:08x}:{:08x}",addr,value,cpu->get_pc());
-        debug->halt();
+        write_log(debug,"write breakpoint hit at {:08x}:{:08x}:{:08x}",addr,value,cpu.get_pc());
+        debug.halt();
     }    
 #endif
 
@@ -538,10 +538,10 @@ void Mem::write_mem(uint32_t addr,access_type v)
     addr &= ~(sizeof(access_type)-1);
 
 #ifdef DEBUG
-    if(debug->breakpoint_hit(addr,v,break_type::write))
+    if(debug.breakpoint_hit(addr,v,break_type::write))
     {
-        write_log("write breakpoint hit at {:08x}:{:08x}:{:08x}",addr,v,cpu->get_pc());
-        debug->halt();
+        write_log(debug,"write breakpoint hit at {:08x}:{:08x}:{:08x}",addr,v,cpu.get_pc());
+        debug.halt();
     }   
 #endif
 
@@ -594,7 +594,7 @@ void Mem::tick_mem_access()
         // 4 -> 2 (word)
         // 2 -> 1 (half)
         // 1 -> 0 (byte)
-        cpu->cycle_tick(wait_states[static_cast<int>(mem_region)][sizeof(access_type) >> 1]);
+        cpu.cycle_tick(wait_states[static_cast<int>(mem_region)][sizeof(access_type) >> 1]);
     }
 }
 
@@ -733,7 +733,7 @@ void Mem::handle_write(std::vector<uint8_t> &buf,uint32_t addr,access_type v)
 #ifdef DEBUG // bounds check the memory access (we are very screwed if this happens)
     if(buf.size() < addr + sizeof(access_type))
     {
-        auto err = fmt::format("out of range handle write at: {:08x}\n",cpu->get_pc());
+        auto err = fmt::format("out of range handle write at: {:08x}\n",cpu.get_pc());
         throw std::runtime_error(err);
     }
 #endif

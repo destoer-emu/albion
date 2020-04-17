@@ -9,7 +9,7 @@ namespace gameboyadvance
 std::string Disass::disass_thumb(uint32_t program_counter)
 {
     pc = program_counter; 
-    uint16_t opcode = mem->read_mem<uint16_t>(pc);
+    uint16_t opcode = mem.read_mem<uint16_t>(pc);
     pc += 2;
     uint32_t op = get_thumb_opcode_bits(opcode);
 
@@ -484,7 +484,7 @@ std::string Disass::disass_thumb_long_bl(uint16_t opcode)
 
     // 4 byte instr made up of two "sub ops"
     int32_t offset1 = opcode & 0x7ff;
-    uint16_t opcode2 = mem->read_mem<uint16_t>(pc);
+    uint16_t opcode2 = mem.read_mem<uint16_t>(pc);
     pc += ARM_HALF_SIZE;
     int offset2 = opcode2 & 0x7ff;
 

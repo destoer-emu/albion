@@ -24,6 +24,10 @@ void Envelope::env_write(uint8_t v) noexcept
     env_up = is_set(v,3);
 }
 
+// todo handle this
+// If a channel is triggered when the frame sequencer's next 
+// step will clock the volume envelope, 
+// the envelope's timer is reloaded with one greater than it would have been.
 void Envelope::env_trigger() noexcept
 {
     env_period = env_load;				

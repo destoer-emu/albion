@@ -1,5 +1,4 @@
-#include <gb/cpu.h>
-#include <gb/memory.h>
+#include<gb/gb.h>
  
 namespace gameboy
 {
@@ -440,14 +439,14 @@ uint8_t Cpu::instr_rlc(uint8_t reg) noexcept
 
 void Cpu::instr_jr() noexcept
 {
-	const auto operand = static_cast<int8_t>(mem->read_memt(pc++));
+	const auto operand = static_cast<int8_t>(mem.read_memt(pc++));
 	cycle_tick(1); // internal delay
 	pc += operand;	
 }
 
 void Cpu::instr_jr_cond(bool cond, int bit) noexcept
 {
-	const auto operand = static_cast<int8_t>(mem->read_memt(pc++));
+	const auto operand = static_cast<int8_t>(mem.read_memt(pc++));
 	if(is_set(f, bit) == cond)
 	{
 		cycle_tick(1); // internal delay
@@ -457,7 +456,7 @@ void Cpu::instr_jr_cond(bool cond, int bit) noexcept
 
 void Cpu::call_cond(bool cond, int bit) noexcept
 {
-	const uint16_t v = mem->read_wordt(pc);
+	const uint16_t v = mem.read_wordt(pc);
 	pc += 2;
 	if(is_set(f,bit) == cond)
 	{

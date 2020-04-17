@@ -38,6 +38,8 @@ void ImguiMainWindow::gba_emu_instance()
 	constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
 	uint64_t next_time = current_time() + screen_ticks_per_frame;
 
+    emu_running = true;
+
     try
     {
         while(!gba.quit)
@@ -73,7 +75,9 @@ void ImguiMainWindow::gba_emu_instance()
     {
         gba.debug.write_logger(ex.what());
         std::cout << ex.what() << "\n";
+        emu_running = false;
     }    
+    emu_running = false;
 }
 
 
@@ -559,9 +563,7 @@ void ImguiMainWindow::gba_stop_instance()
         // save the breakpoint enable state so we can restore it later
         bool break_enabled = gba.debug.breakpoints_enabled;
         gba.debug.disable_everything();
-
         emu_thread.join(); // end the thread
-        emu_running = false;
         gba.quit = false;
         gba.debug.breakpoints_enabled = break_enabled;
         //gba.mem.save_cart_ram(); <-- ignore saving for now
@@ -570,14 +572,17 @@ void ImguiMainWindow::gba_stop_instance()
 
 void ImguiMainWindow::gba_start_instance(bool step)
 {
-    gba_stop_instance();
     gba.debug.step_instr = step;
     if(!emu_running)
     {
         gba.quit = false;
         std::thread emulator(&ImguiMainWindow::gba_emu_instance,this);
-        emu_running = true;
         std::swap(emulator,emu_thread);    
+    }
+
+    else
+    {
+        gba.debug.wake_up();
     }
 }
 

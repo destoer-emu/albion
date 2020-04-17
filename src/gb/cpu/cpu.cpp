@@ -1,24 +1,20 @@
-#include <gb/cpu.h>
-#include <gb/memory.h>
-#include <gb/ppu.h>
-#include <gb/apu.h>
-#include <destoer-emu/debug.h>
+#include<gb/gb.h>
 
 namespace gameboy
 {
 
-void Cpu::init(Memory *m, Ppu *p,Apu *ap, Disass *dis, Debug *debugger, bool use_bios)
+Cpu::Cpu(GB &gb) : mem(gb.mem), apu(gb.apu), ppu(gb.ppu), 
+	debug(gb.debug), disass(gb.disass)
 {
-    mem = m;
-    ppu = p;
-    disass = dis;
-	debug = debugger;
-	apu = ap;
+	
+}
 
-	write_log("[INFO] new instance started!");
+void Cpu::init(bool use_bios)
+{
+	write_log(debug,"[INFO] new instance started!");
 
 
-	is_cgb = mem->rom_cgb_enabled();
+	is_cgb = mem.rom_cgb_enabled();
 
 	// setup regs to skip the bios
 	if(!use_bios)
@@ -90,7 +86,7 @@ uint8_t Cpu::fetch_opcode() noexcept
 	// at midpoint of instr fetch interrupts are checked
 	// and if so the opcode is thrown away and interrupt dispatch started
 	cycle_tick_t(2);
-	bool fired = ((mem->io[IO_IF] & mem->io[IO_IE] & 0x1f) && interrupt_enable);
+	bool fired = ((mem.io[IO_IF] & mem.io[IO_IE] & 0x1f) && interrupt_enable);
 	cycle_tick_t(2);
 
 	if(fired)
@@ -98,12 +94,12 @@ uint8_t Cpu::fetch_opcode() noexcept
 		do_interrupts();
 
 		// have to re fetch the opcode this costs a cycle
-		return mem->read_memt(pc++);
+		return mem.read_memt(pc++);
 	}
 
 	else // return the opcode we have just fetched
 	{
-		return mem->read_mem(pc++);
+		return mem.read_mem(pc++);
 	}
 	
 }
@@ -123,25 +119,25 @@ void Cpu::cycle_tick_t(int cycles) noexcept
 	update_timers(cycles); 
 
 	// handler will check if its enabled
-	mem->tick_dma(cycles << is_double);
+	mem.tick_dma(cycles << is_double);
 	
 	// in double speed mode gfx and apu should operate at half
-	ppu->update_graphics(cycles >> is_double); // handle the lcd emulation
-	apu->tick(cycles >> is_double); // advance the apu state	
+	ppu.update_graphics(cycles >> is_double); // handle the lcd emulation
+	apu.tick(cycles >> is_double); // advance the apu state	
 }
 
 void Cpu::tima_inc() noexcept
 {
 	// timer about to overflow
-	if(mem->io[IO_TIMA] == 255)
+	if(mem.io[IO_TIMA] == 255)
 	{	
-		mem->io[IO_TIMA] = mem->io[IO_TMA]; // reset to value in tma
+		mem.io[IO_TIMA] = mem.io[IO_TMA]; // reset to value in tma
 		request_interrupt(2); // timer overflow interrupt			
 	}
 			
 	else
 	{
-		mem->io[IO_TIMA]++;
+		mem.io[IO_TIMA]++;
 	}	
 }
 
@@ -150,7 +146,7 @@ bool Cpu::internal_tima_bit_set() const noexcept
     // freq bits for internal timer
     static constexpr int freq_arr[4] = {9,3,5,7};
 
-	const uint8_t freq = mem->io[IO_TMC] & 0x3;
+	const uint8_t freq = mem.io[IO_TMC] & 0x3;
 
 	const int bit = freq_arr[freq];
 
@@ -159,7 +155,7 @@ bool Cpu::internal_tima_bit_set() const noexcept
 
 bool Cpu::tima_enabled() const noexcept
 {
-	return is_set(mem->io[IO_TMC],2);	
+	return is_set(mem.io[IO_TMC],2);	
 }
 
 void Cpu::update_timers(int cycles) noexcept
@@ -189,7 +185,7 @@ void Cpu::update_timers(int cycles) noexcept
 		// for the timer when its off
 		if(!is_set(internal_timer,sound_bit) && sound_bit_set)
 		{
-			apu->advance_sequencer(); // advance the sequencer
+			apu.advance_sequencer(); // advance the sequencer
 		}
         
 	}
@@ -203,7 +199,7 @@ void Cpu::update_timers(int cycles) noexcept
 		internal_timer += cycles;
 		if(!is_set(internal_timer,sound_bit) && sound_bit_set)
 		{
-			apu->advance_sequencer(); // advance the sequencer
+			apu.advance_sequencer(); // advance the sequencer
 		}
 	} 
        
@@ -213,8 +209,8 @@ void Cpu::update_timers(int cycles) noexcept
 void Cpu::handle_halt()
 {
 	instr_side_effect = instr_state::normal;
-	uint8_t req = mem->io[IO_IF]; // requested ints 
-	uint8_t enabled = mem->io[IO_IE]; // enabled interrutps
+	uint8_t req = mem.io[IO_IF]; // requested ints 
+	uint8_t enabled = mem.io[IO_IE]; // enabled interrutps
 	
 	// halt bug
 	// halt state not entered and the pc fails to increment for
@@ -227,10 +223,10 @@ void Cpu::handle_halt()
 	
 
 	// sanity check to check if this thing will actually fire
-	const uint8_t stat = mem->io[IO_STAT];
+	const uint8_t stat = mem.io[IO_STAT];
 	if(enabled == 0 || ((((stat >> 3) & 0x7) == 0) && enabled == val_bit(enabled,1)))
 	{
-		write_log("[ERROR] halt infinite loop");
+		write_log(debug,"[ERROR] halt infinite loop");
 		throw std::runtime_error("halt infinite loop");
 	}
 
@@ -240,7 +236,7 @@ void Cpu::handle_halt()
 		// just tick it
 		cycle_tick(1);
 			
-		req = mem->io[IO_IF];
+		req = mem.io[IO_IF];
 	}
 
 
@@ -257,7 +253,7 @@ void Cpu::handle_halt()
 
 	// check if timer interrupt enabled (and the timer is enabled) if it is
 	// determine when it will fire
-	if(is_set(mem->io[IO_TMC],2) && is_set(enabled,2))
+	if(is_set(mem.io[IO_TMC],2) && is_set(enabled,2))
 	{
 
 	}
@@ -332,7 +328,7 @@ void Cpu::request_interrupt(int interrupt) noexcept
 {
 	// set the interrupt flag to signal
 	// an interrupt request
-	mem->io[IO_IF] = set_bit( mem->io[IO_IF],interrupt);
+	mem.io[IO_IF] = set_bit( mem.io[IO_IF],interrupt);
 }
 
 
@@ -351,8 +347,8 @@ void Cpu::do_interrupts() noexcept
 	// 5th cycle in middle of stack push ie and if are checked to  get the 
 	// fired interrupt
 	cycle_tick_t(2);
-	uint8_t req = mem->io[IO_IF];
-	uint8_t enabled = mem->io[IO_IE];
+	uint8_t req = mem.io[IO_IF];
+	uint8_t enabled = mem.io[IO_IE];
 	cycle_tick_t(2);
 
 	write_stack(pc & 0xff);
@@ -368,7 +364,7 @@ void Cpu::do_interrupts() noexcept
 		// if requested & is enabled
 		if(is_set(req,i) && is_set(enabled,i))
 		{
-			mem->io[IO_IF] = deset_bit(mem->io[IO_IF],i); // mark interrupt as serviced
+			mem.io[IO_IF] = deset_bit(mem.io[IO_IF],i); // mark interrupt as serviced
 			pc = 0x40 + (i * 8); // set pc to interrupt vector
 			return;
 		}
@@ -440,7 +436,7 @@ void Cpu::write_hl(uint16_t v) noexcept
 
 void Cpu::write_stackt(uint8_t v) noexcept
 {
-	mem->write_memt(--sp,v); // write to stack
+	mem.write_memt(--sp,v); // write to stack
 }
 
 void Cpu::write_stackwt(uint16_t v) noexcept
@@ -452,7 +448,7 @@ void Cpu::write_stackwt(uint16_t v) noexcept
 // unticked only used by interrupts
 void Cpu::write_stack(uint8_t v) noexcept
 {
-	mem->write_mem(--sp,v); // write to stack
+	mem.write_mem(--sp,v); // write to stack
 }
 
 void Cpu::write_stackw(uint16_t v) noexcept
@@ -463,7 +459,7 @@ void Cpu::write_stackw(uint16_t v) noexcept
 
 uint8_t Cpu::read_stackt() noexcept
 {	
-	return mem->read_memt(sp++);
+	return mem.read_memt(sp++);
 }
 
 uint16_t Cpu::read_stackwt() noexcept

@@ -1,12 +1,16 @@
-#include <gb/ppu.h>
-#include <gb/cpu.h>
-#include <gb/memory.h>
+#include <gb/gb.h>
 
 /* todo add tile & sprite caching? */
 // also figure out why stat irq blocking no longer passes
 
 namespace gameboy
 {
+
+Ppu::Ppu(GB &gb) : cpu(gb.cpu), mem(gb.mem) 
+{
+	screen.resize(SCREEN_WIDTH*SCREEN_HEIGHT);
+	std::fill(screen.begin(),screen.end(),0);	
+}
 
 void Ppu::reset_fetcher() noexcept
 {
@@ -26,15 +30,21 @@ void Ppu::reset_fetcher() noexcept
 	x_scroll_tick = false;
 	scx_cnt = 0;
 
+	// if we draw the window at all this line 
+	// we will draw it from a greater pos next line
+	if(window_drawn)
+	{
+		window_y_line++;
+	}
+
+	window_drawn = false;
+	window_x_line = 0;
 }
 
 
 // other stuff should proabably go in here i forgot to port over
-void Ppu::init(Cpu *c,Memory *m) noexcept
+void Ppu::init() noexcept
 {
-    cpu = c;
-    mem = m;
-	screen.resize(SCREEN_WIDTH*SCREEN_HEIGHT);
 	std::fill(screen.begin(),screen.end(),0);
 
     // main ppu state
@@ -75,11 +85,11 @@ void Ppu::write_sppd(uint8_t v) noexcept
 		sp_pal[sp_pal_idx] = v; 
 	}
 
-	if(is_set(mem->io[IO_SPPI],7)) // increment on a write 
+	if(is_set(mem.io[IO_SPPI],7)) // increment on a write 
 	{
 		sp_pal_idx = (sp_pal_idx + 1) & 0x3f;
-		mem->io[IO_SPPI] &= ~0x3f;
-		mem->io[IO_SPPI] |= sp_pal_idx;
+		mem.io[IO_SPPI] &= ~0x3f;
+		mem.io[IO_SPPI] |= sp_pal_idx;
 	}	
 }
 
@@ -91,15 +101,16 @@ void Ppu::write_bgpd(uint8_t v) noexcept
 		bg_pal[bg_pal_idx] = v; 
 	}
 
-	if(is_set(mem->io[IO_BGPI],7)) // increment on a write 
+	if(is_set(mem.io[IO_BGPI],7)) // increment on a write 
 	{
 		bg_pal_idx = (bg_pal_idx + 1) & 0x3f;
-		mem->io[IO_BGPI] &= ~0x3f;
-		mem->io[IO_BGPI] |= bg_pal_idx;
+		mem.io[IO_BGPI] &= ~0x3f;
+		mem.io[IO_BGPI] |= bg_pal_idx;
 	}	
 }
 
 
+// cant access either during pixel transfer
 
 uint8_t Ppu::get_sppd() const noexcept
 {
@@ -132,51 +143,49 @@ void Ppu::write_stat() noexcept
 void Ppu::stat_update() noexcept
 {
 	// if the lcd is not on then dont do anything
-	if(!mem->is_lcd_enabled())
+	if(!mem.is_lcd_enabled())
 	{
 		return;
 	}
 
 	// read stat and mask the mode
-	uint8_t status = mem->io[IO_STAT];
+	uint8_t status = mem.io[IO_STAT];
 	status &= ~0x3;
 
 	// save our current signal state
 	const bool signal_old = signal;
 
-	// check interrupts
+
+
+	// check coincidence  (lyc == ly)
+	// if lyc is current line set coincidence bit else deset it
+	bool lyc_hit = mem.io[IO_LYC] == current_line;
+	status = lyc_hit? set_bit(status,2) : deset_bit(status,2);
+
+	bool lyc_signal = is_set(status,6) && lyc_hit;
+
+
+	// check nterrupts
 	// stat irq interrupt reqed when we go from no stat conditions met
 	// to any stat condition met
 	switch(mode)
 	{
-		case ppu_mode::hblank: signal = is_set(status,3); break;
-		case ppu_mode::vblank: signal = is_set(status,4); break;
-		case ppu_mode::oam_search: signal = is_set(status,5); break;
-		case ppu_mode::pixel_transfer: signal = false; break;
+		case ppu_mode::hblank: signal = is_set(status,3) || lyc_signal; break;
+		case ppu_mode::vblank: signal = is_set(status,4) || lyc_signal; break;
+		case ppu_mode::oam_search: signal = is_set(status,5) || lyc_signal; break;
+		case ppu_mode::pixel_transfer: signal = lyc_signal; break;
 	}
-	
-
-	// check coincidence  (lyc == ly)
-	// line 153 can be treated as zero 
-	// see https://forums.nesdev.com/viewtopic.php?f=20&t=13727
-	//if( lyc == ly || (lyc == 0 && ly == 153) )
-	// if lyc is current line set coincidence bit else deset it
-	status = (mem->io[IO_LYC] == current_line)? set_bit(status,2) : deset_bit(status,2);
-
-	// if conicidence set and interrupt enabled fire an interrupt
-	signal |= (is_set(status,6) && is_set(status,2));
-
 	
 
 	// if we have changed from 0 to 1 for signal(signal edge)
 	// request a stat interrupt
 	if(!signal_old && signal)
 	{
-		cpu->request_interrupt(1);	
+		cpu.request_interrupt(1);	
 	}
 	
 	// update our status reg
-	mem->io[IO_STAT] = status | 128 | static_cast<int>(mode);
+	mem.io[IO_STAT] = status | 128 | static_cast<uint8_t>(mode);
 }
 
 
@@ -188,32 +197,38 @@ void Ppu::turn_lcd_off() noexcept
 	current_line = 0; // reset ly
 
 	// i think the behavior is this but im honestly not sure
-	//mode = ppu_mode::hblank;
-	//mem->io[IO_STAT] = (mem->io[IO_STAT] & ~3) | static_cast<int>(mode);
-	//signal = is_set(mem->io[IO_STAT],3);
+	mode = ppu_mode::hblank;
+	mem.io[IO_STAT] = (mem.io[IO_STAT] & ~3) | static_cast<uint8_t>(mode);
+	signal = false;
+	reset_fetcher();
 
-	//printf("stat off: %x\n",mem->io[IO_STAT]);
+	//printf("stat off: %x\n",mem.io[IO_STAT]);
 }
 
 
 void Ppu::turn_lcd_on() noexcept
 {
-	//printf("lcd enabled %x\n",mem->is_lcd_enabled());
-	//printf("%x:%x:%x\n",scanline_counter,current_line,mem->io[IO_LYC]);
+	//printf("lcd enabled %x\n",mem.is_lcd_enabled());
+	//printf("%x:%x:%x\n",scanline_counter,current_line,mem.io[IO_LYC]);
 
 	// again not sure what the behavior is when the ppu goes back on
-	//mode = ppu_mode::oam_search;
+	mode = ppu_mode::oam_search;
 	stat_update();
 
-	//printf("lyc bit %x\n",is_set(mem->io[IO_STAT],2));
-	//printf("stat on: %x\n",mem->io[IO_STAT]);
+	//printf("lyc bit %x\n",is_set(mem.io[IO_STAT],2));
+	//printf("stat on: %x\n",mem.io[IO_STAT]);
+}
+
+void Ppu::window_disable() noexcept
+{
+
 }
 
 void Ppu::update_graphics(int cycles) noexcept
 {
 
 	// lcd is off nothing to do
-	if(!mem->is_lcd_enabled()) // <-- should re enable on a delay?
+	if(!mem.is_lcd_enabled()) // <-- should re enable on a delay?
 	{
 		return; // can exit if ppu is disabled nothing else to do
 	}
@@ -224,7 +239,7 @@ void Ppu::update_graphics(int cycles) noexcept
 	// and trigger interrupts	
 	
 	// read out current stat reg
-	const uint8_t status = mem->io[IO_STAT];
+	const uint8_t status = mem.io[IO_STAT];
 
 	scanline_counter += cycles; // advance the cycle counter
 
@@ -243,14 +258,14 @@ void Ppu::update_graphics(int cycles) noexcept
 				{
 					mode = ppu_mode::vblank; // switch to vblank
 					new_vblank = true;
-					cpu->request_interrupt(0); // vblank interrupt
+					cpu.request_interrupt(0); // vblank interrupt
 					
 					// edge case oam stat interrupt is triggered here if enabled
 					if(is_set(status,5))
 					{
 						if(signal == false)
 						{
-							cpu->request_interrupt(1);
+							cpu.request_interrupt(1);
 							signal = true;
 						}	
 					}				
@@ -277,6 +292,7 @@ void Ppu::update_graphics(int cycles) noexcept
 				if(current_line > 153)
 				{
 					current_line = 0;
+					window_y_line = 0;
 					// enter oam search on the first line :)
 					mode = ppu_mode::oam_search; 				
 				}
@@ -297,7 +313,7 @@ void Ppu::update_graphics(int cycles) noexcept
 				// read in the sprites we are about to draw
 				read_sprites();
 
-				scx_cnt = (mem->io[IO_SCX] & 0x7);
+				scx_cnt = (mem.io[IO_SCX] & 0x7);
 				x_scroll_tick = scx_cnt > 0;
 				stat_update();				
 			}
@@ -316,15 +332,15 @@ void Ppu::update_graphics(int cycles) noexcept
 				reset_fetcher();
 					
 				// on cgb do hdma (handler will check if its active)
-				if(cpu->get_cgb())
+				if(cpu.get_cgb())
 				{
-					mem->do_hdma();
+					mem.do_hdma();
 				}
 				stat_update();
 			}
 			break;
 		}	
-	}	
+	}
 }
 
 
@@ -338,7 +354,7 @@ uint32_t Ppu::get_dmg_color(int color_num, pixel_source source) noexcept
 
 	switch(col)
 	{
-		case dmg_colors::black: /*full_color = 0x000000ff;*/ break;
+		case dmg_colors::black: /*full_color = 0xff000000;*/ break;
 		case dmg_colors::white: full_color = 0xffffffff; break;
 		case dmg_colors::light_gray: full_color = 0xffcccccc;  break;
 		case dmg_colors::dark_gray: full_color = 0xff777777; break;
@@ -419,7 +435,7 @@ bool Ppu::push_pixel() noexcept
 	pixel_source source = ppu_fifo[pixel_idx].source;
 	const int scanline = current_line;
 	
-	if(!cpu->get_cgb())
+	if(!cpu.get_cgb())
 	{
 		const uint32_t full_color = get_dmg_color(col_num,source);
 		screen[(scanline*SCREEN_WIDTH)+x_cord] = full_color;
@@ -506,7 +522,7 @@ void Ppu::tick_fetcher(int cycles) noexcept
 void Ppu::draw_scanline(int cycles) noexcept 
 {
 	// get lcd control reg
-	const int control = mem->io[IO_LCDC];
+	const int control = mem.io[IO_LCDC];
 	
 	
 	tick_fetcher(cycles);
@@ -538,14 +554,14 @@ void Ppu::draw_scanline(int cycles) noexcept
 void Ppu::tile_fetch() noexcept
 {
 
-    const bool is_cgb = cpu->get_cgb();
+    const bool is_cgb = cpu.get_cgb();
 
 	// where to draw the visual area and window
-	const uint8_t scroll_y = mem->io[IO_SCY];
-	const uint8_t scroll_x = mem->io[IO_SCX];
-	const uint8_t window_y = mem->io[IO_WY];
-	const uint8_t window_x = mem->io[IO_WX] - 7; // 0,0 is at offest - 7 for window
-	const uint8_t lcd_control = mem->io[IO_LCDC];
+	const uint8_t scroll_y = mem.io[IO_SCY];
+	const uint8_t scroll_x = mem.io[IO_SCX];
+	const uint8_t window_y = mem.io[IO_WY];
+	const uint8_t window_x = mem.io[IO_WX] - 7; // 0,0 is at offest - 7 for window
+	const uint8_t lcd_control = mem.io[IO_LCDC];
 	
 
 	const int scanline = current_line;
@@ -558,7 +574,7 @@ void Ppu::tile_fetch() noexcept
 	// so if we are less than it dont draw 
 	const bool using_window = is_set(lcd_control,5) && (window_y <= scanline) 
 		&&  (window_x <= 166) && (window_x <= tile_cord);
-
+	
 	// which of the 32 horizontal tiles are we currently drawing
 	uint8_t x_pos = tile_cord;
 
@@ -580,8 +596,13 @@ void Ppu::tile_fetch() noexcept
 	{
 		// which window mem?
 		background_mem = is_set(lcd_control,6) ? 0x1c00 : 0x1800;
-		y_pos -= window_y;
-		x_pos -= window_x;
+		y_pos = window_y_line;
+		x_pos = window_x_line;
+
+
+		// cache if we have drawn the window on this line 
+		window_drawn = true;
+		window_x_line += 8;
 	}
 
 
@@ -609,13 +630,13 @@ void Ppu::tile_fetch() noexcept
 	// tile number is allways bank 0
 	if(is_set(lcd_control,4)) // unsigned
 	{
-		const auto tile_num = mem->vram[0][tile_address];
+		const auto tile_num = mem.vram[0][tile_address];
 		tile_location = tile_num * 16;
 	}
 	
 	else // signed tile index 0x1000 is used as base pointer relative to start of vram
 	{
-		const auto tile_num = static_cast<int8_t>(mem->vram[0][tile_address]);
+		const auto tile_num = static_cast<int8_t>(mem.vram[0][tile_address]);
 		tile_location = 0x1000 + (tile_num * 16);
 	}
 
@@ -629,13 +650,12 @@ void Ppu::tile_fetch() noexcept
 	if(is_cgb) // we are drawing in cgb mode 
 	{
 		// bg attributes allways in bank 1
-		const uint8_t attr = mem->vram[1][tile_address];
+		const uint8_t attr = mem.vram[1][tile_address];
 		cgb_pal = attr & 0x7; // get the pal number
 				
 				
 		// draw over sprites
 		priority = is_set(attr,7);
-				
 		x_flip = is_set(attr,5);
 		y_flip = is_set(attr,6);
 
@@ -653,8 +673,8 @@ void Ppu::tile_fetch() noexcept
 	const int line = y_flip? (7 - y_pos) * 2 : y_pos*2;
 		
 			
-	const uint8_t data1 = mem->vram[vram_bank][tile_location+line];
-	const uint8_t data2 = mem->vram[vram_bank][tile_location+line+1];
+	const uint8_t data1 = mem.vram[vram_bank][tile_location+line];
+	const uint8_t data2 = mem.vram[vram_bank][tile_location+line+1];
 	
 	// pixel 0 in the tile is bit 7 of data1 and data2
 	// pixel 1 is bit 6 etc
@@ -685,7 +705,7 @@ void Ppu::tile_fetch() noexcept
 
 dmg_colors Ppu::get_colour(uint8_t colour_num, uint16_t address) noexcept
 {
-	const uint8_t palette = mem->io[address & 0xff];
+	const uint8_t palette = mem.io[address & 0xff];
 
 	const int colour = (palette >> (colour_num * 2)) & 3; 
 
@@ -700,7 +720,7 @@ dmg_colors Ppu::get_colour(uint8_t colour_num, uint16_t address) noexcept
 // called when when enter pixel transfer
 void Ppu::read_sprites() noexcept
 {
-	const uint8_t lcd_control = mem->io[IO_LCDC]; // get lcd control reg
+	const uint8_t lcd_control = mem.io[IO_LCDC]; // get lcd control reg
 
 	const int y_size = is_set(lcd_control,2) ? 16 : 8;
 	
@@ -711,13 +731,13 @@ void Ppu::read_sprites() noexcept
 	for(int sprite = 0; sprite < 40; sprite++) // should fetch all these as soon as we leave oam search
 	{
         const uint16_t addr = sprite*4;
-		const uint8_t y_pos = mem->oam[addr & 0xff];
+		const uint8_t y_pos = mem.oam[addr & 0xff];
 		if( scanline -(y_size - 16) < y_pos  && scanline + 16 >= y_pos )
 		{
 			// intercepts with the line
 			objects_priority[x].index = addr; // save the index
 			// and the x pos
-			objects_priority[x].x_pos = mem->oam[(addr+1)&0xff]-8;
+			objects_priority[x].x_pos = mem.oam[(addr+1)&0xff]-8;
 			if(++x == 10) { break; } // only draw a max of 10 sprites per line
 		}
 	}
@@ -754,9 +774,9 @@ void Ppu::read_sprites() noexcept
 bool Ppu::sprite_fetch() noexcept 
 {
 
-    const bool is_cgb = cpu->get_cgb();
+    const bool is_cgb = cpu.get_cgb();
 	
-	const uint8_t lcd_control = mem->io[IO_LCDC]; // get lcd control reg
+	const uint8_t lcd_control = mem.io[IO_LCDC]; // get lcd control reg
 
 	// in cgb if lcdc bit 0 is deset sprites draw over anything
 	const bool draw_over_everything = !is_set(lcd_control,0) && is_cgb;
@@ -809,9 +829,10 @@ bool Ppu::sprite_fetch() noexcept
 		
 		// sprite takes 4 bytes in the sprite attributes table
 		const uint8_t sprite_index = objects_priority[i].index;
-		uint8_t y_pos = mem->oam[sprite_index];
-		const uint8_t sprite_location = mem->oam[(sprite_index+2)];
-		const uint8_t attributes = mem->oam[(sprite_index+3)];
+		uint8_t y_pos = mem.oam[sprite_index];
+		// lowest bit of tile index ignored for 16 pixel sprites
+		const uint8_t sprite_location = y_size == 16? mem.oam[(sprite_index+2)] & ~1 : mem.oam[(sprite_index+2)];
+		const uint8_t attributes = mem.oam[(sprite_index+3)];
 		
 		const bool y_flip = is_set(attributes,6);
 		const bool x_flip = is_set(attributes,5);
@@ -836,8 +857,8 @@ bool Ppu::sprite_fetch() noexcept
 			// read from the 2nd vram bank
 			const int vram_bank = (is_cgb && is_set(attributes,3))? 1 : 0;
 
-			const uint8_t data1 = mem->vram[vram_bank][data_address];
-			const uint8_t data2 = mem->vram[vram_bank][data_address+1];
+			const uint8_t data1 = mem.vram[vram_bank][data_address];
+			const uint8_t data2 = mem.vram[vram_bank][data_address+1];
 			
 
 			Pixel_Obj *fifo = &ppu_fifo[pixel_idx];
@@ -856,15 +877,8 @@ bool Ppu::sprite_fetch() noexcept
 				int colour_num = val_bit(data2,colour_bit) << 1;
 				colour_num |= val_bit(data1,colour_bit);
 
-				
-				
-				
-				// colour_num needs to be written out to the fetcher
-				// we need to say where it is from eg tile or sprite
-				// so that we actually know where to read the color from
-				// when it comes time to actually push pixels to the screen 
-				
-				// dont display pixels with colour id zero as its transparent
+
+				// dont display pixels with colour id zero as its allways transparent
 				// the colour itself dosent matter we only care about the id
 				if(colour_num == 0)
 				{
@@ -875,35 +889,39 @@ bool Ppu::sprite_fetch() noexcept
 				uint8_t x_pix = 0 - sprite_pixel;
 				x_pix += pixel_start;
 
-				// test if its hidden behind the background layer
-				// 0 is transparent even if the flag is set
-				if(is_set(attributes,7))
+				// if the cgb lcdc sprite overrride is on then the sprite will win every time
+				// also if the tile is color zero (transparent) then the sprite will also win
+				if(!draw_over_everything && fifo[x_pix].colour_num != 0)
 				{
-					if(fifo[x_pix].colour_num != 0)
+					
+					// cgb tile attr set to priority
+					// oam obj above bg ignored
+					if(fifo[x_pix].source == pixel_source::tile_cgbd)
 					{
-						// need to test for the overide in lcdc on cgb
-						if(!draw_over_everything)
-						{
-							continue;
-						}
-					}	
+						continue;
+					}
+
+					// oam priority bit set tile is above sprite
+					else if(is_set(attributes,7))
+					{
+						continue;
+					}
 				}
 
 
-				// if the current posisiton in the fifo is not a sprite
-				// then this current pixel wins as it is non transparent
-				
-				// however in cgb mode if the tile has its priority bit set in its attributes 
-				// the sprite loses unless overidded by lcdc
-				if(fifo[x_pix].source != pixel_source::tile_cgbd || draw_over_everything)
-				{
-					fifo[x_pix].colour_num = colour_num;
-					fifo[x_pix].source =  is_set(attributes,4)? pixel_source::sprite_one : pixel_source::sprite_zero;
-					fifo[x_pix].scx_a = false;
+				// if we have passed all that then the sprite has won
+				// colour_num needs to be written out to the fetcher
+				// we need to say where it is from eg tile or sprite
+				// so that we actually know where to read the color from
+				// when it comes time to actually push pixels to the screen 
 
-					// value just ignored in dmg
-					fifo[x_pix].cgb_pal = attributes & 0x7;	
-				}	
+				fifo[x_pix].colour_num = colour_num;
+				fifo[x_pix].source =  is_set(attributes,4)? pixel_source::sprite_one : pixel_source::sprite_zero;
+				fifo[x_pix].scx_a = false;
+
+				// value just ignored in dmg
+				fifo[x_pix].cgb_pal = attributes & 0x7;	
+				
 			}
 			did_draw = true;
 		}
@@ -918,15 +936,15 @@ bool Ppu::sprite_fetch() noexcept
 // only used by the some frontends but its
 // not code dependant on a frontend so its best placed here
 
-std::vector<uint32_t> Ppu::render_bg() noexcept
+std::vector<uint32_t> Ppu::render_bg(bool higher) noexcept
 {
 
 	std::vector<uint32_t> bg_map(256*256);
 
-	const uint8_t lcd_control = mem->io[IO_LCDC]; // get lcd control reg
-	int background_mem = is_set(lcd_control,3) ? 0x1c00 : 0x1800;
+	const uint8_t lcd_control = mem.io[IO_LCDC]; // get lcd control reg
+	int background_mem = higher ? 0x1c00 : 0x1800;
 
-	bool is_cgb = cpu->get_cgb();
+	bool is_cgb = cpu.get_cgb();
 
 	// for each line
 	for(int tile_y = 0; tile_y < 32; tile_y++)
@@ -941,13 +959,13 @@ std::vector<uint32_t> Ppu::render_bg() noexcept
 			// tile number is allways bank 0
 			if(is_set(lcd_control,4)) // unsigned
 			{
-				const auto tile_num =  mem->vram[0][bg_location];
+				const auto tile_num =  mem.vram[0][bg_location];
 				tile_location = tile_num * 16;
 			}
 			
 			else // signed tile index 0x1000 is used as base pointer relative to start of vram
 			{
-				const auto tile_num = static_cast<int8_t>(mem->vram[0][bg_location]);
+				const auto tile_num = static_cast<int8_t>(mem.vram[0][bg_location]);
 				tile_location = 0x1000 + (tile_num * 16);
 			}
 
@@ -957,7 +975,6 @@ std::vector<uint32_t> Ppu::render_bg() noexcept
 
 
 			int cgb_pal = -1;
-			bool priority = false;
 			bool x_flip = false;
 			bool y_flip = false;
 			int vram_bank = 0;
@@ -966,13 +983,9 @@ std::vector<uint32_t> Ppu::render_bg() noexcept
 			if(is_cgb) // we are drawing in cgb mode 
 			{
 				// bg attributes allways in bank 1
-				const uint8_t attr = mem->vram[1][bg_location];
+				const uint8_t attr = mem.vram[1][bg_location];
 				cgb_pal = attr & 0x7; // get the pal number
-						
-						
-				// draw over sprites
-				priority = is_set(attr,7);
-						
+											
 				x_flip = is_set(attr,5);
 				y_flip = is_set(attr,6);
 
@@ -994,8 +1007,8 @@ std::vector<uint32_t> Ppu::render_bg() noexcept
 				// 2 bytes per line in vram
 				uint16_t data_address = tile_location + line;
 
-				const uint8_t data1 = mem->vram[vram_bank][data_address];
-				const uint8_t data2 = mem->vram[vram_bank][data_address+1];
+				const uint8_t data1 = mem.vram[vram_bank][data_address];
+				const uint8_t data2 = mem.vram[vram_bank][data_address+1];
 
 
 				int color_bit = x_flip? 0 : 7;
@@ -1019,7 +1032,8 @@ std::vector<uint32_t> Ppu::render_bg() noexcept
 
 					else
 					{
-						const uint32_t full_color = get_cgb_color(color_num,cgb_pal ,pixel_source::tile);
+						// dont care about the priority here just smash it
+						const uint32_t full_color = get_cgb_color(color_num,cgb_pal, pixel_source::tile);
 						bg_map[buf_offset + (y * 256) + x] = full_color;
 					}
 					
@@ -1032,13 +1046,13 @@ std::vector<uint32_t> Ppu::render_bg() noexcept
 
 	// now render a black box over the viewing area
 
-	const uint8_t scy = mem->io[IO_SCY];
-	const uint8_t scx = mem->io[IO_SCX];
+	const uint8_t scy = mem.io[IO_SCY];
+	const uint8_t scx = mem.io[IO_SCX];
 
 	// draw x bounds
 	// draw two vertical lines to indicate scx start
 	// and scx + screen width
-	for(int y = 0; y < SCREEN_HEIGHT; y++)
+	for(uint32_t y = 0; y < SCREEN_HEIGHT; y++)
 	{
 		const int y_offset = ((scy + y) & 0xff) * 256;
 
@@ -1049,7 +1063,7 @@ std::vector<uint32_t> Ppu::render_bg() noexcept
 	// draw y bounds
 	// draw two horizontal lines to indicate scy start
 	// and scy + screen HEIGHT
-	for(int x = 0; x < SCREEN_WIDTH; x++)
+	for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
 	{
 		const int x_offset = (scx + x) & 0xff; 
 
@@ -1061,13 +1075,24 @@ std::vector<uint32_t> Ppu::render_bg() noexcept
 	return bg_map;
 }
 
+void Ppu::render_palette(uint32_t *palette_bg,uint32_t *palette_sp) noexcept
+{
+	for(int cgb_pal = 0; cgb_pal < 8; cgb_pal++)
+	{
+		for(int color_num = 0; color_num < 4; color_num++)
+		{
+			palette_bg[(cgb_pal*4)+color_num] = get_cgb_color(color_num,cgb_pal, pixel_source::tile);
+			palette_sp[(cgb_pal*4)+color_num] = get_cgb_color(color_num,cgb_pal,pixel_source::sprite_one);
+		}
+	}
+}
 
 std::vector<uint32_t> Ppu::render_tiles() noexcept
 {
 
 	std::vector<uint32_t> tiles(384*8*8*2);
 
-	int banks = cpu->get_cgb()? 2 : 1;
+	int banks = cpu.get_cgb()? 2 : 1;
 
 
 	for(int bank = 0; bank < banks; bank++)
@@ -1091,8 +1116,8 @@ std::vector<uint32_t> Ppu::render_tiles() noexcept
 					// 2 bytes per line in vram
 					const uint16_t data_address = (tile_num * 16) + (y * 2);
 
-					const uint8_t data1 = mem->vram[bank][data_address];
-					const uint8_t data2 = mem->vram[bank][data_address+1];
+					const uint8_t data1 = mem.vram[bank][data_address];
+					const uint8_t data2 = mem.vram[bank][data_address+1];
 
 					// for each pixel in the line of the tile
 					for(int x = 7; x >= 0; x--)

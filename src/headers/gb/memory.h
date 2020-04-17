@@ -12,7 +12,8 @@ namespace gameboy
 class Memory
 {
 public:
-    void init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_rom=true, bool use_bios=false);
+    Memory(GB &gb);
+    void init(std::string rom_name, bool with_rom=true, bool use_bios=false);
 
     // disable and enable reads from the bios
     // fiddles the bank zero pointe
@@ -72,10 +73,11 @@ public:
 	static constexpr int GEKKIO_FAIL_SIZE = 6;
 
 private:
-    Cpu *cpu = nullptr;
-    Ppu *ppu = nullptr;
-    Apu *apu = nullptr;
-    Debug *debug = nullptr;
+
+    Cpu &cpu;
+    Ppu &ppu;
+    Apu &apu;
+    Debug &debug;
 
     void do_dma(uint8_t v) noexcept;
 

@@ -2,7 +2,7 @@
 #include "emu_instance.h"
 #include <QMessageBox>
 
-EmuInstance::EmuInstance(QObject *parent, GB *g, FrameBuffer *f)
+EmuInstance::EmuInstance(QObject *parent, gameboy::GB *g, FrameBuffer *f)
 {
     UNUSED(parent);
 

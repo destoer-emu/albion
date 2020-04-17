@@ -1,5 +1,5 @@
 #pragma once
-#include "forward_def.h"
+#include <gb/forward_def.h>
 #include <destoer-emu/lib.h>
 #include <destoer-emu/debug.h>
 
@@ -12,51 +12,17 @@ enum class instr_state
 {
     normal,
     halt,
-    ei,
-    di
-};
-
-
-enum class gameboy_event
-{
-    timer_increment
-};
-
-
-class EventQueue
-{
-public:
-
-    struct EventNode
-    {
-        // how many cycles until the event
-        int cycles_limit;
-        gameboy_event type;
-    };
-
-    // add an event to be queued later
-    void insert_event(const EventNode &event);
-
-    // call the appropiate event handler
-    void service_event(gameboy_event type);
-
-    // push pending events to be added into the main list
-    // sorted
-    void queue_events();
-
-private:
-    // sorted list of events to be serviced
-    std::list<EventNode> event_list;
-
-    //events to queue up
-    std::vector<EventNode> pending_events;
+    ei, // enable interrupt
+    di  // disable interrupt
 };
 
 
 class Cpu
 {
 public:
-    void init(Memory *m, Ppu *p,Apu *ap, Disass *d, Debug *debugger,bool use_bios = false);
+    Cpu(GB &gb);
+
+    void init(bool use_bios = false);
     void step();
     void cycle_tick(int cycles) noexcept; 
     void cycle_tick_t(int cycles) noexcept;
@@ -96,12 +62,12 @@ public:
     void load_state(std::ifstream &fp);
 
 private:
-    Memory *mem = nullptr;
-    Ppu *ppu = nullptr;
-    Apu *apu = nullptr;
-    Disass *disass = nullptr;
-    Debug *debug = nullptr;
 
+    Memory &mem;
+    Apu &apu;
+    Ppu &ppu;
+    Debug &debug;
+    Disass &disass;
 
     // registers
     uint8_t a; uint8_t f; //af

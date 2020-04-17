@@ -32,6 +32,9 @@ void Ppu::save_state(std::ofstream &fp)
     file_write_arr(fp,sp_pal,sizeof(sp_pal));
     file_write_var(fp,sp_pal_idx);
     file_write_var(fp,bg_pal_idx);
+    file_write_var(fp,window_y_line);
+    file_write_var(fp,window_x_line);
+    file_write_var(fp,window_drawn);
 }
 
 void Ppu::load_state(std::ifstream &fp)
@@ -66,6 +69,9 @@ void Ppu::load_state(std::ifstream &fp)
     file_read_arr(fp,sp_pal,sizeof(sp_pal));
     file_read_var(fp,sp_pal_idx);
     file_read_var(fp,bg_pal_idx);
+    file_read_var(fp,window_y_line);
+    file_read_var(fp,window_x_line);
+    file_read_var(fp,window_drawn);    
 }
 
 }

@@ -4,11 +4,16 @@
 namespace gameboy
 {
 
+Noise::Noise(GB &gb,int c) : Channel(gb,c)
+{
+
+}
+
 // CHANNEL 4 NOISE
 
-void Noise::init(Memory *m, int c) noexcept
+void Noise::init() noexcept
 {
-    init_channel(m,c);
+    init_channel();
     env_init();
 	clock_shift = 0;
 	counter_width = 0;

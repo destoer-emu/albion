@@ -53,6 +53,7 @@ uint8_t TimerCounter::read_counter(int idx) const
             break;
         }
     }
+    return 0;
 }
 
 // actually writes the reload but is at the same addr

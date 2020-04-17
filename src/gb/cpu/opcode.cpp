@@ -1,8 +1,6 @@
-#include <gb/cpu.h>
-#include <gb/memory.h>
-#include <gb/disass.h>
+#include <gb/gb.h>
 #include <destoer-emu/debug.h>
-#include <gb/apu.h>
+
 
 
 namespace gameboy
@@ -11,9 +9,9 @@ namespace gameboy
 
 void Cpu::check_rst_loop(uint16_t addr, uint8_t op)
 {
-	if(mem->read_mem(addr) == op)
+	if(mem.read_mem(addr) == op)
 	{
-		write_log("[ERROR] rst infinite loop at {:x}->{:x}",pc,addr);
+		write_log(debug,"[ERROR] rst infinite loop at {:x}->{:x}",pc,addr);
 		throw std::runtime_error("infinite rst lockup");
 	}
 }
@@ -22,12 +20,12 @@ void Cpu::exec_instr()
 {
 
 #ifdef DEBUG
-	uint8_t x = mem->read_mem(pc);
-	if(debug->step_instr || debug->breakpoint_hit(pc,x,break_type::execute))
+	uint8_t x = mem.read_mem(pc);
+	if(debug.step_instr || debug.breakpoint_hit(pc,x,break_type::execute))
 	{
 		// halt until told otherwhise :)
-		write_log("[DEBUG] execute breakpoint hit ({:x}:{:x})",pc,x);
-		debug->halt();
+		write_log(debug,"[DEBUG] execute breakpoint hit ({:x}:{:x})",pc,x);
+		debug.halt();
 	}
 #endif
 
@@ -48,12 +46,12 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0x1: // ld bc, nn
-			write_bc(mem->read_wordt(pc));
+			write_bc(mem.read_wordt(pc));
 			pc += 2;
 			break;
 		
 		case 0x2: // ld (bc), a
-			mem->write_memt(read_bc(),a);
+			mem.write_memt(read_bc(),a);
 			break;
 		
 		case 0x3: // inc bc
@@ -70,7 +68,7 @@ void Cpu::exec_instr()
 			break;
 			
 		case 0x6: // ld b, n
-			b = mem->read_memt(pc++);
+			b = mem.read_memt(pc++);
 			break;
 			
 		case 0x7: // rlca (rotate a left bit 7 to carry)
@@ -80,7 +78,7 @@ void Cpu::exec_instr()
 		
 		
 		case 0x8: // ld (nnnn), sp
-			mem->write_wordt(mem->read_wordt(pc),sp);
+			mem.write_wordt(mem.read_wordt(pc),sp);
 			pc += 2; // for two immediate ops
 			break;
 		
@@ -92,7 +90,7 @@ void Cpu::exec_instr()
 
 		
 		case 0xa: // ld a, (bc)
-			a = mem->read_memt(read_bc());
+			a = mem.read_memt(read_bc());
 			break;
 		
 		
@@ -113,7 +111,7 @@ void Cpu::exec_instr()
 		
 		
 		case 0xe: // ld c, nn
-			c = mem->read_memt(pc++);
+			c = mem.read_memt(pc++);
 			break;
 
 			
@@ -126,37 +124,36 @@ void Cpu::exec_instr()
 		case 0x10: // stop 
 			pc += 1; // skip over next byte
 			
-			if(is_cgb && is_set(mem->io[IO_SPEED],0))
+			if(is_cgb && is_set(mem.io[IO_SPEED],0))
 			{
-				mem->io[IO_SPEED] = deset_bit(mem->io[IO_SPEED],0); // clear the bit
+				mem.io[IO_SPEED] = deset_bit(mem.io[IO_SPEED],0); // clear the bit
 				is_double = !is_double;
 				
 				if(is_double)
 				{
-					mem->io[IO_SPEED] = set_bit(mem->io[IO_SPEED],7);
+					mem.io[IO_SPEED] = set_bit(mem.io[IO_SPEED],7);
 				}
 			
 				else // single speed 
 				{
-					mem->io[IO_SPEED] = deset_bit(mem->io[IO_SPEED],7);
+					mem.io[IO_SPEED] = deset_bit(mem.io[IO_SPEED],7);
 				}
-				apu->set_double(is_double);
 			}
 			
 			else // almost nothing triggers this 
 			{
-				write_log("[WARNING] stop opcode hit at {:x}",pc);
+				write_log(debug,"[WARNING] stop opcode hit at {:x}",pc);
 			}
 
 			break;
 			
 		case 0x11: // ld de, nn
-			write_de(mem->read_wordt(pc));
+			write_de(mem.read_wordt(pc));
 			pc += 2;
 			break;
 		
 		case 0x12: // ld (de), a
-			mem->write_memt(read_de(), a);
+			mem.write_memt(read_de(), a);
 			break;
 		
 		case 0x13: // inc de
@@ -173,7 +170,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0x16: // ld d, nn 
-			d = mem->read_memt(pc++);
+			d = mem.read_memt(pc++);
 			break;
 		
 		case 0x17: // rla (rotate left through carry flag) 
@@ -191,7 +188,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0x1a: // ld a,(de) 
-			a = mem->read_memt(read_de());
+			a = mem.read_memt(read_de());
 			break;
 		
 
@@ -209,7 +206,7 @@ void Cpu::exec_instr()
 			break;
 			
 		case 0x1e: // ld e, n
-			e = mem->read_memt(pc++);
+			e = mem.read_memt(pc++);
 			break;
 		
 		case 0x1f: // rra
@@ -222,12 +219,12 @@ void Cpu::exec_instr()
 			break;
 			
 		case 0x21: // ld hl, nn
-			write_hl(mem->read_wordt(pc));
+			write_hl(mem.read_wordt(pc));
 			pc += 2;
 			break;
 		
 		case 0x22: // ldi (hl), a
-			mem->write_memt(read_hl(),a);
+			mem.write_memt(read_hl(),a);
 			write_hl(read_hl()+1);
 			break;
 		
@@ -245,7 +242,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0x26: // ld h, nn
-			h = mem->read_memt(pc++);
+			h = mem.read_memt(pc++);
 			break;
 		
 		case 0x27: // daa (lots of edge cases)
@@ -296,7 +293,7 @@ void Cpu::exec_instr()
 		// flags affected by this?
 		case 0x2a: // ldi a, (hl)
 			
-			a = mem->read_memt(read_hl());
+			a = mem.read_memt(read_hl());
 			write_hl(read_hl()+1);
 			break;
 		
@@ -314,7 +311,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0x2e: // ld l, nn
-			l = mem->read_memt(pc++);
+			l = mem.read_memt(pc++);
 			break;
 			
 		case 0x2f: // cpl (flip bits in a)
@@ -329,12 +326,12 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0x31: // ld sp, nn
-			sp = mem->read_wordt(pc);
+			sp = mem.read_wordt(pc);
 			pc += 2;
 			break;
 		
 		case 0x32: // ldd (hl), a 
-			mem->write_memt(read_hl(),a);
+			mem.write_memt(read_hl(),a);
 			write_hl(read_hl()-1);
 			break;
 		
@@ -345,22 +342,22 @@ void Cpu::exec_instr()
 		
 		case 0x34: // inc (hl)
         {
-			uint8_t v = mem->read_memt(read_hl()); // use to store (hl)
+			uint8_t v = mem.read_memt(read_hl()); // use to store (hl)
 			instr_inc(v++); // inc 
-			mem->write_memt(read_hl(),v); // and write back
+			mem.write_memt(read_hl(),v); // and write back
 			break;
         }
 
 		case 0x35: // dec (hl)
         {
-			uint8_t v = mem->read_memt(read_hl());
+			uint8_t v = mem.read_memt(read_hl());
 			instr_dec(v--); // dec it
-			mem->write_memt(read_hl(),v); // and write straight back	
+			mem.write_memt(read_hl(),v); // and write straight back	
 			break;
         }	
 		
 		case 0x36: // ld (hl), n 
-			mem->write_memt(read_hl(),mem->read_memt(pc++));
+			mem.write_memt(read_hl(),mem.read_memt(pc++));
 			break;
 		
 		case 0x37: // scf
@@ -380,7 +377,7 @@ void Cpu::exec_instr()
 			break;	
 			
 		case 0x3a: // ldd a, (hl)
-			a = mem->read_memt(read_hl());
+			a = mem.read_memt(read_hl());
 			write_hl(read_hl()-1);
 			break;
 		
@@ -399,7 +396,7 @@ void Cpu::exec_instr()
 			
 		
 		case 0x3e: // ld a, n
-			a = mem->read_memt(pc++);
+			a = mem.read_memt(pc++);
 			break;
 		
 		case 0x3f: // ccf
@@ -442,7 +439,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0x46: // ld b, (hl)
-			b = mem->read_memt(read_hl());
+			b = mem.read_memt(read_hl());
 			break;
 		
 		case 0x47: // ld b,a
@@ -474,7 +471,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0x4e: // ld c, (hl)
-			c = mem->read_memt(read_hl());
+			c = mem.read_memt(read_hl());
 			break;
 		
 		case 0x4f: // ld c,a
@@ -509,7 +506,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0x56: // ld d, (hl)
-			d = mem->read_memt(read_hl());
+			d = mem.read_memt(read_hl());
 			break;
 		
 		case 0x57: // ld d, a
@@ -542,7 +539,7 @@ void Cpu::exec_instr()
 			break;
 			
 		case 0x5e: // ld e, (hl)
-			e = mem->read_memt(read_hl());
+			e = mem.read_memt(read_hl());
 			break;
 		
 		case 0x5f: // ld e, a
@@ -576,7 +573,7 @@ void Cpu::exec_instr()
 			break;
 			
 		case 0x66: // ld h, (hl)
-			h = mem->read_memt(read_hl());
+			h = mem.read_memt(read_hl());
 			break;
 		
 		case 0x67: // ld h, a 
@@ -610,7 +607,7 @@ void Cpu::exec_instr()
 		
 		case 0x6e: // ld l, (hl)
 			
-			l = mem->read_memt(read_hl());
+			l = mem.read_memt(read_hl());
 			
 			break;
 		
@@ -619,27 +616,27 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0x70: // ld (hl),b
-			mem->write_memt(read_hl(),b);
+			mem.write_memt(read_hl(),b);
 			break;
 		
 		case 0x71: // ld (hl), c
-			mem->write_memt(read_hl(), c);
+			mem.write_memt(read_hl(), c);
 			break;
 		
 		case 0x72: // ld (hl), d
-			mem->write_memt(read_hl(),d);
+			mem.write_memt(read_hl(),d);
 			break;
 		
 		case 0x73: // ld (hl), e
-			mem->write_memt(read_hl(),e);
+			mem.write_memt(read_hl(),e);
 			break;
 		
 		case 0x74: // ld (hl), h
-			mem->write_memt(read_hl(),h);
+			mem.write_memt(read_hl(),h);
 			break;
 		
 		case 0x75: // ld (hl), l
-			mem->write_memt(read_hl(),l);
+			mem.write_memt(read_hl(),l);
 			break;
 		
 		case 0x76: // halt 
@@ -648,7 +645,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0x77: // ld (hl), a 
-			mem->write_memt(read_hl(),a);
+			mem.write_memt(read_hl(),a);
 			break;
 		
 		case 0x78: // ld a, b
@@ -676,7 +673,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0x7e: // ld a, (hl)
-			a = mem->read_memt(read_hl());
+			a = mem.read_memt(read_hl());
 			break;
 		
 		case 0x7f: // ld a, a
@@ -709,7 +706,7 @@ void Cpu::exec_instr()
 		
 		case 0x86: // add a, (hl)
         {
-		    uint8_t v = mem->read_memt(read_hl());
+		    uint8_t v = mem.read_memt(read_hl());
 			instr_add(v);
 			break;
         }
@@ -744,7 +741,7 @@ void Cpu::exec_instr()
 		
 		case 0x8e: // adc (hl)
         {
-			uint8_t v = mem->read_memt(read_hl());
+			uint8_t v = mem.read_memt(read_hl());
 			instr_adc(v);
 			break;
         }
@@ -779,7 +776,7 @@ void Cpu::exec_instr()
 		
 		case 0x96: // sub (hl)
         {
-			uint8_t v = mem->read_memt(read_hl());
+			uint8_t v = mem.read_memt(read_hl());
 			instr_sub(v);
 			break;
         }
@@ -814,7 +811,7 @@ void Cpu::exec_instr()
 		
 		case 0x9e: // sbc a, (hl)
         {
-			uint8_t v = mem->read_memt(read_hl());
+			uint8_t v = mem.read_memt(read_hl());
 			instr_sbc(v);
 			break;
         }
@@ -848,7 +845,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xa6: // and (hl)
-			instr_and(mem->read_memt(read_hl()));
+			instr_and(mem.read_memt(read_hl()));
 			break;
 		
 		case 0xa7: // and a
@@ -882,7 +879,7 @@ void Cpu::exec_instr()
 		
 		case 0xae: // xor (hl)
         {
-			uint8_t v = mem->read_memt(read_hl());
+			uint8_t v = mem.read_memt(read_hl());
 			instr_xor(v);
 			break;
         }
@@ -917,7 +914,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xb6: // or (hl)
-			instr_or(mem->read_memt(read_hl()));
+			instr_or(mem.read_memt(read_hl()));
 			break;
 		
 		case 0xb7: // or a
@@ -954,7 +951,7 @@ void Cpu::exec_instr()
 		
 		case 0xbe: // cp (hl)
         {
-			uint8_t v = mem->read_memt(read_hl());
+			uint8_t v = mem.read_memt(read_hl());
 			instr_cp(v);
 			break;
         }
@@ -973,7 +970,7 @@ void Cpu::exec_instr()
 		
 		case 0xc2: // jp nz, nnnn
         {
-			uint16_t v =  mem->read_wordt(pc);
+			uint16_t v =  mem.read_wordt(pc);
 			pc += 2;
 			if(!is_set(f,Z))
 			{
@@ -984,7 +981,7 @@ void Cpu::exec_instr()
         }
 
 		case 0xc3: // jump
-			pc = mem->read_wordt(pc);
+			pc = mem.read_wordt(pc);
 			cycle_tick(1); // internal
 			break;
 		
@@ -1002,7 +999,7 @@ void Cpu::exec_instr()
 		
 		
 		case 0xc6: // add a, nn
-			instr_add(mem->read_memt(pc++));
+			instr_add(mem.read_memt(pc++));
 			break;
 		
 		case 0xc7: // rst 00
@@ -1025,7 +1022,7 @@ void Cpu::exec_instr()
 		
 		case 0xca: // jp z, nnnn
         {
-			uint16_t v = mem->read_wordt(pc);
+			uint16_t v = mem.read_wordt(pc);
 			pc += 2;
 			if(is_set(f, Z))
 			{
@@ -1037,7 +1034,7 @@ void Cpu::exec_instr()
 
 		case 0xcb: // multi len opcode (cb prefix)
         {
-			uint8_t cbop = mem->read_memt(pc++); // fetch the opcode
+			uint8_t cbop = mem.read_memt(pc++); // fetch the opcode
 			// tick our instr fetch for cb
 			exec_cb(cbop); // exec it
 			break; 
@@ -1050,7 +1047,7 @@ void Cpu::exec_instr()
         }
 		case 0xCD: // call nn 
         {
-			uint16_t v = mem->read_wordt(pc);
+			uint16_t v = mem.read_wordt(pc);
 			pc += 2;
 			cycle_tick(1); // internal
 			write_stackwt(pc);
@@ -1059,7 +1056,7 @@ void Cpu::exec_instr()
         }
 
 		case 0xce: // adc a, nn
-			instr_adc(mem->read_memt(pc++));
+			instr_adc(mem.read_memt(pc++));
 			break;
 		
 		case 0xcf: // rst 08
@@ -1079,7 +1076,7 @@ void Cpu::exec_instr()
 		
 		case 0xd2: // jp nc u16
         {
-			uint16_t v = mem->read_wordt(pc);
+			uint16_t v = mem.read_wordt(pc);
 			pc += 2;
 			if(!is_set(f,C))
 			{
@@ -1101,7 +1098,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xd6: // sub a, nn
-			instr_sub(mem->read_memt(pc++));
+			instr_sub(mem.read_memt(pc++));
 			break;
 		
 		case 0xd7: // rst 10
@@ -1125,7 +1122,7 @@ void Cpu::exec_instr()
 		
 		case 0xda: // jp c, u16
         {
-			uint16_t v = mem->read_wordt(pc);
+			uint16_t v = mem.read_wordt(pc);
 			pc += 2;
 			if(is_set(f,C))
 			{
@@ -1142,7 +1139,7 @@ void Cpu::exec_instr()
         }
 
 		case 0xde: // sbc a, n
-			instr_sbc(mem->read_memt(pc++));
+			instr_sbc(mem.read_memt(pc++));
 			break;
 
 		case 0xdf: // rst 18
@@ -1153,7 +1150,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xE0: // ld (ff00+n),a
-			mem->write_iot((0xff00+mem->read_memt(pc++)),a);
+			mem.write_iot((0xff00+mem.read_memt(pc++)),a);
 			break;
 
 		case 0xe1: // pop hl
@@ -1161,7 +1158,7 @@ void Cpu::exec_instr()
 			break;
 			
 		case 0xE2: // LD ($FF00+C),A
-			mem->write_iot(0xff00 + c, a);
+			mem.write_iot(0xff00 + c, a);
 			break;
 
 		case 0xe5: // push hl
@@ -1170,7 +1167,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xe6: // and a, n
-			instr_and(mem->read_memt(pc++));
+			instr_and(mem.read_memt(pc++));
 			break;
 		
 		case 0xe7: // rst 20
@@ -1181,7 +1178,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xe8: // add sp, i8 
-			sp = instr_addi(sp, static_cast<int8_t>(mem->read_memt(pc++)));
+			sp = instr_addi(sp, static_cast<int8_t>(mem.read_memt(pc++)));
 			cycle_tick(2); // internal delay (unsure)
 			break;
 		
@@ -1190,12 +1187,12 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xea: // ld (nnnn), a
-			mem->write_memt(mem->read_wordt(pc),a);
+			mem.write_memt(mem.read_wordt(pc),a);
 			pc += 2;
 			break;
 		
 		case 0xee: // xor a, nn
-			instr_xor(mem->read_memt(pc++));
+			instr_xor(mem.read_memt(pc++));
 			break;
 		
 		case 0xef: // rst 28
@@ -1206,7 +1203,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xF0: // ld a, (ff00+nn)
-			a = mem->read_iot(0xff00+mem->read_memt(pc++));
+			a = mem.read_iot(0xff00+mem.read_memt(pc++));
 			break;
 		
 		case 0xf1: // pop af
@@ -1214,7 +1211,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xf2: // ld a, (ff00+c)
-			a = mem->read_iot(0xff00 + c);
+			a = mem.read_iot(0xff00 + c);
 			break;
 		
 		case 0xf3: // disable interrupt
@@ -1229,7 +1226,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xf6: // or a, nn
-			instr_or(mem->read_memt(pc++));
+			instr_or(mem.read_memt(pc++));
 			break;
 		
 		case 0xf7: // rst 30
@@ -1240,7 +1237,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xf8: // ld hl, sp + i8 
-			write_hl(instr_addi(sp,static_cast<int8_t>(mem->read_memt(pc++))));
+			write_hl(instr_addi(sp,static_cast<int8_t>(mem.read_memt(pc++))));
 			cycle_tick(1); // internal
 			break;
 		
@@ -1250,7 +1247,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xfa: // ld a (nn) <-- 16 bit address
-			a = mem->read_memt(mem->read_wordt(pc));
+			a = mem.read_memt(mem.read_wordt(pc));
 			pc += 2;
 			break;
 		
@@ -1260,7 +1257,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xFE: // cp a, nn (do a sub and discard result)
-			instr_cp(mem->read_memt(pc++));
+			instr_cp(mem.read_memt(pc++));
 			break;
 			
 		
@@ -1273,7 +1270,7 @@ void Cpu::exec_instr()
 
 		default:
 		{
-			write_log("[ERROR] invalid opcode at {:x}",pc);
+			write_log(debug,"[ERROR] invalid opcode at {:x}",pc);
 			throw std::runtime_error("invalid opcode!");		
 		}
     }

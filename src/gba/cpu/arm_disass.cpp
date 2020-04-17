@@ -1,11 +1,13 @@
-#include <gba/disass.h>
-#include <gba/arm.h>
-#include <gba/cpu.h>
-#include <gba/memory.h>
+#include<gba/gba.h>
 
 namespace gameboyadvance
 {
 
+Disass::Disass(GBA &gba) : mem(gba.mem), cpu(gba.cpu)
+{
+    init_arm_disass_table();
+    init_thumb_disass_table();
+}
 
 void Disass::init_arm_disass_table()
 {
@@ -130,7 +132,7 @@ void Disass::init_arm_disass_table()
 std::string Disass::disass_arm(uint32_t program_counter)
 {
     pc = program_counter;
-    uint32_t opcode = mem->read_mem<uint32_t>(pc);
+    uint32_t opcode = mem.read_mem<uint32_t>(pc);
     pc += ARM_WORD_SIZE;
     uint32_t op = get_arm_opcode_bits(opcode);
 

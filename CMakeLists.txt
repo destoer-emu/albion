@@ -10,8 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 
 #set(FRONTEND "QT")
-set(FRONTEND "SDL")
-#set(FRONTEND "IMGUI")
+#set(FRONTEND "SDL")
+set(FRONTEND "IMGUI")
 
 
 add_definitions(-DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL)
@@ -66,7 +66,7 @@ if(WIN32)
 		#link_libraries("C:/SDL2-2.0.10/lib/x64/SDL2.lib") if no sdl2 cmake
 	endif()
 else()
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -pthread -O3")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -pthread -O3")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lSDL2")
 	if(${FRONTEND} STREQUAL "IMGUI") 
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lglfw  -lGL -lGLEW")
@@ -78,7 +78,16 @@ endif()
 if(${FRONTEND} STREQUAL "QT") 
 	if(WIN32)
 		list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.9.9/msvc2017_64")
+		find_package(OPENGL REQUIRED)
+		if (OPENGL_FOUND)
+			include_directories(${OPENGL_INCLUDE_DIRS})
+			link_libraries(${OPENGL_LIBRARIES})
+		endif()
+	else()
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lGL")
 	endif()
+
+
 
 	set(CMAKE_AUTOMOC ON)
 	set(CMAKE_AUTORCC ON)
@@ -86,11 +95,10 @@ if(${FRONTEND} STREQUAL "QT")
 	find_package(Qt5 COMPONENTS Widgets OpenGL REQUIRED)
 	link_libraries(Qt5::Widgets)
 	link_libraries(Qt5::OpenGL)
-	find_package(OPENGL REQUIRED)
-	if (OPENGL_FOUND)
-		include_directories(${OPENGL_INCLUDE_DIRS})
-		link_libraries(${OPENGL_LIBRARIES})
-	endif()	
+
+	
+
+
 endif()
 
 
@@ -114,9 +122,12 @@ file(GLOB src_files
 	"src/gba/cpu/*.cpp"
 	"src/gba/memory/*.cpp"
 	"src/gba/ppu/*.cpp"
+	"src/gba/apu/*.cpp"
 	"src/gba/headers/gba/*.h"
 	"src/frontend/gb/*.cpp"
 	"src/frontend/gb/*.h"
+	"src/frontend/gba/*.cpp"
+	"src/frontend/gba/*.h"
 )
 
 # add some includes

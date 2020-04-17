@@ -27,7 +27,8 @@ SDLMainWindow::SDLMainWindow(std::string filename)
 
 			case emu_type::none:
 			{
-				printf("unrecognised rom type: %s\n",filename);
+				std::cout << "unrecognised rom type" 
+					<< filename << "\n";
 				return;
 			}
 		}

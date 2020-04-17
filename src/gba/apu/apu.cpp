@@ -1,12 +1,15 @@
-#include <gba/apu.h>
+#include <gba/gba.h>
 
 namespace gameboyadvance
 {
 
-void Apu::init(Mem *mem, Cpu *cpu)
+Apu::Apu(GBA &gba) : mem(gba.mem), cpu(gba.cpu)
 {
-    this->mem = mem;
-    this->cpu = cpu;
+    playback.init(32*1024,sample_size);
+}
+
+void Apu::init()
+{
     apu_io.init();
 
     // init our audio playback

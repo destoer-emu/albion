@@ -1,15 +1,15 @@
-#include <gba/dma.h>
-#include <gba/memory.h>
-#include <gba/cpu.h>
-#include <gba/apu.h>
+#include <gba/gba.h>
 
 namespace gameboyadvance
 {
 
-void Dma::init(Mem *mem, Cpu *cpu)
+Dma::Dma(GBA &gba) : mem(gba.mem), cpu(gba.cpu)
 {
-    this->mem = mem;
-    this->cpu = cpu;
+
+}
+
+void Dma::init()
+{
     dma_in_progress = false;
 
     for(auto &x: dma_regs)
@@ -223,8 +223,8 @@ void Dma::do_dma(int reg_num, dma_type req_type)
 
             for(int i = 0; i < 4; i++)
             {
-                uint32_t v = mem->read_memt<uint32_t>(r.src_shadow+i*ARM_WORD_SIZE);
-                mem->write_memt<uint32_t>(r.dst_shadow,v);
+                uint32_t v = mem.read_memt<uint32_t>(r.src_shadow+i*ARM_WORD_SIZE);
+                mem.write_memt<uint32_t>(r.dst_shadow,v);
             }
             
             switch(r.src_cnt)
@@ -252,8 +252,8 @@ void Dma::do_dma(int reg_num, dma_type req_type)
                 {
                     uint32_t offset = i * size;
 
-                    uint32_t v = mem->read_memt<uint32_t>(r.src_shadow+offset);
-                    mem->write_memt<uint32_t>(r.dst_shadow+offset,v);
+                    uint32_t v = mem.read_memt<uint32_t>(r.src_shadow+offset);
+                    mem.write_memt<uint32_t>(r.dst_shadow+offset,v);
                     
                 }
             }
@@ -264,8 +264,8 @@ void Dma::do_dma(int reg_num, dma_type req_type)
                 {
                     uint32_t offset = i * size;
 
-                    uint16_t v = mem->read_memt<uint16_t>(r.src_shadow+offset);
-                    mem->write_memt<uint16_t>(r.dst_shadow+offset,v);
+                    uint16_t v = mem.read_memt<uint16_t>(r.src_shadow+offset);
+                    mem.write_memt<uint16_t>(r.dst_shadow+offset,v);
                 }
             }
             break;
@@ -276,7 +276,7 @@ void Dma::do_dma(int reg_num, dma_type req_type)
     static constexpr interrupt dma_interrupt[4] = {interrupt::dma0,interrupt::dma1,interrupt::dma2,interrupt::dma3}; 
     if(r.irq) 
     {
-        cpu->request_interrupt(dma_interrupt[reg_num]);
+        cpu.request_interrupt(dma_interrupt[reg_num]);
     }
 
 

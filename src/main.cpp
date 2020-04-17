@@ -69,7 +69,7 @@ void gb_run_test_helper(const std::vector<std::string> &tests, int seconds)
         }
     }
 
-    printf("total: %d\n",tests.size());
+    printf("total: %zd\n",tests.size());
     printf("pass: %d\n",pass);
     printf("fail: %d\n",fail);
     printf("abort: %d\n",aborted);
@@ -79,7 +79,11 @@ void gb_run_test_helper(const std::vector<std::string> &tests, int seconds)
 void gb_run_tests()
 {
     puts("gekkio_tests:");
+    auto start = std::chrono::system_clock::now();
     gb_run_test_helper(filter_ext(get_dir_tree("mooneye-gb_hwtests"),"gb"),10);
+    auto current = std::chrono::system_clock::now();
+    auto count = std::chrono::duration_cast<std::chrono::seconds>(current - start).count();
+    printf("total time taken %ld\n",count);
 }
 
 int main(int argc, char *argv[])

@@ -1,5 +1,4 @@
-#include <gb/apu.h>
-#include <gb/memory.h>
+#include <gb/gb.h>
  
 
 namespace gameboy
@@ -7,15 +6,17 @@ namespace gameboy
 
 //CHANNEL 3 WAVE
 
-
-void Wave::init(Memory *m, int c) noexcept
+Wave::Wave(GB &gb, int c) : Channel(gb,c)
 {
-    init_channel(m,c);
+
+}
+
+void Wave::init() noexcept
+{
+	init_channel();
 	freq_init();
     freq_lower_mask = freq_lower_masks[chan_number];
     period_scale = freq_period_scales[chan_number];
-
-
 }
 
 
@@ -40,7 +41,7 @@ void Wave::tick_period(int cycles) noexcept
 		if(dac_on() && enabled())
 		{
 			int pos = duty_idx / 2;
-			uint8_t byte = mem->io[0x30 + pos];
+			uint8_t byte = mem.io[0x30 + pos];
 				
 			if(!is_set(duty_idx,0)) // access the high nibble first
 			{

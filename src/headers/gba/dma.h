@@ -47,7 +47,8 @@ struct DmaReg
 class Dma
 {
 public: 
-    void init(Mem *mem, Cpu *cpu);
+    Dma(GBA &gba);
+    void init();
 
     void handle_dma(dma_type req_type);
 
@@ -60,8 +61,8 @@ public:
 
 
 private:
-    Mem *mem = nullptr;
-    Cpu *cpu = nullptr;
+    Mem &mem;
+    Cpu &cpu;
 
     void do_dma(int reg_num,dma_type req_type);
     void handle_increment(int reg_num);

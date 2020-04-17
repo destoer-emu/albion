@@ -85,7 +85,7 @@ private:
 //----- logger macro definition ---
 // might be a less nasty way to ensure these drop away
 // when the debugger is not compiled into the code
-#define write_log(...) debug->write_logger(__VA_ARGS__)
+#define write_log(X,...) (X).write_logger(__VA_ARGS__)
 
 
 #else
@@ -94,8 +94,7 @@ private:
 class Debug 
 {
 public: 
-    template<typename... Args>
-    void write_logger(std::string x,Args... args) { UNUSED(x); }
+    void write_logger(std::string x,...) { UNUSED(x); }
 };
 #define write_log(...)
 

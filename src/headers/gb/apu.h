@@ -10,10 +10,13 @@ namespace gameboy
 class Channel
 {
 public:
+	Channel(GB &gb, int c);
+
+	void init_channel() noexcept;
 	// length counter
     void tick_lengthc() noexcept;
 	void length_trigger() noexcept;
-	void length_write(uint8_t v, int sequencer_step) noexcept;
+	void length_write(uint8_t v) noexcept;
 
 	void reset_length() noexcept;
 
@@ -27,25 +30,28 @@ public:
 	void chan_save_state(std::ofstream &fp);
 	void chan_load_state(std::ifstream &fp);
 protected:
-	void init_channel(Memory *m, int chan_number) noexcept;
+	void init_channel(int chan_number) noexcept;
 	bool dac_on() const noexcept;
 	bool enabled() const noexcept;
 
+	Memory &mem;
+	Apu &apu;
+
     int lengthc = 0;
     bool length_enabled = false;
-    int chan_number; // must be inited
+    const int chan_number; // must be inited
 
 	int output = 0;
 
-	Memory *mem;
+	
 
 	// ideally these should be consts...
-	uint16_t trigger_addr;
-	int max_len;
-	int len_mask;
+	const uint16_t trigger_addr;
+	const int max_len;
+	const int len_mask;
 
-	uint16_t dac_reg;
-	uint16_t dac_mask;
+	const uint16_t dac_reg;
+	const uint16_t dac_mask;
 
 	static constexpr uint16_t trigger_regs[] = {IO_NR14,IO_NR24,IO_NR34,IO_NR44};
 	static constexpr int max_lengths[] = {0x40,0x40,0x100,0x40};
@@ -107,7 +113,8 @@ protected:
 class Square : public Channel, public FreqReg, public Envelope
 {
 public:
-	void init(Memory *mem, int chan_number) noexcept;
+	Square(GB &gb,int c);
+	void init() noexcept;
 	void tick_period(int cycles) noexcept;
 	void write_cur_duty(uint8_t v) noexcept;
 	void duty_trigger() noexcept;
@@ -128,6 +135,7 @@ protected:
 class Sweep : public Square
 {
 public:
+	Sweep(GB &gb, int c);
 	void sweep_init() noexcept;
 	void sweep_trigger() noexcept;
 	void sweep_write(uint8_t v) noexcept;
@@ -148,7 +156,8 @@ private:
 class Wave : public Channel, public FreqReg
 {
 public:
-	void init(Memory *m, int c) noexcept;
+	Wave(GB &gb, int c);
+	void init() noexcept;
 	void wave_trigger() noexcept;
 	void vol_trigger() noexcept;
 	void write_vol(uint8_t v) noexcept;
@@ -164,7 +173,10 @@ private:
 class Noise : public Channel, public Envelope
 {
 public:
-	void init(Memory *m, int c) noexcept;
+	Noise(GB &gb, int c);
+
+
+	void init() noexcept;
 	void tick_period(int cycles) noexcept;
 	void noise_write(uint8_t v) noexcept;
 	void noise_trigger() noexcept;
@@ -182,11 +194,13 @@ private:
 };
 
 class Apu
-{
+{	
 public:
+	Apu(GB &gb);
+
 	void push_samples(int cycles) noexcept;
 
-	void init(Memory *m) noexcept;
+	void init() noexcept;
 
 	void tick(int cycles) noexcept;
 
@@ -201,36 +215,34 @@ public:
 
 	bool enabled() const noexcept;
 
-	void set_double(bool d) noexcept;
-
-
 	void save_state(std::ofstream &fp);
 	void load_state(std::ifstream &fp);
 
+
+	// constructors called in apu.cpp
 	Sweep c1;
 	Square c2;
 	Wave c3;
 	Noise c4;
+
 	GbPlayback playback;
 private:
+
+	Memory &mem;
 
 	void tick_length_counters() noexcept;
 	void clock_envelopes() noexcept;
 	int sequencer_step = 0;
-	Memory *mem = nullptr;
 
 	bool sound_enabled = true;
 
-	bool is_double = false;
+	// counter used to down sample	
+	int down_sample_cnt = 0; 
 
-	// sound playback
-	static constexpr int sample_size = 2048;
 
-	//  internal sound playback
-	float audio_buf[sample_size] = {0};
-	int audio_buf_idx = 0; // how filled up is the buffer
-	int down_sample_cnt = 0; // counter used to down sample	
-	bool audio_setup = false;
+	static constexpr int freq_playback = 96000;
+	static constexpr int down_sample_lim = (4 * 1024 * 1024) / freq_playback;
+
 };
 
 }

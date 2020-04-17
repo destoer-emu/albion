@@ -36,8 +36,10 @@ struct Obj // struct for holding sprites on a scanline
 class Ppu
 {
 public:
+    Ppu(GB &gb);
 
-    void init(Cpu *c,Memory *m) noexcept;
+
+    void init() noexcept;
 
     std::vector<uint32_t> screen; // 160 by 144
 
@@ -60,6 +62,7 @@ public:
 
     void turn_lcd_off() noexcept;
     void turn_lcd_on() noexcept; 
+    void window_disable() noexcept;
 
     // mode change, write, or line change
     // will trigger this
@@ -83,10 +86,14 @@ public:
 
 
     // display viewer
-    std::vector<uint32_t> render_bg() noexcept;
+    std::vector<uint32_t> render_bg(bool higher) noexcept;
     std::vector<uint32_t> render_tiles() noexcept;
+    void render_palette(uint32_t *palette_bg,uint32_t *palette_sp) noexcept;
 
 private:
+
+    Cpu &cpu;
+    Memory &mem;    
 
     enum class pixel_source
     {
@@ -95,10 +102,6 @@ private:
         sprite_zero = 1,
         sprite_one = 2
     };
-
-
-    Cpu *cpu = nullptr;
-    Memory *mem = nullptr;
 
     bool push_pixel() noexcept;
     void tick_fetcher(int cycles) noexcept;
@@ -147,6 +150,15 @@ private:
 	bool window_start = false;
 	bool x_scroll_tick = false;
 	int scx_cnt = 0;
+
+
+    // window internal vars
+    // keep track of how much the window has drawn
+    int window_y_line = 0;
+    int window_x_line = 0;
+    bool window_drawn = false; // did we draw the window on this line?
+
+
 
     // cgb pal
 	uint8_t bg_pal[0x40] = {0xff}; // bg palette data

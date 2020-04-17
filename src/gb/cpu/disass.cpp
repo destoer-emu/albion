@@ -1,14 +1,18 @@
-#include <gb/disass.h>
-#include <gb/memory.h>
+#include <gb/gb.h>
 #include <destoer-emu/lib.h>
 
 
 namespace gameboy
 {
 
-void Disass::init(Memory *m) noexcept
+Disass::Disass(GB &gb) : mem(gb.mem)
 {
-    mem = m;
+
+}
+
+void Disass::init() noexcept
+{
+    
 }
 
 
@@ -559,11 +563,11 @@ constexpr Disass_entry cb_opcode_table[256] =
 // and having a bunch of extra bytes in the exe
 uint32_t Disass::get_op_sz(uint16_t addr) noexcept
 {
-    uint8_t opcode = mem->read_mem(addr++);
+    uint8_t opcode = mem.read_mem(addr++);
 
     bool is_cb = opcode == 0xcb;
 
-    disass_type type = is_cb ? cb_opcode_table[mem->read_mem(addr)].type : opcode_table[opcode].type;
+    disass_type type = is_cb ? cb_opcode_table[mem.read_mem(addr)].type : opcode_table[opcode].type;
 
     int size = is_cb?  1 : 0; // 1 byte prefix for cb
 
@@ -575,12 +579,12 @@ uint32_t Disass::get_op_sz(uint16_t addr) noexcept
 std::string Disass::disass_op(uint16_t addr) noexcept
 {
 
-    uint8_t opcode = mem->read_mem(addr++);
+    uint8_t opcode = mem.read_mem(addr++);
 
     
     if(opcode == 0xcb)
     {
-        opcode = mem->read_mem(addr);
+        opcode = mem.read_mem(addr);
         Disass_entry entry = cb_opcode_table[opcode];
         return std::string(entry.fmt_str);
     }
@@ -595,19 +599,19 @@ std::string Disass::disass_op(uint16_t addr) noexcept
             // eg jp
             case disass_type::op_u16:
             {
-                return fmt::format(entry.fmt_str,mem->read_word(addr));
+                return fmt::format(entry.fmt_str,mem.read_word(addr));
             }
 
             // eg ld a, 0xff
             case disass_type::op_u8:
             {
-                return fmt::format(entry.fmt_str,mem->read_mem(addr));
+                return fmt::format(entry.fmt_str,mem.read_mem(addr));
             }
 
             // eg jr
             case disass_type::op_i8:
             {
-                int8_t operand = mem->read_mem(addr++);
+                int8_t operand = mem.read_mem(addr++);
                 return fmt::format(entry.fmt_str,addr+operand);
             }
 

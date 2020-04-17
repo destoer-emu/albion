@@ -15,7 +15,8 @@ namespace gameboyadvance
 class Cpu
 {
 public:
-    void init(Display *disp, Mem *mem,Apu *apu, Debug *debug, Disass *disass);
+    Cpu(GBA &gba);
+    void init();
     void step();
     void cycle_tick(int cylces); // advance the system state
 
@@ -150,11 +151,11 @@ private:
     void set_zero_flag_long(uint64_t v);
     void set_nz_flag_long(uint64_t v);
 
-    Display *disp = nullptr;
-    Mem *mem = nullptr;
-    Debug *debug = nullptr;
-    Disass *disass = nullptr;
-    Apu *apu = nullptr;
+    Display &disp;
+    Mem &mem;
+    Debug &debug;
+    Disass &disass;
+    Apu &apu;
 
     // underlying registers
 

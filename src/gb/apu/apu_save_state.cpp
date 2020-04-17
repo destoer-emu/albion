@@ -12,9 +12,6 @@ void Apu::save_state(std::ofstream &fp)
     c4.save_state(fp);
 
 	file_write_var(fp,sound_enabled);
-	file_write_var(fp,is_double);
-	file_write_arr(fp,audio_buf,sizeof(audio_buf));
-	file_write_var(fp,audio_buf_idx); 
 	file_write_var(fp,down_sample_cnt);
 }
 
@@ -86,16 +83,7 @@ void Apu::load_state(std::ifstream &fp)
 
 
 	file_read_var(fp,sound_enabled);
-	file_read_var(fp,is_double);
-	file_read_arr(fp,audio_buf,sizeof(audio_buf));
-	file_read_var(fp,audio_buf_idx); 
 	file_read_var(fp,down_sample_cnt);
-
-    // prevent out of bound idx loads
-    if(audio_buf_idx >= sample_size)
-    {
-        audio_buf_idx = 0;
-    }
 }
 
 

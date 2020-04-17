@@ -69,8 +69,9 @@ private:
 };
 
 
-struct GameboyDisplayViewer
+class GameboyDisplayViewer
 {
+public:
     void init();
     void update(gameboy::GB &gb);
 
@@ -82,10 +83,12 @@ struct GameboyDisplayViewer
     Texture bg_map;
     Texture tiles;
 
-    // implement a dumper for the ppu sprite and bg palette 
-    // tomorrow and pass more tests
-    uint32_t pallette_bg[32];
-    uint32_t pallette_sp[32];
+    std::atomic_bool bg_map_higher = false;
+
+private:
+    std::mutex pal_mutex;
+    uint32_t palette_bg[32];
+    uint32_t palette_sp[32];
 };
 
 
@@ -172,7 +175,7 @@ private:
     
     GLFWwindow* window;
     std::thread emu_thread;
-    bool emu_running = false;  
+    std::atomic_bool emu_running = false;  
     emu_type running_type = emu_type::none;
 
     Texture screen;

@@ -1,7 +1,4 @@
-#include <gb/memory.h>
-#include <gb/ppu.h>
-#include <gb/cpu.h>
-#include <gb/apu.h>
+#include <gb/gb.h>
 #include <destoer-emu/lib.h>
 #include <destoer-emu/debug.h>
 
@@ -76,13 +73,35 @@ bool Memory::rom_cgb_enabled() const noexcept
 	}
 }
 
-void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_rom, bool use_bios)
+Memory::Memory(GB &gb) : cpu(gb.cpu), ppu(gb.ppu), 
+	apu(gb.apu), debug(gb.debug)
 {
-    cpu = c; // init our cpu pointer
-    ppu = p;
-	apu = a;
-	debug = d;
+	// reserve our underlying memory
+    cgb_wram_bank.resize(7);
+    for(auto &x: cgb_wram_bank)
+    {
+        x.resize(0x1000);
+		std::fill(x.begin(),x.end(),0);
+    }
 
+    wram.resize(0x1000);
+	std::fill(wram.begin(),wram.end(),0); 
+    oam.resize(0xa0);
+	std::fill(oam.begin(),oam.end(),0);
+    io.resize(0x100);
+	std::fill(io.begin(),io.end(),0);
+
+    vram.resize(0x2);
+    for(auto &x: vram)
+    {
+        x.resize(0x2000); 
+		std::fill(x.begin(),x.end(),0);
+    }
+	rom.resize(0x4000);
+} 
+
+void Memory::init(std::string rom_name, bool with_rom, bool use_bios)
+{
 	if(with_rom)
 	{
 		read_file(rom_name,rom); // read our rom in
@@ -115,21 +134,19 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
 		}
 	}
 
-    // reserve our underlying memory
+    // init memory
     vram.resize(0x2);
     for(auto &x: vram)
     {
-        x.resize(0x2000); 
 		std::fill(x.begin(),x.end(),0);
     }
-
-
-    wram.resize(0x1000);
 	std::fill(wram.begin(),wram.end(),0); 
-    oam.resize(0xa0);
 	std::fill(oam.begin(),oam.end(),0);
-    io.resize(0x100);
 	std::fill(io.begin(),io.end(),0);
+    for(auto &x: cgb_wram_bank)
+    {
+		std::fill(x.begin(),x.end(),0);
+    }
 
 
     // pull out our rom info
@@ -142,16 +159,10 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
         x.resize(0x2000);
 		std::fill(x.begin(),x.end(),0);
     }
-
 	load_cart_ram();
 
 
-    cgb_wram_bank.resize(7);
-    for(auto &x: cgb_wram_bank)
-    {
-        x.resize(0x1000);
-		std::fill(x.begin(),x.end(),0);
-    }
+
 
 
 
@@ -327,9 +338,10 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
 	{
 		static constexpr uint8_t wave_ram_initial[] =
 		{
-			0x00, 0xFF, 0x00, 0xFF, 0x00,
-			0xFF, 0x00, 0xFF, 0x00, 0xFF,
-			0x00, 0xFF, 0x00, 0xFF, 0x00,
+			0x00, 0xFF, 0x00, 0xFF,
+			0x00, 0xFF, 0x00, 0xFF, 
+			0x00, 0xFF, 0x00, 0xFF, 
+			0x00, 0xFF, 0x00, 0xFF
 		}; 
 
 		for(int i = 0; i < 16; i++)
@@ -369,7 +381,7 @@ void Memory::init(Cpu *c,Ppu *p,Debug *d,Apu *a,std::string rom_name, bool with_
 
 uint8_t Memory::read_bios(uint16_t addr) const noexcept
 {
-	if(cpu->get_cgb())
+	if(cpu.get_cgb())
 	{
 		if(addr < bios.size() && (addr < 0x100  || addr >= 0x200))
 		{
@@ -596,11 +608,11 @@ uint8_t Memory::read_mem(uint16_t addr) noexcept
 {
 #ifdef DEBUG
 	const uint8_t value = std::invoke(memory_table[(addr & 0xf000) >> 12].read_memf,this,addr);
-	if(debug->breakpoint_hit(addr,value,break_type::read))
+	if(debug.breakpoint_hit(addr,value,break_type::read))
 	{
 		// halt until told otherwhise :)
-		write_log("[DEBUG] read breakpoint hit ({:x}:{:x})",addr,value);
-		debug->halt();
+		write_log(debug,"[DEBUG] read breakpoint hit ({:x}:{:x})",addr,value);
+		debug.halt();
 	}
 	return value;
 
@@ -612,11 +624,11 @@ uint8_t Memory::read_mem(uint16_t addr) noexcept
 void Memory::write_mem(uint16_t addr, uint8_t v) noexcept
 {
 #ifdef DEBUG
-	if(debug->breakpoint_hit(addr,v,break_type::write))
+	if(debug.breakpoint_hit(addr,v,break_type::write))
 	{
 		// halt until told otherwhise :)
-		write_log("[DEBUG] write breakpoint hit ({:x}:{:})",addr,v);
-		debug->halt();
+		write_log(debug,"[DEBUG] write breakpoint hit ({:x}:{:})",addr,v);
+		debug.halt();
 	}
 #endif
     return std::invoke(memory_table[(addr & 0xf000) >> 12].write_memf,this,addr,v);    
@@ -640,14 +652,14 @@ void Memory::write_word(uint16_t addr, uint16_t v) noexcept
 uint8_t Memory::read_memt(uint16_t addr) noexcept
 {
     uint8_t v = read_mem(addr);
-    cpu->cycle_tick(1); // tick for the memory access 
+    cpu.cycle_tick(1); // tick for the memory access 
     return v;
 }
 
 void Memory::write_memt(uint16_t addr, uint8_t v) noexcept
 {
     write_mem(addr,v);
-    cpu->cycle_tick(1); // tick for the memory access    
+    cpu.cycle_tick(1); // tick for the memory access    
 }
 
 
@@ -675,7 +687,7 @@ uint8_t Memory::read_oam(uint16_t addr) const noexcept
     }
 
     // if not in vblank or hblank cant access it
-    if(ppu->mode != ppu_mode::hblank && ppu->mode != ppu_mode::vblank)
+    if(ppu.mode != ppu_mode::hblank && ppu.mode != ppu_mode::vblank)
     {
         return 0xff;
     }
@@ -687,7 +699,7 @@ uint8_t Memory::read_oam(uint16_t addr) const noexcept
 uint8_t Memory::read_vram(uint16_t addr) const noexcept
 {
     // vram is used in pixel transfer cannot access
-    if(ppu->mode != ppu_mode::pixel_transfer)
+    if(ppu.mode != ppu_mode::pixel_transfer)
     {
         return vram[vram_bank][addr & 0x1fff];
     }
@@ -746,12 +758,12 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 			// read out dpad 
 			if(!is_set(req,4))
 			{
-				return ( (req & 0xf0) | (cpu->joypad_state & 0x0f) );
+				return ( (req & 0xf0) | (cpu.joypad_state & 0x0f) );
 			}
 			// read out a b sel start 
 			else if(!is_set(req,5))
 			{
-				return ( (req & 0xf0) | ((cpu->joypad_state >> 4) & 0xf ) );
+				return ( (req & 0xf0) | ((cpu.joypad_state >> 4) & 0xf ) );
 			}		
 				
 			return 0xff; // return all unset
@@ -760,13 +772,13 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 
         case IO_LY:
         {
-            return ppu->current_line;
+            return ppu.current_line;
         }
 
 		case IO_DIV:
 		{
 			// div register is upper 8 bits of the internal timer
-			return (cpu->internal_timer & 0xff00) >> 8;
+			return (cpu.internal_timer & 0xff00) >> 8;
 		}
 
 		// sound regs
@@ -863,9 +875,9 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		case 0x3c: case 0x3d: case 0x3e: case 0x3f:
 		{
 			// if wave is on write to current byte <-- finish accuracy later
-			if(apu->chan_enabled(2))
+			if(apu.chan_enabled(2))
 			{
-				return io[0x30 + (apu->c3.get_duty_idx() / 2)];
+				return io[0x30 + (apu.c3.get_duty_idx() / 2)];
 			}
 			
 			else // if its off allow "free reign" over it
@@ -889,12 +901,12 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		
 		case IO_BGPD: 
 		{
-			return ppu->get_bgpd();
+			return ppu.get_bgpd();
 		}
 		
 		case IO_SPPD:
 		{
-			return ppu->get_sppd();
+			return ppu.get_sppd();
 		}
 
 		
@@ -913,6 +925,15 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		}
 
 
+		case IO_PCM12:
+		{
+			return apu.c1.get_output() | apu.c2.get_output() << 4;
+		}
+
+		case IO_PCM34:
+		{
+			return apu.c3.get_output() | apu.c4.get_output() << 4;
+		}
 
 
         default: 
@@ -925,7 +946,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 uint8_t Memory::read_iot(uint16_t addr) noexcept
 {
     uint8_t v = read_io(addr);
-    cpu->cycle_tick(1); // tick for mem access
+    cpu.cycle_tick(1); // tick for mem access
     return v;
 }
 
@@ -1018,7 +1039,7 @@ void Memory::write_oam(uint16_t addr,uint8_t v) noexcept
     }
 
     // if not in vblank or hblank cant access it
-    if(ppu->mode != ppu_mode::hblank && ppu->mode != ppu_mode::vblank)
+    if(ppu.mode != ppu_mode::hblank && ppu.mode != ppu_mode::vblank)
     {
         return;
     }
@@ -1030,7 +1051,7 @@ void Memory::write_oam(uint16_t addr,uint8_t v) noexcept
 void Memory::write_vram(uint16_t addr,uint8_t v) noexcept
 {
     // vram is used in pixel transfer cannot access
-    if(ppu->mode != ppu_mode::pixel_transfer)
+    if(ppu.mode != ppu_mode::pixel_transfer)
     {
         vram[vram_bank][addr & 0x1fff] = v;
     }
@@ -1134,24 +1155,24 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// update the timer freq (tac in gb docs)
 		case IO_TMC:
 		{
-			bool is_set = cpu->internal_tima_bit_set();
+			bool is_set = cpu.internal_tima_bit_set();
 
-			bool enabled = cpu->tima_enabled();
+			bool enabled = cpu.tima_enabled();
 
 			io[IO_TMC] = v | 248;
 
 			// as our edge is anded with the enable
 			// disalbing it when enabled can cause a drop from
 			// high to low
-			if(enabled && is_set && !cpu->tima_enabled())
+			if(enabled && is_set && !cpu.tima_enabled())
 			{
-				cpu->tima_inc();
+				cpu.tima_inc();
 			}
 
 			// changing the freq can cause the bit to drop from high to low
-			if((is_set && !cpu->internal_tima_bit_set() && cpu->tima_enabled()))
+			if((is_set && !cpu.internal_tima_bit_set() && cpu.tima_enabled()))
 			{
-				cpu->tima_inc();
+				cpu.tima_inc();
 			}
 
 			break;
@@ -1161,12 +1182,12 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// should account for this internal behavior
 		case IO_DIV:
 		{
-			if(cpu->internal_tima_bit_set() && cpu->tima_enabled())
+			if(cpu.internal_tima_bit_set() && cpu.tima_enabled())
 			{
-				cpu->tima_inc();
+				cpu.tima_inc();
 			}
 
-			cpu->internal_timer = 0;
+			cpu.internal_timer = 0;
 			break;
 		}
 			
@@ -1185,14 +1206,22 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			// lcd switched off this write
 			if(!is_set(v,7) && is_set(lcdc_old,7)) 
 			{
-				ppu->turn_lcd_off();
+				ppu.turn_lcd_off();
 			}
 			
 			// lcdc turned on this write
 			else if(is_set(v,7) && !is_set(lcdc_old,7))
 			{
-				ppu->turn_lcd_on();
+				ppu.turn_lcd_on();
 			}
+
+
+			if(!is_set(v,5) && is_set(lcdc_old,5))
+			{
+				// disable the window
+				ppu.window_disable();
+			}
+
 			break;
 		}
 
@@ -1209,7 +1238,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			
 			// set unused bit
 			io[IO_STAT] |= 0x80;
-			ppu->write_stat();
+			ppu.write_stat();
 			break;
 		}
 
@@ -1223,7 +1252,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		case IO_LYC:
 		{
 			io[IO_LYC] = v;
-			ppu->stat_update();
+			ppu.stat_update();
 			break;
 		}
 
@@ -1246,7 +1275,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// cgb ram bank number
 		case IO_SVBK:
 		{
-			if(cpu->get_cgb())
+			if(cpu.get_cgb())
 			{
 				cgb_wram_bank_idx = v & 0x7;
 				
@@ -1274,7 +1303,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		case IO_SPEED:
 		{
 			// not cgb return ff 
-			if(!cpu->get_cgb())
+			if(!cpu.get_cgb())
 			{
 				io[IO_SPEED] = 0xff;
 			}
@@ -1289,7 +1318,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		case IO_VBANK: // what vram bank are we writing to?
 		{
 			// not cgb return data
-			if(!cpu->get_cgb())
+			if(!cpu.get_cgb())
 			{
 				io[IO_VBANK] = v;
 			}
@@ -1305,14 +1334,14 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		case IO_BGPI:
 		{
 			// not cgb return ff 
-			if(!cpu->get_cgb())
+			if(!cpu.get_cgb())
 			{
 				io[IO_BGPI] = v;
 			}
 			
 			else
 			{
-				ppu->set_bg_pal_idx(v);
+				ppu.set_bg_pal_idx(v);
 				io[IO_BGPI] = v | 0x40;
 			}
 			break;
@@ -1320,14 +1349,14 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_BGPD: // finish later 
 		{
-			if(!cpu->get_cgb())
+			if(!cpu.get_cgb())
 			{
 				io[IO_BGPD] = v;
 			}
 
 			else
 			{
-				ppu->write_bgpd(v);
+				ppu.write_bgpd(v);
 			}
 			break;
 		}
@@ -1335,14 +1364,14 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		case IO_SPPI: // sprite pallete index
 		{
 			// not cgb return ff 
-			if(!cpu->get_cgb())
+			if(!cpu.get_cgb())
 			{
 				io[IO_SPPI] = v;
 			}			
 
 			else
 			{
-				ppu->set_sp_pal_idx(v);
+				ppu.set_sp_pal_idx(v);
 				io[IO_SPPI] = v | 0x40;
 			}
 			break;
@@ -1351,14 +1380,14 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		case IO_SPPD: // sprite pallete data
 		{
 			// not cgb return ff 
-			if(!cpu->get_cgb())
+			if(!cpu.get_cgb())
 			{
 				io[IO_SPPD] = v;
 			}
 
 			else
 			{			
-				ppu->write_sppd(v);
+				ppu.write_sppd(v);
 			}
 			break;
 		}
@@ -1436,9 +1465,9 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// sound registers
 		case IO_NR10:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
-				apu->c1.sweep_write(v);
+				apu.c1.sweep_write(v);
 				io[IO_NR10] = v | 128;
 			}
 			break;
@@ -1448,12 +1477,12 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR11:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
 				// bottom 6 bits are length data 
 				// set the internal counter to 64 - bottom 6 bits of data
-				apu->c1.write_lengthc(v);
-				apu->c1.write_cur_duty(v);
+				apu.c1.write_lengthc(v);
+				apu.c1.write_cur_duty(v);
 				io[IO_NR11] = v;
 			}
 			break;
@@ -1461,20 +1490,20 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR12:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
 				io[IO_NR12] = v;
-				apu->c1.check_dac();
-				apu->c1.env_write(v);
+				apu.c1.check_dac();
+				apu.c1.env_write(v);
 			}
 			break;
 		}
 
 		case IO_NR13:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
-				apu->c1.freq_write_lower(v);
+				apu.c1.freq_write_lower(v);
 				io[IO_NR13] = v;
 			}
 			break;
@@ -1482,21 +1511,21 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR14:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
-				apu->c1.freq_write_higher(v);
+				apu.c1.freq_write_higher(v);
 				
 
 				if(is_set(v,7)) // trigger
 				{
-					apu->c1.length_trigger();
-					apu->c1.freq_reload_period();
-					apu->c1.env_trigger();
-					apu->c1.sweep_trigger();
-					apu->c1.duty_trigger();
+					apu.c1.length_trigger();
+					apu.c1.freq_reload_period();
+					apu.c1.env_trigger();
+					apu.c1.sweep_trigger();
+					apu.c1.duty_trigger();
 				}
 
-				apu->c1.length_write(v,apu->get_sequencer_step());
+				apu.c1.length_write(v);
 
 				io[IO_NR14] = v;
 			}
@@ -1507,10 +1536,10 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR21:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
-				apu->c2.write_lengthc(v);
-				apu->c2.write_cur_duty(v);
+				apu.c2.write_lengthc(v);
+				apu.c2.write_cur_duty(v);
 				io[IO_NR21] = v;
 			}
 			break;
@@ -1518,40 +1547,40 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR22:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
 				io[IO_NR22] = v;
-				apu->c2.check_dac();	
-				apu->c2.env_write(v);
+				apu.c2.check_dac();	
+				apu.c2.env_write(v);
 			}
 			break;
 		}
 
 		case IO_NR23:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
 				io[IO_NR23] = v;
-				apu->c2.freq_write_lower(v);
+				apu.c2.freq_write_lower(v);
 			}
 			break;
 		}
 
 		case IO_NR24:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
-				apu->c2.freq_write_higher(v);
+				apu.c2.freq_write_higher(v);
 
 				if(is_set(v,7)) // trigger
 				{
-					apu->c2.length_trigger();
-					apu->c2.freq_reload_period();
-					apu->c2.env_trigger();
-					apu->c2.duty_trigger();
+					apu.c2.length_trigger();
+					apu.c2.freq_reload_period();
+					apu.c2.env_trigger();
+					apu.c2.duty_trigger();
 				}
 
-				apu->c2.length_write(v,apu->get_sequencer_step());
+				apu.c2.length_write(v);
 
 				io[IO_NR24] = v;
 			}
@@ -1561,10 +1590,10 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR30:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
 				io[IO_NR30] = v | 127;
-				apu->c3.check_dac();
+				apu.c3.check_dac();
 			}
 			break;
 		}
@@ -1572,9 +1601,9 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR31:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
-				apu->c3.write_lengthc(v);
+				apu.c3.write_lengthc(v);
 				io[IO_NR31] = v;
 			}
 			break;
@@ -1582,9 +1611,9 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR32:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
-				apu->c3.write_vol(v);
+				apu.c3.write_vol(v);
 				io[IO_NR32] = v | 159;
 			}
 			break;
@@ -1592,9 +1621,9 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR33:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
-				apu->c3.freq_write_lower(v);
+				apu.c3.freq_write_lower(v);
 				io[IO_NR33] = v;
 			}
 			break;
@@ -1602,23 +1631,23 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR34:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
-				apu->c3.freq_write_higher(v);
+				apu.c3.freq_write_higher(v);
 
 				if(is_set(v,7)) // trigger
 				{
-					apu->c3.length_trigger();
-					apu->c3.freq_reload_period();
-					apu->c3.wave_trigger();
-					apu->c3.vol_trigger();
+					apu.c3.length_trigger();
+					apu.c3.freq_reload_period();
+					apu.c3.wave_trigger();
+					apu.c3.vol_trigger();
 				}
 
-				apu->c3.length_write(v,apu->get_sequencer_step());
+				apu.c3.length_write(v);
 
 				// after all the trigger events have happend
 				// if the dac is off switch channel off				
-				apu->c3.check_dac();
+				apu.c3.check_dac();
 
 
 				io[IO_NR34] = v | (16 + 32 + 8);
@@ -1628,9 +1657,9 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR41:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
-				apu->c4.write_lengthc(v);
+				apu.c4.write_lengthc(v);
 				io[IO_NR41] = v | 192;
 			}
 			break;
@@ -1638,21 +1667,21 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR42:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
 				io[IO_NR42] = v;
-				apu->c4.check_dac();
-				apu->c4.env_write(v);
+				apu.c4.check_dac();
+				apu.c4.env_write(v);
 			}
 			break;
 		}
 
 		case IO_NR43:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
 				io[IO_NR43] = v;
-				apu->c4.noise_write(v);
+				apu.c4.noise_write(v);
 			}
 			break;
 		}
@@ -1661,18 +1690,18 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		{
 
 
-			if(apu->enabled())
+			if(apu.enabled())
 			{
 				if(is_set(v,7)) // trigger
 				{
-					apu->c4.length_trigger();
-					apu->c4.env_trigger();
-					apu->c4.noise_trigger();
+					apu.c4.length_trigger();
+					apu.c4.env_trigger();
+					apu.c4.noise_trigger();
 				}
 
-				apu->c4.length_write(v,apu->get_sequencer_step());		
+				apu.c4.length_write(v);		
 
-				apu->c4.check_dac();	
+				apu.c4.check_dac();	
 
 				io[IO_NR44] = v | 63;
 			}
@@ -1683,7 +1712,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// nr 50
 		case IO_NR50:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
 				io[IO_NR50] = v;
 			}
@@ -1693,7 +1722,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			
 		case IO_NR51:
 		{
-			if(apu->enabled())
+			if(apu.enabled())
 			{
 				io[IO_NR51] = v;
 			}
@@ -1714,15 +1743,15 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			// and lock writes until its on
 			if(is_set(io[IO_NR52],7) && !is_set(v,7))
 			{
-				apu->disable_sound();
+				apu.disable_sound();
 			}
 			
 			// enabled
 			else if(!is_set(io[IO_NR52],7) && is_set(v,7))
 			{
-				apu->enable_sound();
+				apu.enable_sound();
 				// power up resets the fetcher
-				apu->reset_sequencer();
+				apu.reset_sequencer();
 			}			
 			break;
 		}
@@ -1735,9 +1764,9 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		case 0x3c: case 0x3d: case 0x3e: case 0x3f:
 		{
 			// if wave is on write to current byte <-- finish accuracy later
-			if(apu->chan_enabled(2))
+			if(apu.chan_enabled(2))
 			{
-				io[0x30 + (apu->c3.get_duty_idx() / 2)] = v;
+				io[0x30 + (apu.c3.get_duty_idx() / 2)] = v;
 			}
 			
 			else // if its off allow "free reign" over it
@@ -1773,7 +1802,7 @@ void Memory::do_gdma() noexcept
 		write_mem(dest+i,read_mem(source+i));
 	}
 
-	cpu->cycle_tick(8*(len / 0x10)); // 8 M cycles for each 10 byte block
+	cpu.cycle_tick(8*(len / 0x10)); // 8 M cycles for each 10 byte block
 
 	io[IO_HDMA5] = 0xff; // terminate the transfer
 }
@@ -1805,7 +1834,7 @@ void Memory::do_hdma() noexcept
 	}
 
 	// 8 M cycles for each 0x10 block
-	cpu->cycle_tick(8);
+	cpu.cycle_tick(8);
 	
 	// hdma is over 
 	if(--hdma_len <= 0)
@@ -1825,7 +1854,7 @@ void Memory::do_hdma() noexcept
 void Memory::write_iot(uint16_t addr,uint8_t v) noexcept
 {
     write_io(addr,v);
-    cpu->cycle_tick(1); // tick for mem access
+    cpu.cycle_tick(1); // tick for mem access
 }
 
 // wram zero bank 0xc000 - 0xd000

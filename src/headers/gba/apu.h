@@ -11,7 +11,9 @@ namespace gameboyadvance
 class Apu
 {
 public:
-    void init(Mem *mem, Cpu *cpu);
+    Apu(GBA &gba);
+
+    void init();
     void tick(int cylces); 
 
     void push_dma_a(uint8_t x);
@@ -22,8 +24,8 @@ public:
 private:
     void push_samples(int cycles);
 
-    Mem *mem = nullptr;
-    Cpu *cpu = nullptr;
+    Mem &mem;
+    Cpu &cpu;
 
     uint8_t dma_a_sample;
     uint8_t dma_b_sample;

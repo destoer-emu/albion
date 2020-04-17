@@ -51,6 +51,8 @@ void Texture::draw_texture()
     glEnable(GL_TEXTURE_2D); 
     glBindTexture(GL_TEXTURE_2D,texture);
 
+    // figure out how to maintain ratio here ;)
+
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0, 1.0);
         glTexCoord2f(1.0f, 0.0f); glVertex2f( 1.0, 1.0);
@@ -296,6 +298,12 @@ void ImguiMainWindow::load_state(std::string filename)
             // ignore unsupported
             break;
         }
+
+        case emu_type::none:
+        {
+            break;
+        }
+
     }
 }
 
@@ -440,12 +448,13 @@ void ImguiMainWindow::file_browser()
 
 
     
-    for(auto i = 0; i < dir_list.size(); i++)
+    for(size_t i = 0; i < dir_list.size(); i++)
     {
         // display only the file name
         std::string disp_path = std::filesystem::path(dir_list[i]).filename().string();
 
-        if(ImGui::Selectable(disp_path.c_str(),selected == i,ImGuiSelectableFlags_AllowDoubleClick))
+        if(ImGui::Selectable(disp_path.c_str(),
+            static_cast<size_t>(selected) == i,ImGuiSelectableFlags_AllowDoubleClick))
         {
             selected = i;
             selected_file = dir_list[i];
@@ -568,8 +577,6 @@ void ImguiMainWindow::menu_bar(Debug &debug)
             ImGui::EndMenu();
         }
 
-        auto old = selected_window;
-
         if(ImGui::BeginMenu("Debug"))
         {
             if (ImGui::MenuItem("Cpu"))
@@ -611,11 +618,6 @@ void ImguiMainWindow::menu_bar(Debug &debug)
         {
             selected_window = current_window::screen;
             ImGui::EndMenu();
-        }
-
-        if(old != selected_window)
-        {
-            stop_instance();
         }
 
         menubar_size = ImGui::GetWindowSize();
@@ -708,11 +710,17 @@ void ImguiMainWindow::mainloop()
                 {
                     gb_display_viewer.draw_bg_map();
                     gb_display_viewer.draw_tiles();
+                    gb_display_viewer.draw_palette();
                     gameboy_draw_screen();
                     break;
                 }
 
                 case current_window::screen:
+                {
+                    break;
+                }
+
+                case current_window::full_debugger:
                 {
                     break;
                 }
@@ -757,6 +765,11 @@ void ImguiMainWindow::mainloop()
                 }
 
                 case current_window::screen:
+                {
+                    break;
+                }
+
+                case current_window::full_debugger:
                 {
                     break;
                 }

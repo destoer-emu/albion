@@ -1,10 +1,10 @@
 #pragma once
-#include "cpu.h"
-#include "memory.h"
-#include "apu.h"
-#include "ppu.h"
+#include <gb/memory.h>
+#include <gb/ppu.h>
+#include <gb/apu.h>
+#include <gb/cpu.h>
+#include <gb/disass.h>
 #include <destoer-emu/lib.h>
-#include "disass.h"
 #include <destoer-emu/debug.h>
 
 namespace gameboy
@@ -37,12 +37,15 @@ public:
     void save_state(std::string filename);
     void load_state(std::string filename);
 
-    Cpu cpu;
-    Memory mem;
-    Ppu ppu;
-    Apu apu;
-    Disass disass;
+
+
+    Cpu cpu{*this};
+    Memory mem{*this};
+    Ppu ppu{*this};
+    Apu apu{*this};
+    Disass disass{*this};
     Debug debug;
+
 
     std::atomic_bool quit = false;
     bool throttle_emu = true;

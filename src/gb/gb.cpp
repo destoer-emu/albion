@@ -12,11 +12,11 @@ GB::GB()
 
 void GB::reset(std::string rom_name, bool with_rom, bool use_bios)
 {
-    mem.init(&cpu,&ppu,&debug,&apu,rom_name,with_rom,use_bios);
-    ppu.init(&cpu,&mem);
-    disass.init(&mem);
-	apu.init(&mem);
-	cpu.init(&mem,&ppu,&apu,&disass,&debug,use_bios);
+    mem.init(rom_name,with_rom,use_bios);
+    ppu.init();
+    disass.init();
+	apu.init();
+	cpu.init(use_bios);
 	throttle_emu = true;
 	if(use_bios)
 	{
@@ -31,7 +31,7 @@ void GB::key_input(int key, bool pressed)
 
 	if(pressed)
 	{
-		switch(key)
+		switch(static_cast<emu_key>(key))
 		{
 			case emu_key::a: key_pressed(button::a); break;
 			case emu_key::s: key_pressed(button::b); break;
@@ -41,12 +41,13 @@ void GB::key_input(int key, bool pressed)
 			case emu_key::left: key_pressed(button::left); break;
 			case emu_key::up: key_pressed(button::up); break;
 			case emu_key::down: key_pressed(button::down); break;
+			default: break;
 		}
 	}
 
 	else // released
 	{
-		switch(key)
+		switch(static_cast<emu_key>(key))
 		{
 			case emu_key::a: key_released(button::a); break;
 			case emu_key::s: key_released(button::b); break;
@@ -70,6 +71,8 @@ void GB::key_input(int key, bool pressed)
 				throttle_emu = true;						
 				break;
 			}
+
+			default: break;
 		}
 	}
 }

@@ -1,10 +1,14 @@
-#include <gb/apu.h>
-#include <gb/memory.h>
+#include <gb/gb.h>
 
 namespace gameboy
 { 
 
 // CHANNEL 1 SWEEP
+
+Sweep::Sweep(GB &gb, int c) : Square(gb,c)
+{
+
+}
 
 void Sweep::sweep_init() noexcept
 {
@@ -109,12 +113,12 @@ void Sweep::do_freqsweep() noexcept
 		sweep_shadow = temp;
 		
 		// write back low 8
-		mem->io[IO_NR13] = sweep_shadow & 0xff;
+		mem.io[IO_NR13] = sweep_shadow & 0xff;
 
 		
 		// and high 3
-		mem->io[IO_NR14] &= ~0x7; // mask bottom 3
-		mem->io[IO_NR14] |= (sweep_shadow >> 8) & 0x7; // and write them out
+		mem.io[IO_NR14] &= ~0x7; // mask bottom 3
+		mem.io[IO_NR14] |= (sweep_shadow >> 8) & 0x7; // and write them out
 		
 		// also back to our internal cached freq
 		freq = sweep_shadow;		

@@ -14,7 +14,8 @@ namespace gameboyadvance
 class Mem
 {
 public:
-    void init(std::string filename,Debug *debug, Cpu *cpu, Display *disp, Apu *apu);
+    Mem(GBA &gba);
+    void init(std::string filename);
 
 
 
@@ -64,12 +65,13 @@ public:
     // object attribute map
     std::vector<uint8_t> oam; // 0x400 
 
+    // inited by main constructor
     Dma dma;
 private:
-    Debug *debug = nullptr;
-    Cpu *cpu = nullptr;
-    Display *disp = nullptr;
-    Apu *apu = nullptr;
+    Debug &debug;
+    Cpu &cpu;
+    Display &disp;
+    Apu &apu;
 
     template<typename access_type>
     void tick_mem_access();

@@ -1,16 +1,15 @@
-#include <gba/display.h>
-#include <destoer-emu/lib.h>
-#include <gba/memory.h>
-#include <gba/cpu.h>
+#include <gba/gba.h>
 
 namespace gameboyadvance
 {
 
-void Display::init(Mem *mem, Cpu *cpu)
+Display::Display(GBA &gba) : mem(gba.mem), cpu(gba.cpu)
 {
-    this->mem = mem;
-    this->cpu = cpu;
     screen.resize(SCREEN_WIDTH*SCREEN_HEIGHT);
+}
+
+void Display::init()
+{
     std::fill(screen.begin(),screen.end(),0);
     cyc_cnt = 0; // current number of elapsed cycles
     ly = 0; // current number of cycles
@@ -29,7 +28,7 @@ void Display::load_reference_point_regs()
 // renderer helper functions
 uint16_t Display::read_palette(uint32_t pal_num,uint32_t idx)
 {
-    return mem->handle_read<uint16_t>(mem->pal_ram,(0x20*pal_num)+idx*2);        
+    return mem.handle_read<uint16_t>(mem.pal_ram,(0x20*pal_num)+idx*2);        
 }
 
 
@@ -57,7 +56,7 @@ void Display::read_tile(uint32_t tile[],bool col_256,uint32_t base,uint32_t pal_
         {
             // read out the color indexs from the tile
             uint32_t tile_offset = (x_pix / 2);
-            uint8_t tile_data = mem->handle_read<uint8_t>(mem->vram,addr+tile_offset);
+            uint8_t tile_data = mem.handle_read<uint8_t>(mem.vram,addr+tile_offset);
             uint32_t idx1 =  tile_data & 0xf;
             uint32_t idx2 = (tile_data >> 4) & 0xf;
 
@@ -107,7 +106,7 @@ void Display::render_text(int id)
     uint32_t tile_data[8];
 
     uint32_t x_drawn = 0; // how many pixels did we draw this time?
-    for(int x = 0; x < SCREEN_WIDTH; x += x_drawn)
+    for(uint32_t x = 0; x < SCREEN_WIDTH; x += x_drawn)
     {
 
         // 8 for each map but each map takes 2 bytes
@@ -145,7 +144,7 @@ void Display::render_text(int id)
         }
 
         // read out the bg entry and rip all the information we need about the tile
-        uint16_t bg_map_entry = mem->handle_read<uint16_t>(mem->vram,bg_map_base+bg_map_offset);
+        uint16_t bg_map_entry = mem.handle_read<uint16_t>(mem.vram,bg_map_base+bg_map_offset);
                     
 
         bool x_flip = is_set(bg_map_entry,10);
@@ -220,9 +219,9 @@ void Display::render()
         case 0x3: // bg mode 3 
         { 
             // what is the enable for this?
-            for(int x = 0; x < SCREEN_WIDTH; x++)
+            for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
             {
-                uint32_t c = convert_color(mem->handle_read<uint16_t>(mem->vram,(ly*SCREEN_WIDTH*2)+x*2));
+                uint32_t c = convert_color(mem.handle_read<uint16_t>(mem.vram,(ly*SCREEN_WIDTH*2)+x*2));
                 screen[(ly*SCREEN_WIDTH)+x] = c;
             }
             break;
@@ -232,10 +231,10 @@ void Display::render()
         case 0x4: // mode 4 (does not handle scrolling)
         {
             // what is the enable for this
-            for(int x = 0; x < SCREEN_WIDTH; x++)
+            for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
             {
-                uint8_t idx = mem->vram[(ly*SCREEN_WIDTH)+x];
-                uint16_t color = mem->handle_read<uint16_t>(mem->pal_ram,(idx*2));
+                uint8_t idx = mem.vram[(ly*SCREEN_WIDTH)+x];
+                uint16_t color = mem.handle_read<uint16_t>(mem.pal_ram,(idx*2));
                 uint32_t c = convert_color(color);
                 screen[(ly*SCREEN_WIDTH)+x] = c;
             }
@@ -245,9 +244,9 @@ void Display::render()
 /*
         case 0x5: // same as mode 3 but lower screen size?
         {
-            for(int x = 0; x < SCREEN_WIDTH; x++)
+            for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
             {
-                uint32_t c = convert_color(mem->handle_read<uint16_t>(mem->vram,(ly*SCREEN_WIDTH*2)+x*2));
+                uint32_t c = convert_color(mem.handle_read<uint16_t>(mem.vram,(ly*SCREEN_WIDTH*2)+x*2));
                 screen[ly][x] = c;
             }
             break;            
@@ -279,7 +278,7 @@ void Display::advance_line()
 
         if(disp_stat.lyc_irq_enable)
         {
-            cpu->request_interrupt(interrupt::vcount);
+            cpu.request_interrupt(interrupt::vcount);
         }
 
     }
@@ -322,15 +321,15 @@ void Display::tick(int cycles)
                 // if hblank irq enabled
                 if(disp_io.disp_stat.hblank_irq_enable)
                 {
-                    cpu->request_interrupt(interrupt::hblank);
+                    cpu.request_interrupt(interrupt::hblank);
                 }
-                mem->dma.handle_dma(dma_type::hblank);
+                mem.dma.handle_dma(dma_type::hblank);
 
 
 
                 if(ly >= 2)
                 {
-                    mem->dma.handle_dma(dma_type::video_capture);
+                    mem.dma.handle_dma(dma_type::video_capture);
                 }
 
             }
@@ -352,9 +351,9 @@ void Display::tick(int cycles)
                     // if vblank irq enabled
                     if(disp_io.disp_stat.vblank_irq_enable)
                     {
-                        cpu->request_interrupt(interrupt::vblank);
+                        cpu.request_interrupt(interrupt::vblank);
                     }
-                    mem->dma.handle_dma(dma_type::vblank);
+                    mem.dma.handle_dma(dma_type::vblank);
                 }
 
                 else
@@ -394,9 +393,9 @@ void Display::tick(int cycles)
                 // does the hblank irq & dma fire during vblank?
                 if(disp_io.disp_stat.hblank_irq_enable)
                 {
-                    cpu->request_interrupt(interrupt::hblank);
+                    cpu.request_interrupt(interrupt::hblank);
                 }
-                mem->dma.handle_dma(dma_type::hblank);
+                mem.dma.handle_dma(dma_type::hblank);
             }
 
             break;

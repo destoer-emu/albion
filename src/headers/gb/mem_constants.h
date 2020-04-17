@@ -68,4 +68,7 @@ constexpr int IO_HDMA4 = 0x54;
 
 constexpr int IO_HDMA5 = 0x55;
 
+constexpr int IO_PCM12 = 0x76;
+constexpr int IO_PCM34 = 0x77;
+
 }

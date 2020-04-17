@@ -9,7 +9,7 @@ uint16_t Cpu::fetch_thumb_opcode()
 {
     // ignore the pipeline for now
     regs[PC] &= ~1;
-    uint16_t opcode = mem->read_memt<uint16_t>(regs[PC]);
+    uint16_t opcode = mem.read_memt<uint16_t>(regs[PC]);
     regs[PC] += ARM_HALF_SIZE;
     return opcode;
 }
@@ -50,14 +50,14 @@ void Cpu::thumb_load_store_sp(uint16_t opcode)
 
     if(l)
     {
-        regs[rd] = mem->read_memt<uint32_t>(addr);
+        regs[rd] = mem.read_memt<uint32_t>(addr);
         regs[rd] = rotr(regs[rd],(addr&3)*8);
         cycle_tick(3); // 1s + 1n + 1i for ldr        
     }
 
     else
     {
-        mem->write_memt<uint32_t>(addr,regs[rd]);
+        mem.write_memt<uint32_t>(addr,regs[rd]);
         cycle_tick(2); // 2s for str
     }
 
@@ -81,7 +81,7 @@ void Cpu::thumb_swi(uint16_t opcode)
 {
     // do we even do anything with nn!?
     UNUSED(opcode);
-    write_log("[cpu-thumb: {:08x}] swi {:x}",regs[PC],opcode & 0xff);
+    write_log(debug,"[cpu-thumb: {:08x}] swi {:x}",regs[PC],opcode & 0xff);
 
     int idx = static_cast<int>(cpu_mode::supervisor);
 
@@ -136,21 +136,21 @@ void Cpu::thumb_load_store_sbh(uint16_t opcode)
     {
         case 0: // strh
         {
-            mem->write_memt<uint16_t>(addr,regs[rd]);
+            mem.write_memt<uint16_t>(addr,regs[rd]);
             cycle_tick(2); // 2n for str
             break;
         }
 
         case 1: // ldsb
         {
-            regs[rd] = sign_extend<uint32_t>(mem->read_memt<uint8_t>(addr),8);
+            regs[rd] = sign_extend<uint32_t>(mem.read_memt<uint8_t>(addr),8);
             cycle_tick(3); // 1s + 1n + 1i
             break;
         }
 
         case 2: // ldrh
         {
-            regs[rd] = mem->read_memt<uint16_t>(addr);
+            regs[rd] = mem.read_memt<uint16_t>(addr);
             // result rotated right by 8 on arm7 if unaligned 
             regs[rd] = rotr(regs[rd],8*(addr&1)); 
             
@@ -162,12 +162,12 @@ void Cpu::thumb_load_store_sbh(uint16_t opcode)
         {
             if(!(addr & 1)) // is aligned
             {
-                regs[rd] = sign_extend<uint32_t>(mem->read_memt<uint16_t>(addr),16);
+                regs[rd] = sign_extend<uint32_t>(mem.read_memt<uint16_t>(addr),16);
             }
 
             else // unaligned
             {
-                regs[rd] = sign_extend<uint32_t>(mem->read_memt<uint8_t>(addr),8);
+                regs[rd] = sign_extend<uint32_t>(mem.read_memt<uint8_t>(addr),8);
             }
 
             cycle_tick(3); // 1s + 1n + 1i
@@ -189,21 +189,21 @@ void Cpu::thumb_load_store_reg(uint16_t opcode)
     {
         case 0: // str
         {
-            mem->write_memt<uint32_t>(addr,regs[rd]);
+            mem.write_memt<uint32_t>(addr,regs[rd]);
             cycle_tick(2); // 2n for str
             break;
         }
 
         case 1: //strb
         {
-            mem->write_memt<uint8_t>(addr,regs[rd]);
+            mem.write_memt<uint8_t>(addr,regs[rd]);
             cycle_tick(2); // 2n for str
             break;
         }
 
         case 2: // ldr
         {
-            regs[rd] = mem->read_memt<uint32_t>(addr);
+            regs[rd] = mem.read_memt<uint32_t>(addr);
             regs[rd] = rotr(regs[rd],(addr&3)*8);
             cycle_tick(3); // 1s + 1n + 1i for ldr
             break;
@@ -211,7 +211,7 @@ void Cpu::thumb_load_store_reg(uint16_t opcode)
 
         case 3: // ldrb
         {
-            regs[rd] = mem->read_memt<uint8_t>(addr);
+            regs[rd] = mem.read_memt<uint8_t>(addr);
             cycle_tick(3); // 1s + 1n + 1i for ldr
             break;
         }
@@ -238,7 +238,7 @@ void Cpu::thumb_load_store_half(uint16_t opcode)
     if(load) // ldrh
     {
         uint32_t addr = regs[rb] + nn;
-        regs[rd] = mem->read_memt<uint16_t>(addr);
+        regs[rd] = mem.read_memt<uint16_t>(addr);
         // arm7 rotate by 8 if unaligned
         regs[rd] = rotr(regs[rd],8*(addr&1)); 
         cycle_tick(3); //1s +1n + 1i
@@ -246,7 +246,7 @@ void Cpu::thumb_load_store_half(uint16_t opcode)
 
     else //strh
     {
-        mem->write_memt<uint16_t>(regs[rb]+nn,regs[rd]);
+        mem.write_memt<uint16_t>(regs[rb]+nn,regs[rd]);
         cycle_tick(2); // 2n for str
     } 
 }
@@ -268,7 +268,7 @@ void Cpu::thumb_push_pop(uint16_t opcode)
             if(is_set(reg_range,i))
             {
                 n++;
-                regs[i] = mem->read_memt<uint32_t>(regs[SP]);
+                regs[i] = mem.read_memt<uint32_t>(regs[SP]);
                 regs[SP] += ARM_WORD_SIZE;
             }
         }
@@ -276,7 +276,7 @@ void Cpu::thumb_push_pop(uint16_t opcode)
         // nS +1N +1I (pop) | (n+1)S +2N +1I(pop pc)
         if(lr)
         {
-            regs[PC] = mem->read_memt<uint32_t>(regs[SP]) & ~1;
+            regs[PC] = mem.read_memt<uint32_t>(regs[SP]) & ~1;
             regs[SP] += ARM_WORD_SIZE;
             cycle_tick((n+1) + 3);
         }
@@ -315,14 +315,14 @@ void Cpu::thumb_push_pop(uint16_t opcode)
         {
             if(is_set(reg_range,i))
             {
-                mem->write_memt<uint32_t>(addr,regs[i]);
+                mem.write_memt<uint32_t>(addr,regs[i]);
                 addr += ARM_WORD_SIZE;
             }
         }
 
         if(lr)
         {
-            mem->write_memt<uint32_t>(addr,regs[LR]);
+            mem.write_memt<uint32_t>(addr,regs[LR]);
         }
 
         // (n-1)S+2N (PUSH)
@@ -574,12 +574,12 @@ void Cpu::thumb_multiple_load_store(uint16_t opcode)
         // ldmia
         if(load)
         {
-            regs[PC] = mem->read_memt<uint32_t>(regs[rb]);
+            regs[PC] = mem.read_memt<uint32_t>(regs[rb]);
         }
         //stmia
         else
         {
-            mem->write_memt<uint32_t>(regs[rb],regs[PC]);
+            mem.write_memt<uint32_t>(regs[rb],regs[PC]);
         }
         regs[rb] += 0x40;        
     }   
@@ -594,12 +594,12 @@ void Cpu::thumb_multiple_load_store(uint16_t opcode)
                 // ldmia
                 if(load)
                 {
-                    regs[i] = mem->read_memt<uint32_t>(regs[rb]);
+                    regs[i] = mem.read_memt<uint32_t>(regs[rb]);
                 }
                 //stmia
                 else
                 {
-                    mem->write_memt<uint32_t>(regs[rb],regs[i]);
+                    mem.write_memt<uint32_t>(regs[rb],regs[i]);
                 }
                 regs[rb] += ARM_WORD_SIZE;
             }
@@ -637,7 +637,7 @@ void Cpu::thumb_ldst_imm(uint16_t opcode)
     {
         case 0b00: // str
         {  
-            mem->write_memt<uint32_t>((regs[rb]+imm*4),regs[rd]);
+            mem.write_memt<uint32_t>((regs[rb]+imm*4),regs[rd]);
             cycle_tick(2);
             break;
         }
@@ -645,7 +645,7 @@ void Cpu::thumb_ldst_imm(uint16_t opcode)
         case 0b01: // ldr
         {
             uint32_t addr = regs[rb]+imm*4;
-            regs[rd] = mem->read_memt<uint32_t>(addr);
+            regs[rd] = mem.read_memt<uint32_t>(addr);
             regs[rd] = rotr(regs[rd],(addr&3)*8);
             cycle_tick(3);
             break;            
@@ -653,14 +653,14 @@ void Cpu::thumb_ldst_imm(uint16_t opcode)
 
         case 0b10: // strb
         {
-            mem->write_memt<uint8_t>((regs[rb]+imm),regs[rd]);
+            mem.write_memt<uint8_t>((regs[rb]+imm),regs[rd]);
             cycle_tick(2);
             break;
         }
 
         case 0b11: // ldrb
         {
-            regs[rd] = mem->read_memt<uint8_t>((regs[rb]+imm));
+            regs[rd] = mem.read_memt<uint8_t>((regs[rb]+imm));
             cycle_tick(3);       
             break;
         }
@@ -729,7 +729,7 @@ void Cpu::thumb_long_bl(uint16_t opcode)
         // lr = tmp | 1
         regs[LR] = tmp | 1;
         cycle_tick(3); //2S+1N cycle
-        write_log("[cpu-thumb {:08x}] call {:08x}",tmp,regs[PC]);
+        write_log(debug,"[cpu-thumb {:08x}] call {:08x}",tmp,regs[PC]);
     }
 
 }
@@ -826,7 +826,7 @@ void Cpu::thumb_ldr_pc(uint16_t opcode)
     // pc is + 4 ahead of current instr
     uint32_t addr = ((regs[PC] + 2) & ~2) + offset;
 
-    regs[rd] = mem->read_memt<uint32_t>(addr);
+    regs[rd] = mem.read_memt<uint32_t>(addr);
 
 
     // takes 2s + 1n cycles

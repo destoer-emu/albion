@@ -8,13 +8,7 @@ namespace gameboyadvance
 class Disass
 {
 public:
-    void init(Mem *mem, Cpu *cpu)
-    {
-        this->mem = mem;
-        this->cpu = cpu;
-        init_arm_disass_table();
-        init_thumb_disass_table();
-    }
+    Disass(GBA &gba);
 
     uint32_t get_pc() const { return pc; }
     void set_pc(uint32_t pc) { this->pc = pc;}
@@ -24,8 +18,8 @@ public:
 
 
 private:
-    Mem *mem = nullptr;
-    Cpu *cpu = nullptr;
+    Mem &mem;
+    Cpu &cpu;
     uint32_t pc; // pc for disassmebling instrs
 
     const char *shift_names[4] = 

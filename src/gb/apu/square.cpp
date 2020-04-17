@@ -6,10 +6,13 @@ namespace gameboy
 
 // CHANNEL 1 & 2 SQAURE WAVE
 
-
-void Square::init(Memory *m, int c) noexcept
+Square::Square(GB &gb, int c) : Channel(gb,c)
 {
-    init_channel(m,c);
+
+}
+
+void Square::init() noexcept
+{
 	freq_init();
 	env_init();
     freq_lower_mask = freq_lower_masks[chan_number];

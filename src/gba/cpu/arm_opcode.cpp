@@ -8,9 +8,9 @@ namespace gameboyadvance
 // if there is a pipeline stall (whenever pc changes besides a fetch)
 void Cpu::arm_fill_pipeline() // need to verify this...
 {
-    pipeline[0] = mem->read_memt<uint32_t>(regs[PC]);
+    pipeline[0] = mem.read_memt<uint32_t>(regs[PC]);
     regs[PC] += ARM_WORD_SIZE;
-    pipeline[1] = mem->read_memt<uint32_t>(regs[PC]);
+    pipeline[1] = mem.read_memt<uint32_t>(regs[PC]);
     regs[PC] += ARM_WORD_SIZE;
 }
 
@@ -22,7 +22,7 @@ uint32_t Cpu::fetch_arm_opcode()
     // ignore the pipeline for now
     regs[PC] &= ~3; // algin
 
-    uint32_t opcode = mem->read_memt<uint32_t>(regs[PC]);
+    uint32_t opcode = mem.read_memt<uint32_t>(regs[PC]);
     regs[PC] += ARM_WORD_SIZE;
     return opcode;
 }
@@ -175,15 +175,15 @@ void Cpu::arm_swap(uint32_t opcode)
     // rd = [rn], [rn] = rm
     if(is_byte)
     {
-        tmp = mem->read_memt<uint8_t>(regs[rn]);
-        mem->write_memt<uint8_t>(regs[rn],regs[rm]);
+        tmp = mem.read_memt<uint8_t>(regs[rn]);
+        mem.write_memt<uint8_t>(regs[rn],regs[rm]);
     }
 
     else
     {
-        tmp = mem->read_memt<uint32_t>(regs[rn]);
+        tmp = mem.read_memt<uint32_t>(regs[rn]);
         regs[rd] = rotr(regs[rd],(regs[rn]&3)*8);
-        mem->write_memt<uint32_t>(regs[rn],regs[rm]);
+        mem.write_memt<uint32_t>(regs[rn],regs[rm]);
     }
 
 
@@ -279,7 +279,7 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
             {
                w = false;
             }
-            regs[i] = mem->read_memt<uint32_t>(addr);
+            regs[i] = mem.read_memt<uint32_t>(addr);
 
             if(i == PC && s) // if pc is in list and s bit set  cpsr = spsr
             {
@@ -303,12 +303,12 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
             // store old base
             if(rn == i && i == first)
             {
-                mem->write_memt<uint32_t>(addr,old_base);
+                mem.write_memt<uint32_t>(addr,old_base);
             }
 
             else
             {
-                mem->write_memt<uint32_t>(addr,regs[i]);
+                mem.write_memt<uint32_t>(addr,regs[i]);
             }
         }
 
@@ -373,7 +373,7 @@ void Cpu::arm_branch(uint32_t opcode)
     {
         // bits 0:1  are allways cleared
         regs[LR] = (regs[PC] & ~3);
-        write_log("[cpu-arm {:08x}] call {:08x}",regs[PC],pc+offset);
+        write_log(debug,"[cpu-arm {:08x}] call {:08x}",regs[PC],pc+offset);
     }
 
 
@@ -865,21 +865,21 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
             case 1: // ldrh
             {
-                regs[rd] = mem->read_memt<uint16_t>(addr);
+                regs[rd] = mem.read_memt<uint16_t>(addr);
                 cycle_tick(cycles+3); // 1s + 1n + 1i
                 break;
             }
 
             case 2: // ldrsb
             {
-                regs[rd] = sign_extend<uint32_t>(mem->read_memt<uint8_t>(addr),8);
+                regs[rd] = sign_extend<uint32_t>(mem.read_memt<uint8_t>(addr),8);
                 cycle_tick(cycles+3); // 1s + 1n + 1i
                 break;
             }
 
             case 3: // ldrsh
             {
-                regs[rd] = sign_extend<uint32_t>(mem->read_memt<uint16_t>(addr),16);
+                regs[rd] = sign_extend<uint32_t>(mem.read_memt<uint16_t>(addr),16);
                 cycle_tick(cycles+3); // 1s + 1n + 1i
                 break;
             }
@@ -892,7 +892,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
         {
             case 1: // strh
             {
-                mem->write_memt<uint16_t>(addr,value);
+                mem.write_memt<uint16_t>(addr,value);
                 cycle_tick(2); // 2n cycles
                 break;
             }
@@ -999,12 +999,12 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
     {
         if(is_byte)
         {
-            regs[rd] = mem->read_memt<uint8_t>(addr);
+            regs[rd] = mem.read_memt<uint8_t>(addr);
         }
 
         else // ldr and swp use rotated reads
         {
-            regs[rd] = mem->read_memt<uint32_t>(addr);
+            regs[rd] = mem.read_memt<uint32_t>(addr);
             regs[rd] = rotr(regs[rd],(addr&3)*8);
         }
         cycles = 3; // 1s + 1n + 1i
@@ -1028,13 +1028,13 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 
 		if(is_byte)
 		{
-			mem->write_memt<uint8_t>(addr,v);
+			mem.write_memt<uint8_t>(addr,v);
 		}
 		
 		
 		else
 		{
-			mem->write_memt<uint32_t>(addr,v);
+			mem.write_memt<uint32_t>(addr,v);
 		}
         cycles = 2; // 2 N cycles for a store 
 
