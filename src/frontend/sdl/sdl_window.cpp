@@ -77,7 +77,7 @@ void SDLMainWindow::gameboy_main(std::string filename)
 		{
 			SDL_Delay(time_left(next_time) / 8);
 		}
-		next_time = current_time() + screen_ticks_per_frame;
+		next_time = current_time() + screen_ticks_per_frame;z
     }	
 }
 

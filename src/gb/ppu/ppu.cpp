@@ -555,15 +555,27 @@ void Ppu::tile_fetch() noexcept
 {
 
     const bool is_cgb = cpu.get_cgb();
+	const uint8_t lcd_control = mem.io[IO_LCDC];
+
+	// in dmg mode bg and window lose priority
+	// if lcdc bit 0 is reset
+	if(!is_cgb && !is_set(lcd_control,0)) 
+	{
+		// each pixel uses color 0 of bgp
+		for(int i = 0; i < 8; i++)
+		{
+			fetcher_tile[i].colour_num = 0;
+			fetcher_tile[i].source = pixel_source::tile;		
+			fetcher_tile[i].scx_a = false;
+		}
+		return;
+	}
 
 	// where to draw the visual area and window
 	const uint8_t scroll_y = mem.io[IO_SCY];
 	const uint8_t scroll_x = mem.io[IO_SCX];
 	const uint8_t window_y = mem.io[IO_WY];
 	const uint8_t window_x = mem.io[IO_WX] - 7; // 0,0 is at offest - 7 for window
-	const uint8_t lcd_control = mem.io[IO_LCDC];
-	
-
 	const int scanline = current_line;
 	
 
@@ -726,8 +738,9 @@ void Ppu::read_sprites() noexcept
 	
 	const uint8_t scanline = current_line;
 
-
-	int x = 0;
+	
+	// reset how many sprites we have as its a new scanline
+	no_sprites = 0;
 	for(int sprite = 0; sprite < 40; sprite++) // should fetch all these as soon as we leave oam search
 	{
         const uint16_t addr = sprite*4;
@@ -735,19 +748,19 @@ void Ppu::read_sprites() noexcept
 		if( scanline -(y_size - 16) < y_pos  && scanline + 16 >= y_pos )
 		{
 			// intercepts with the line
-			objects_priority[x].index = addr; // save the index
+			objects_priority[no_sprites].index = addr; // save the index
 			// and the x pos
-			objects_priority[x].x_pos = mem.oam[(addr+1)&0xff]-8;
-			if(++x == 10) { break; } // only draw a max of 10 sprites per line
+			objects_priority[no_sprites].x_pos = mem.oam[(addr+1)&0xff]-8;
+			if(++no_sprites == 10) { break; } // only draw a max of 10 sprites per line
 		}
 	}
+	//bool is_cgb = cpu.get_cgb();
 
-	
 	// sort the array
 	// if x cords are same use oam as priority lower indexes draw last
 	// else use the x cordinate again lower indexes draw last
 	// this means they will draw on top of other sprites
-	std::sort(&objects_priority[0],&objects_priority[x],
+/*	std::sort(&objects_priority[0],&objects_priority[x],
 		[](const Obj &a, const Obj &b)
 		{
 			// sort by the oam index
@@ -763,8 +776,19 @@ void Ppu::read_sprites() noexcept
 			}
 		}
 	);	
-	
-	no_sprites = x; // save how many sprites we have	
+*/
+
+	std::sort(&objects_priority[0],&objects_priority[no_sprites],
+		[](const Obj &a, const Obj &b)
+		{
+			if(a.x_pos == b.x_pos)
+			{
+				return a.index > b.index;
+			}
+
+			return a.x_pos > b.x_pos;
+		}
+	);
 }
 
 

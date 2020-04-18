@@ -29,8 +29,8 @@ enum class dmg_colors
 
 struct Obj // struct for holding sprites on a scanline
 {
-    int index = 0;
-    int x_pos = 0;
+    uint16_t index = 0;
+    uint8_t x_pos = 0;
 };
 
 class Ppu
