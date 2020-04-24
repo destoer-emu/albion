@@ -27,6 +27,8 @@ public:
     int get_vcount() const { return ly; } 
 
     
+    void render_palette(uint32_t *palette, size_t size);
+
     std::vector<uint32_t> screen;
     bool new_vblank = false;
     DispIo disp_io;

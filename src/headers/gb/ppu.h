@@ -146,6 +146,7 @@ private:
 	bool tile_ready = false; // is the tile fetch ready to go into the fio 
 	Obj objects_priority[10]; // sprites for the current scanline
 	int no_sprites = 0; // how many sprites
+    int cur_sprite = 0; // current sprite
 	bool sprite_drawn = false;
 	bool window_start = false;
 	bool x_scroll_tick = false;

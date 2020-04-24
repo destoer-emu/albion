@@ -598,11 +598,13 @@ void ImguiMainWindow::menu_bar(Debug &debug)
             {
                 selected_window = current_window::display_viewer;
                 gb_display_viewer.enabled = true;
+                gba_display_viewer.enabled = true;
             }
 
             else
             {
                 gb_display_viewer.enabled = false;
+                gba_display_viewer.enabled = true;
             }
 
             ImGui::EndMenu();
@@ -647,8 +649,6 @@ void ImguiMainWindow::mainloop()
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     screen.init_texture(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);
     gb_display_viewer.init();
-
-
     
     // and fix gekkio test failures call_iming ret_timing <-- timing issue with vblank and hblank
 
@@ -761,6 +761,7 @@ void ImguiMainWindow::mainloop()
 
                 case current_window::display_viewer:
                 {
+                    gba_display_viewer.draw_palette();
                     break;
                 }
 

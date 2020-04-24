@@ -180,6 +180,16 @@ void Display::render_text(int id)
 }
 
 
+// for frontend debugging
+
+void Display::render_palette(uint32_t *palette, size_t size)
+{
+    for(size_t i = 0; i < size; i++)
+    {
+        palette[i] = convert_color(mem.handle_read<uint16_t>(mem.pal_ram,i*2));
+    }   
+}
+
 void Display::render()
 {
     const auto disp_cnt = disp_io.disp_cnt;
@@ -266,6 +276,14 @@ void Display::render()
 
 void Display::advance_line()
 {
+
+    // if in vdraw render the line
+    if(ly < 160)
+    {
+        render();
+    }
+
+
     ly++;
 
     auto &disp_stat = disp_io.disp_stat;
@@ -286,13 +304,6 @@ void Display::advance_line()
     else
     {
         disp_stat.lyc_hit = false;
-    }
-
-
-    // if in vdraw render the line
-    if(ly < 160)
-    {
-        render();
     }
 
     // exit hblank
@@ -379,8 +390,6 @@ void Display::tick(int cycles)
                     mode = display_mode::visible;
                     disp_io.disp_stat.vblank = false;
                     ly = 0;
-
-                    render();
                 }
             }
 

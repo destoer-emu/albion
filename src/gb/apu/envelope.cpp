@@ -20,7 +20,7 @@ void Envelope::env_write(uint8_t v) noexcept
 {
     volume_load = (v >> 4) & 0xf;
     volume = volume_load;
-    env_load = v & 0x3;
+    env_load = v & 0x7;
     env_up = is_set(v,3);
 }
 

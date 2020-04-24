@@ -332,11 +332,11 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_IME: cpu.cpu_io.ime = is_set(v,0); break;
         case IO_IME+1: case IO_IME+2: case IO_IME+3: break; // unused
 
-        case IO_IE: cpu.cpu_io.interrupt_enable = (cpu.cpu_io.interrupt_enable & ~0xff) | v; break;
-        case IO_IE+1: cpu.cpu_io.interrupt_enable = (cpu.cpu_io.interrupt_enable & ~0xff00) | (v & 0x3f);  break;
+        case IO_IE: cpu.cpu_io.interrupt_enable = (cpu.cpu_io.interrupt_enable & 0xff00) | v; break;
+        case IO_IE+1: cpu.cpu_io.interrupt_enable = (cpu.cpu_io.interrupt_enable & 0x00ff) | (v & 0x3f) << 8;  break;
 
-        case IO_IF: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & ~0xff) | v; break;
-        case IO_IF+1: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & ~0xff00) | (v & 0x3f);  break;
+        case IO_IF: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & 0xff00) | v; break;
+        case IO_IF+1: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & 0x00ff) | (v & 0x3f) << 8;  break;
 
 
         case IO_HALTCNT: cpu.cpu_io.halt_cnt.write(v); break;

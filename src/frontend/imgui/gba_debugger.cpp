@@ -32,6 +32,41 @@ void gba_handle_input(GBA &gba)
     }
 }
 
+GBADisplayViewer::GBADisplayViewer()
+{
+
+}
+
+void GBADisplayViewer::update(GBA &gba)
+{
+    std::scoped_lock<std::mutex> guard(pal_mutex);
+    gba.disp.render_palette(palette.data(),palette.size());    
+}
+
+
+void GBADisplayViewer::draw_palette()
+{
+    std::scoped_lock<std::mutex> guard(pal_mutex);
+    ImGui::Begin("gba palette");
+    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+    auto p = ImGui::GetCursorScreenPos();
+	for(int row = 0; row < PAL_Y; row++)
+	{
+		for(int col = 0; col < PAL_X; col++)
+		{
+            // smash a colored box here somehow...
+            // think we need to conver it to float first
+            // i cant find the api call to draw the box
+            float sz = 20.0;
+            float x = (p.x + (col * sz));
+            float y = (p.y + (row * sz));
+            draw_list->AddRectFilled(ImVec2(x+4.0, y+4.0), ImVec2(x+sz, y + sz),  palette[(row*PAL_X)+col]);
+		}
+	}
+    ImGui::End();        
+}
+
+
 void ImguiMainWindow::gba_emu_instance()
 {
 	constexpr uint32_t fps = 60; 
@@ -39,7 +74,7 @@ void ImguiMainWindow::gba_emu_instance()
 	uint64_t next_time = current_time() + screen_ticks_per_frame;
 
     emu_running = true;
-
+    gba.quit = false;
     try
     {
         while(!gba.quit)
@@ -52,6 +87,11 @@ void ImguiMainWindow::gba_emu_instance()
             // swap the buffer so the frontend can render it
             screen.swap_buffer(gba.disp.screen);
 
+
+            if(gba_display_viewer.enabled)
+            {
+                gba_display_viewer.update(gba);
+            }
 
             /*
             // throttle the emulation
@@ -76,6 +116,7 @@ void ImguiMainWindow::gba_emu_instance()
         gba.debug.write_logger(ex.what());
         std::cout << ex.what() << "\n";
         emu_running = false;
+        return;
     }    
     emu_running = false;
 }
@@ -453,7 +494,7 @@ void ImguiMainWindow::gba_draw_memory()
     static constexpr uint32_t MAX_ADDR = 0x0E010000;
     static uint32_t edit_addr = 0;
     static uint32_t edit_value = 0;
-    static bool update = false;
+    static bool update = true;
     ImGui::Begin("gba-memory-editor");
 
 
@@ -476,6 +517,9 @@ void ImguiMainWindow::gba_draw_memory()
             {
                 base_addr = addr - CLIPPER_ADDR_OFFSET;
             }            
+
+
+            printf("goto %x\n",base_addr);
 
             update = true;
 			*input_mem = '\0';
@@ -528,6 +572,7 @@ void ImguiMainWindow::gba_draw_memory()
 
     if(update)
     {
+        printf("update: %f\n",((addr-base_addr) / 0x10) * line_size);
         update = false;
         ImGui::SetScrollY(((addr-base_addr) / 0x10) * line_size);
     }
@@ -543,7 +588,8 @@ void ImguiMainWindow::gba_draw_memory()
 
             for(int j = 0; j < 0x10; j++)
             {
-                ImGui::Text("%02x ",gba.mem.read_mem<uint8_t>((base_addr+(j)+i*0x10)%MAX_ADDR));
+                uint32_t dest = (base_addr+j+(i*0x10))%MAX_ADDR;
+                ImGui::Text("%02x ",gba.mem.read_mem<uint8_t>(dest));
                 ImGui::SameLine();
             }
             ImGui::Text("\n");
@@ -557,14 +603,13 @@ void ImguiMainWindow::gba_draw_memory()
 
 void ImguiMainWindow::gba_stop_instance()
 {
-    if(emu_running)
+    if(emu_thread.joinable())
     {
         gba.quit = true;
         // save the breakpoint enable state so we can restore it later
         bool break_enabled = gba.debug.breakpoints_enabled;
         gba.debug.disable_everything();
         emu_thread.join(); // end the thread
-        gba.quit = false;
         gba.debug.breakpoints_enabled = break_enabled;
         //gba.mem.save_cart_ram(); <-- ignore saving for now
     }
@@ -573,11 +618,9 @@ void ImguiMainWindow::gba_stop_instance()
 void ImguiMainWindow::gba_start_instance(bool step)
 {
     gba.debug.step_instr = step;
-    if(!emu_running)
+    if(!emu_thread.joinable())
     {
-        gba.quit = false;
-        std::thread emulator(&ImguiMainWindow::gba_emu_instance,this);
-        std::swap(emulator,emu_thread);    
+        emu_thread = std::thread(&ImguiMainWindow::gba_emu_instance,this);
     }
 
     else

@@ -92,6 +92,24 @@ private:
 };
 
 
+class GBADisplayViewer
+{
+public:
+    GBADisplayViewer();
+    void update(gameboyadvance::GBA &gb);
+    void draw_palette();
+
+
+    std::atomic_bool enabled = false;
+
+private:
+    static constexpr int PAL_X = 16;
+    static constexpr int PAL_Y = 16;
+    std::array<uint32_t,PAL_X*PAL_Y> palette{0};
+
+    std::mutex pal_mutex;
+};
+
 class ImguiMainWindow
 {
 public:
@@ -180,6 +198,7 @@ private:
 
     Texture screen;
     GameboyDisplayViewer gb_display_viewer;
+    GBADisplayViewer gba_display_viewer;
 };
 
 #endif

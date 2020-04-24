@@ -3,7 +3,7 @@
 namespace gameboyadvance
 {
 
-Dma::Dma(GBA &gba) : mem(gba.mem), cpu(gba.cpu)
+Dma::Dma(GBA &gba) : mem(gba.mem), cpu(gba.cpu) , debug(gba.debug)
 {
 
 }
@@ -221,6 +221,7 @@ void Dma::do_dma(int reg_num, dma_type req_type)
         {
             //printf("fifo dma %x from %08x to %08x\n",reg_num,r.src_shadow,r.dst_shadow);
 
+
             for(int i = 0; i < 4; i++)
             {
                 uint32_t v = mem.read_memt<uint32_t>(r.src_shadow+i*ARM_WORD_SIZE);
@@ -244,7 +245,7 @@ void Dma::do_dma(int reg_num, dma_type req_type)
             dma_in_progress = true;
 
 
-            printf("dma %x from %08x to %08x\n",reg_num,r.src_shadow,r.dst_shadow);
+            write_log(debug,"dma {:x} from {:08x} to {:08x}\n",reg_num,r.src_shadow,r.dst_shadow);
 
             if(r.is_word)
             {

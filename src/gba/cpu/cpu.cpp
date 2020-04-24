@@ -369,7 +369,7 @@ void Cpu::tick_timers(int cycles)
         auto limit = timer.cycle_limit[timer.scale];
 
         // if its above the threshold
-        if(timer.cycle_count > limit)
+        if(timer.cycle_count >= limit)
         {
             auto old = timer.counter;
 
@@ -377,7 +377,7 @@ void Cpu::tick_timers(int cycles)
             timer.counter += timer.cycle_count / limit;
 
             // adjust cycle count accordingly
-            timer.cycle_count &= limit-1;
+            timer.cycle_count %= limit;
 
             // timer overflowed
             if(timer.counter < old)
@@ -432,6 +432,8 @@ void Cpu::timer_overflow(int timer_num)
 // by skipping the state forward
 void Cpu::step()
 {
+    // handle interrupts
+    do_interrupts();
 
 #ifdef DEBUG
     const uint32_t pc = regs[PC];
@@ -456,13 +458,10 @@ void Cpu::step()
     }
 
     handle_power_state();
-
-    // handle interrupts
-    do_interrupts();
 }
 
 
-
+// we need to replace this with proper scheduling but its fine for now
 void Cpu::handle_power_state()
 {
         // check halt and stop here?
@@ -1009,9 +1008,8 @@ void Cpu::do_interrupts()
     }
 
     // the handler will find out what fired for us!
-    if((cpu_io.ime & cpu_io.interrupt_enable) != 0 && cpu_io.interrupt_flag)
+    if((cpu_io.interrupt_flag & cpu_io.interrupt_enable) != 0 && cpu_io.ime)
     {
-        //printf("interrupt fired!");
         service_interrupt();
     }
 }

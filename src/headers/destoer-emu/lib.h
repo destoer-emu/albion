@@ -96,13 +96,13 @@ inline bool is_set(uint64_t reg, int bit) noexcept
 
 inline uint64_t set_bit(uint64_t v,int bit) noexcept
 {
-    return (v |= (1 << bit));
+    return v | (1 << bit);
 }
 
 
 inline uint64_t deset_bit(uint64_t v,int bit)
 {
-    return (v &= ~(1 << bit));
+    return v & ~(1 << bit);
 }
 
 inline uint8_t val_bit(uint8_t data, int position) noexcept

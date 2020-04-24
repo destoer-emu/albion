@@ -26,7 +26,8 @@ void Channel::tick_lengthc() noexcept
     if(length_enabled)
     {
         // tick the length counter if zero deset it
-        if(!--lengthc)
+        // only decrement if not zero
+        if(lengthc != 0 && --lengthc == 0)
         {
             disable_chan();
         }
@@ -83,25 +84,22 @@ void Channel::length_write(uint8_t v) noexcept
     // + next step doesent clock, clock the length counter
     if(!is_set(mem.io[trigger_addr],6) && is_set(v,6) && !(sequencer_step & 1))
     {
-        // if not zero decrement
-        if(lengthc != 0)
-        {	
-            // decrement and if now zero and there is no trigger 
-            // switch the channel off
-            if(!--lengthc)
+        // decrement and if now zero and there is no trigger 
+        // switch the channel off
+        if(lengthc != 0 && --lengthc == 0)
+        {
+            if(is_set(v,7)) 
+            { 
+                // if we have hit a trigger it should be max len - 1
+                lengthc = max_len - 1;
+            }
+                
+            else
             {
-                if(is_set(v,7)) 
-                { 
-                    // if we have hit a trigger it should be max len - 1
-                    lengthc = max_len - 1;
-                }
-                    
-                else
-                {
-                    disable_chan();
-                }       
-            }	
+                disable_chan();
+            }       
         }	
+        
     }
 
 	// after all the trigger events have happend

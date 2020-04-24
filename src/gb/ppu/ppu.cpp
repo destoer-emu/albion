@@ -575,7 +575,8 @@ void Ppu::tile_fetch() noexcept
 	const uint8_t scroll_y = mem.io[IO_SCY];
 	const uint8_t scroll_x = mem.io[IO_SCX];
 	const uint8_t window_y = mem.io[IO_WY];
-	const uint8_t window_x = mem.io[IO_WX] - 7; // 0,0 is at offest - 7 for window
+	// window does not work nicely below 0x7 im not sure what the exact behavior we want here is...
+	const uint8_t window_x = mem.io[IO_WX] & ~7; 
 	const int scanline = current_line;
 	
 
@@ -760,24 +761,8 @@ void Ppu::read_sprites() noexcept
 	// if x cords are same use oam as priority lower indexes draw last
 	// else use the x cordinate again lower indexes draw last
 	// this means they will draw on top of other sprites
-/*	std::sort(&objects_priority[0],&objects_priority[x],
-		[](const Obj &a, const Obj &b)
-		{
-			// sort by the oam index
-			if(a.x_pos == b.x_pos)
-			{
-				return (a.index > b.index);
-			}
 
-			// sort by the x posistion
-			else
-			{
-				return (a.x_pos < b.x_pos);
-			}
-		}
-	);	
-*/
-
+	// think the issue with dmg-acid2 is somewhere else at this point!
 	std::sort(&objects_priority[0],&objects_priority[no_sprites],
 		[](const Obj &a, const Obj &b)
 		{

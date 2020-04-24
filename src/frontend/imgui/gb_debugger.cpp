@@ -4,6 +4,13 @@
 using namespace gameboy;
 
 
+void GameboyDisplayViewer::init()
+{
+    bg_map.init_texture(256,256);
+    tiles.init_texture(0x10*8*2,0x18*8);
+}
+
+
 void GameboyDisplayViewer::update(GB &gb)
 {
     auto t = gb.ppu.render_tiles();
@@ -12,12 +19,6 @@ void GameboyDisplayViewer::update(GB &gb)
     bg_map.swap_buffer(b);
     std::scoped_lock<std::mutex> guard(pal_mutex);
     gb.ppu.render_palette(palette_bg,palette_sp);    
-}
-
-void GameboyDisplayViewer::init()
-{
-    bg_map.init_texture(256,256);
-    tiles.init_texture(0x10*8*2,0x18*8);
 }
 
 void GameboyDisplayViewer::draw_bg_map()
@@ -120,6 +121,7 @@ void ImguiMainWindow::gameboy_emu_instance()
 	uint64_t next_time = current_time() + screen_ticks_per_frame;
 
     emu_running = true;
+    gb.quit = false;
 
     try
     {
@@ -161,15 +163,15 @@ void ImguiMainWindow::gameboy_emu_instance()
     {
         std::cout << ex.what() << "\n";
         emu_running = false;
+        return;
     }
-    
     emu_running = false;
 }
 
 
 void ImguiMainWindow::gameboy_stop_instance()
 {
-    if(emu_running)
+    if(emu_thread.joinable())
     {
         gb.quit = true;
         // save the breakpoint state so we can restore it later
@@ -185,11 +187,9 @@ void ImguiMainWindow::gameboy_stop_instance()
 void ImguiMainWindow::gameboy_start_instance(bool step)
 {
     gb.debug.step_instr = step;
-    if(!emu_running)
+    if(!emu_thread.joinable())
     {
-        gb.quit = false;
-        std::thread emulator(&ImguiMainWindow::gameboy_emu_instance,this);
-        std::swap(emulator,emu_thread);    
+        emu_thread = std::thread(&ImguiMainWindow::gameboy_emu_instance,this);    
     }
 
     else
@@ -441,7 +441,7 @@ void ImguiMainWindow::gameboy_draw_memory()
 
             for(int j = 0; j < 0x10; j++)
             {
-                ImGui::Text("%02x ",gb.mem.raw_read(((j)+i*0x10)&0xffff));
+                ImGui::Text("%02x ",gb.mem.raw_read((j+(i*0x10))&0xffff));
                 ImGui::SameLine();
             }
             ImGui::Text("\n");
