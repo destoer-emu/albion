@@ -8,7 +8,13 @@ emu_type get_emulator_type(std::string filename)
 	{
 		std::string ext = filename.substr(ext_idx+1);
 
-        if(ext == "gbc" || ext == "gb" || ext == "sgb")
+        for(auto &x: ext)
+        {
+            x = tolower(x);
+        }
+
+        // isx needs a format conversion but its fine
+        if(ext == "gbc" || ext == "gb" || ext == "sgb" || ext == "isx")
         {
             return emu_type::gameboy;
         }
