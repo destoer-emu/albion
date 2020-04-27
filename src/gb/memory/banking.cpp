@@ -1,4 +1,4 @@
-#include <gb/memory.h>
+#include <gb/gb.h>
 
 namespace gameboy
 {
@@ -41,7 +41,7 @@ void Memory::change_lo_rom_bank_mbc1(uint16_t address, uint8_t v) noexcept
 {
 	UNUSED(address);
 	const uint8_t data = ((v & 0x1f) == 0) ? 1 : (v & 0x1f);
-	cart_rom_bank = (mbc1_bank2 << 5) | data;
+	cart_rom_bank = (cart_rom_bank & ~0x1f) | data;
 	
 	// bank greater than the current number of rom banks wraps back round
 	if(cart_rom_bank >= rom_info.no_rom_banks) 
@@ -52,19 +52,18 @@ void Memory::change_lo_rom_bank_mbc1(uint16_t address, uint8_t v) noexcept
 
 // 0x4000 - 0x5fff
 
-// changes the kind of bank switch mbc1 does
+// write bank two register
 void Memory::mbc1_banking_change(uint16_t address, uint8_t v) noexcept 
 {
 	UNUSED(address);
 	
 	mbc1_bank2 = (v & 3);
 
-	if(rom_banking) 
-    {
-		change_hi_rom_bank_mbc1();
-	} 
+	// doesent matter what the mode is we allways use the bank2 reg
+	// for the higher part of our rom in the 0x4000 - 0x8000 area
+	change_hi_rom_bank_mbc1();
 	
-	else 
+	if(!rom_banking)
     {
 		ram_bank_change_mbc1();
 	}

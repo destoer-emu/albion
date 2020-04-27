@@ -61,6 +61,10 @@ public:
 
     void do_hdma() noexcept;
 
+    int get_bank() const noexcept
+    {
+        return cart_rom_bank;
+    } 
 
     // serial tests
     emu_test test_result = emu_test::running;

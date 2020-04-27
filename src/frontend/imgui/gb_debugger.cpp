@@ -337,7 +337,12 @@ void ImguiMainWindow::gameboy_draw_disassembly_child()
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f,0.0f,1.0f,1.0f));
             }
 
-            disass_str = fmt::format("{:04x}: {}",target,gb.disass.disass_op(target));
+            // for now only show bank over zero target in rom banking range
+            // will add vram and wram banks etc later
+            int bank = target >= 0x4000  && target <= 0x8000 ? gb.mem.get_bank() : 0;
+
+            disass_str = fmt::format("{:02x}:{:04x}: {}",bank,target,gb.disass.disass_op(target));
+            
             if(ImGui::Selectable(disass_str.c_str(),selected == i))
             {
                 selected = i;

@@ -190,21 +190,40 @@ void Rom_info::init(std::vector<uint8_t> &rom, std::string romname)
     // pull cart type
     switch(cart_type)
     {
-        case 0: type = rom_type::rom_only; break; // rom only
-
-        case 1: case 2: case 3:
+        case 0x0: case 0x8: case 0x9:
+        {
+            type = rom_type::rom_only; break; // rom only
+        }
+        case 0x1: case 0x2: case 0x3:
         { 
             type = rom_type::mbc1; break;
         }
 
-        case 5: case 6:
+        case 0x5: case 0x6:
         { 
             type = rom_type::mbc2; break;
         }
         
-        case 10:  type = rom_type::mbc3; has_rtc = true; break; 
-        case 0x1b: type = rom_type::mbc5; break;
-        default: type = rom_type::mbc3; break; // assume mb3 for now
+        case 0x10: case 0xF:
+        {  
+            type = rom_type::mbc3; has_rtc = true; break; 
+        }
+
+        case 0x11: case 0x12: case 0x13:
+        {  
+            type = rom_type::mbc3; break; 
+        }
+
+        case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e:
+        {
+            type = rom_type::mbc5; break;
+        }
+
+        default:
+        {
+            throw std::runtime_error(fmt::format("unknown cart type: {:x}",cart_type));
+            break;
+        }
     }
 
     // get number of rom banks

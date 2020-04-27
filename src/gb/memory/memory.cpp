@@ -966,16 +966,13 @@ uint8_t Memory::read_rom_lower_mbc1(uint16_t addr) const noexcept
 		return rom[addr & 0x3fff];
 	}
 
-	// if not the bank2 reg is used (shifted right by 5 bits)
-	// which we do anyways because its the only way its ever used
+	
+	// else the bank2 register is used shift left by 5 bits
+	// which is hte top 2 bits of our cart_rom_bank allready :)
 	else // TODO optimise this bank read
 	{
-		int bank = mbc1_bank2 << 5;
-		if(bank >= rom_info.no_rom_banks) 
-		{
-			bank %= rom_info.no_rom_banks;
-		}
-		return rom[(bank * 0x4000) +  (addr & 0x3fff)];
+
+		return rom[((cart_rom_bank & ~0x1f) * 0x4000) +  (addr & 0x3fff)];
 	}
 }
 

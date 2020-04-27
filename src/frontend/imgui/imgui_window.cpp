@@ -790,8 +790,38 @@ void ImguiMainWindow::mainloop()
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // setup the viewport so it will stop drawing just below the menubar
-        glViewport(0, 0, display_w, display_h-static_cast<GLsizei>(menubar_size.y));
+        // lets figure out how much to scale by
+        const int y = display_h - static_cast<int>(menubar_size.y);
+        const int x = display_w;
+
+        int fact_y = y / screen.get_height();
+        int fact_x = x / screen.get_width();
+
+        // make sure the factor we scale by is equal
+        if(fact_x > fact_y)
+        {
+            fact_x = fact_y;
+        }
+
+        else if(fact_y > fact_x)
+        {
+            fact_y = fact_x;
+        }
+
+
+        // recalc the heights with the new factor
+        int screen_y = screen.get_height() * fact_y;
+        int screen_x = screen.get_width() * fact_x;
+
+    
+
+        // now get half the remainder of our total draw area 
+        // and use it to keep it in the centre of the viewpoert
+        int width_offset = (x - screen_x) / 2;
+        int height_offset = (y - screen_y) / 2;
+
+        // set the viewport to draw from the offsets and draw the screen for the factor we are strecthing at
+        glViewport(width_offset, height_offset, screen_x, screen_y);
 
         screen.update_texture();
         screen.draw_texture();
