@@ -103,6 +103,38 @@ private:
         sprite_one = 2
     };
 
+
+    // pod type to hold pixels in the fifo
+    // cgb_pal is part of attr not sure it should 
+    // just be anded out each time
+    struct Pixel_Obj 
+    {
+        int colour_num = 0;
+        pixel_source source = pixel_source::tile;
+        int cgb_pal = 0;
+        bool scx_a = false;   
+        uint8_t attr = 0;   
+        int priority = 0;
+    };
+
+    template<size_t N>
+    struct Pixel_Fifo
+    {
+        void reset() noexcept
+        {
+            len = 0;
+            read_idx = 0;
+        }
+
+        Pixel_Obj fifo[N];
+        const size_t size = N;
+        int len = 0;
+        int read_idx = 0;
+    };
+
+
+
+    bool sprite_win(const Pixel_Obj &sp, const Pixel_Obj &bg) noexcept;
     bool push_pixel() noexcept;
     void tick_fetcher(int cycles) noexcept;
     void draw_scanline(int cycles) noexcept;
@@ -121,17 +153,6 @@ private:
     uint32_t scanline_counter = 0;
 
 
-
-
-
-    struct Pixel_Obj // pod type to hold pixels in the fifo
-    {
-        int colour_num = 0;
-        pixel_source source = pixel_source::tile;
-        int cgb_pal = 0;
-        bool scx_a = false;       
-    };
-
 	// fetcher
 	bool hblank = false;
 	int x_cord = 0; // current x cord of the ppu
@@ -142,6 +163,11 @@ private:
 	uint8_t ppu_scyc = 0; // how far along a sprite fetch is
 	int pixel_count = 0; // how many pixels are in the fifo
 	Pixel_Obj fetcher_tile[8];
+
+    // sprites with the higher priority will stay in this queue
+    // that are non zero color (i.e appear eailer in objects_priority)
+    Pixel_Fifo<8> fetcher_sprite;
+
 	int tile_cord = 0;
 	bool tile_ready = false; // is the tile fetch ready to go into the fio 
 	Obj objects_priority[10]; // sprites for the current scanline

@@ -39,7 +39,7 @@ void convert_isx(std::vector<uint8_t> &rom)
     std::vector<uint8_t> new_rom;
 
     // no header lets parse it :P
-    int len = 0;
+    size_t len = 0;
     while(len < rom.size())
     {
         switch(rom[len++])
@@ -88,7 +88,7 @@ void convert_isx(std::vector<uint8_t> &rom)
 
 
                 // if need more space resize to accomodate it 
-                if(0x4000 * (bank+1) > new_rom.size())
+                if(0x4000U * (bank+1) > new_rom.size())
                 {
                     new_rom.resize(0x4000 * (bank+1),0);
                 }

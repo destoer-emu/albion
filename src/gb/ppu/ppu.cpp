@@ -1,8 +1,5 @@
 #include <gb/gb.h>
 
-/* todo add tile & sprite caching? */
-// also figure out why stat irq blocking no longer passes
-
 namespace gameboy
 {
 
@@ -39,6 +36,8 @@ void Ppu::reset_fetcher() noexcept
 
 	window_drawn = false;
 	window_x_line = 0;
+
+	fetcher_sprite.reset();
 }
 
 
@@ -430,21 +429,36 @@ bool Ppu::push_pixel() noexcept
 		return (pixel_count > 8);
 	}
 	
-	
-	const int col_num = ppu_fifo[pixel_idx].colour_num; // save the pixel we will shift
-	pixel_source source = ppu_fifo[pixel_idx].source;
-	const int scanline = current_line;
-	
+	// assume bg winns
+	bool sprite_priority = false;
+
+	const auto bg = ppu_fifo[pixel_idx];
+
+	const auto sp = fetcher_sprite.fifo[fetcher_sprite.read_idx];
+
+	// if sprite has stuff to push
+	// advance the fifo and figure out which one wins
+	if(fetcher_sprite.len != 0)
+	{
+		// "push" the sprite object out
+		fetcher_sprite.len -= 1;
+		fetcher_sprite.read_idx = (fetcher_sprite.read_idx + 1) % fetcher_sprite.size;
+
+		sprite_priority = sprite_win(sp,bg);
+	}
+
+	const auto pixel = sprite_priority? sp : bg;
+
 	if(!cpu.get_cgb())
 	{
-		const uint32_t full_color = get_dmg_color(col_num,source);
-		screen[(scanline*SCREEN_WIDTH)+x_cord] = full_color;
+		const uint32_t full_color = get_dmg_color(pixel.colour_num,pixel.source);
+		screen[(current_line*SCREEN_WIDTH)+x_cord] = full_color;
 	}
 	
 	else // gameboy color
 	{
-		const uint32_t full_color = get_cgb_color(col_num, ppu_fifo[pixel_idx].cgb_pal, source);
-		screen[(scanline*SCREEN_WIDTH)+x_cord] = full_color;
+		const uint32_t full_color = get_cgb_color(pixel.colour_num, pixel.cgb_pal, pixel.source);
+		screen[(current_line*SCREEN_WIDTH)+x_cord] = full_color;
 	}
 	
 	// shift out a pixel
@@ -755,27 +769,64 @@ void Ppu::read_sprites() noexcept
 			if(++no_sprites == 10) { break; } // only draw a max of 10 sprites per line
 		}
 	}
-	//bool is_cgb = cpu.get_cgb();
 
-	// sort the array
-	// if x cords are same use oam as priority lower indexes draw last
-	// else use the x cordinate again lower indexes draw last
-	// this means they will draw on top of other sprites
-
-	// think the issue with dmg-acid2 is somewhere else at this point!
-	std::sort(&objects_priority[0],&objects_priority[no_sprites],
-		[](const Obj &a, const Obj &b)
-		{
-			if(a.x_pos == b.x_pos)
+	// if in dmg mode sort the array
+	// lower x cord has highest priority
+	// if at same x cord lowest oam draws first
+	// once in the fifo writes will be blocked if they have a lower priority
+	if(!cpu.get_cgb())
+	{
+		std::sort(&objects_priority[0],&objects_priority[no_sprites],
+			[](const Obj &a, const Obj &b)
 			{
-				return a.index > b.index;
-			}
+				if(a.x_pos == b.x_pos)
+				{
+					return a.index < b.index;
+				}
 
-			return a.x_pos > b.x_pos;
-		}
-	);
+				return a.x_pos < b.x_pos;
+			}
+		);
+	}
 }
 
+
+
+
+bool Ppu::sprite_win(const Pixel_Obj &sp, const Pixel_Obj &bg) noexcept
+{
+
+	// in cgb if lcdc bit 0 is deset sprites draw over anything
+	const bool draw_over_everything = !is_set(mem.io[IO_LCDC],0) && cpu.get_cgb();
+
+	// dont display pixels with colour id zero as its allways transparent
+	// the colour itself dosent matter we only care about the id
+	if(sp.colour_num == 0)
+	{
+		return false;
+	}
+
+	// if the cgb lcdc sprite overrride is on then the sprite will win every time
+	// also if the tile is color zero (transparent) then the sprite will also win
+	if(!draw_over_everything && bg.colour_num != 0)
+	{
+		
+		// cgb tile attr set to priority
+		// oam obj above bg ignored
+		if(bg.source == pixel_source::tile_cgbd)
+		{
+			return false;
+		}
+
+		// oam priority bit set tile is above sprite
+		else if(is_set(sp.attr,7))
+		{
+			return false;
+		}
+	}
+
+	return true;	
+}
 
 
 // returns if they have been rendered
@@ -787,9 +838,6 @@ bool Ppu::sprite_fetch() noexcept
 	
 	const uint8_t lcd_control = mem.io[IO_LCDC]; // get lcd control reg
 
-	// in cgb if lcdc bit 0 is deset sprites draw over anything
-	const bool draw_over_everything = !is_set(lcd_control,0) && is_cgb;
-	
 	const int y_size = is_set(lcd_control,2) ? 16 : 8;
 
 	const int scanline = current_line;
@@ -870,68 +918,59 @@ bool Ppu::sprite_fetch() noexcept
 			const uint8_t data2 = mem.vram[vram_bank][data_address+1];
 			
 
-			Pixel_Obj *fifo = &ppu_fifo[pixel_idx];
-
 			// if xflipped we need to read from start to end
 			// and else end to start (see below)
 			int colour_bit = x_flip? 7 - pixel_start : pixel_start;
 			const int shift = x_flip? 1 : -1;
-			
+
 			// eaiser to read in from right to left as pixel 0
 			// is bit 7 in the color data pixel 1 is bit 6 etc 
 			for(int sprite_pixel = pixel_start; sprite_pixel >= 0; sprite_pixel--,colour_bit += shift)
 			{
 				
 				// rest same as tiles
-				int colour_num = val_bit(data2,colour_bit) << 1;
-				colour_num |= val_bit(data1,colour_bit);
-
-
-				// dont display pixels with colour id zero as its allways transparent
-				// the colour itself dosent matter we only care about the id
-				if(colour_num == 0)
-				{
-					continue;
-				}
+				const int colour_num = (val_bit(data2,colour_bit) << 1) 
+					| val_bit(data1,colour_bit);
 
 				// where we actually want to dump the pixel into the fifo
 				uint8_t x_pix = 0 - sprite_pixel;
 				x_pix += pixel_start;
 
-				// if the cgb lcdc sprite overrride is on then the sprite will win every time
-				// also if the tile is color zero (transparent) then the sprite will also win
-				if(!draw_over_everything && fifo[x_pix].colour_num != 0)
-				{
-					
-					// cgb tile attr set to priority
-					// oam obj above bg ignored
-					if(fifo[x_pix].source == pixel_source::tile_cgbd)
-					{
-						continue;
-					}
 
-					// oam priority bit set tile is above sprite
-					else if(is_set(attributes,7))
+				const auto fifo_idx = (x_pix + fetcher_sprite.read_idx) % fetcher_sprite.size;
+
+				
+				/* 
+					note lower idx means that a fetcher object has a greater priority
+					on dmg this will just work as priority is by x cordinate and therefore 
+					the order sprites will be drawn in thus the fifo will fill up with
+					higher priority sprites first and deny sprites that draw after it
+					however on cgb they will draw out of priority order as its by oam idx
+					so we need a manual check by here 
+				*/
+
+				// if something is allready there with a greater priority
+				if(x_pix < fetcher_sprite.len && fetcher_sprite.fifo[fifo_idx].priority < i)
+				{
+					// and it is non zero then we lose
+					if(fetcher_sprite.fifo[fifo_idx].colour_num != 0)
 					{
 						continue;
 					}
 				}
 
 
-				// if we have passed all that then the sprite has won
-				// colour_num needs to be written out to the fetcher
-				// we need to say where it is from eg tile or sprite
-				// so that we actually know where to read the color from
-				// when it comes time to actually push pixels to the screen 
-
-				fifo[x_pix].colour_num = colour_num;
-				fifo[x_pix].source =  is_set(attributes,4)? pixel_source::sprite_one : pixel_source::sprite_zero;
-				fifo[x_pix].scx_a = false;
-
-				// value just ignored in dmg
-				fifo[x_pix].cgb_pal = attributes & 0x7;	
+				fetcher_sprite.fifo[fifo_idx].colour_num = colour_num;
+				fetcher_sprite.fifo[fifo_idx].source = is_set(attributes,4)? pixel_source::sprite_one : pixel_source::sprite_zero;
 				
+				// values just ignored in dmg
+				fetcher_sprite.fifo[fifo_idx].cgb_pal = attributes & 0x7;	 
+				fetcher_sprite.fifo[fifo_idx].attr = attributes;
+				
+				fetcher_sprite.fifo[fifo_idx].priority = i;	
 			}
+			// whatever length is longer is our new len ;)
+			fetcher_sprite.len = (fetcher_sprite.len > pixel_start + 1)? fetcher_sprite.len : pixel_start + 1;
 			did_draw = true;
 		}
 	}

@@ -35,12 +35,20 @@ void Ppu::save_state(std::ofstream &fp)
     file_write_var(fp,window_y_line);
     file_write_var(fp,window_x_line);
     file_write_var(fp,window_drawn);
+    file_write_var(fp,fetcher_sprite.fifo);
+    file_write_var(fp,fetcher_sprite.len);
+    file_write_var(fp,fetcher_sprite.read_idx);
 }
 
 void Ppu::load_state(std::ifstream &fp)
 {
     file_read_vec(fp,screen);
     file_read_var(fp,current_line);
+    if(current_line > 153)
+    {
+        throw std::runtime_error("current line out of range!");
+    }
+
     file_read_var(fp,mode);
     if(static_cast<int>(mode) > 3 || static_cast<int>(mode) < 0)
     {
@@ -53,14 +61,30 @@ void Ppu::load_state(std::ifstream &fp)
     file_read_var(fp,x_cord);
     file_read_arr(fp,ppu_fifo,sizeof(ppu_fifo));
     file_read_var(fp,pixel_idx);
+    if(pixel_idx >= sizeof(ppu_fifo) / sizeof(ppu_fifo[0]))
+    {
+        throw std::runtime_error("pixel idx out of range!");
+    }
     file_read_var(fp,ppu_cyc);
     file_read_var(fp,ppu_scyc);
     file_read_var(fp,pixel_count);
+    if(pixel_count > 16)
+    {
+        throw std::runtime_error("pixel count out of range");
+    }
     file_read_arr(fp,fetcher_tile,sizeof(fetcher_tile));
     file_read_var(fp,tile_cord);
+    if(tile_cord >= SCREEN_WIDTH)
+    {
+        throw std::runtime_error("tile cord out of range!");
+    }
     file_read_var(fp,tile_ready);
     file_read_arr(fp,objects_priority,sizeof(objects_priority));
     file_read_var(fp,no_sprites);
+    if(no_sprites > 10)
+    {
+        throw std::runtime_error("invalid number of sprites!");
+    }
     file_read_var(fp,sprite_drawn);
     file_read_var(fp,window_start);
     file_read_var(fp,x_scroll_tick);
@@ -71,7 +95,15 @@ void Ppu::load_state(std::ifstream &fp)
     file_read_var(fp,bg_pal_idx);
     file_read_var(fp,window_y_line);
     file_read_var(fp,window_x_line);
-    file_read_var(fp,window_drawn);    
+    file_read_var(fp,window_drawn);
+    file_read_var(fp,fetcher_sprite.fifo);
+    file_read_var(fp,fetcher_sprite.len);
+    file_read_var(fp,fetcher_sprite.read_idx); 
+
+    if(fetcher_sprite.read_idx > fetcher_sprite.size || fetcher_sprite.len > fetcher_sprite.size)
+    {
+        throw std::runtime_error("fetcher_sprite out of range!");
+    }   
 }
 
 }

@@ -240,7 +240,7 @@ private:
 	int down_sample_cnt = 0; 
 
 
-	static constexpr int freq_playback = 96000;
+	static constexpr int freq_playback = 44100;
 	static constexpr int down_sample_lim = (4 * 1024 * 1024) / freq_playback;
 
 };

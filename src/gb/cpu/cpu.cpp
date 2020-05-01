@@ -119,7 +119,7 @@ void Cpu::cycle_tick_t(int cycles) noexcept
 	update_timers(cycles); 
 
 	// handler will check if its enabled
-	mem.tick_dma(cycles << is_double);
+	mem.tick_dma(cycles);
 	
 	// in double speed mode gfx and apu should operate at half
 	ppu.update_graphics(cycles >> is_double); // handle the lcd emulation
