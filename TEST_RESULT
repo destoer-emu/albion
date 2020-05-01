@@ -1,23 +1,12 @@
 gekkio_tests:
-mooneye-gb_hwtests\utils\bootrom_dumper.gb: aborted halt infinite loop
-mooneye-gb_hwtests\utils\dump_boot_hwio.gb: pass
-mooneye-gb_hwtests\misc\boot_div-A.gb: fail
-mooneye-gb_hwtests\misc\boot_div-cgb0.gb: fail
-mooneye-gb_hwtests\misc\boot_div-cgbABCDE.gb: fail
-mooneye-gb_hwtests\misc\boot_hwio-C.gb: fail
-mooneye-gb_hwtests\misc\boot_regs-A.gb: fail
-mooneye-gb_hwtests\misc\boot_regs-cgb.gb: fail
-mooneye-gb_hwtests\misc\ppu\vblank_stat_intr-C.gb: fail
-mooneye-gb_hwtests\misc\bits\unused_hwio-C.gb: fail
-mooneye-gb_hwtests\manual-only\sprite_priority.gb: timeout
-mooneye-gb_hwtests\emulator-only\mbc5\rom_16Mb.gb: aborted infinite rst lockup
-mooneye-gb_hwtests\emulator-only\mbc5\rom_1Mb.gb: aborted infinite rst lockup
-mooneye-gb_hwtests\emulator-only\mbc5\rom_2Mb.gb: aborted infinite rst lockup
-mooneye-gb_hwtests\emulator-only\mbc5\rom_32Mb.gb: aborted infinite rst lockup
-mooneye-gb_hwtests\emulator-only\mbc5\rom_4Mb.gb: aborted infinite rst lockup
-mooneye-gb_hwtests\emulator-only\mbc5\rom_512kb.gb: aborted infinite rst lockup
-mooneye-gb_hwtests\emulator-only\mbc5\rom_64Mb.gb: aborted infinite rst lockup
-mooneye-gb_hwtests\emulator-only\mbc5\rom_8Mb.gb: aborted infinite rst lockup
+mooneye-gb_hwtests\emulator-only\mbc5\rom_16Mb.gb: pass
+mooneye-gb_hwtests\emulator-only\mbc5\rom_1Mb.gb: pass
+mooneye-gb_hwtests\emulator-only\mbc5\rom_2Mb.gb: pass
+mooneye-gb_hwtests\emulator-only\mbc5\rom_32Mb.gb: pass
+mooneye-gb_hwtests\emulator-only\mbc5\rom_4Mb.gb: pass
+mooneye-gb_hwtests\emulator-only\mbc5\rom_512kb.gb: pass
+mooneye-gb_hwtests\emulator-only\mbc5\rom_64Mb.gb: pass
+mooneye-gb_hwtests\emulator-only\mbc5\rom_8Mb.gb: pass
 mooneye-gb_hwtests\emulator-only\mbc2\bits_ramg.gb: pass
 mooneye-gb_hwtests\emulator-only\mbc2\bits_romb.gb: pass
 mooneye-gb_hwtests\emulator-only\mbc2\bits_unused.gb: pass
@@ -32,25 +21,16 @@ mooneye-gb_hwtests\emulator-only\mbc1\bits_ramg.gb: pass
 mooneye-gb_hwtests\emulator-only\mbc1\multicart_rom_8Mb.gb: fail
 mooneye-gb_hwtests\emulator-only\mbc1\ram_256kb.gb: pass
 mooneye-gb_hwtests\emulator-only\mbc1\ram_64kb.gb: pass
-mooneye-gb_hwtests\emulator-only\mbc1\rom_16Mb.gb: fail
+mooneye-gb_hwtests\emulator-only\mbc1\rom_16Mb.gb: pass
 mooneye-gb_hwtests\emulator-only\mbc1\rom_1Mb.gb: pass
 mooneye-gb_hwtests\emulator-only\mbc1\rom_2Mb.gb: pass
 mooneye-gb_hwtests\emulator-only\mbc1\rom_4Mb.gb: pass
 mooneye-gb_hwtests\emulator-only\mbc1\rom_512kb.gb: pass
-mooneye-gb_hwtests\emulator-only\mbc1\rom_8Mb.gb: fail
+mooneye-gb_hwtests\emulator-only\mbc1\rom_8Mb.gb: pass
 mooneye-gb_hwtests\acceptance\add_sp_e_timing.gb: pass
-mooneye-gb_hwtests\acceptance\boot_div-dmg0.gb: fail
 mooneye-gb_hwtests\acceptance\boot_div-dmgABCmgb.gb: fail
-mooneye-gb_hwtests\acceptance\boot_div-S.gb: fail
-mooneye-gb_hwtests\acceptance\boot_div2-S.gb: fail
-mooneye-gb_hwtests\acceptance\boot_hwio-dmg0.gb: fail
 mooneye-gb_hwtests\acceptance\boot_hwio-dmgABCmgb.gb: fail
-mooneye-gb_hwtests\acceptance\boot_hwio-S.gb: fail
-mooneye-gb_hwtests\acceptance\boot_regs-dmg0.gb: fail
 mooneye-gb_hwtests\acceptance\boot_regs-dmgABC.gb: pass
-mooneye-gb_hwtests\acceptance\boot_regs-mgb.gb: fail
-mooneye-gb_hwtests\acceptance\boot_regs-sgb.gb: fail
-mooneye-gb_hwtests\acceptance\boot_regs-sgb2.gb: fail
 mooneye-gb_hwtests\acceptance\call_cc_timing.gb: pass
 mooneye-gb_hwtests\acceptance\call_cc_timing2.gb: pass
 mooneye-gb_hwtests\acceptance\call_timing.gb: pass
@@ -112,9 +92,10 @@ mooneye-gb_hwtests\acceptance\interrupts\ie_push.gb: pass
 mooneye-gb_hwtests\acceptance\instr\daa.gb: pass
 mooneye-gb_hwtests\acceptance\bits\mem_oam.gb: pass
 mooneye-gb_hwtests\acceptance\bits\reg_f.gb: pass
-mooneye-gb_hwtests\acceptance\bits\unused_hwio-GS.gb: fail
-total: 114
-pass: 70
-fail: 34
-abort: 9
-timeout: 1
+mooneye-gb_hwtests\acceptance\bits\unused_hwio-GS.gb: pass
+total: 94
+pass: 80
+fail: 14
+abort: 0
+timeout: 0
+total time taken 49
