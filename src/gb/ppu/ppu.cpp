@@ -927,7 +927,7 @@ bool Ppu::sprite_fetch() noexcept
 			// is bit 7 in the color data pixel 1 is bit 6 etc 
 			for(int sprite_pixel = pixel_start; sprite_pixel >= 0; sprite_pixel--,colour_bit += shift)
 			{
-				
+
 				// rest same as tiles
 				const int colour_num = (val_bit(data2,colour_bit) << 1) 
 					| val_bit(data1,colour_bit);
@@ -939,9 +939,8 @@ bool Ppu::sprite_fetch() noexcept
 
 				const auto fifo_idx = (x_pix + fetcher_sprite.read_idx) % fetcher_sprite.size;
 
-				
 				/* 
-					note lower idx means that a fetcher object has a greater priority
+					lower objects_priority idx means that a fetcher object has a greater priority
 					on dmg this will just work as priority is by x cordinate and therefore 
 					the order sprites will be drawn in thus the fifo will fill up with
 					higher priority sprites first and deny sprites that draw after it
@@ -949,15 +948,23 @@ bool Ppu::sprite_fetch() noexcept
 					so we need a manual check by here 
 				*/
 
-				// if something is allready there with a greater priority
-				if(x_pix < fetcher_sprite.len && fetcher_sprite.fifo[fifo_idx].priority < i)
+				// if a pixel is allready in the fifo
+				if(x_pix < fetcher_sprite.len)
 				{
-					// and it is non zero then we lose
-					if(fetcher_sprite.fifo[fifo_idx].colour_num != 0)
+					// current color is transparent and a pixel 
+					// is allready there we lose
+					if(colour_num == 0)
 					{
 						continue;
 					}
-				}
+
+					// pixel allready there has a higher priority
+					// and color is not transparent we lose
+					else if(fetcher_sprite.fifo[fifo_idx].priority < i && fetcher_sprite.fifo[fifo_idx].colour_num != 0)
+					{
+						continue;
+					}
+				}	
 
 
 				fetcher_sprite.fifo[fifo_idx].colour_num = colour_num;

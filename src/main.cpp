@@ -27,6 +27,9 @@ void gb_run_test_helper(const std::vector<std::string> &tests, int seconds)
         try
         {
             gb.reset(x);
+            gb.apu.playback.stop();
+            gb.throttle_emu = false;
+
 
             auto start = std::chrono::system_clock::now();
 
