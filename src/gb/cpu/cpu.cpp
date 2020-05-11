@@ -65,8 +65,16 @@ void Cpu::init(bool use_bios)
     interrupt_enable = false;
     halt_bug = false;
 
+	pending_cycles = 0;
 }
 
+// cycles that dont need to be ticked yet
+// as there is no memory access involed
+// takes t cycles
+void Cpu::cycle_delay(int cycles) noexcept
+{
+	pending_cycles += cycles;
+}
 
 void Cpu::step()
 {
@@ -114,6 +122,10 @@ void Cpu::cycle_tick(int cycles) noexcept
 // t cycle tick
 void Cpu::cycle_tick_t(int cycles) noexcept
 {
+	// tick off any cycles that are pending
+	// from instr cycles that dont do memory accesses
+	cycles += pending_cycles;
+	pending_cycles = 0;
 
 	// timers act at constant speed
 	update_timers(cycles); 
@@ -208,6 +220,12 @@ void Cpu::update_timers(int cycles) noexcept
 
 void Cpu::handle_halt()
 {
+	// smash off all pending cycles before the halt check
+	if(pending_cycles > 0)
+	{
+		cycle_tick(0);
+	}
+
 	instr_side_effect = instr_state::normal;
 	uint8_t req = mem.io[IO_IF]; // requested ints 
 	uint8_t enabled = mem.io[IO_IE]; // enabled interrutps

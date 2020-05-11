@@ -66,7 +66,7 @@ if(WIN32)
 		#link_libraries("C:/SDL2-2.0.10/lib/x64/SDL2.lib") if no sdl2 cmake
 	endif()
 else()
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -pthread -O3")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -pthread -Ofast")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lSDL2")
 	if(${FRONTEND} STREQUAL "IMGUI") 
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lglfw  -lGL -lGLEW")

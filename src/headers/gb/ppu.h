@@ -204,7 +204,6 @@ private:
 
 	unsigned int x_cord = 0; // current x cord of the ppu
 	unsigned int tile_cord = 0;
-	bool window_start = false;
 	int scx_cnt = 0;
 
 

@@ -26,6 +26,7 @@ public:
     void step();
     void cycle_tick(int cycles) noexcept; 
     void cycle_tick_t(int cycles) noexcept;
+    void cycle_delay(int cycles) noexcept;
     void tima_inc() noexcept;
     bool internal_tima_bit_set() const noexcept;
     bool tima_enabled() const noexcept;
@@ -87,6 +88,8 @@ private:
     // timer
     void update_timers(int cycles) noexcept;
     
+
+    int pending_cycles = 0;
 
     // next opcode
     uint8_t opcode = 0;

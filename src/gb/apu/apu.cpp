@@ -170,8 +170,9 @@ void Apu::push_samples(int cycles) noexcept
     down_sample_cnt -= cycles;
 	if(down_sample_cnt <= 0)
 	{
-		
-		down_sample_cnt = down_sample_lim;
+		// any cycles that "spill over" should get added
+        // down_sample_cnt is negative if this happens
+		down_sample_cnt = down_sample_lim + down_sample_cnt;
 
 		if(!playback.is_playing()) 
 		{ 

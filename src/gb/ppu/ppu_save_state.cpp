@@ -20,7 +20,6 @@ void Ppu::save_state(std::ofstream &fp)
     file_write_var(fp,tile_cord);
     file_write_var(fp,no_sprites);
     file_write_var(fp,cur_sprite);
-    file_write_var(fp,window_start);
     file_write_var(fp,scx_cnt);
     file_write_arr(fp,bg_pal,sizeof(bg_pal));
     file_write_arr(fp,sp_pal,sizeof(sp_pal));
@@ -104,7 +103,6 @@ void Ppu::load_state(std::ifstream &fp)
     {
         throw std::runtime_error("invalid current sprite");
     }
-    file_read_var(fp,window_start);
     file_read_var(fp,scx_cnt);
     file_read_arr(fp,bg_pal,sizeof(bg_pal));
     file_read_arr(fp,sp_pal,sizeof(sp_pal));

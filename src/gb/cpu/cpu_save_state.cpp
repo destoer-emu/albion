@@ -21,6 +21,7 @@ void Cpu::save_state(std::ofstream &fp)
     file_write_var(fp,interrupt_enable);
     file_write_var(fp,is_cgb);
     file_write_var(fp,is_double);
+    file_write_var(fp,pending_cycles);
 }
 
 
@@ -45,7 +46,8 @@ void Cpu::load_state(std::ifstream &fp)
     }
     file_read_var(fp,interrupt_enable);
     file_read_var(fp,is_cgb);
-    file_read_var(fp,is_double);	
+    file_read_var(fp,is_double);
+    file_read_var(fp,pending_cycles);	
 }
 
 }

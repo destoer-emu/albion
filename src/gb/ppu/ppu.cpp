@@ -20,18 +20,12 @@ void Ppu::reset_fetcher() noexcept
 	x_cord = 0; // current x cord of the ppu
 	tile_cord = 0;
 	fetcher.ready = false; 
-	window_start = false;
 	scx_cnt = 0;
 
-	// if we draw the window at all this line 
-	// we will draw it from a greater pos next line
-	if(window_drawn)
-	{
-		window_y_line++;
-	}
 
 	window_drawn = false;
 	window_x_line = 0;
+
 
 	obj_fifo.reset();
 	bg_fifo.reset();
@@ -56,6 +50,8 @@ void Ppu::init() noexcept
     // cgb pal
 	sp_pal_idx = 0;
 	bg_pal_idx = 0; // index into the bg pal (entry takes two bytes)
+
+	window_y_line = 0;
 
 	memset(bg_pal,0x00,sizeof(bg_pal)); // bg palette data
 	memset(sp_pal,0x00,sizeof(sp_pal)); // sprite pallete data 
@@ -186,10 +182,8 @@ void Ppu::stat_update() noexcept
 		cpu.request_interrupt(1);	
 	}
 	
-	// update our status reg
-	// need to use get_mode here so it will read hblank
-	// while the oam mode glitch is active
-	mem.io[IO_STAT] = status | 128 | static_cast<uint8_t>(get_mode());
+
+	mem.io[IO_STAT] = status | 128 | static_cast<uint8_t>(mode);
 }
 
 
@@ -204,7 +198,6 @@ void Ppu::turn_lcd_off() noexcept
 	mode = ppu_mode::hblank;
 	mem.io[IO_STAT] = (mem.io[IO_STAT] & ~3) | static_cast<uint8_t>(mode);
 	signal = false;
-	reset_fetcher();
 }
 
 
@@ -219,7 +212,8 @@ void Ppu::turn_lcd_on() noexcept
 
 	// i think it should read hblank till it hits pixel xfer
 	// and allow writes through but im honestly not sure
-	
+	// blargss lcd-sync test is probably what we need...
+
 	//printf("lyc bit %x\n",is_set(mem.io[IO_STAT],2));
 	//printf("stat on: %x\n",mem.io[IO_STAT]);
 }
@@ -239,6 +233,14 @@ void Ppu::switch_hblank() noexcept
 	{
 		mem.do_hdma();
 	}
+
+	// if we draw the window at all this line 
+	// we will draw it from a greater pos next line
+	if(window_drawn)
+	{
+		window_y_line++;
+	}
+
 	stat_update();	
 }
 
@@ -268,7 +270,7 @@ void Ppu::update_graphics(int cycles) noexcept
 			if(scanline_counter >= 456)
 			{
 				// reset the counter extra cycles should tick over
-				scanline_counter = 0;
+				scanline_counter -= 456;
 
 				current_line++;
 				
@@ -303,7 +305,7 @@ void Ppu::update_graphics(int cycles) noexcept
 		{
 			if(scanline_counter >= 456)
 			{
-				scanline_counter = 0;
+				scanline_counter -= 456;
 				current_line++;
 				
 				// vblank is over
@@ -521,13 +523,13 @@ void Ppu::tick_fetcher() noexcept
 			tile_fetch();
 			fetcher.ready = true;
 		}
-		return;	
+		return;
 	}
 	
 	// if we have room to dump into the fifo
 	// and we are ready to do so, do it now 
 	// at 0 dump at start at 8 pixels dump in higher half
-	else if(fetcher.ready && fetcher.cyc >= 8)
+	if(fetcher.ready)
 	{
 		if(bg_fifo.len <= 8)
 		{

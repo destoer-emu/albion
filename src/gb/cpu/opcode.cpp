@@ -56,7 +56,7 @@ void Cpu::exec_instr()
 		
 		case 0x3: // inc bc
 			write_bc(read_bc()+1);
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			break;
 		
 		case 0x4: // inc b
@@ -84,7 +84,7 @@ void Cpu::exec_instr()
 		
 		case 0x9: // add hl,bc
 			write_hl(instr_addw(read_hl(),read_bc()));
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			break;
 			
 
@@ -96,7 +96,7 @@ void Cpu::exec_instr()
 		
 		case 0xb: // dec bc 
 			write_bc(read_bc()-1);
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			break;
 		
 		
@@ -158,7 +158,7 @@ void Cpu::exec_instr()
 		
 		case 0x13: // inc de
 			write_de(read_de()+1);
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			break;
 		
 		case 0x14: // inc d
@@ -184,7 +184,7 @@ void Cpu::exec_instr()
 		
 		case 0x19: // add hl, de
 			write_hl(instr_addw(read_hl(),read_de()));
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			break;
 		
 		case 0x1a: // ld a,(de) 
@@ -194,7 +194,7 @@ void Cpu::exec_instr()
 
 		case 0x1b: // dec de
 			write_de(read_de()-1);
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			break;
 			
 		case 0x1c: // inc e
@@ -230,7 +230,7 @@ void Cpu::exec_instr()
 		
 		case 0x23: // inc hl
 			write_hl(read_hl()+1); // increment hl
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			break;
 		
 		case 0x24: // inc h
@@ -287,7 +287,7 @@ void Cpu::exec_instr()
 		
 		case 0x29: // add hl, hl
 			write_hl(instr_addw(read_hl(),read_hl()));
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			break;
 		
 		// flags affected by this?
@@ -299,7 +299,7 @@ void Cpu::exec_instr()
 		
 		case 0x2b: // dec hl
 			write_hl(read_hl()-1);
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			break;
 		
 		case 0x2c: // inc l
@@ -337,7 +337,7 @@ void Cpu::exec_instr()
 		
 		case 0x33: // inc sp
 			sp += 1;
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			break;
 		
 		case 0x34: // inc (hl)
@@ -373,7 +373,7 @@ void Cpu::exec_instr()
 			
 		case 0x39: // add hl, sp 
 			write_hl(instr_addw(read_hl(),sp));
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			break;	
 			
 		case 0x3a: // ldd a, (hl)
@@ -383,7 +383,7 @@ void Cpu::exec_instr()
 		
 		case 0x3b: // dec sp
 			sp -= 1;
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			break;
 		
 		case 0x3c: // inc a
@@ -975,14 +975,14 @@ void Cpu::exec_instr()
 			if(!is_set(f,Z))
 			{
 				pc = v;
-				cycle_tick(1); // internal delay
+				cycle_delay(4); // internal delay
 			}
 			break;
         }
 
 		case 0xc3: // jump
 			pc = mem.read_wordt(pc);
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			break;
 		
 		
@@ -993,7 +993,7 @@ void Cpu::exec_instr()
         }
 
 		case 0xc5: // push bc 	
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			write_stackwt(read_bc());
 			break;
 		
@@ -1004,7 +1004,7 @@ void Cpu::exec_instr()
 		
 		case 0xc7: // rst 00
 			check_rst_loop(0x00,0xc7);
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			write_stackwt(pc);
 			pc = 0;
 			break;
@@ -1017,7 +1017,7 @@ void Cpu::exec_instr()
 
 		case 0xc9: // ret 
 			pc = read_stackwt();	
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			break;
 		
 		case 0xca: // jp z, nnnn
@@ -1027,7 +1027,7 @@ void Cpu::exec_instr()
 			if(is_set(f, Z))
 			{
 				pc = v;
-				cycle_tick(1); // internal
+				cycle_delay(4); // internal
 			}
 			break;
         }
@@ -1049,7 +1049,7 @@ void Cpu::exec_instr()
         {
 			uint16_t v = mem.read_wordt(pc);
 			pc += 2;
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			write_stackwt(pc);
 			pc = v;
 			break;
@@ -1061,7 +1061,7 @@ void Cpu::exec_instr()
 		
 		case 0xcf: // rst 08
 			check_rst_loop(0x08,0xcf);	
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			write_stackwt(pc);
 			pc = 0x8;
 			break;
@@ -1081,7 +1081,7 @@ void Cpu::exec_instr()
 			if(!is_set(f,C))
 			{
 				pc = v;
-				cycle_tick(1);// internal
+				cycle_delay(4);// internal
 			}
 			break;
         }
@@ -1093,7 +1093,7 @@ void Cpu::exec_instr()
         }
 
 		case 0xD5: // push de
-			cycle_tick(1); // internal delay 
+			cycle_delay(4); // internal delay 
 			write_stackwt(read_de());
 			break;
 		
@@ -1105,7 +1105,7 @@ void Cpu::exec_instr()
 			#ifdef DEBUG
 			check_rst_loop(0x10,0xd7);
 			#endif
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			write_stackwt(pc);
 			pc = 0x10;
 			break;
@@ -1116,7 +1116,7 @@ void Cpu::exec_instr()
 			
 		case 0xd9: // reti
 			pc = read_stackwt();	
-			cycle_tick(1);// internal
+			cycle_delay(4);// internal
 			interrupt_enable = true; // re-enable interrupts
 			break;
 		
@@ -1127,7 +1127,7 @@ void Cpu::exec_instr()
 			if(is_set(f,C))
 			{
 				pc = v;
-				cycle_tick(1); // internal
+				cycle_delay(4); // internal
 			}
 			break;
         }
@@ -1144,7 +1144,7 @@ void Cpu::exec_instr()
 
 		case 0xdf: // rst 18
 			check_rst_loop(0x18,0xdf);
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			write_stackwt(pc);
 			pc = 0x18;
 			break;
@@ -1162,7 +1162,7 @@ void Cpu::exec_instr()
 			break;
 
 		case 0xe5: // push hl
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			write_stackwt( read_hl());
 			break;
 		
@@ -1172,14 +1172,14 @@ void Cpu::exec_instr()
 		
 		case 0xe7: // rst 20
 			check_rst_loop(0x20,0xe7);
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			write_stackwt(pc);
 			pc = 0x20;
 			break;
 		
 		case 0xe8: // add sp, i8 
 			sp = instr_addi(sp, static_cast<int8_t>(mem.read_memt(pc++)));
-			cycle_tick(2); // internal delay (unsure)
+			cycle_delay(8); // internal delay (unsure)
 			break;
 		
 		case 0xe9: // jp hl
@@ -1197,7 +1197,7 @@ void Cpu::exec_instr()
 		
 		case 0xef: // rst 28
 			check_rst_loop(0x28,0xef);
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			write_stackwt(pc);
 			pc = 0x28;
 			break;
@@ -1221,7 +1221,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xf5: // push af
-			cycle_tick(1); // internal delay
+			cycle_delay(4); // internal delay
 			write_stackwt(read_af());
 			break;
 		
@@ -1231,19 +1231,19 @@ void Cpu::exec_instr()
 		
 		case 0xf7: // rst 30
 			check_rst_loop(0x30,0xf7);
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			write_stackwt(pc);
 			pc = 0x30;
 			break;
 		
 		case 0xf8: // ld hl, sp + i8 
 			write_hl(instr_addi(sp,static_cast<int8_t>(mem.read_memt(pc++))));
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			break;
 		
 		case 0xf9: // ld sp, hl
 			sp = read_hl();
-			cycle_tick(1); // internal
+			cycle_delay(4); // internal
 			break;
 		
 		case 0xfa: // ld a (nn) <-- 16 bit address
@@ -1263,7 +1263,7 @@ void Cpu::exec_instr()
 		
 		case 0xff: // rst 38
 			check_rst_loop(0x38,0xff);	
-			cycle_tick(1); // internal 
+			cycle_delay(4); // internal 
 			write_stackwt(pc);
 			pc = 0x38;
 			break;   

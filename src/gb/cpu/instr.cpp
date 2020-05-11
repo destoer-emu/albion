@@ -440,7 +440,7 @@ uint8_t Cpu::instr_rlc(uint8_t reg) noexcept
 void Cpu::instr_jr() noexcept
 {
 	const auto operand = static_cast<int8_t>(mem.read_memt(pc++));
-	cycle_tick(1); // internal delay
+	cycle_delay(4); // internal delay
 	pc += operand;	
 }
 
@@ -449,7 +449,7 @@ void Cpu::instr_jr_cond(bool cond, int bit) noexcept
 	const auto operand = static_cast<int8_t>(mem.read_memt(pc++));
 	if(is_set(f, bit) == cond)
 	{
-		cycle_tick(1); // internal delay
+		cycle_delay(4); // internal delay
 		pc += operand;
 	}	
 }
@@ -460,7 +460,7 @@ void Cpu::call_cond(bool cond, int bit) noexcept
 	pc += 2;
 	if(is_set(f,bit) == cond)
 	{
-		cycle_tick(1);  // internal delay
+		cycle_delay(4);  // internal delay
 		write_stackwt(pc);
 		pc = v;
 	}
@@ -469,11 +469,11 @@ void Cpu::call_cond(bool cond, int bit) noexcept
 
 void Cpu::ret_cond(bool cond, int bit) noexcept
 {
-	cycle_tick(1); // internal
+	cycle_delay(4); // internal
 	if(is_set(f,bit) == cond)
 	{
 		pc = read_stackwt();
-		cycle_tick(1);  // internal
+		cycle_delay(4);  // internal
 	}	
 }
 
