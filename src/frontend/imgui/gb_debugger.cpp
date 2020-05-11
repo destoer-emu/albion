@@ -8,6 +8,8 @@ void GameboyDisplayViewer::init()
 {
     bg_map.init_texture(256,256);
     tiles.init_texture(0x10*8*2,0x18*8);
+    memset(palette_bg,0,sizeof(palette_bg));
+    memset(palette_sp,0,sizeof(palette_sp));
 }
 
 
@@ -93,7 +95,7 @@ void gameboy_handle_input(GB &gb)
         }
 
         // just released
-        else if(!down && pressed[i])
+        else if(!down &&  pressed[i])
         {
             gb.key_released(gb_key[i]); 
             pressed[i] = false; 

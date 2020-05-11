@@ -1,5 +1,11 @@
 #include <gb/gb.h>
 
+
+// need a fifo push pop function
+// as well as seperating the dumping of fetcher  into fifo
+// as well as the sprite mixing
+// but lets just get it working again first :D
+
 namespace gameboy
 {
 
@@ -11,20 +17,10 @@ Ppu::Ppu(GB &gb) : cpu(gb.cpu), mem(gb.mem)
 
 void Ppu::reset_fetcher() noexcept
 {
-	// fetcher
-	hblank = false;
 	x_cord = 0; // current x cord of the ppu
-	pixel_idx = 0;
-
-	ppu_cyc = 0; // how far for a tile fetch is
-	ppu_scyc = 0; // how far along a sprite fetch is
-	pixel_count = 0; // how many pixels are in the fifo
 	tile_cord = 0;
-	tile_ready = false; // is the tile fetch ready to go into the fio 
-	no_sprites = 0; // how many sprites
-	sprite_drawn = false;
+	fetcher.ready = false; 
 	window_start = false;
-	x_scroll_tick = false;
 	scx_cnt = 0;
 
 	// if we draw the window at all this line 
@@ -37,7 +33,9 @@ void Ppu::reset_fetcher() noexcept
 	window_drawn = false;
 	window_x_line = 0;
 
-	fetcher_sprite.reset();
+	obj_fifo.reset();
+	bg_fifo.reset();
+	fetcher.reset();
 }
 
 
@@ -132,6 +130,11 @@ uint8_t Ppu::get_bgpd() const noexcept
 }
 
 
+ppu_mode Ppu::get_mode() const noexcept
+{
+	return mode;
+}
+
 void Ppu::write_stat() noexcept
 {
 	stat_update();
@@ -184,7 +187,9 @@ void Ppu::stat_update() noexcept
 	}
 	
 	// update our status reg
-	mem.io[IO_STAT] = status | 128 | static_cast<uint8_t>(mode);
+	// need to use get_mode here so it will read hblank
+	// while the oam mode glitch is active
+	mem.io[IO_STAT] = status | 128 | static_cast<uint8_t>(get_mode());
 }
 
 
@@ -200,8 +205,6 @@ void Ppu::turn_lcd_off() noexcept
 	mem.io[IO_STAT] = (mem.io[IO_STAT] & ~3) | static_cast<uint8_t>(mode);
 	signal = false;
 	reset_fetcher();
-
-	//printf("stat off: %x\n",mem.io[IO_STAT]);
 }
 
 
@@ -214,6 +217,9 @@ void Ppu::turn_lcd_on() noexcept
 	mode = ppu_mode::oam_search;
 	stat_update();
 
+	// i think it should read hblank till it hits pixel xfer
+	// and allow writes through but im honestly not sure
+	
 	//printf("lyc bit %x\n",is_set(mem.io[IO_STAT],2));
 	//printf("stat on: %x\n",mem.io[IO_STAT]);
 }
@@ -221,6 +227,19 @@ void Ppu::turn_lcd_on() noexcept
 void Ppu::window_disable() noexcept
 {
 
+}
+
+void Ppu::switch_hblank() noexcept
+{
+	// switch to hblank
+	mode = ppu_mode::hblank;
+
+	// on cgb do hdma (handler will check if its active)
+	if(cpu.get_cgb())
+	{
+		mem.do_hdma();
+	}
+	stat_update();	
 }
 
 void Ppu::update_graphics(int cycles) noexcept
@@ -303,17 +322,18 @@ void Ppu::update_graphics(int cycles) noexcept
 		// mode 2 oam search
 		case ppu_mode::oam_search:
 		{
-			// mode 2 is over
 			if(scanline_counter >= 80)
 			{
 				// switch to pixel transfer
 				mode = ppu_mode::pixel_transfer;
 				
+				reset_fetcher();
+
 				// read in the sprites we are about to draw
 				read_sprites();
 
-				scx_cnt = (mem.io[IO_SCX] & 0x7);
-				x_scroll_tick = scx_cnt > 0;
+				scx_cnt = mem.io[IO_SCX] & 0x7;
+
 				stat_update();				
 			}
 			break;
@@ -323,20 +343,6 @@ void Ppu::update_graphics(int cycles) noexcept
 		case ppu_mode::pixel_transfer: 
 		{
 			draw_scanline(cycles);
-			if(hblank) // if just entering hblank 
-			{
-				// switch to hblank
-				mode = ppu_mode::hblank;
-					
-				reset_fetcher();
-					
-				// on cgb do hdma (handler will check if its active)
-				if(cpu.get_cgb())
-				{
-					mem.do_hdma();
-				}
-				stat_update();
-			}
 			break;
 		}	
 	}
@@ -407,42 +413,49 @@ uint32_t Ppu::get_cgb_color(int color_num, int cgb_pal, pixel_source source) noe
 // shift a pixel out of the array and smash it to the screen 
 // increment x afterwards
 
-// returns wether it can keep pushing or not
+// returns true if hblank has started
 
 bool Ppu::push_pixel() noexcept
 {
 
 	// cant push anymore
-	if(!(pixel_count > 8)) { return false; }
-
-	 // ignore how much we are offset into the tile
-	 // if we fetched a bg tile
-	if(x_scroll_tick && ppu_fifo[pixel_idx].scx_a)
-	{
-		pixel_idx += 1; // goto next pixel in fifo
-		pixel_count -= 1; // "shift the pixel out"
-		scx_cnt -= 1;
-		if(!scx_cnt)
-		{
-			x_scroll_tick = false;
-		}
-		return (pixel_count > 8);
+	if(bg_fifo.len <= 8) 
+	{ 
+		return false; 
 	}
-	
+
+	// ignore how much we are offset into the tile
+	// if we fetched a bg tile
+	// i highly doubt there is a hard coded dont do the shift is this aint the window
+	// on real hardware i need to find out how this is actually done
+	if(scx_cnt > 0 && !window_drawn)
+	{
+
+
+		// push a pixel out out
+		bg_fifo.read_idx = (bg_fifo.read_idx + 1) % bg_fifo.size;
+		bg_fifo.len--;
+
+		scx_cnt--;
+		return false;
+	}
+
 	// assume bg winns
 	bool sprite_priority = false;
 
-	const auto bg = ppu_fifo[pixel_idx];
+	const auto bg = bg_fifo.fifo[bg_fifo.read_idx];
+	bg_fifo.read_idx = (bg_fifo.read_idx + 1) % bg_fifo.size;
+	bg_fifo.len--;
 
-	const auto sp = fetcher_sprite.fifo[fetcher_sprite.read_idx];
+	const auto sp = obj_fifo.fifo[obj_fifo.read_idx];
 
 	// if sprite has stuff to push
 	// advance the fifo and figure out which one wins
-	if(fetcher_sprite.len != 0)
+	if(obj_fifo.len != 0)
 	{
 		// "push" the sprite object out
-		fetcher_sprite.len -= 1;
-		fetcher_sprite.read_idx = (fetcher_sprite.read_idx + 1) % fetcher_sprite.size;
+		obj_fifo.read_idx = (obj_fifo.read_idx + 1) % obj_fifo.size;
+		obj_fifo.len--;
 
 		sprite_priority = sprite_win(sp,bg);
 	}
@@ -461,16 +474,15 @@ bool Ppu::push_pixel() noexcept
 		screen[(current_line*SCREEN_WIDTH)+x_cord] = full_color;
 	}
 	
-	// shift out a pixel
-	pixel_count -= 1;
-	pixel_idx += 1; // goto next pixel in fifo
+
 	if(++x_cord == 160)
 	{
 		// done drawing enter hblank
-		hblank = true;
-		return false;
+		switch_hblank();
+		return true;
 	}
-	return true;
+
+	return false;
 }	
 	
 
@@ -488,78 +500,79 @@ bool Ppu::push_pixel() noexcept
 // (as this just works out nicer than dividing the inputs by two)
 
 // need to handle bugs with the window
-void Ppu::tick_fetcher(int cycles) noexcept
+void Ppu::tick_fetcher() noexcept
 {
 
+	// 1 cycle is tile num 
+	// 2nd is lb of data 
+	// 3rd is high byte of data 
+	// 4th is pushing it into the fifo	
+	fetcher.cyc += 1; // further along 
+	
 	// advance the fetcher if we dont have a tile dump waiting
 	// fetcher operates at half of base clock (4mhz)
-	if(!tile_ready) // fetch the tile
+	// note atm this only fetches tiles but on real hardware we fetch sprites and tiles :D
+	if(!fetcher.ready) // fetch some data
 	{
 		// should fetch the number then low and then high byte
 		// but we will ignore this fact for now
-
-		// 1 cycle is tile num 
-		// 2nd is lb of data 
-		// 3rd is high byte of data 
-
-		ppu_cyc += cycles; // further along 
-
-		if(ppu_cyc >= 6) // takes 3 cycles to fetch 8 pixels
+		if(fetcher.cyc >= 6) // takes 3 cycles to fetch 8 pixels
 		{
 			tile_fetch();
-			tile_ready = true;
-			// any over flow will be used to push the next tile
-			// into the fifo (the 4th clock)
-			ppu_cyc = 0;
-		}	
+			fetcher.ready = true;
+		}
+		return;	
 	}
 	
 	// if we have room to dump into the fifo
 	// and we are ready to do so, do it now 
 	// at 0 dump at start at 8 pixels dump in higher half
-	if(tile_ready && pixel_count <= 8)
+	else if(fetcher.ready && fetcher.cyc >= 8)
 	{
-		// sanity check incase it fetches an extra
-		// tile or two when pushing out the last set
-		// of pixels
-		if(tile_cord <= 160)
+		if(bg_fifo.len <= 8)
 		{
-			memcpy(&ppu_fifo[tile_cord],fetcher_tile,8 * sizeof(Pixel_Obj));
-		}
-		tile_cord += 8; // goto next tile fetch
-		tile_ready = false;
-		pixel_count += 8;
+			for(int i = 0; i < 8; i++)
+			{
+				bg_fifo.fifo[bg_fifo.write_idx] = fetcher.buf[i];
+				bg_fifo.write_idx = (bg_fifo.write_idx + 1) % bg_fifo.size;
+			}
+			tile_cord += 8; // goto next tile fetch
+			bg_fifo.len += 8;
+			fetcher.ready = false;
+			fetcher.cyc = 0;
+		}	
 	}		
 }	
 	
 
 void Ppu::draw_scanline(int cycles) noexcept 
 {
-	// get lcd control reg
-	const int control = mem.io[IO_LCDC];
+	// is sprite drawing enabled?
+	const bool obj_enabled = is_set(mem.io[IO_LCDC],1);
 	
 	
-	tick_fetcher(cycles);
-	
-	// push out of fifo
-	if(pixel_count > 8)
+	// advance the fetcher and the fifo
+	for(int i = 0; i < cycles; i++) // 1 pixel pushed per cycle
 	{
-		for(int i = 0; i < cycles; i++) // 1 pixel pushed per cycle
+		// ignore sprite timings for now
+		// sprites are fetched instantly into the fifo
+		// and not into the fetcher as they should be
+		if(obj_enabled)
 		{
-			// ignore sprite timings for now
-			if(is_set(control,1))
-			{
-				sprite_fetch();
-			}
-		
-			// blit the pixel 
-			// stop at hblank 
-			// or if the fifo only has 8 pixels inside it
-			if(!push_pixel()) 
-			{ 
-				return; 
-			}
+			sprite_fetch();
 		}
+	
+		// blit the pixel
+		// fifo will check if it can push for us
+		const auto hblank = push_pixel();
+
+		// if in hblank there is no more to do 
+		if(hblank)
+		{
+			return;
+		}
+
+		tick_fetcher();
 	}
 }
 
@@ -578,9 +591,8 @@ void Ppu::tile_fetch() noexcept
 		// each pixel uses color 0 of bgp
 		for(int i = 0; i < 8; i++)
 		{
-			fetcher_tile[i].colour_num = 0;
-			fetcher_tile[i].source = pixel_source::tile;		
-			fetcher_tile[i].scx_a = false;
+			fetcher.buf[i].colour_num = 0;
+			fetcher.buf[i].source = pixel_source::tile;
 		}
 		return;
 	}
@@ -589,8 +601,7 @@ void Ppu::tile_fetch() noexcept
 	const uint8_t scroll_y = mem.io[IO_SCY];
 	const uint8_t scroll_x = mem.io[IO_SCX];
 	const uint8_t window_y = mem.io[IO_WY];
-	// window does not work nicely below 0x7 im not sure what the exact behavior we want here is...
-	const uint8_t window_x = mem.io[IO_WX] & ~7; 
+	const uint8_t window_x = mem.io[IO_WX]; 
 	const int scanline = current_line;
 	
 
@@ -600,7 +611,7 @@ void Ppu::tile_fetch() noexcept
 	// it starts drawing at window_x 
 	// so if we are less than it dont draw 
 	const bool using_window = is_set(lcd_control,5) && (window_y <= scanline) 
-		&&  (window_x <= 166) && (window_x <= tile_cord);
+		&&  (window_x <= 166) && (mem.io[IO_WX] <= tile_cord + 7);
 	
 	// which of the 32 horizontal tiles are we currently drawing
 	uint8_t x_pos = tile_cord;
@@ -720,13 +731,11 @@ void Ppu::tile_fetch() noexcept
 			
 		// save our info to the fetcher
 		// in dmg the pal number will be ignored
-		fetcher_tile[i].colour_num = colour_num;
-		fetcher_tile[i].cgb_pal = cgb_pal;
+		fetcher.buf[i].colour_num = colour_num;
+		fetcher.buf[i].cgb_pal = cgb_pal;
 		// in cgb an priority bit is set it has priority over sprites
 		// unless lcdc has the master overide enabled
-		fetcher_tile[i].source = priority ? pixel_source::tile_cgbd : pixel_source::tile;		
-		
-		fetcher_tile[i].scx_a = !using_window;
+		fetcher.buf[i].source = priority ? pixel_source::tile_cgbd : pixel_source::tile;		
 	}
 }
 
@@ -747,6 +756,13 @@ dmg_colors Ppu::get_colour(uint8_t colour_num, uint16_t address) noexcept
 // called when when enter pixel transfer
 void Ppu::read_sprites() noexcept
 {
+	// priority
+	// by oam index if in cgb mode
+	// in dmg by xcord unless equal where it 
+	// is also done by oam index
+
+
+
 	const uint8_t lcd_control = mem.io[IO_LCDC]; // get lcd control reg
 
 	const int y_size = is_set(lcd_control,2) ? 16 : 8;
@@ -756,37 +772,54 @@ void Ppu::read_sprites() noexcept
 	
 	// reset how many sprites we have as its a new scanline
 	no_sprites = 0;
-	for(int sprite = 0; sprite < 40; sprite++) // should fetch all these as soon as we leave oam search
+	cur_sprite = 0;
+	for(size_t sprite = 0; sprite < 40; sprite++) // should fetch all these as soon as we leave oam search
 	{
         const uint16_t addr = sprite*4;
 		const uint8_t y_pos = mem.oam[addr & 0xff];
 		if( scanline -(y_size - 16) < y_pos  && scanline + 16 >= y_pos )
 		{
 			// intercepts with the line
-			objects_priority[no_sprites].index = addr; // save the index
+			objects[no_sprites].index = addr; // save the index
 			// and the x pos
-			objects_priority[no_sprites].x_pos = mem.oam[(addr+1)&0xff]-8;
+			objects[no_sprites].x_pos = mem.oam[(addr+1)&0xff];
+			objects[no_sprites].attr = mem.oam[(addr+3)];
+
+			// priority by oam index in cgb update here
+			if(cpu.get_cgb())
+			{
+				objects[no_sprites].priority = no_sprites;
+			}
 			if(++no_sprites == 10) { break; } // only draw a max of 10 sprites per line
 		}
 	}
 
-	// if in dmg mode sort the array
-	// lower x cord has highest priority
-	// if at same x cord lowest oam draws first
-	// once in the fifo writes will be blocked if they have a lower priority
+
+	// in dmg by xcord unless equal where it 
+	// is also done by oam index
+	// we sort like this here regardless because we want them in xcord order
+	// i.e the order our screen will draw them left to right
+	// so we dont need rechecks
+	std::sort(&objects[0],&objects[no_sprites],
+	[](const Obj &sp1, const Obj &sp2)
+	{
+		if(sp1.x_pos == sp2.x_pos)
+		{
+			return sp1.index < sp2.index;
+		}
+
+		return sp1.x_pos < sp2.x_pos;
+	});
+
+
+	// in dmg we need to update the priority by here instead as it
+	// is now in correct order 
 	if(!cpu.get_cgb())
 	{
-		std::sort(&objects_priority[0],&objects_priority[no_sprites],
-			[](const Obj &a, const Obj &b)
-			{
-				if(a.x_pos == b.x_pos)
-				{
-					return a.index < b.index;
-				}
-
-				return a.x_pos < b.x_pos;
-			}
-		);
+		for(size_t i = 0; i < no_sprites; i++)
+		{
+			objects[i].priority = i;
+		}
 	}
 }
 
@@ -819,7 +852,7 @@ bool Ppu::sprite_win(const Pixel_Obj &sp, const Pixel_Obj &bg) noexcept
 		}
 
 		// oam priority bit set tile is above sprite
-		else if(is_set(sp.attr,7))
+		else if(is_set(objects[sp.sprite_idx].attr,7))
 		{
 			return false;
 		}
@@ -831,7 +864,7 @@ bool Ppu::sprite_win(const Pixel_Obj &sp, const Pixel_Obj &bg) noexcept
 
 // returns if they have been rendered
 // because we will delay if they have been
-bool Ppu::sprite_fetch() noexcept 
+void Ppu::sprite_fetch() noexcept 
 {
 
     const bool is_cgb = cpu.get_cgb();
@@ -841,51 +874,45 @@ bool Ppu::sprite_fetch() noexcept
 	const int y_size = is_set(lcd_control,2) ? 16 : 8;
 
 	const int scanline = current_line;
-	
-	bool did_draw = false;
-	
-	for(int i = 0; i < no_sprites; i++)
+		
+	for(size_t i = cur_sprite; i < no_sprites; i++)
 	{
-		// if wrap with the x posistion will cause it to wrap around
-		// where its in range of the current sprite we still need to draw it
-		// for thje pixels its in range 
-		
-		// say we have one at 255
-		// it will draw 7 pixels starting from zero
-		// so from 0-6
-		// so if the xcord = 0 then the first 6 pixels must be mixed
-		// but i have no clue how to actually do this under a fifo...
-		
-		
-		// offset into the sprite we start drawing at 
+
+		// TODO figure out a more sensible way to handle sprites < 8	
+		// this is probably related to the reason the documentation
+		// says the oam entry is the x pos - 8
+
+		// offset into the sprite data we start drawing at 
 		// 7 is the 0th pixel and is defualt for a 
 		// sprite that we draw fully
 		int pixel_start = 7; 
 
-		uint8_t x_pos = objects_priority[i].x_pos;
-
-		if(x_cord == 0 &&  x_pos + 7 > 255)
+		// sprite < 8
+		if(x_cord == 0 && objects[cur_sprite].x_pos < 8)
 		{
-			x_pos += 7;
-			
-			// this will cause it to draw at the correct offset into the sprite
-			pixel_start = x_pos;
+			// here because the sprite gets -8
+			// this means it would normally underflow
+			// and only draw how much it is offset
+			// on the screen so account for the pixel start
+			pixel_start = objects[cur_sprite].x_pos;
 		}
-		
-		
-		
+
+
 		// if it does not start at the current x cord 
-		// and does not overflow then we dont care
-		else if(x_pos != x_cord)
+		// then we dont care
+		// we do + 8 instead of - 8 for the x_pos to avoid
+		// underflows
+		else if(objects[cur_sprite].x_pos != x_cord + 8)
 		{
 			continue;
 		}
-		
+
+
 		
 		
 		
 		// sprite takes 4 bytes in the sprite attributes table
-		const uint8_t sprite_index = objects_priority[i].index;
+		const uint8_t sprite_index = objects[i].index;
 		uint8_t y_pos = mem.oam[sprite_index];
 		// lowest bit of tile index ignored for 16 pixel sprites
 		const uint8_t sprite_location = y_size == 16? mem.oam[(sprite_index+2)] & ~1 : mem.oam[(sprite_index+2)];
@@ -937,10 +964,12 @@ bool Ppu::sprite_fetch() noexcept
 				x_pix += pixel_start;
 
 
-				const auto fifo_idx = (x_pix + fetcher_sprite.read_idx) % fetcher_sprite.size;
+				// for now we are just writing directly into the fifo and not the fetcher
+				// and completing fetches instantly this is not how hardware works but just go with it for now
+				auto &fifo_ref = obj_fifo.fifo[(x_pix + obj_fifo.read_idx) % obj_fifo.size];
 
 				/* 
-					lower objects_priority idx means that a fetcher object has a greater priority
+					lower objects idx means that a fetcher object has a greater priority
 					on dmg this will just work as priority is by x cordinate and therefore 
 					the order sprites will be drawn in thus the fifo will fill up with
 					higher priority sprites first and deny sprites that draw after it
@@ -949,7 +978,7 @@ bool Ppu::sprite_fetch() noexcept
 				*/
 
 				// if a pixel is allready in the fifo
-				if(x_pix < fetcher_sprite.len)
+				if(x_pix < obj_fifo.len)
 				{
 					// current color is transparent and a pixel 
 					// is allready there we lose
@@ -960,28 +989,27 @@ bool Ppu::sprite_fetch() noexcept
 
 					// pixel allready there has a higher priority
 					// and color is not transparent we lose
-					else if(fetcher_sprite.fifo[fifo_idx].priority < i && fetcher_sprite.fifo[fifo_idx].colour_num != 0)
+					else if(objects[fifo_ref.sprite_idx].priority < i && fifo_ref.colour_num != 0)
 					{
 						continue;
 					}
 				}	
 
 
-				fetcher_sprite.fifo[fifo_idx].colour_num = colour_num;
-				fetcher_sprite.fifo[fifo_idx].source = is_set(attributes,4)? pixel_source::sprite_one : pixel_source::sprite_zero;
-				
-				// values just ignored in dmg
-				fetcher_sprite.fifo[fifo_idx].cgb_pal = attributes & 0x7;	 
-				fetcher_sprite.fifo[fifo_idx].attr = attributes;
-				
-				fetcher_sprite.fifo[fifo_idx].priority = i;	
+				fifo_ref.colour_num = colour_num;
+				fifo_ref.source = is_set(attributes,4)? pixel_source::sprite_one : pixel_source::sprite_zero;
+				fifo_ref.sprite_idx = cur_sprite;
+
+
+				// value just ignored in dmg
+				fifo_ref.cgb_pal = attributes & 0x7;	 
 			}
-			// whatever length is longer is our new len ;)
-			fetcher_sprite.len = (fetcher_sprite.len > pixel_start + 1)? fetcher_sprite.len : pixel_start + 1;
-			did_draw = true;
+			// update the len if we have added new pixels :P
+			// and not just mixed old ones
+			obj_fifo.len = std::max(static_cast<size_t>(pixel_start+1),obj_fifo.len);
+			cur_sprite += 1;
 		}
 	}
-	return did_draw;
 }
 
 

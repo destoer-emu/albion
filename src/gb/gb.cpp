@@ -150,30 +150,27 @@ void GB::key_pressed(button b)
 	cpu.joypad_state = deset_bit(cpu.joypad_state, key);
 	
 
-	
-	
-	// is this a standard button or a directional one?
+	// is the input for a button?
 	bool button = (key > 3);
 
 	
 	uint8_t key_req = mem.io[IO_JOYPAD];
 	bool req_int = false;
 	
-	// only request an interrupt if the button just pressed
-	// is the style of button the game is intereted in
+	// only fire interrupts on buttons the game is current trying to read
+	// a, b, start, sel
 	if(button && !is_set(key_req,5))
 	{
 		req_int = true;
 	}
 	
-	// same but for direcitonals
-	
+	// dpad
 	else if(!button && !is_set(key_req,4))
 	{
 		req_int = true;
 	}
 	
-	// req an int
+	// fire an interrupt
 	if(req_int && !previously_unset)
 	{
 		cpu.request_interrupt(4);

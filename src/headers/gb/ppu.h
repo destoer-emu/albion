@@ -40,12 +40,13 @@ public:
 
 
     void init() noexcept;
+    ppu_mode get_mode() const noexcept;
 
     std::vector<uint32_t> screen; // 160 by 144
 
 
 
-    ppu_mode mode = ppu_mode::oam_search;
+    
 
     int current_line = 0;
     bool new_vblank = false;
@@ -103,86 +104,114 @@ private:
         sprite_one = 2
     };
 
+    struct Obj // struct for holding sprites on a scanline
+    {
+        uint16_t index = 0;
+        uint8_t x_pos = 0;
+        uint8_t attr = 0;
+        unsigned priority = 0;
+    };
+
 
     // pod type to hold pixels in the fifo
     // cgb_pal is part of attr not sure it should 
     // just be anded out each time
     struct Pixel_Obj 
     {
-        int colour_num = 0;
+        size_t colour_num = 0;
         pixel_source source = pixel_source::tile;
-        int cgb_pal = 0;
-        bool scx_a = false;   
-        uint8_t attr = 0;   
-        int priority = 0;
+        size_t cgb_pal = 0;
+        size_t sprite_idx = 0;
     };
 
-    template<size_t N>
+
     struct Pixel_Fifo
     {
         void reset() noexcept
         {
-            len = 0;
             read_idx = 0;
+            write_idx = 0;
+            len = 0;
         }
 
-        Pixel_Obj fifo[N];
-        const size_t size = N;
-        int len = 0;
-        int read_idx = 0;
+
+        static constexpr size_t size = 16;
+        Pixel_Obj fifo[size];
+
+        // implemented as a circular buffer
+        size_t read_idx = 0;
+        size_t write_idx = 0;
+        size_t len = 0;
     };
+
+
+    enum class fetcher_mode
+    {
+        tile,
+        sprite
+    };
+
+    struct Pixel_Fetcher
+    {
+        void reset() noexcept
+        {
+            cyc = 0;
+            mode = fetcher_mode::tile;
+            ready = false;
+            len = 0;
+        }
+
+        unsigned int cyc = 0; // how far for a tile fetch is
+        fetcher_mode mode = fetcher_mode::tile;
+        bool ready = false;
+        Pixel_Obj buf[8];
+        unsigned int len = 0;
+    };
+
 
 
 
     bool sprite_win(const Pixel_Obj &sp, const Pixel_Obj &bg) noexcept;
     bool push_pixel() noexcept;
-    void tick_fetcher(int cycles) noexcept;
+    void tick_fetcher() noexcept;
     void draw_scanline(int cycles) noexcept;
     void tile_fetch() noexcept;
     dmg_colors get_colour(uint8_t colour_num, uint16_t address) noexcept;
     uint32_t get_cgb_color(int color_num, int cgb_pal, pixel_source source) noexcept;
     uint32_t get_dmg_color(int color_num, pixel_source source) noexcept;
     void read_sprites() noexcept;
-    bool sprite_fetch() noexcept;  
+    void sprite_fetch() noexcept;  
+    void switch_hblank() noexcept;
 
 
     void reset_fetcher() noexcept;
 
     // main ppu state
+    ppu_mode mode = ppu_mode::oam_search;
 	bool signal = false;
     uint32_t scanline_counter = 0;
 
 
-	// fetcher
-	bool hblank = false;
-	int x_cord = 0; // current x cord of the ppu
-	Pixel_Obj ppu_fifo[168];
-	int pixel_idx = 0;
+    Pixel_Fetcher fetcher;
+    Pixel_Fifo bg_fifo;
+    Pixel_Fifo obj_fifo;
+	Obj objects[10]; // sprites for the current scanline
+	unsigned int no_sprites = 0; // how many sprites
+    unsigned int cur_sprite = 0; // current sprite
 
-	uint8_t ppu_cyc = 0; // how far for a tile fetch is
-	uint8_t ppu_scyc = 0; // how far along a sprite fetch is
-	int pixel_count = 0; // how many pixels are in the fifo
-	Pixel_Obj fetcher_tile[8];
 
-    // sprites with the higher priority will stay in this queue
-    // that are non zero color (i.e appear eailer in objects_priority)
-    Pixel_Fifo<8> fetcher_sprite;
+	
 
-	int tile_cord = 0;
-	bool tile_ready = false; // is the tile fetch ready to go into the fio 
-	Obj objects_priority[10]; // sprites for the current scanline
-	int no_sprites = 0; // how many sprites
-    int cur_sprite = 0; // current sprite
-	bool sprite_drawn = false;
+	unsigned int x_cord = 0; // current x cord of the ppu
+	unsigned int tile_cord = 0;
 	bool window_start = false;
-	bool x_scroll_tick = false;
 	int scx_cnt = 0;
 
 
     // window internal vars
     // keep track of how much the window has drawn
-    int window_y_line = 0;
-    int window_x_line = 0;
+    unsigned int window_y_line = 0;
+    unsigned int window_x_line = 0;
     bool window_drawn = false; // did we draw the window on this line?
 
 
@@ -190,8 +219,8 @@ private:
     // cgb pal
 	uint8_t bg_pal[0x40] = {0xff}; // bg palette data
 	uint8_t sp_pal[0x40] = {0xff}; // sprite pallete data 
-	int sp_pal_idx = 0;
-	int bg_pal_idx = 0; // index into the bg pal (entry takes two bytes)
+	unsigned int sp_pal_idx = 0;
+	unsigned int bg_pal_idx = 0; // index into the bg pal (entry takes two bytes)
 
 
 };

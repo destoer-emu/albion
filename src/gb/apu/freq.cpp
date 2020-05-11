@@ -33,4 +33,10 @@ int FreqReg::get_duty_idx() const noexcept
     return duty_idx;
 }
 
+void FreqReg::freq_trigger() noexcept
+{
+    // reload frequency peroid on trigger
+    freq_reload_period();
+}
+
 }

@@ -651,15 +651,15 @@ void Memory::write_word(uint16_t addr, uint16_t v) noexcept
 // memory accesses (timed)
 uint8_t Memory::read_memt(uint16_t addr) noexcept
 {
+	cpu.cycle_tick(1); // tick for the memory access 
     uint8_t v = read_mem(addr);
-    cpu.cycle_tick(1); // tick for the memory access 
     return v;
 }
 
 void Memory::write_memt(uint16_t addr, uint8_t v) noexcept
 {
+	cpu.cycle_tick(1); // tick for the memory access    
     write_mem(addr,v);
-    cpu.cycle_tick(1); // tick for the memory access    
 }
 
 
@@ -687,7 +687,7 @@ uint8_t Memory::read_oam(uint16_t addr) const noexcept
     }
 
     // if not in vblank or hblank cant access it
-    if(ppu.mode != ppu_mode::hblank && ppu.mode != ppu_mode::vblank)
+    if(ppu.get_mode() != ppu_mode::hblank && ppu.get_mode() != ppu_mode::vblank)
     {
         return 0xff;
     }
@@ -699,7 +699,7 @@ uint8_t Memory::read_oam(uint16_t addr) const noexcept
 uint8_t Memory::read_vram(uint16_t addr) const noexcept
 {
     // vram is used in pixel transfer cannot access
-    if(ppu.mode != ppu_mode::pixel_transfer)
+    if(ppu.get_mode() != ppu_mode::pixel_transfer)
     {
         return vram[vram_bank][addr & 0x1fff];
     }
@@ -768,7 +768,6 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 				
 			return 0xff; // return all unset
 		}	
-
 
         case IO_LY:
         {
@@ -1053,8 +1052,8 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 
 uint8_t Memory::read_iot(uint16_t addr) noexcept
 {
+	cpu.cycle_tick(1); // tick for mem access
     uint8_t v = read_io(addr);
-    cpu.cycle_tick(1); // tick for mem access
     return v;
 }
 
@@ -1144,7 +1143,7 @@ void Memory::write_oam(uint16_t addr,uint8_t v) noexcept
     }
 
     // if not in vblank or hblank cant access it
-    if(ppu.mode != ppu_mode::hblank && ppu.mode != ppu_mode::vblank)
+    if(ppu.get_mode() != ppu_mode::hblank && ppu.get_mode() != ppu_mode::vblank)
     {
         return;
     }
@@ -1156,7 +1155,7 @@ void Memory::write_oam(uint16_t addr,uint8_t v) noexcept
 void Memory::write_vram(uint16_t addr,uint8_t v) noexcept
 {
     // vram is used in pixel transfer cannot access
-    if(ppu.mode != ppu_mode::pixel_transfer)
+    if(ppu.get_mode() != ppu_mode::pixel_transfer)
     {
         vram[vram_bank][addr & 0x1fff] = v;
     }
@@ -1629,6 +1628,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 				{
 					apu.c1.length_trigger();
 					apu.c1.freq_reload_period();
+					apu.c1.freq_trigger();
 					apu.c1.env_trigger();
 					apu.c1.sweep_trigger();
 					apu.c1.duty_trigger();
@@ -1685,6 +1685,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 				{
 					apu.c2.length_trigger();
 					apu.c2.freq_reload_period();
+					apu.c2.freq_trigger();
 					apu.c2.env_trigger();
 					apu.c2.duty_trigger();
 				}
@@ -1748,6 +1749,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 				{
 					apu.c3.length_trigger();
 					apu.c3.freq_reload_period();
+					apu.c3.freq_trigger();
 					apu.c3.wave_trigger();
 					apu.c3.vol_trigger();
 				}
@@ -1962,8 +1964,8 @@ void Memory::do_hdma() noexcept
 
 void Memory::write_iot(uint16_t addr,uint8_t v) noexcept
 {
+	cpu.cycle_tick(1); // tick for mem access
     write_io(addr,v);
-    cpu.cycle_tick(1); // tick for mem access
 }
 
 // wram zero bank 0xc000 - 0xd000

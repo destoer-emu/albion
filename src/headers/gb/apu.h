@@ -73,6 +73,7 @@ public:
 	int get_duty_idx() const noexcept;
 	void freq_save_state(std::ofstream &fp);
 	void freq_load_state(std::ifstream &fp);
+	void freq_trigger() noexcept;
 protected:
 	int freq = 0;
 	int period = 0;
