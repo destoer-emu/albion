@@ -1,10 +1,13 @@
 #include <gb/gb.h>
 
 
-// need a fifo push pop function
-// as well as seperating the dumping of fetcher  into fifo
-// as well as the sprite mixing
-// but lets just get it working again first :D
+// regressions with timigns tests after rewrite
+// and even when hard coding the minimum pixel transfer time
+// for scanline rendering
+// which should make no difference as we 
+// didnt handle sprite and win stalls in the fifo anyways...
+// seems to cause 2 of the ppu tests to fail?
+// need to look into this
 
 namespace gameboy
 {
@@ -21,11 +24,6 @@ void Ppu::reset_fetcher() noexcept
 	tile_cord = 0;
 	fetcher.ready = false; 
 	scx_cnt = 0;
-
-
-	window_drawn = false;
-	window_x_line = 0;
-
 
 	obj_fifo.reset();
 	bg_fifo.reset();
@@ -241,6 +239,9 @@ void Ppu::switch_hblank() noexcept
 		window_y_line++;
 	}
 
+	window_drawn = false;
+	window_x_line = 0;
+
 	stat_update();	
 }
 
@@ -267,10 +268,10 @@ void Ppu::update_graphics(int cycles) noexcept
 	{	
 		case ppu_mode::hblank: // hblank
 		{
-			if(scanline_counter >= 456)
+			if(scanline_counter >= LINE_END)
 			{
 				// reset the counter extra cycles should tick over
-				scanline_counter -= 456;
+				scanline_counter -= LINE_END;
 
 				current_line++;
 				
@@ -303,9 +304,9 @@ void Ppu::update_graphics(int cycles) noexcept
 		
 		case ppu_mode::vblank: // vblank
 		{
-			if(scanline_counter >= 456)
+			if(scanline_counter >= LINE_END)
 			{
-				scanline_counter -= 456;
+				scanline_counter -= LINE_END;
 				current_line++;
 				
 				// vblank is over
@@ -324,18 +325,20 @@ void Ppu::update_graphics(int cycles) noexcept
 		// mode 2 oam search
 		case ppu_mode::oam_search:
 		{
-			if(scanline_counter >= 80)
+			if(scanline_counter >= OAM_END)
 			{
 				// switch to pixel transfer
 				mode = ppu_mode::pixel_transfer;
 				
-				reset_fetcher();
+				emulate_pixel_fifo = false;
+				pixel_transfer_end = calc_pixel_transfer_end();
+
+				// if using fifo allways for testing
+				//reset_fetcher();
+				//scx_cnt = mem.io[IO_SCX] & 0x7;
 
 				// read in the sprites we are about to draw
 				read_sprites();
-
-				scx_cnt = mem.io[IO_SCX] & 0x7;
-
 				stat_update();				
 			}
 			break;
@@ -344,12 +347,51 @@ void Ppu::update_graphics(int cycles) noexcept
 		// pixel transfer
 		case ppu_mode::pixel_transfer: 
 		{
-			draw_scanline(cycles);
+			
+			if(emulate_pixel_fifo)
+			{
+				draw_scanline(cycles);
+			}
+			
+			else
+			{
+				if(scanline_counter >= pixel_transfer_end)
+				{
+					render_scanline();
+					switch_hblank();
+				}
+			}
+			
+			// testing
+			//draw_scanline(cycles);
 			break;
 		}	
 	}
 }
 
+void Ppu::ppu_write() noexcept
+{
+	// written during mid scanline
+	// switch to using the fetcher 
+	// and smash any cycles off
+	if(mode == ppu_mode::pixel_transfer)
+	{
+		if(!emulate_pixel_fifo)
+		{
+			reset_fetcher();
+			scx_cnt = mem.io[IO_SCX] & 0x7;
+			emulate_pixel_fifo = true;
+			draw_scanline(scanline_counter-OAM_END);
+		}
+	}
+}
+
+uint32_t Ppu::calc_pixel_transfer_end() noexcept
+{
+	// does not handle the sprite, window, scx
+	// stalls and just assumes the minimum for now
+	return 252;
+}
 
 uint32_t Ppu::get_dmg_color(int color_num, pixel_source source) noexcept
 {
@@ -411,6 +453,56 @@ uint32_t Ppu::get_cgb_color(int color_num, int cgb_pal, pixel_source source) noe
 }
 
 
+
+
+void Ppu::render_scanline() noexcept
+{
+
+
+    const bool is_cgb = cpu.get_cgb();
+	auto scx_offset = mem.io[IO_SCX] & 0x7;
+	// is sprite drawing enabled?
+	const bool obj_enabled = is_set(mem.io[IO_LCDC],1);
+
+	Pixel_Obj scanline_fifo[176];
+
+	// this will just render nicely without modifying it
+	for(tile_cord = 0; tile_cord < 176; tile_cord += 8)
+	{
+		tile_fetch(&scanline_fifo[tile_cord]);
+	}
+
+	// window does not scroll
+	// we many have to handle it triggering in the middle of the line
+	if(window_drawn)
+	{
+		scx_offset = 0;
+	}
+
+	if(obj_enabled)
+	{
+		//printf("rendering sprites %d\n",no_sprites);
+		sprite_fetch(&scanline_fifo[scx_offset],false);
+	}
+
+	for(size_t x = 0; x < SCREEN_WIDTH; x++)
+	{
+		const auto pixel = scanline_fifo[x+scx_offset];
+
+		if(!is_cgb)
+		{
+			const uint32_t full_color = get_dmg_color(pixel.colour_num,pixel.source);
+			screen[(current_line*SCREEN_WIDTH)+x] = full_color;
+		}
+		
+		else // gameboy color
+		{
+			const uint32_t full_color = get_cgb_color(pixel.colour_num, pixel.cgb_pal, pixel.source);
+			screen[(current_line*SCREEN_WIDTH)+x] = full_color;
+		}		
+	}
+
+}
 
 // shift a pixel out of the array and smash it to the screen 
 // increment x afterwards
@@ -520,7 +612,7 @@ void Ppu::tick_fetcher() noexcept
 		// but we will ignore this fact for now
 		if(fetcher.cyc >= 6) // takes 3 cycles to fetch 8 pixels
 		{
-			tile_fetch();
+			tile_fetch(fetcher.buf);
 			fetcher.ready = true;
 		}
 		return;
@@ -561,7 +653,7 @@ void Ppu::draw_scanline(int cycles) noexcept
 		// and not into the fetcher as they should be
 		if(obj_enabled)
 		{
-			sprite_fetch();
+			sprite_fetch(obj_fifo.fifo);
 		}
 	
 		// blit the pixel
@@ -580,7 +672,7 @@ void Ppu::draw_scanline(int cycles) noexcept
 
 // fetch a single tile into the fifo
 
-void Ppu::tile_fetch() noexcept
+void Ppu::tile_fetch(Pixel_Obj *buf) noexcept
 {
 
     const bool is_cgb = cpu.get_cgb();
@@ -722,7 +814,11 @@ void Ppu::tile_fetch() noexcept
 	int color_bit = x_flip? 0 : 7;
 	
 	const int shift = x_flip ? 1 : -1;
-	
+
+	// in cgb an priority bit is set it has priority over sprites
+	// unless lcdc has the master overide enabled
+	const auto source = priority ? pixel_source::tile_cgbd : pixel_source::tile;	
+
 	for(int i = 0; i < 8; i++, color_bit += shift)
 	{
 		// combine data 2 and data 1 to get the color id for the pixel
@@ -733,11 +829,10 @@ void Ppu::tile_fetch() noexcept
 			
 		// save our info to the fetcher
 		// in dmg the pal number will be ignored
-		fetcher.buf[i].colour_num = colour_num;
-		fetcher.buf[i].cgb_pal = cgb_pal;
-		// in cgb an priority bit is set it has priority over sprites
-		// unless lcdc has the master overide enabled
-		fetcher.buf[i].source = priority ? pixel_source::tile_cgbd : pixel_source::tile;		
+		buf[i].cgb_pal = cgb_pal;
+
+		buf[i].colour_num = colour_num;
+		buf[i].source = source;	
 	}
 }
 
@@ -864,11 +959,11 @@ bool Ppu::sprite_win(const Pixel_Obj &sp, const Pixel_Obj &bg) noexcept
 }
 
 
-// returns if they have been rendered
-// because we will delay if they have been
-void Ppu::sprite_fetch() noexcept 
+// the buf passed in current goes unused if doing fifo rendering
+// when we move this to use the actual fetcher it will used a pass param
+// of it instead of hardcoding a direct dump into the fifo
+void Ppu::sprite_fetch(Pixel_Obj *buf,bool use_fifo) noexcept
 {
-
     const bool is_cgb = cpu.get_cgb();
 	
 	const uint8_t lcd_control = mem.io[IO_LCDC]; // get lcd control reg
@@ -889,26 +984,53 @@ void Ppu::sprite_fetch() noexcept
 		// sprite that we draw fully
 		int pixel_start = 7; 
 
-		// sprite < 8
-		if(x_cord == 0 && objects[cur_sprite].x_pos < 8)
+		uint8_t x_pos = objects[cur_sprite].x_pos;
+
+		if(use_fifo)
 		{
-			// here because the sprite gets -8
-			// this means it would normally underflow
-			// and only draw how much it is offset
-			// on the screen so account for the pixel start
-			pixel_start = objects[cur_sprite].x_pos;
+			// sprite < 8
+			if(x_cord == 0 && x_pos < 8)
+			{
+				// here because the sprite gets -8
+				// this means it would normally underflow
+				// and only draw how much it is offset
+				// on the screen so account for the pixel start
+				pixel_start = x_pos;
+			}
+
+
+			// if it does not start at the current x cord 
+			// then we dont care
+			// we do + 8 instead of - 8 for the x_pos to avoid
+			// underflows
+			else if(x_pos != x_cord + 8)
+			{
+				continue;
+			}
 		}
 
-
-		// if it does not start at the current x cord 
-		// then we dont care
-		// we do + 8 instead of - 8 for the x_pos to avoid
-		// underflows
-		else if(objects[cur_sprite].x_pos != x_cord + 8)
+		// scanline renderer so we are just allways drawing the thing if its on screen
+		else
 		{
-			continue;
-		}
+			// dont draw out of range sprites :P
+			if(x_pos >= SCREEN_WIDTH+8)
+			{
+				continue;
+			}
 
+			// just draw from zero up to the posistion
+			if(x_pos < 8)
+			{
+				pixel_start = objects[cur_sprite].x_pos;
+				x_pos = 0;
+			}
+
+			// draw from -8 to the posistion
+			else
+			{
+				x_pos -= 8;
+			}
+		}
 
 		
 		
@@ -922,36 +1044,45 @@ void Ppu::sprite_fetch() noexcept
 		
 		const bool y_flip = is_set(attributes,6);
 		const bool x_flip = is_set(attributes,5);
+
+
 		
-		
-		// does this sprite  intercept with the scanline
-		if( scanline -(y_size - 16) < y_pos  && scanline + 16 >= y_pos )
+		// if this sprite doesent meet the scanline we dont care
+		if(!( scanline -(y_size - 16) < y_pos  && scanline + 16 >= y_pos ))
 		{
-			y_pos -= 16;
-			uint8_t line = scanline - y_pos; 
-			
-			// read the sprite backwards in y axis
-			if(y_flip)
-			{
-				line = y_size - (line + 1);
-			}
-			
-			line *= 2; // each line of sprite data is two bytes
-			uint16_t data_address = ((sprite_location * 16 )) + line; // in realitly this is offset into vram at 0x8000
+			continue;
+		}
+		
+		y_pos -= 16;
+		uint8_t line = scanline - y_pos; 
+		
+		// read the sprite backwards in y axis
+		if(y_flip)
+		{
+			line = y_size - (line + 1);
+		}
+		
+		line *= 2; // each line of sprite data is two bytes
+		uint16_t data_address = ((sprite_location * 16 )) + line; // in realitly this is offset into vram at 0x8000
 
-			// if in cgb and attr has bit 3 set 
-			// read from the 2nd vram bank
-			const int vram_bank = (is_cgb && is_set(attributes,3))? 1 : 0;
+		// if in cgb and attr has bit 3 set 
+		// read from the 2nd vram bank
+		const int vram_bank = (is_cgb && is_set(attributes,3))? 1 : 0;
 
-			const uint8_t data1 = mem.vram[vram_bank][data_address];
-			const uint8_t data2 = mem.vram[vram_bank][data_address+1];
-			
+		const uint8_t data1 = mem.vram[vram_bank][data_address];
+		const uint8_t data2 = mem.vram[vram_bank][data_address+1];
+		
 
-			// if xflipped we need to read from start to end
-			// and else end to start (see below)
-			int colour_bit = x_flip? 7 - pixel_start : pixel_start;
-			const int shift = x_flip? 1 : -1;
+		// if xflipped we need to read from start to end
+		// and else end to start (see below)
+		int colour_bit = x_flip? 7 - pixel_start : pixel_start;
+		const int shift = x_flip? 1 : -1;
 
+		const auto source = is_set(attributes,4)? pixel_source::sprite_one : pixel_source::sprite_zero;
+
+		// render into the fifo
+		if(use_fifo)
+		{
 			// eaiser to read in from right to left as pixel 0
 			// is bit 7 in the color data pixel 1 is bit 6 etc 
 			for(int sprite_pixel = pixel_start; sprite_pixel >= 0; sprite_pixel--,colour_bit += shift)
@@ -962,8 +1093,7 @@ void Ppu::sprite_fetch() noexcept
 					| val_bit(data1,colour_bit);
 
 				// where we actually want to dump the pixel into the fifo
-				uint8_t x_pix = 0 - sprite_pixel;
-				x_pix += pixel_start;
+				const size_t x_pix = pixel_start - sprite_pixel;
 
 
 				// for now we are just writing directly into the fifo and not the fetcher
@@ -999,9 +1129,8 @@ void Ppu::sprite_fetch() noexcept
 
 
 				fifo_ref.colour_num = colour_num;
-				fifo_ref.source = is_set(attributes,4)? pixel_source::sprite_one : pixel_source::sprite_zero;
+				fifo_ref.source = source;
 				fifo_ref.sprite_idx = cur_sprite;
-
 
 				// value just ignored in dmg
 				fifo_ref.cgb_pal = attributes & 0x7;	 
@@ -1011,6 +1140,64 @@ void Ppu::sprite_fetch() noexcept
 			obj_fifo.len = std::max(static_cast<size_t>(pixel_start+1),obj_fifo.len);
 			cur_sprite += 1;
 		}
+
+
+		// scanline renderer
+		else
+		{
+			for(int sprite_pixel = pixel_start; sprite_pixel >= 0; sprite_pixel--,colour_bit += shift)
+			{
+				// rest same as tiles
+				const int colour_num = (val_bit(data2,colour_bit) << 1) 
+					| val_bit(data1,colour_bit);
+
+
+				// where we actually want to dump the pixel into the fifo
+				const size_t x_pix = pixel_start - sprite_pixel;
+
+				// just dump the thing directly we only need to check tile to sprite wins here
+				// as lower priority ones will just get drawn over when we are using the painters algorithm
+				auto &pixel_ref = buf[x_pix + x_pos];
+
+				Pixel_Obj sp;
+				sp.colour_num = colour_num;
+				sp.source = source;
+				sp.sprite_idx = cur_sprite;
+				sp.cgb_pal = attributes & 0x7;
+
+				bool is_tile = (pixel_ref.source == pixel_source::tile || pixel_ref.source == pixel_source::tile_cgbd);
+
+				// if a tile is there check which has priority
+				if(is_tile)
+				{
+					if(!sprite_win(sp,pixel_ref))
+					{
+						continue;
+					}
+				}
+
+				// is a sprite check if we lose
+				// if we are transparent 
+				// or of a lower priority while the one allready there 
+				// is transparent we lose
+				else
+				{
+					if(colour_num == 0)
+					{
+						continue;
+					}
+
+					else if(objects[pixel_ref.sprite_idx].priority < i && pixel_ref.colour_num != 0)
+					{
+						continue;
+					}
+				}
+
+
+				pixel_ref = sp;
+			}
+			cur_sprite += 1;				
+		}	
 	}
 }
 

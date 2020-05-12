@@ -31,6 +31,7 @@ constexpr int IO_NR52 = 0x26;
 constexpr int IO_LY = 0x44;
 constexpr int IO_WX = 0x4b;
 constexpr int IO_WY = 0x4a;
+constexpr int IO_BGP = 0x47;
 constexpr int IO_SCY = 0x42;
 constexpr int IO_SPEED = 0x4D;
 constexpr int IO_VBANK = 0x4f;

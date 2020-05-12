@@ -36,12 +36,12 @@ mooneye-gb_hwtests/acceptance/ppu/stat_lyc_onoff.gb: fail
 mooneye-gb_hwtests/acceptance/ppu/intr_2_0_timing.gb: pass
 mooneye-gb_hwtests/acceptance/ppu/lcdon_write_timing-GS.gb: fail
 mooneye-gb_hwtests/acceptance/ppu/intr_1_2_timing-GS.gb: pass
-mooneye-gb_hwtests/acceptance/ppu/intr_2_oam_ok_timing.gb: pass
+mooneye-gb_hwtests/acceptance/ppu/intr_2_oam_ok_timing.gb: fail
 mooneye-gb_hwtests/acceptance/ppu/hblank_ly_scx_timing-GS.gb: fail
 mooneye-gb_hwtests/acceptance/ppu/intr_2_mode3_timing.gb: fail
 mooneye-gb_hwtests/acceptance/ppu/lcdon_timing-GS.gb: fail
 mooneye-gb_hwtests/acceptance/ppu/stat_irq_blocking.gb: pass
-mooneye-gb_hwtests/acceptance/ppu/intr_2_mode0_timing.gb: pass
+mooneye-gb_hwtests/acceptance/ppu/intr_2_mode0_timing.gb: fail
 mooneye-gb_hwtests/acceptance/ppu/vblank_stat_intr-GS.gb: pass
 mooneye-gb_hwtests/acceptance/timer/tima_reload.gb: fail
 mooneye-gb_hwtests/acceptance/timer/rapid_toggle.gb: pass
@@ -94,8 +94,8 @@ mooneye-gb_hwtests/emulator-only/mbc2/bits_unused.gb: pass
 mooneye-gb_hwtests/emulator-only/mbc2/rom_1Mb.gb: pass
 mooneye-gb_hwtests/emulator-only/mbc2/bits_ramg.gb: pass
 total: 94
-pass: 79
-fail: 15
+pass: 77
+fail: 17
 abort: 0
 timeout: 0
-total time taken 3
+total time taken 2

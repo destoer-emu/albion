@@ -44,8 +44,9 @@ public:
 
     std::vector<uint32_t> screen; // 160 by 144
 
-
-
+    // inform ppu that registers that can affect
+    // pixel transfer have been written
+    void ppu_write() noexcept;
     
 
     int current_line = 0;
@@ -174,23 +175,35 @@ private:
     bool sprite_win(const Pixel_Obj &sp, const Pixel_Obj &bg) noexcept;
     bool push_pixel() noexcept;
     void tick_fetcher() noexcept;
-    void draw_scanline(int cycles) noexcept;
-    void tile_fetch() noexcept;
+    void render_scanline() noexcept;
+    void tile_fetch(Pixel_Obj *buf) noexcept;
     dmg_colors get_colour(uint8_t colour_num, uint16_t address) noexcept;
     uint32_t get_cgb_color(int color_num, int cgb_pal, pixel_source source) noexcept;
     uint32_t get_dmg_color(int color_num, pixel_source source) noexcept;
     void read_sprites() noexcept;
-    void sprite_fetch() noexcept;  
+    void sprite_fetch(Pixel_Obj *buf,bool use_fifo=true) noexcept;
     void switch_hblank() noexcept;
 
 
     void reset_fetcher() noexcept;
+
+
+    // scanline drawing (used when no pixel transfer writes happen)
+    void draw_scanline(int cycles) noexcept;
+
 
     // main ppu state
     ppu_mode mode = ppu_mode::oam_search;
 	bool signal = false;
     uint32_t scanline_counter = 0;
 
+    static constexpr uint32_t OAM_END = 80;
+    static constexpr uint32_t LINE_END = 456;
+    uint32_t pixel_transfer_end = 252;
+    bool emulate_pixel_fifo = false;
+
+
+    uint32_t calc_pixel_transfer_end() noexcept;
 
     Pixel_Fetcher fetcher;
     Pixel_Fifo bg_fifo;
@@ -212,7 +225,6 @@ private:
     unsigned int window_y_line = 0;
     unsigned int window_x_line = 0;
     bool window_drawn = false; // did we draw the window on this line?
-
 
 
     // cgb pal

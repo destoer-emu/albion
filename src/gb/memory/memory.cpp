@@ -1303,6 +1303,8 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_LCDC: // lcdc
 		{
+			ppu.ppu_write();
+
 			const uint8_t lcdc_old = io[IO_LCDC];
 
 			io[IO_LCDC] = v;
@@ -1334,6 +1336,8 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// writes can trigger interrupts on dmg?
 		case IO_STAT:
 		{
+			ppu.ppu_write();
+
 			// delete writeable bits
 			io[IO_STAT] &= 7;
 				
@@ -1346,6 +1350,43 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			break;
 		}
 
+		case IO_SCX:
+		{
+			ppu.ppu_write();
+			io[IO_SCX] = v;
+			break;
+		}
+
+
+		case IO_SCY:
+		{
+			ppu.ppu_write();
+			io[IO_SCY] = v;
+			break;
+		}
+
+
+		case IO_WX:
+		{
+			ppu.ppu_write();
+			io[IO_WX] = v;
+			break;
+		}
+
+
+		case IO_WY:
+		{
+			ppu.ppu_write();
+			io[IO_WY] = v;
+			break;
+		}
+
+		case IO_BGP:
+		{
+			ppu.ppu_write();
+			io[IO_BGP] = v;
+			break;
+		}
 
 		// block ly writes
 		case IO_LY:
