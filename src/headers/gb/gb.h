@@ -3,6 +3,7 @@
 #include <gb/ppu.h>
 #include <gb/apu.h>
 #include <gb/cpu.h>
+#include <gb/scheduler.h>
 #include <gb/disass.h>
 #include <destoer-emu/lib.h>
 #include <destoer-emu/debug.h>
@@ -44,6 +45,7 @@ public:
     Ppu ppu{*this};
     Apu apu{*this};
     Disass disass{*this};
+    Scheduler scheduler{*this};
     Debug debug;
 
 

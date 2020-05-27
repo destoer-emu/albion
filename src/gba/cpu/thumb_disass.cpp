@@ -225,7 +225,7 @@ std::string Disass::disass_thumb_branch(uint16_t opcode)
     int32_t offset = sign_extend<int32_t>(opcode & 0x7ff,11) * 2;
     uint32_t res = pc+offset+ARM_HALF_SIZE;
 
-    return fmt::format("b #0x{:08x}, {:08x}",res, offset);
+    return fmt::format("b #0x{:08x}",res);
 }
 
 std::string Disass::disass_thumb_load_store_half(uint16_t opcode)

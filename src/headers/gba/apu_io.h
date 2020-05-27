@@ -3,11 +3,11 @@
 
 namespace gameboyadvance
 {
-
+struct ApuIo;
 
 struct SoundCnt
 {
-    SoundCnt();
+    SoundCnt(ApuIo &apu_io);
     void init();
 
     void write_l(int idx,uint8_t v);
@@ -46,6 +46,9 @@ struct SoundCnt
     bool sound3_enable;
     bool sound4_enable;
     bool sound_enable;
+
+
+    ApuIo &apu_io;
 };
 
 
@@ -70,7 +73,7 @@ struct ApuIo
     ApuIo();
     void init();
 
-    SoundCnt sound_cnt;
+    SoundCnt sound_cnt{*this};
     SoundFifo fifo_a;
     SoundFifo fifo_b;
 };

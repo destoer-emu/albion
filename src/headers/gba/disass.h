@@ -72,6 +72,7 @@ private:
     std::string disass_arm_swap(uint32_t opcode);
     std::string disass_arm_mul(uint32_t opcode);
     std::string disass_arm_mull(uint32_t opcode);
+    std::string disass_arm_swi(uint32_t opcode);
 
     // thumb disassembling
     std::string disass_thumb_ldr_pc(uint16_t opcode);

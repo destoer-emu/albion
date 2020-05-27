@@ -120,7 +120,18 @@ void Disass::init_arm_disass_table()
 
             case 0b11:
             {
-                disass_arm_table[i] = &Disass::disass_arm_unknown;
+
+                // 1111 SWI
+                if(((i >> 8) & 0b1111) == 0b1111)
+                {
+                    disass_arm_table[i] = &Disass::disass_arm_swi;
+                }
+
+                // rest are coprocesor instrucitons and are undefined on the gba
+                else
+                {
+                    disass_arm_table[i] = &Disass::disass_arm_unknown;
+                }
                 break;
             }
         }        
@@ -146,6 +157,13 @@ std::string Disass::disass_arm_get_cond_suffix(int opcode)
     const int cond_bits = (opcode >> 28) & 0xf;
     return std::string(suf_array[cond_bits]);
 }
+
+
+std::string Disass::disass_arm_swi(uint32_t opcode)
+{
+    return fmt::format("swi {:08x}",opcode & 0x0fffffff);
+}
+
 
 /* TODO */
 std::string Disass::disass_arm_mull(uint32_t opcode)

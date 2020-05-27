@@ -32,6 +32,7 @@ void TimerCounter::init()
     reload = 0;
     counter = 0;
     scale = 0;
+    cycle_count = 0;
     count_up = false;
     irq = false;
     enable = false;
@@ -77,7 +78,7 @@ void TimerCounter::write_counter(int idx, uint8_t v)
 
 uint8_t TimerCounter::read_control() const
 {
-    return scale | count_up << 2 | irq << 6 | enable << 7;
+    return scale | (count_up << 2) | (irq << 6) | (enable << 7);
 }
 
 void TimerCounter::write_control(uint8_t v)
@@ -85,7 +86,7 @@ void TimerCounter::write_control(uint8_t v)
     scale = v & 0x3;
     count_up = is_set(v,2);
     irq = is_set(v,6);
-    bool old = enable;
+    const bool old = enable;
     enable = is_set(v,7);
 
     // if we have just enabled the timer reload it
@@ -103,7 +104,7 @@ CpuIo::CpuIo()
 
 void CpuIo::init()
 {
-    ime = true;
+    ime = false;
     interrupt_enable = 0;
     interrupt_flag = 0; 
     halt_cnt.init(); 

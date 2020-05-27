@@ -3,7 +3,7 @@
 namespace gameboy
 {
 
-constexpr int CART_RAM_BANK_INVALID = -1;
+constexpr unsigned int CART_RAM_BANK_INVALID = 0xffffffff;
 
 
 // i/o reg constants only use when performing direct access to the io array(use the actual address otherwhise)

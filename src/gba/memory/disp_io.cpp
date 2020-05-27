@@ -223,10 +223,10 @@ uint8_t DispStat::read(int idx) const
     {
         case 0:
         {
-            return vblank | hblank << 1 | lyc_hit << 2 |
-                vblank_irq_enable << 3 | 
-                hblank_irq_enable << 4 |
-                lyc_irq_enable << 5;
+            return vblank | (hblank << 1) | (lyc_hit << 2) |
+                (vblank_irq_enable << 3) | 
+                (hblank_irq_enable << 4) |
+                (lyc_irq_enable << 5);
         }
 
         case 1:

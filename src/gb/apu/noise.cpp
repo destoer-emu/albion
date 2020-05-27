@@ -1,10 +1,9 @@
-#include <gb/apu.h>
-#include <gb/memory.h>
+#include <gb/gb.h>
 
 namespace gameboy
 {
 
-Noise::Noise(GB &gb,int c) : Channel(gb,c)
+Noise::Noise(GB &gb,int c) : Channel(gb,c), scheduler(gb.scheduler)
 {
 
 }
@@ -28,8 +27,7 @@ void Noise::tick_period(int cycles) noexcept
 
 	if(period <= 0)
 	{
-		// "The noise channel's frequency timer period is set by a base divisor shifted left some number of bits. "
-		period = (divisors[divisor_idx] << clock_shift); 
+		reload_period();
 
 		// bottom two bits xored and reg shifted right
 		int result = shift_reg & 0x1;
@@ -70,9 +68,26 @@ void Noise::noise_write(uint8_t v) noexcept
 
 void Noise::noise_trigger() noexcept
 {
-    // noise channel stuff
-    period = (divisors[divisor_idx] << clock_shift);
     shift_reg = 0x7fff;
+}
+
+void Noise::reload_period() noexcept
+{
+	// "The noise channel's frequency timer period is set by a base divisor shifted left some number of bits. "
+	period = divisors[divisor_idx] << clock_shift;
+
+    // create  a new event as the period has changed
+    // need to half the ammount if we are in double speed
+    const auto event = scheduler.create_event(period << scheduler.is_double(),event_type::c4_period_elapse);
+
+    // dont tick off the old event as 
+    // it will use the new value as we have just overwritten 
+    // the old internal counter
+    // this is not an event we are dropping and expecting to start later 
+
+    scheduler.insert(event,false);
+
+
 }
 
 }

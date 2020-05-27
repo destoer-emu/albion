@@ -39,8 +39,6 @@ private:
     int audio_buf_idx = 0;
     int down_sample_cnt = 380;
 
-    bool audio_setup = false;
-
     GbaPlayback playback;
 };
 

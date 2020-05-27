@@ -79,7 +79,7 @@ void Cpu::thumb_sp_add(uint16_t opcode)
 // ^ not sure im reading from the right place for the vector table
 void Cpu::thumb_swi(uint16_t opcode)
 {
-    // do we even do anything with nn!?
+    // nn is ignored by hardware
     UNUSED(opcode);
     write_log(debug,"[cpu-thumb: {:08x}] swi {:x}",regs[PC],opcode & 0xff);
 
@@ -576,11 +576,13 @@ void Cpu::thumb_multiple_load_store(uint16_t opcode)
         {
             regs[PC] = mem.read_memt<uint32_t>(regs[rb]);
         }
+
         //stmia
         else
         {
             mem.write_memt<uint32_t>(regs[rb],regs[PC]);
         }
+
         regs[rb] += 0x40;        
     }   
 

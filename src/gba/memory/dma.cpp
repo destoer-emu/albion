@@ -46,6 +46,8 @@ void DmaReg::init()
     enable = false;
 }
 
+// theres def a faster way to handle this masking but we wont worry about it for now
+
 
 void Dma::write_source(int reg_num,int idx, uint8_t v)
 {
@@ -57,6 +59,13 @@ void Dma::write_source(int reg_num,int idx, uint8_t v)
         case 1: r.src = (r.src & 0x0fff00ff) | (v << 8); break;
         case 2: r.src = (r.src & 0x0f00ffff) | (v << 16); break;
         case 3: r.src = (r.src & 0x00ffffff) | ((v & 0xf) << 24); break;            
+    }
+
+
+    // probably a cleaner way to handle the 27 bit limit 
+    if(reg_num != 3)
+    {
+        r.src = deset_bit(r.src,27);
     }
 }
 
@@ -71,6 +80,13 @@ void Dma::write_dest(int reg_num, int idx, uint8_t v)
         case 2: r.dst = (r.dst & 0x0f00ffff) | (v << 16); break;
         case 3: r.dst = (r.dst & 0x00ffffff) | ((v & 0xf) << 24); break;            
     }
+
+    // probably a cleaner way to handle the 27 bit limit 
+    if(reg_num != 3)
+    {
+        r.dst = deset_bit(r.dst,27);
+    }
+
 }
 
 void Dma::write_count(int reg_num,int idx, uint8_t v)
@@ -81,7 +97,10 @@ void Dma::write_count(int reg_num,int idx, uint8_t v)
     {
         case 0: r.word_count = (r.word_count & 0xff00) | v; break;
         case 1: r.word_count = (r.word_count & 0x00ff) | v << 8; break;
-    }    
+    }
+    
+    // enforce the word count limit
+    r.word_count &= max_count[reg_num] - 1;    
 }
 
 uint8_t Dma::read_control(int reg_num,int idx)
@@ -148,7 +167,7 @@ void Dma::write_control(int reg_num,int idx, uint8_t v)
             }
 
             r.irq = is_set(v,6);
-            bool old = r.enable;
+            const bool old = r.enable;
             r.enable = is_set(v,7);
 
             if(!old && r.enable)
@@ -157,10 +176,8 @@ void Dma::write_control(int reg_num,int idx, uint8_t v)
                 r.src_shadow = r.src;
                 r.dst_shadow = r.dst;
 
-                printf("reloaded to %x:%08x:%08x\n",reg_num,r.src_shadow,r.dst_shadow);
+                printf("[%08x]reloaded to %x:%08x:%08x\n",cpu.get_pc(),reg_num,r.src_shadow,r.dst_shadow);
 
-                // if zero reload with max length
-                r.word_count_shadow = (r.word_count == 0 )? max_count[reg_num] : r.word_count;
                 if(r.start_time == dma_type::immediate)
                 {
                     handle_dma(dma_type::immediate);
@@ -183,16 +200,24 @@ void Dma::handle_dma(dma_type req_type)
 
     for(int i = 0; i < 4; i++)
     {
-        auto &r = dma_regs[i];
+        const auto &r = dma_regs[i];
 
 
-        if(r.start_time == req_type && r.enable)
+        if(r.enable && r.start_time == req_type)
         {
             do_dma(i,req_type); 
         }   
     }
 }
 
+
+void Dma::turn_off_video_capture()
+{
+    if(dma_regs[3].start_time == dma_type::video_capture)
+    {
+        dma_regs[3].enable = false;
+    }
+}
 
 void Dma::do_dma(int reg_num, dma_type req_type)
 {
@@ -205,10 +230,18 @@ void Dma::do_dma(int reg_num, dma_type req_type)
     }
 
 
-    const int size = r.is_word? ARM_WORD_SIZE : ARM_HALF_SIZE;
+    // dmas complete instantly for now but this will probably require chaning later :D
 
+    // reload word count
+    r.word_count_shadow = (r.word_count == 0 )? max_count[reg_num] : r.word_count;
 
-    
+    // if in dst_cnt is in mode 3
+    // reload the dst
+    if(r.dst_cnt == 3)
+    {
+        r.dst_shadow = r.dst;
+    }
+
     switch(req_type)
     {
         // sound dma transfer 4 arm words
@@ -224,18 +257,18 @@ void Dma::do_dma(int reg_num, dma_type req_type)
 
             for(int i = 0; i < 4; i++)
             {
-                uint32_t v = mem.read_memt<uint32_t>(r.src_shadow+i*ARM_WORD_SIZE);
+                const uint32_t v = mem.read_memt<uint32_t>(r.src_shadow);
                 mem.write_memt<uint32_t>(r.dst_shadow,v);
-            }
-            
-            switch(r.src_cnt)
-            {
-                case 0: r.src_shadow += 4; break;
-                case 1: r.src_shadow -= 4; break;
-                case 2: break;
-                case 3: throw std::runtime_error("sad mode of 3");
-            }
+                
+                // increment + reload is forbidden dont use it
+                if(r.src_cnt != 3)
+                {
+                    // allways in word mode here
+                    r.src_shadow += addr_increment_table[1][r.src_cnt];
+                }
 
+                // dst is not incremented when doing fifo dma
+            }
             return;
         }
 
@@ -251,11 +284,9 @@ void Dma::do_dma(int reg_num, dma_type req_type)
             {
                 for(size_t i = 0; i < r.word_count_shadow; i++)
                 {
-                    uint32_t offset = i * size;
-
-                    uint32_t v = mem.read_memt<uint32_t>(r.src_shadow+offset);
-                    mem.write_memt<uint32_t>(r.dst_shadow+offset,v);
-                    
+                    const uint32_t v = mem.read_memt<uint32_t>(r.src_shadow);
+                    mem.write_memt<uint32_t>(r.dst_shadow,v);
+                    handle_increment(reg_num);      
                 }
             }
 
@@ -263,10 +294,9 @@ void Dma::do_dma(int reg_num, dma_type req_type)
             {
                 for(size_t i = 0; i < r.word_count_shadow; i++)
                 {
-                    uint32_t offset = i * size;
-
-                    uint16_t v = mem.read_memt<uint16_t>(r.src_shadow+offset);
-                    mem.write_memt<uint16_t>(r.dst_shadow+offset,v);
+                    const uint16_t v = mem.read_memt<uint16_t>(r.src_shadow);
+                    mem.write_memt<uint16_t>(r.dst_shadow,v);
+                    handle_increment(reg_num);
                 }
             }
             break;
@@ -288,75 +318,21 @@ void Dma::do_dma(int reg_num, dma_type req_type)
     }
 
     dma_in_progress = false;
-
-    // in fifo timing mode (sound dma)
-    // increments dont happen
-    if(req_type != dma_type::sound)
-    {
-        handle_increment(reg_num);
-    }
 }
-
 
 
 void Dma::handle_increment(int reg_num)
 {
     auto &r = dma_regs[reg_num];
 
-    const int size = r.is_word? ARM_WORD_SIZE : ARM_HALF_SIZE;
-
-    switch(r.src_cnt)
+    
+    // increment + reload is forbidden dont use it
+    if(r.src_cnt != 3)
     {
-        case 0: // increment
-        {
-            r.src_shadow += r.word_count_shadow  * size;
-            break;
-        }
-
-        case 1: // decrement
-        {
-            r.src_shadow -= r.word_count_shadow * size;
-            break;
-        }
-
-        case 2: // fixed (do nothing)
-        {
-            break;
-        }
-
-        case 3: // invalid
-        {
-            throw std::runtime_error("sad mode of 3!");
-        }
+        r.src_shadow += addr_increment_table[r.is_word][r.src_cnt];
     }
 
-
-    switch(r.dst_cnt)
-    {
-        case 0: // increment
-        {
-            r.dst_shadow += r.word_count_shadow * size;
-            break;
-        }
-
-        case 1: // decrement
-        {
-            r.dst_shadow -= r.word_count_shadow * size;
-            break;
-        }
-
-        case 2: // fixed (do nothing)
-        {
-            break;
-        }
-
-        
-        case 3: // incremnt + reload
-        {
-            r.dst_shadow = r.dst + r.word_count_shadow;
-            break;
-        }
-    }
+    r.dst_shadow += addr_increment_table[r.is_word][r.src_cnt];
 }
 
 };

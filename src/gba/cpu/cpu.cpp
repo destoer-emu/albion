@@ -12,6 +12,9 @@ Cpu::Cpu(GBA &gba) : disp(gba.disp), mem(gba.mem), debug(gba.debug),
 
 void Cpu::init()
 {
+    // current registers
+    memset(regs,0,sizeof(user_regs));
+
     // backup stores
     memset(user_regs,0,sizeof(user_regs));
 
@@ -23,6 +26,7 @@ void Cpu::init()
 
     // banked status regs
     memset(status_banked,0,sizeof(status_banked));
+
 
 
     // setup main cpu state
@@ -327,7 +331,18 @@ void Cpu::init_arm_opcode_table()
 
             case 0b11:
             {
-                arm_opcode_table[i] = &Cpu::arm_unknown;
+
+                // 1111 SWI
+                if(((i >> 8) & 0b1111) == 0b1111)
+                {
+                    arm_opcode_table[i] = &Cpu::arm_swi;
+                }
+
+                // rest are coprocesor instrucitons and are undefined on the gba
+                else
+                {
+                    arm_opcode_table[i] = &Cpu::arm_unknown;
+                }
                 break;
             }
         } 
@@ -342,19 +357,21 @@ void Cpu::cycle_tick(int cycles)
     tick_timers(cycles);
 }
 
+// debug tmr_demo tomorrow
+// figure out why cascading timers aint working
+// then work on passing some of the dma tests
 
 void Cpu::tick_timers(int cycles)
 {
     // for each timer
     for(int i = 0; i < 4; i++)
-    {
+    {        
         auto &timer = cpu_io.timers[i];
 
-
+        // increments on prev timer overflow so we dont care
         if(timer.count_up)
         {
-            printf("cascading timers unimplemented");
-            exit(1);
+            continue;
         }
 
         // timer is not enabled we dont care
@@ -363,25 +380,28 @@ void Cpu::tick_timers(int cycles)
             continue;
         }
 
-
         timer.cycle_count += cycles;
 
-        auto limit = timer.cycle_limit[timer.scale];
+        const auto limit = timer.cycle_limit[timer.scale];
 
         // if its above the threshold
         if(timer.cycle_count >= limit)
         {
-            auto old = timer.counter;
+            //puts("timer inc");
+            const auto old = timer.counter;
 
             // timer += how many limits passed
-            timer.counter += timer.cycle_count / limit;
+            // / (compilier is not smart enough to use a shit here)
+            timer.counter += timer.cycle_count >> timer.shift_table[timer.scale];
 
             // adjust cycle count accordingly
-            timer.cycle_count %= limit;
+            // % (compilier is not smart enough to use a & here)
+            timer.cycle_count &= limit - 1;
 
             // timer overflowed
             if(timer.counter < old)
             {
+                //printf("timer overflow %d\n",i);
                 timer_overflow(i);
             }
         }
@@ -399,6 +419,7 @@ void Cpu::timer_overflow(int timer_num)
     {
         request_interrupt(timer.timer_interrupt[timer_num]);
     }
+
 
 
     // if the timer num is equal to the dma sound channels dma
@@ -426,10 +447,32 @@ void Cpu::timer_overflow(int timer_num)
         }
     }
 
+
+    // check if the timer above is subject to cascade
+    // in what oreder should this happen 
+    // should the current timer fire its irq first?
+    if(timer_num != 3) // cant cascade?
+    {
+        auto &next_timer = cpu_io.timers[timer_num+1];
+
+        if(next_timer.enable && next_timer.count_up)
+        {
+            // about to converflow
+            if(next_timer.counter == 0xffff)
+            {
+                timer_overflow(timer_num+1);
+            }
+
+            else
+            {
+                next_timer.counter += 1;
+            }
+        }
+    }
+
 }
 
-// get this booting into armwrestler
-// by skipping the state forward
+
 void Cpu::step()
 {
     // handle interrupts
@@ -482,7 +525,7 @@ void Cpu::handle_power_state()
             }
 
             // tick cycles until we an interrupt fires
-            // this is gonna be slow as hell
+            // this is gonna be slow as hell until we get a event system
             while(!(cpu_io.interrupt_flag & cpu_io.interrupt_enable))
             {
                 cycle_tick(1);
@@ -653,7 +696,7 @@ void Cpu::load_registers(cpu_mode mode)
             regs[PC] = user_regs[PC]; // may be overkill
 
             // load fiq banked 
-            memcpy(&regs[5],fiq_banked,sizeof(uint32_t)*5);
+            memcpy(&regs[8],fiq_banked,sizeof(uint32_t)*5);
             regs[SP] = hi_banked[idx][0];
             regs[LR] = hi_banked[idx][1];
 
@@ -725,7 +768,7 @@ void Cpu::store_registers(cpu_mode mode)
             user_regs[PC] = regs[PC]; // may be overkill
 
             // store fiq banked 
-            memcpy(fiq_banked,&regs[5],sizeof(uint32_t)*5);
+            memcpy(fiq_banked,&regs[8],sizeof(uint32_t)*5);
             hi_banked[idx][0] = regs[SP];
             hi_banked[idx][1] = regs[LR];
 
@@ -1018,6 +1061,8 @@ void Cpu::do_interrupts()
 // or does the handler check if?
 void Cpu::service_interrupt()
 {
+
+
     int idx = static_cast<int>(cpu_mode::irq);
 
     // spsr for irq = cpsr

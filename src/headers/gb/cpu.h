@@ -22,6 +22,8 @@ class Cpu
 public:
     Cpu(GB &gb);
 
+    bool get_double() const;
+
     void init(bool use_bios = false);
     void step();
     void cycle_tick(int cycles) noexcept; 
@@ -67,6 +69,7 @@ private:
     Memory &mem;
     Apu &apu;
     Ppu &ppu;
+    Scheduler &scheduler;
     Debug &debug;
     Disass &disass;
 

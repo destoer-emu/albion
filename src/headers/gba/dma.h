@@ -59,6 +59,7 @@ public:
     void write_control(int reg_num,int idx, uint8_t v);
     uint8_t read_control(int reg_num,int idx);
 
+    void turn_off_video_capture();
 
 private:
     Mem &mem;
@@ -68,6 +69,12 @@ private:
     void do_dma(int reg_num,dma_type req_type);
     void handle_increment(int reg_num);
     static constexpr int max_count[4] = {0x4000,0x4000,0x4000,0x10000};
+
+    static constexpr int32_t addr_increment_table[2][4] = 
+    {
+        {+ARM_HALF_SIZE,-ARM_HALF_SIZE,0,+ARM_HALF_SIZE}, // half
+        {+ARM_WORD_SIZE,-ARM_WORD_SIZE,0,+ARM_WORD_SIZE} // word
+    };
 
     bool dma_in_progress;
 

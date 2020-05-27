@@ -61,6 +61,29 @@ void Cpu::arm_unknown(uint32_t opcode)
 }
 
 
+void Cpu::arm_swi(uint32_t opcode)
+{
+    // nn is ignored by hardware
+    UNUSED(opcode);
+
+    int idx = static_cast<int>(cpu_mode::supervisor);
+
+    // spsr for supervisor = cpsr
+    status_banked[idx] = cpsr;
+
+    // lr in supervisor mode set to return addr
+    hi_banked[static_cast<int>(idx)][1] = regs[PC];
+
+    // supervisor mode switch
+    switch_mode(cpu_mode::supervisor);
+
+    cpsr = set_bit(cpsr,7); //set the irq bit to mask interrupts
+
+    // branch to interrupt vector
+    regs[PC] = 0x8;
+    cycle_tick(3); // 2s + 1n;
+}
+
 void Cpu::arm_mull(uint32_t opcode)
 {
     UNUSED(opcode);
@@ -610,6 +633,8 @@ void Cpu::arm_data_processing(uint32_t opcode)
         {
             set_cpsr(status_banked[static_cast<int>(arm_mode)]);
         }
+
+        update_flags = false;
     }
     
     // switch on the opcode to decide what to do
@@ -769,7 +794,6 @@ void Cpu::arm_data_processing(uint32_t opcode)
 // bx 
 void Cpu::arm_branch_and_exchange(uint32_t opcode)
 {
-
     int rn = opcode & 0xf;
 
     // if bit 0 of rn is a 1
@@ -1043,6 +1067,8 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 
     // handle any write backs that occur
     // arm says we cant use the same rd and base with a writeback
+    // but theres impl defined behavior that gba-suite tests here
+    // but i dont know what it is
     if(rn != rd) 
     {
         if(!p) // post allways do a writeback

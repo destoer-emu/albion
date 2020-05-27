@@ -24,7 +24,6 @@ void GbaPlayback::init(int frequency, int sample_size) noexcept
 
 
     SDL_OpenAudio(&audio_spec,NULL);
-	start();
 }
 
 void GbaPlayback::mix_samples(float &f1, float &f2, int volume) noexcept

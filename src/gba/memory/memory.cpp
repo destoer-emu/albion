@@ -104,7 +104,12 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_VCOUNT+1: break;
 
         case IO_DISPSTAT: disp.disp_io.disp_stat.write(0,v); break;
-        case IO_DISPSTAT+1: disp.disp_io.disp_stat.write(1,v); break;
+        case IO_DISPSTAT+1:
+        {
+            // new lyc written need to re run the comparison 
+            disp.update_vcount_compare();
+            disp.disp_io.disp_stat.write(1,v); break;
+        }
 
         // stubbed
         case IO_GREENSWAP: break;
@@ -333,10 +338,10 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_IME+1: case IO_IME+2: case IO_IME+3: break; // unused
 
         case IO_IE: cpu.cpu_io.interrupt_enable = (cpu.cpu_io.interrupt_enable & 0xff00) | v; break;
-        case IO_IE+1: cpu.cpu_io.interrupt_enable = (cpu.cpu_io.interrupt_enable & 0x00ff) | (v & 0x3f) << 8;  break;
+        case IO_IE+1: cpu.cpu_io.interrupt_enable = (cpu.cpu_io.interrupt_enable & 0x00ff) | ((v & 0x3f) << 8);  break;
 
-        case IO_IF: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & 0xff00) | v; break;
-        case IO_IF+1: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & 0x00ff) | (v & 0x3f) << 8;  break;
+        case IO_IF: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & 0xff00) & ~v; break;
+        case IO_IF+1: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & 0x00ff) & ~((v & 0x3f) << 8);  break;
 
 
         case IO_HALTCNT: cpu.cpu_io.halt_cnt.write(v); break;
@@ -349,8 +354,8 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
 
         default: // here we will handle open bus when we have all our io regs done :)
         { 
-            auto err = fmt::format("[io {:08x}] unhandled write at {:08x}:{:x}",cpu.get_pc(),addr,v);
-            throw std::runtime_error(err);
+            //auto err = fmt::format("[io {:08x}] unhandled write at {:08x}:{:x}",cpu.get_pc(),addr,v);
+            //throw std::runtime_error(err);
         }
     }
 }
@@ -384,7 +389,7 @@ uint8_t Mem::read_io_regs(uint32_t addr)
 
 
         case IO_VCOUNT: return disp.get_vcount();
-        case IO_VCOUNT+1: return disp.get_vcount();
+        case IO_VCOUNT+1: return 0;
 
 
         // timers
@@ -410,7 +415,7 @@ uint8_t Mem::read_io_regs(uint32_t addr)
         case IO_TM3CNT_H+1: return 0; // upper byte not used
 
 
-        case IO_IME: return is_set(cpu.cpu_io.ime,0); 
+        case IO_IME: return cpu.cpu_io.ime;
         case IO_IME+1: case IO_IME+2: case IO_IME+3: return 0; // stub
 
         case IO_IE: return cpu.cpu_io.interrupt_enable & 0xff;
@@ -419,12 +424,17 @@ uint8_t Mem::read_io_regs(uint32_t addr)
         case IO_IF: return cpu.cpu_io.interrupt_flag & 0xff;
         case IO_IF+1: return (cpu.cpu_io.interrupt_flag >> 8) & 0x3f;         
 
-
+        // gamepak wait timings ignore for now
+        case IO_WAITCNT: return 0; break;
+        case IO_WAITCNT+1: return 0; break;
+        case IO_WAITCNT+2: return  0; break;
+        case IO_WAITCNT+3: return 0; break;
 
         default:
         {
-            auto err = fmt::format("[io {:08x}] unhandled read at {:08x}",cpu.get_pc(),addr);
-            throw std::runtime_error(err);
+            //auto err = fmt::format("[io {:08x}] unhandled read at {:08x}",cpu.get_pc(),addr);
+            //throw std::runtime_error(err);
+            return 0;
         }
     }
 }
@@ -594,7 +604,9 @@ void Mem::tick_mem_access()
         // 4 -> 2 (word)
         // 2 -> 1 (half)
         // 1 -> 0 (byte)
-        cpu.cycle_tick(wait_states[static_cast<int>(mem_region)][sizeof(access_type) >> 1]);
+        // our waitstates are busted ive stubbed them for now
+        // we need to read up and S and N cycles
+        //cpu.cycle_tick(wait_states[static_cast<int>(mem_region)][sizeof(access_type) >> 1]);
     }
 }
 
@@ -745,7 +757,7 @@ void Mem::handle_write(std::vector<uint8_t> &buf,uint32_t addr,access_type v)
 }
 
 
-
+// should probably handle our "waitstate" timings for io by here
 
 // as io has side effects we need to write to it byte by byte
 template<>

@@ -74,7 +74,7 @@ bool Memory::rom_cgb_enabled() const noexcept
 }
 
 Memory::Memory(GB &gb) : cpu(gb.cpu), ppu(gb.ppu), 
-	apu(gb.apu), debug(gb.debug)
+	apu(gb.apu), scheduler(gb.scheduler), debug(gb.debug)
 {
 	// reserve our underlying memory
     cgb_wram_bank.resize(7);
@@ -1185,7 +1185,11 @@ void Memory::do_dma(uint8_t v) noexcept
 		}
 		oam_dma_active = true; // indicate a dma is active and to lock memory
 		oam_dma_address = dma_address; // the source address
-		oam_dma_index = 0; // how far along the dma transfer we are		
+		oam_dma_index = 0; // how far along the dma transfer we are	
+
+		const auto event = scheduler.create_event((0xa0 * 4)+0x8,event_type::oam_dma_end);
+		scheduler.insert(event);
+	
 	}
 }
 
@@ -1200,11 +1204,11 @@ void Memory::tick_dma(int cycles) noexcept
 
 	oam_dma_index += cycles;
 	// We are done with our dma
-	// 0xa2 is number of m cycles
-	if(oam_dma_index >= 0x288) 
+	// 8 extra cycles to start and stop
+	// 4 cycles per byte
+	if(oam_dma_index >= (0xa0 * 4)+8) 
 	{
 		oam_dma_active = false;
-		return;
 	}	
 }
 
@@ -1668,7 +1672,6 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 				if(is_set(v,7)) // trigger
 				{
 					apu.c1.length_trigger();
-					apu.c1.freq_reload_period();
 					apu.c1.freq_trigger();
 					apu.c1.env_trigger();
 					apu.c1.sweep_trigger();
@@ -1725,7 +1728,6 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 				if(is_set(v,7)) // trigger
 				{
 					apu.c2.length_trigger();
-					apu.c2.freq_reload_period();
 					apu.c2.freq_trigger();
 					apu.c2.env_trigger();
 					apu.c2.duty_trigger();
@@ -1789,18 +1791,12 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 				if(is_set(v,7)) // trigger
 				{
 					apu.c3.length_trigger();
-					apu.c3.freq_reload_period();
 					apu.c3.freq_trigger();
 					apu.c3.wave_trigger();
 					apu.c3.vol_trigger();
 				}
 
 				apu.c3.length_write(v);
-
-				// after all the trigger events have happend
-				// if the dac is off switch channel off				
-				apu.c3.check_dac();
-
 
 				io[IO_NR34] = v | (16 + 32 + 8);
 			}

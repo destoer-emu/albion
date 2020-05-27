@@ -90,6 +90,7 @@ private:
     void arm_swap(uint32_t opcode);
     void arm_mul(uint32_t opcode);
     void arm_mull(uint32_t opcode);
+    void arm_swi(uint32_t opcode);
 
     // thumb cpu instructions
     void thumb_unknown(uint16_t opcode);

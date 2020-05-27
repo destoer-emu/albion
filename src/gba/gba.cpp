@@ -55,16 +55,41 @@ void GBA::button_event(button b, bool down)
 {
 	int idx = static_cast<int>(b);
 
+	auto &keyinput = mem.mem_io.keyinput;
+	auto &key_control = mem.mem_io.key_control;
+
 	// 0 = pressed
 
 	if(down)
 	{
-		mem.mem_io.keyinput = deset_bit(mem.mem_io.keyinput,idx); 
+		keyinput = deset_bit(keyinput,idx); 
 	}
 
 	else
 	{
-		mem.mem_io.keyinput = set_bit(mem.mem_io.keyinput,idx);
+		keyinput = set_bit(keyinput,idx);
+	}
+
+	// keyinput irqs enabled
+	if(key_control.irq_enable_flag)
+	{
+		int res = key_control.key_cnt & keyinput & 0x3FF; 
+
+		// one pressed
+		if(key_control.irq_cond)
+		{
+			// if any key is pressed we care about fire
+			if(res > 0)
+			{
+				cpu.request_interrupt(interrupt::keypad);
+			}
+		}
+
+		// all pressed
+		else if(res == (key_control.key_cnt & 0x3ff))
+		{
+			cpu.request_interrupt(interrupt::keypad);
+		}
 	}	
 }
 

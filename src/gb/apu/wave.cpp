@@ -6,7 +6,7 @@ namespace gameboy
 
 //CHANNEL 3 WAVE
 
-Wave::Wave(GB &gb, int c) : Channel(gb,c)
+Wave::Wave(GB &gb, int c) : Channel(gb,c), FreqReg(gb,c)
 {
 
 }
@@ -15,8 +15,6 @@ void Wave::init() noexcept
 {
 	init_channel();
 	freq_init();
-    freq_lower_mask = freq_lower_masks[chan_number];
-    period_scale = freq_period_scales[chan_number];
 }
 
 

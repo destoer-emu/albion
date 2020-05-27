@@ -12,6 +12,7 @@ GB::GB()
 
 void GB::reset(std::string rom_name, bool with_rom, bool use_bios)
 {
+	scheduler.init();
     mem.init(rom_name,with_rom,use_bios);
     ppu.init();
     disass.init();

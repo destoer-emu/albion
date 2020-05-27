@@ -26,13 +26,21 @@ public:
     void load_reference_point_regs();
     int get_vcount() const { return ly; } 
 
-    
+    void update_vcount_compare();
+
     void render_palette(uint32_t *palette, size_t size);
 
     std::vector<uint32_t> screen;
     bool new_vblank = false;
     DispIo disp_io;
 private:
+
+    struct TileData
+    {
+        uint16_t col_num;
+        uint32_t pal_num;
+    };
+
 
     uint32_t reference_point_x;
     uint32_t reference_point_y;
@@ -45,7 +53,7 @@ private:
 
     // renderer helper functions
     uint16_t read_palette(uint32_t pal_num,uint32_t idx);
-    void read_tile(uint32_t tile[],bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
+    void read_tile(TileData tile[],bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
         uint32_t y,bool x_flip, bool y_flip);
 
 
@@ -56,9 +64,11 @@ private:
     Cpu &cpu;
 
     display_mode mode = display_mode::visible;
+
+    std::vector<std::vector<TileData>> bg_lines;
 };
 
-
+// this needs color correction at some point
 inline uint32_t convert_color(uint16_t color)
 {
     int r = color & 0x1f;

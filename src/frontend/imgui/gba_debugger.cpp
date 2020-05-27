@@ -79,6 +79,8 @@ void ImguiMainWindow::gba_emu_instance()
     {
         while(!gba.quit)
         {
+            //auto start = std::chrono::system_clock::now();
+
             gba_handle_input(gba);
             
             
@@ -108,6 +110,10 @@ void ImguiMainWindow::gba_emu_instance()
 
             std::this_thread::sleep_for(std::chrono::milliseconds(time_left(next_time)));
             next_time = current_time() + screen_ticks_per_frame;
+
+            //auto end = std::chrono::system_clock::now();
+            //printf("fps: %d\n",1000 / std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() );
+
         }
     }
 

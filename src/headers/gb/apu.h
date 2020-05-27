@@ -66,6 +66,7 @@ class FreqReg
 {
 
 public:
+	FreqReg(GB &gb,int c);
 	void freq_init() noexcept;
 	void freq_write_lower(uint8_t v) noexcept;
 	void freq_write_higher(uint8_t v) noexcept;
@@ -74,17 +75,30 @@ public:
 	void freq_save_state(std::ofstream &fp);
 	void freq_load_state(std::ifstream &fp);
 	void freq_trigger() noexcept;
+	int get_period() const noexcept;
 protected:
 	int freq = 0;
 	int period = 0;
 
 
-	int freq_lower_mask;
-	int period_scale;
+	const int freq_lower_mask;
+	const int period_scale;
 
 	// write info
 	static constexpr int freq_lower_masks[] = {~0xff,0x700,~0xff};
 	static constexpr int freq_period_scales[] = {4,4,2};
+
+
+	Scheduler &scheduler;
+
+	static constexpr event_type channel_events[] =
+	{
+		event_type::c1_period_elapse,
+		event_type::c2_period_elapse,
+		event_type::c3_period_elapse
+	};
+
+	const event_type channel_event;
 
 
 	int duty_idx = 0;
@@ -179,11 +193,15 @@ public:
 
 	void init() noexcept;
 	void tick_period(int cycles) noexcept;
+	void reload_period() noexcept;
 	void noise_write(uint8_t v) noexcept;
 	void noise_trigger() noexcept;
 	void save_state(std::ofstream &fp);
 	void load_state(std::ifstream &fp);	
 private:
+
+	Scheduler &scheduler;
+
 	//http://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware#Noise_Channel
 	static constexpr int divisors[8] = { 8, 16, 32, 48, 64, 80, 96, 112 };
 
@@ -230,6 +248,7 @@ public:
 private:
 
 	Memory &mem;
+	Scheduler &scheduler;
 
 	void tick_length_counters() noexcept;
 	void clock_envelopes() noexcept;

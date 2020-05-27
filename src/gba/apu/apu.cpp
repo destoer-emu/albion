@@ -5,22 +5,17 @@ namespace gameboyadvance
 
 Apu::Apu(GBA &gba) : mem(gba.mem), cpu(gba.cpu)
 {
-    playback.init(32*1024,sample_size);
+    playback.init(44100,sample_size);
 }
 
 void Apu::init()
 {
     apu_io.init();
 
-    // init our audio playback
-    if(!audio_setup)
-    {
-        playback.init(32*1024,sample_size);
-        audio_setup = true;
-    }
+    // dont enable playback atm as the sound is awful
 	playback.start();
     audio_buf_idx = 0;
-    down_sample_cnt = 512;
+    down_sample_cnt = (16 * 1024 * 1024) / 44100;
     dma_a_sample = 0;
     dma_b_sample = 0;
 }
@@ -45,7 +40,7 @@ void Apu::push_samples(int cycles)
 
     else
     {
-        down_sample_cnt = 512;
+        down_sample_cnt = (16 * 1024 * 1024) / 44100;
     }
 
 
@@ -61,7 +56,7 @@ void Apu::push_samples(int cycles)
     // (this is nice and jank and doesent handle the output properly but just roll with it for a sec)
     // (also the audio on the one rom that works is earbleeding cause it doesent run the rom at the correct speed)
     // (this code also aint checking if the channels are enabled)
-    int volume = 128*5;
+    int volume = 50;
 
 
     // mix left and right channels

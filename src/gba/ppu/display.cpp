@@ -6,6 +6,11 @@ namespace gameboyadvance
 Display::Display(GBA &gba) : mem(gba.mem), cpu(gba.cpu)
 {
     screen.resize(SCREEN_WIDTH*SCREEN_HEIGHT);
+    bg_lines.resize(4);
+    for(auto &x: bg_lines)
+    {
+        x.resize(SCREEN_WIDTH);
+    }
 }
 
 void Display::init()
@@ -33,7 +38,7 @@ uint16_t Display::read_palette(uint32_t pal_num,uint32_t idx)
 
 
 
-void Display::read_tile(uint32_t tile[],bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, uint32_t y,bool x_flip, bool y_flip)
+void Display::read_tile(TileData tile[],bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, uint32_t y,bool x_flip, bool y_flip)
 {
     uint32_t tile_y = y % 8;
     tile_y = y_flip? 7-tile_y : tile_y;
@@ -49,24 +54,32 @@ void Display::read_tile(uint32_t tile[],bool col_256,uint32_t base,uint32_t pal_
 
     else
     {
+        int x_pix = x_flip? 6 : 0;
+        const int x_step = x_flip? -2 : +2;
 
-        int x_pix = x_flip? 8 : 0;
-        int x_step = x_flip? -2 : +2;
+        // depending on x flip we need to swap the nibbles
+        // ie with no xflip we need to use the lower nibble first
+        // then shift down the 2nd nibble out of the byte
+        // when we are x flipping the 1st part of the data
+        // will be in the higher part of the  byte
+        // as we are reading it backwards
+        const int shift_one = x_flip << 2;
+        const int shift_two = !x_flip << 2;
+
         for(int x = 0; x < 8; x += 2, x_pix += x_step)
         {
             // read out the color indexs from the tile
-            uint32_t tile_offset = (x_pix / 2);
-            uint8_t tile_data = mem.handle_read<uint8_t>(mem.vram,addr+tile_offset);
-            uint32_t idx1 =  tile_data & 0xf;
-            uint32_t idx2 = (tile_data >> 4) & 0xf;
+            const uint32_t tile_offset = (x_pix / 2);
+            const uint8_t tile_data = mem.handle_read<uint8_t>(mem.vram,addr+tile_offset);
 
-            // read out the colors
-            uint16_t color1 = read_palette(pal_num,idx1);
-            uint16_t color2 = read_palette(pal_num,idx2);
+            const uint32_t idx1 = (tile_data >> shift_one) & 0xf;
+            const uint32_t idx2 = (tile_data >> shift_two) & 0xf;
 
-            // convert and smash them to the screen
-            tile[x] = convert_color(color1);
-            tile[x+1] = convert_color(color2);
+            tile[x].col_num = idx1; 
+            tile[x].pal_num = pal_num;
+
+            tile[x+1].col_num = idx2; 
+            tile[x+1].pal_num = pal_num;
         }
     }
 }
@@ -91,6 +104,7 @@ void Display::render_text(int id)
     uint32_t scroll_x = disp_io.bg_offset_x[id].offset;
     uint32_t scroll_y = disp_io.bg_offset_y[id].offset;
 
+    // modulo for x and y should probably depend on the size of bg map
     uint32_t line = (ly + scroll_y) % 512;
 
     // what is the start tiles
@@ -103,17 +117,18 @@ void Display::render_text(int id)
     bg_map_base += (map_y % 0x20) * 64; // (2 * 32);
             
 
-    uint32_t tile_data[8];
+    TileData tile_data[8];
 
     uint32_t x_drawn = 0; // how many pixels did we draw this time?
     for(uint32_t x = 0; x < SCREEN_WIDTH; x += x_drawn)
     {
-
         // 8 for each map but each map takes 2 bytes
         // its 32 by 32 so we want it to wrap back around
         // at that point
         uint32_t bg_map_offset = (map_x++ % 0x20) * 2; 
+   
 
+        
 
         uint32_t x_pos = (x + scroll_x) % 512;
 
@@ -144,27 +159,29 @@ void Display::render_text(int id)
         }
 
         // read out the bg entry and rip all the information we need about the tile
-        uint16_t bg_map_entry = mem.handle_read<uint16_t>(mem.vram,bg_map_base+bg_map_offset);
-                    
+        const uint16_t bg_map_entry = mem.handle_read<uint16_t>(mem.vram,bg_map_base+bg_map_offset);
 
-        bool x_flip = is_set(bg_map_entry,10);
-        bool y_flip = is_set(bg_map_entry,11);
+        // todo if we have the same tile ident dont bother refetching it  
 
-        uint32_t tile_num = bg_map_entry & 0x1ff; 
-        uint32_t pal_num = (bg_map_entry >> 12) & 0xf;
+        const bool x_flip = is_set(bg_map_entry,10);
+        const bool y_flip = is_set(bg_map_entry,11);
 
+        const uint32_t tile_num = bg_map_entry & 0x1ff; 
+        const uint32_t pal_num = (bg_map_entry >> 12) & 0xf;
 
         read_tile(tile_data,col_256,bg_tile_data_base,pal_num,tile_num,line,x_flip,y_flip);
-
-                
+        
 
 
 
                 
         // finally smash it to the screen probably a nicer way to do the last part :)
+        // so we dont have to recopy it but ah well we can fix this later :D
+        // probably best is to do what we do on the gb and just render an extra tile either side
+        // and scroll it in when we actually push it to the screen 
         uint32_t tile_offset = x_pos % 8;
 
-        uint32_t *buf = &tile_data[tile_offset];
+        TileData *buf = &tile_data[tile_offset];
         int pixels_to_draw = 8 - tile_offset;
 
         for(int i = 0; i < pixels_to_draw; i++)
@@ -173,9 +190,9 @@ void Display::render_text(int id)
             { 
                 break;
             }
-            screen[(ly*SCREEN_WIDTH)+x+i] = buf[i];
+            bg_lines[id][x+i] = buf[i];
         }
-        x_drawn = pixels_to_draw;           
+        x_drawn = pixels_to_draw;   
     }    
 }
 
@@ -202,18 +219,73 @@ void Display::render()
 
         case 0x0: // text mode
         {
-            for(int i = 0; i < 4; i++)
+            for(int bg = 0; bg < 4; bg++)
             {
-                if(disp_cnt.bg_enable[i]) // if bg enabled!
+                if(disp_cnt.bg_enable[bg]) // if bg enabled!
                 {
-                    render_text(i);
+                    render_text(bg);
                 }
             }
             
+
+            // employ painters algortihm for now
+            // im not sure if we should just reverse iterate over it
+            // and find the first non transparent pixel
+            // also we should ideally cache this bg_priority array on bg_cnt writes
+
+            struct BgPriority
+            {
+                int bg;
+                int priority;
+            };
+
+            BgPriority bg_priority[4];
+
+            for(int i = 0; i < 4; i++)
+            {
+                bg_priority[i].bg = i;
+                bg_priority[i].priority = disp_io.bg_cnt[i].priority;
+            }
+
+            // reverse sort so highest priority is at the end of the array
+            std::sort(&bg_priority[0],&bg_priority[4],
+            [](const BgPriority &a, const BgPriority &b)
+            {
+                // if they have equal priority the lower bg idx wins
+                if(a.priority == b.priority)
+                {
+                    return b.bg > a.bg;
+                }
+
+                // else by the bg_cnt priority
+                return a.priority > b.priority;
+            });
+
+
+
+            for(size_t x = 0; x < SCREEN_WIDTH; x++)
+            {
+                // default to backdrop color
+                screen[(ly*SCREEN_WIDTH)+x] = convert_color(read_palette(0,0));
+                for(int i = 0; i < 4; i++)
+                {
+                    int bg = bg_priority[i].bg;
+                    if(disp_cnt.bg_enable[bg]) // if bg enabled!
+                    {
+                        const auto &data = bg_lines[bg][x];
+                        if(data.col_num != 0)
+                        {
+                            const uint32_t full_color = convert_color(read_palette(data.pal_num,data.col_num));
+                            screen[(ly*SCREEN_WIDTH)+x] = full_color;
+                        }
+                    }
+                }
+            }
+                
             break;
         }
 
-
+/*
         case 0x2: // bg mode 2
         {
             for(int i = 2; i < 4; i++)
@@ -225,7 +297,7 @@ void Display::render()
             }
             break;
         }
-
+*/
         case 0x3: // bg mode 3 
         { 
             // what is the enable for this?
@@ -271,8 +343,28 @@ void Display::render()
 }
 
 
+// not asserted on irq enable changes
+// thanks fleroviux (vcountirq.gba)
+void Display::update_vcount_compare()
+{
+    auto &disp_stat = disp_io.disp_stat;
+
+    // if the compare bit was previously off and is now on
+    // fire an interrupt
+    bool cur = ly == disp_stat.lyc;
 
 
+    // if rapid lyc writes happen desetting and setting the bit
+    // this can fire multiple times on the same line
+    // see lyc_midline_rapid.gba
+    if(disp_stat.lyc_irq_enable && !disp_stat.lyc_hit && cur)
+    {
+        cpu.request_interrupt(interrupt::vcount);
+    }
+
+    // set the v counter flag
+    disp_stat.lyc_hit = cur;
+}
 
 void Display::advance_line()
 {
@@ -286,35 +378,34 @@ void Display::advance_line()
 
     ly++;
 
-    auto &disp_stat = disp_io.disp_stat;
 
-    // need to fire an interrupt here if enabled
-    if(ly == disp_stat.lyc)
+    // if there is a video capture dma turn it off
+    // it does not repeat the next frame it gets disabled
+    // until it is turned back on
+    if(ly == 162)
     {
-        // set the v counter flag
-        disp_stat.lyc_hit = true;
-
-        if(disp_stat.lyc_irq_enable)
-        {
-            cpu.request_interrupt(interrupt::vcount);
-        }
-
+        mem.dma.turn_off_video_capture();
     }
 
-    else
+    // >= 2 req a video capture dma
+    else if(ly >= 2)
     {
-        disp_stat.lyc_hit = false;
+        mem.dma.handle_dma(dma_type::video_capture);
     }
+
+
+
+
+    update_vcount_compare();
 
     // exit hblank
-    disp_stat.hblank = false;
+    disp_io.disp_stat.hblank = false;
     cyc_cnt = 0; // reset cycle counter
 }
 
 
 
 
-// not 100% sure when interrupts are reqed
 void Display::tick(int cycles)
 {
     cyc_cnt += cycles;
@@ -323,11 +414,14 @@ void Display::tick(int cycles)
     {
         case display_mode::visible:
         {
+            // enter hblank 
+            // however flag doesent get set to later
             if(cyc_cnt >= 960)
             {
-                // enter hblank
-                disp_io.disp_stat.hblank = false;
                 mode = display_mode::hblank;
+
+                // flag should be set later at 1006 cycles because of oam search?
+                disp_io.disp_stat.hblank = true;
 
                 // if hblank irq enabled
                 if(disp_io.disp_stat.hblank_irq_enable)
@@ -335,14 +429,6 @@ void Display::tick(int cycles)
                     cpu.request_interrupt(interrupt::hblank);
                 }
                 mem.dma.handle_dma(dma_type::hblank);
-
-
-
-                if(ly >= 2)
-                {
-                    mem.dma.handle_dma(dma_type::video_capture);
-                }
-
             }
             break;
         }
@@ -354,7 +440,8 @@ void Display::tick(int cycles)
             {
                 advance_line();
 
-                if(ly == 160) // 160 we need to vblank
+                // 160 we need to enter vblank
+                if(ly == 160) 
                 {
                     mode = display_mode::vblank;
                     disp_io.disp_stat.vblank = true;
@@ -394,19 +481,23 @@ void Display::tick(int cycles)
             }
 
 
-            else if(cyc_cnt >= 960) // hblank is still active even in vblank
+            // todo is the hblank flag still delayed in vblank
+            // where a oam search should not be happening?
+
+            // hblank is still active even in vblank
+            else if(cyc_cnt >= 960 && !disp_io.disp_stat.hblank) 
             {
                 // enter hblank (dont set the internal mode here)
                 disp_io.disp_stat.hblank = true;
 
-                // does the hblank irq & dma fire during vblank?
+                // only the flag gets set
                 if(disp_io.disp_stat.hblank_irq_enable)
                 {
                     cpu.request_interrupt(interrupt::hblank);
                 }
-                mem.dma.handle_dma(dma_type::hblank);
-            }
 
+                // dma does not happen here
+            }
             break;
         }
     }

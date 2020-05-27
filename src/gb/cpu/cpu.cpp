@@ -4,9 +4,14 @@ namespace gameboy
 {
 
 Cpu::Cpu(GB &gb) : mem(gb.mem), apu(gb.apu), ppu(gb.ppu), 
-	debug(gb.debug), disass(gb.disass)
+	scheduler(gb.scheduler), debug(gb.debug), disass(gb.disass)
 {
 	
+}
+
+bool Cpu::get_double() const
+{
+	return is_double;
 }
 
 void Cpu::init(bool use_bios)
@@ -131,7 +136,8 @@ void Cpu::cycle_tick_t(int cycles) noexcept
 	update_timers(cycles); 
 
 	// handler will check if its enabled
-	mem.tick_dma(cycles);
+	//mem.tick_dma(cycles);
+	scheduler.tick(cycles);
 	
 	// in double speed mode gfx and apu should operate at half
 	ppu.update_graphics(cycles >> is_double); // handle the lcd emulation

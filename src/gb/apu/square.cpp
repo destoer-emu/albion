@@ -1,12 +1,11 @@
-#include <gb/apu.h>
-#include <gb/memory.h>
+#include <gb/gb.h>
 
 namespace gameboy
 { 
 
 // CHANNEL 1 & 2 SQAURE WAVE
 
-Square::Square(GB &gb, int c) : Channel(gb,c)
+Square::Square(GB &gb, int c) : Channel(gb,c), FreqReg(gb,c)
 {
 
 }
@@ -15,8 +14,6 @@ void Square::init() noexcept
 {
 	freq_init();
 	env_init();
-    freq_lower_mask = freq_lower_masks[chan_number];
-    period_scale = freq_period_scales[chan_number];
 	cur_duty = 0;
 }
 

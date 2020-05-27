@@ -81,6 +81,7 @@ private:
     Cpu &cpu;
     Ppu &ppu;
     Apu &apu;
+    Scheduler &scheduler;
     Debug &debug;
 
     void do_dma(uint8_t v) noexcept;
@@ -146,8 +147,8 @@ private:
 
     // banking vars
     bool enable_ram = false; // is ram banking enabled
-    int cart_ram_bank = 0;
-	int cart_rom_bank = 1; // currently selected rom bank
+    unsigned int cart_ram_bank = 0;
+	unsigned int cart_rom_bank = 1; // currently selected rom bank
 	bool rom_banking = true; // is rom banking enabled
     int mbc1_bank2 = 0;
 

@@ -5,7 +5,7 @@ namespace gameboyadvance
 
 
 
-SoundCnt::SoundCnt()
+SoundCnt::SoundCnt(ApuIo &io) : apu_io(io)
 {
     init();
 }
@@ -62,12 +62,20 @@ void SoundCnt::write_h(int idx, uint8_t v)
             timer_num_a = is_set(v,2);
 
             // fifo reset handed upon a 1 written here...
+            if(is_set(v,3))
+            {
+                apu_io.fifo_a.init();
+            }
 
             enable_right_b = is_set(v,4);
             enable_left_b = is_set(v,5);
             timer_num_b = is_set(v,6);
 
             // and the same for b by here...
+            if(is_set(v,7))
+            {
+                apu_io.fifo_b.init();
+            }
             break;
         }
     }

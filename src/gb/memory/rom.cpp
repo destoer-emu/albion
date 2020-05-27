@@ -251,6 +251,14 @@ void Rom_info::init(std::vector<uint8_t> &rom, std::string romname)
     }
 
 
+    if(no_rom_banks != rom.size() / 0x4000)
+    {
+        puts("[warn] cart header does not match rom size");
+        no_rom_banks = rom.size() / 0x4000;
+        rom.resize(no_rom_banks*0x4000);
+    }
+
+
     // get the number of ram banks
     uint32_t ram_type = rom[0x149];
     constexpr uint32_t ram_table[5] = {0,1,1,4,16};

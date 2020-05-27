@@ -55,6 +55,7 @@ struct TimerCounter
 
 
     static constexpr int cycle_limit[4] = {1,64,256,1024};
+    static constexpr int shift_table[4] = {0,6,8,10};
     static constexpr interrupt timer_interrupt[4] = 
     {
         interrupt::timer0,
