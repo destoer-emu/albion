@@ -10,8 +10,6 @@ Dma::Dma(GBA &gba) : mem(gba.mem), cpu(gba.cpu) , debug(gba.debug)
 
 void Dma::init()
 {
-    dma_in_progress = false;
-
     for(auto &x: dma_regs)
     {
         x.init();
@@ -176,7 +174,7 @@ void Dma::write_control(int reg_num,int idx, uint8_t v)
                 r.src_shadow = r.src;
                 r.dst_shadow = r.dst;
 
-                printf("[%08x]reloaded to %x:%08x:%08x\n",cpu.get_pc(),reg_num,r.src_shadow,r.dst_shadow);
+                printf("[%08x]reloaded to %x:%08x:%08x:%d\n",cpu.get_pc(),reg_num,r.src_shadow,r.dst_shadow,r.dst_cnt);
 
                 if(r.start_time == dma_type::immediate)
                 {
@@ -193,11 +191,7 @@ void Dma::write_control(int reg_num,int idx, uint8_t v)
 // of a specific type?
 void Dma::handle_dma(dma_type req_type)
 {
-    if(dma_in_progress)
-    {
-        return;
-    }
-
+    // higher priority dmas can hijack lower ones during transfer
     for(int i = 0; i < 4; i++)
     {
         const auto &r = dma_regs[i];
@@ -230,7 +224,7 @@ void Dma::do_dma(int reg_num, dma_type req_type)
     }
 
 
-    // dmas complete instantly for now but this will probably require chaning later :D
+    // dmas complete instantly for now but this will probably require changing later :D
 
     // reload word count
     r.word_count_shadow = (r.word_count == 0 )? max_count[reg_num] : r.word_count;
@@ -275,8 +269,6 @@ void Dma::do_dma(int reg_num, dma_type req_type)
 
         default:
         {
-            dma_in_progress = true;
-
 
             write_log(debug,"dma {:x} from {:08x} to {:08x}\n",reg_num,r.src_shadow,r.dst_shadow);
 
@@ -317,7 +309,6 @@ void Dma::do_dma(int reg_num, dma_type req_type)
         r.enable = false;
     }
 
-    dma_in_progress = false;
 }
 
 
@@ -332,7 +323,7 @@ void Dma::handle_increment(int reg_num)
         r.src_shadow += addr_increment_table[r.is_word][r.src_cnt];
     }
 
-    r.dst_shadow += addr_increment_table[r.is_word][r.src_cnt];
+    r.dst_shadow += addr_increment_table[r.is_word][r.dst_cnt];
 }
 
 };

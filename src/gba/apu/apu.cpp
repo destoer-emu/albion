@@ -13,7 +13,7 @@ void Apu::init()
     apu_io.init();
 
     // dont enable playback atm as the sound is awful
-	playback.start();
+	//playback.start();
     audio_buf_idx = 0;
     down_sample_cnt = (16 * 1024 * 1024) / 44100;
     dma_a_sample = 0;

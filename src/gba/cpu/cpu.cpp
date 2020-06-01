@@ -357,10 +357,6 @@ void Cpu::cycle_tick(int cycles)
     tick_timers(cycles);
 }
 
-// debug tmr_demo tomorrow
-// figure out why cascading timers aint working
-// then work on passing some of the dma tests
-
 void Cpu::tick_timers(int cycles)
 {
     // for each timer
@@ -401,7 +397,6 @@ void Cpu::tick_timers(int cycles)
             // timer overflowed
             if(timer.counter < old)
             {
-                //printf("timer overflow %d\n",i);
                 timer_overflow(i);
             }
         }
@@ -412,6 +407,32 @@ void Cpu::timer_overflow(int timer_num)
 {
     auto &timer = cpu_io.timers[timer_num];
 
+
+    // check if the timer above is subject to cascade
+    // in what oreder should this happen 
+    // should the current timer fire its irq first?
+    if(timer_num != 3) // cant cascade?
+    {
+        auto &next_timer = cpu_io.timers[timer_num+1];
+
+        if(next_timer.enable && next_timer.count_up)
+        {
+            // about to converflow
+            if(next_timer.counter == 0xffff)
+            {
+                timer_overflow(timer_num+1);
+            }
+
+            else
+            {
+                next_timer.counter += 1;
+            }
+        }
+    }
+
+
+
+    // reload the timer with inital value
     timer.counter = timer.reload;
 
     // if fire irq on timer overflow
@@ -446,30 +467,6 @@ void Cpu::timer_overflow(int timer_num)
             mem.dma.handle_dma(dma_type::sound);
         }
     }
-
-
-    // check if the timer above is subject to cascade
-    // in what oreder should this happen 
-    // should the current timer fire its irq first?
-    if(timer_num != 3) // cant cascade?
-    {
-        auto &next_timer = cpu_io.timers[timer_num+1];
-
-        if(next_timer.enable && next_timer.count_up)
-        {
-            // about to converflow
-            if(next_timer.counter == 0xffff)
-            {
-                timer_overflow(timer_num+1);
-            }
-
-            else
-            {
-                next_timer.counter += 1;
-            }
-        }
-    }
-
 }
 
 
@@ -518,6 +515,8 @@ void Cpu::handle_power_state()
 
         case HaltCnt::power_state::halt:
         {
+            puts("halt");
+
             // need a better check here to prevent the emulator just locking up
             if(!cpu_io.interrupt_enable)
             {

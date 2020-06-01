@@ -85,6 +85,13 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
 {
     addr &= IO_MASK;
 
+    // io not mirrored bar one undocumented register
+    if(addr >= 0x400)
+    {
+        return;
+    }
+
+
     // add to unused handler in default later
     // we just want this range of unused addrs
     // to be totally ignore for now for convenice
@@ -106,9 +113,10 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_DISPSTAT: disp.disp_io.disp_stat.write(0,v); break;
         case IO_DISPSTAT+1:
         {
+            disp.disp_io.disp_stat.write(1,v);
             // new lyc written need to re run the comparison 
             disp.update_vcount_compare();
-            disp.disp_io.disp_stat.write(1,v); break;
+            break;
         }
 
         // stubbed
@@ -366,6 +374,13 @@ uint8_t Mem::read_io_regs(uint32_t addr)
 {
     addr &= IO_MASK;
 
+    // io not mirrored bar one undocumented register
+    if(addr >= 0x400)
+    {
+        // not sure if open bus should occur here
+        return 0;
+    }
+
 
     switch(addr)
     {
@@ -484,8 +499,22 @@ access_type Mem::read_mem_handler(uint32_t addr)
         case memory_region::rom: return read_rom<access_type>(addr);
 
         // flash is also accesed here
+        // we should really switch over to fptrs so this is nicer to swap stuff out
         case memory_region::sram:
         { 
+
+            // flash id stub for pokemon remove later
+            if(addr == 0x0E000000)
+            {
+                return 0xc2;
+            }
+
+            else if(addr == 0x0E000001)
+            {
+                return 0x09;
+            }
+
+
             return read_sram<access_type>(addr);
         }
 

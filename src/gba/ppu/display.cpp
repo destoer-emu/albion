@@ -3,6 +3,21 @@
 namespace gameboyadvance
 {
 
+// get devkitpro on linux
+// port our lyc test to asm (text printing is all)
+// and get a proper 3ds setup
+// and write some intr and dma tests amongst others
+
+
+/*
+    fix rendering issues,baisc sprite, window impl, affine transforms
+    fix our dma sound, then unstub the memory writes
+*/
+
+
+// see 8 bit writes to video memory for doom bug
+
+
 Display::Display(GBA &gba) : mem(gba.mem), cpu(gba.cpu)
 {
     screen.resize(SCREEN_WIDTH*SCREEN_HEIGHT);
@@ -17,7 +32,7 @@ void Display::init()
 {
     std::fill(screen.begin(),screen.end(),0);
     cyc_cnt = 0; // current number of elapsed cycles
-    ly = 0; // current number of cycles
+    ly = 0;
     mode = display_mode::visible;
     new_vblank = false;
     disp_io.init();
@@ -43,17 +58,35 @@ void Display::read_tile(TileData tile[],bool col_256,uint32_t base,uint32_t pal_
     uint32_t tile_y = y % 8;
     tile_y = y_flip? 7-tile_y : tile_y;
 
-    // each tile accounts for 8 vertical pixels but is 2 bytes long
-    uint32_t addr = base+(tile_num*0x20) + (tile_y * 4); 
 
 
+    // 8bpp 
     if(col_256)
     {
-        throw std::runtime_error("256 color unimpl!");
+        // each tile accounts for 8 vertical pixels but is 64 bytes long
+        const uint32_t addr = base+(tile_num*0x40) + (tile_y * 8); 
+
+        int x_pix = x_flip? 7 : 0;
+        const int x_step = x_flip? -1 : +1;
+        for(int x = 0; x < 8; x++, x_pix += x_step)
+        {
+            
+            const uint8_t tile_data = mem.handle_read<uint8_t>(mem.vram,addr+x_pix);
+
+            tile[x].col_num = tile_data;
+            // set pal as zero so that the col num is the sole indexer
+            tile[x].pal_num = 0;
+        }
+
     }
 
+    //4bpp
     else
     {
+
+        // each tile accounts for 8 vertical pixels but is 32 bytes long
+        const uint32_t addr = base+(tile_num*0x20) + (tile_y * 4); 
+
         int x_pix = x_flip? 6 : 0;
         const int x_step = x_flip? -2 : +2;
 
@@ -92,7 +125,7 @@ void Display::render_text(int id)
     const auto &cnt = disp_io.bg_cnt[id];
     const uint32_t bg_tile_data_base = cnt.char_base_block * 0x4000;
     uint32_t bg_map_base =  cnt.screen_base_block * 0x800;
-    const uint32_t size = cnt.screen_size;  // <-- need to take this more into account!
+    const uint32_t size = cnt.screen_size;  
 
 
     // 256 color one pal 8bpp? or 16 color 16 pal 4bpp 
@@ -101,15 +134,15 @@ void Display::render_text(int id)
 
 
 
-    uint32_t scroll_x = disp_io.bg_offset_x[id].offset;
-    uint32_t scroll_y = disp_io.bg_offset_y[id].offset;
+    const uint32_t scroll_x = disp_io.bg_offset_x[id].offset;
+    const uint32_t scroll_y = disp_io.bg_offset_y[id].offset;
 
     // modulo for x and y should probably depend on the size of bg map
-    uint32_t line = (ly + scroll_y) % 512;
+    const uint32_t line = (ly + scroll_y) % 512;
 
     // what is the start tiles
     uint32_t map_x = scroll_x / 8; 
-    uint32_t map_y = line / 8;
+    const uint32_t map_y = line / 8;
 
 
     // add the current y offset to the base for this line
@@ -138,9 +171,16 @@ void Display::render_text(int id)
         // screen (may be a better way to do this)
         switch(size)
         {
+        
+            // default dont care :P
+            case 0: // 256 by 256
+            {
+                break;
+            }
+
             case 1: // 512 by 256
             {
-                bg_map_offset += x_pos> 255 ? 0x800 : 0;
+                bg_map_offset += x_pos > 255 ? 0x800 : 0;
                 break;
             }
 
@@ -166,7 +206,7 @@ void Display::render_text(int id)
         const bool x_flip = is_set(bg_map_entry,10);
         const bool y_flip = is_set(bg_map_entry,11);
 
-        const uint32_t tile_num = bg_map_entry & 0x1ff; 
+        const uint32_t tile_num = bg_map_entry & 0x3ff; 
         const uint32_t pal_num = (bg_map_entry >> 12) & 0xf;
 
         read_tile(tile_data,col_256,bg_tile_data_base,pal_num,tile_num,line,x_flip,y_flip);
@@ -262,7 +302,9 @@ void Display::render()
             });
 
 
-
+            // probably need to split this step
+            // and the color conversion for when we attempt to overlay sprites on it
+            // but ignore this for now 
             for(size_t x = 0; x < SCREEN_WIDTH; x++)
             {
                 // default to backdrop color
@@ -286,18 +328,146 @@ void Display::render()
         }
 
 /*
-        case 0x2: // bg mode 2
+        // very buggy needs proper impl
+        case 0x1: // text mode
         {
-            for(int i = 2; i < 4; i++)
+            for(int bg = 0; bg < 4; bg++)
             {
-                if(disp_cnt.bg_enable[i]) // if bg enabled!
+                if(disp_cnt.bg_enable[bg]) // if bg enabled!
                 {
-                    render_text(i);
-                }                
+                    render_text(bg);
+                }
             }
+            
+
+            // employ painters algortihm for now
+            // im not sure if we should just reverse iterate over it
+            // and find the first non transparent pixel
+            // also we should ideally cache this bg_priority array on bg_cnt writes
+
+            struct BgPriority
+            {
+                int bg;
+                int priority;
+            };
+
+            BgPriority bg_priority[4];
+
+            for(int i = 0; i < 4; i++)
+            {
+                bg_priority[i].bg = i;
+                bg_priority[i].priority = disp_io.bg_cnt[i].priority;
+            }
+
+            // reverse sort so highest priority is at the end of the array
+            std::sort(&bg_priority[0],&bg_priority[4],
+            [](const BgPriority &a, const BgPriority &b)
+            {
+                // if they have equal priority the lower bg idx wins
+                if(a.priority == b.priority)
+                {
+                    return b.bg > a.bg;
+                }
+
+                // else by the bg_cnt priority
+                return a.priority > b.priority;
+            });
+
+
+
+            for(size_t x = 0; x < SCREEN_WIDTH; x++)
+            {
+                // default to backdrop color
+                screen[(ly*SCREEN_WIDTH)+x] = convert_color(read_palette(0,0));
+                for(int i = 0; i < 4; i++)
+                {
+                    int bg = bg_priority[i].bg;
+                    if(disp_cnt.bg_enable[bg]) // if bg enabled!
+                    {
+                        const auto &data = bg_lines[bg][x];
+                        if(data.col_num != 0)
+                        {
+                            const uint32_t full_color = convert_color(read_palette(data.pal_num,data.col_num));
+                            screen[(ly*SCREEN_WIDTH)+x] = full_color;
+                        }
+                    }
+                }
+            }
+                
             break;
         }
 */
+
+/*      need to impl properly
+        case 0x2: // bg mode 2
+        {
+            for(int bg = 2; bg < 4; bg++)
+            {
+                if(disp_cnt.bg_enable[bg]) // if bg enabled!
+                {
+                    render_text(bg);
+                }                
+            }
+
+
+
+            // employ painters algortihm for now
+            // im not sure if we should just reverse iterate over it
+            // and find the first non transparent pixel
+            // also we should ideally cache this bg_priority array on bg_cnt writes
+
+            struct BgPriority
+            {
+                int bg;
+                int priority;
+            };
+
+            BgPriority bg_priority[2];
+
+            for(int i = 0; i < 2; i++)
+            {
+                bg_priority[i].bg = i;
+                bg_priority[i].priority = disp_io.bg_cnt[i].priority;
+            }
+
+            // reverse sort so highest priority is at the end of the array
+            std::sort(&bg_priority[0],&bg_priority[2],
+            [](const BgPriority &a, const BgPriority &b)
+            {
+                // if they have equal priority the lower bg idx wins
+                if(a.priority == b.priority)
+                {
+                    return b.bg > a.bg;
+                }
+
+                // else by the bg_cnt priority
+                return a.priority > b.priority;
+            });
+
+
+            for(size_t x = 0; x < SCREEN_WIDTH; x++)
+            {
+                // default to backdrop color
+                screen[(ly*SCREEN_WIDTH)+x] = convert_color(read_palette(0,0));
+                for(int i = 2; i < 4; i++)
+                {
+                    int bg = bg_priority[i-2].bg;
+                    if(disp_cnt.bg_enable[bg]) // if bg enabled!
+                    {
+                        const auto &data = bg_lines[bg][x];
+                        if(data.col_num != 0)
+                        {
+                            const uint32_t full_color = convert_color(read_palette(data.pal_num,data.col_num));
+                            screen[(ly*SCREEN_WIDTH)+x] = full_color;
+                        }
+                    }
+                }
+            }
+
+            break;
+        }
+*/
+
         case 0x3: // bg mode 3 
         { 
             // what is the enable for this?
@@ -351,7 +521,7 @@ void Display::update_vcount_compare()
 
     // if the compare bit was previously off and is now on
     // fire an interrupt
-    bool cur = ly == disp_stat.lyc;
+    const bool cur = ly == disp_stat.lyc;
 
 
     // if rapid lyc writes happen desetting and setting the bit
@@ -368,14 +538,6 @@ void Display::update_vcount_compare()
 
 void Display::advance_line()
 {
-
-    // if in vdraw render the line
-    if(ly < 160)
-    {
-        render();
-    }
-
-
     ly++;
 
 
@@ -415,13 +577,20 @@ void Display::tick(int cycles)
         case display_mode::visible:
         {
             // enter hblank 
-            // however flag doesent get set to later
             if(cyc_cnt >= 960)
             {
+
+
+                // if in vdraw render the line
+                if(ly < 160)
+                {
+                    render();
+                }
+
                 mode = display_mode::hblank;
 
-                // flag should be set later at 1006 cycles because of oam search?
-                disp_io.disp_stat.hblank = true;
+
+                // flag should not get set to later
 
                 // if hblank irq enabled
                 if(disp_io.disp_stat.hblank_irq_enable)
@@ -459,6 +628,13 @@ void Display::tick(int cycles)
                     mode = display_mode::visible;
                 }
             }
+
+            else if(cyc_cnt >= 1006)
+            {
+                // flag should be set later at 1006 cycles because of oam search?
+                disp_io.disp_stat.hblank = true;
+            }
+
             break;
         }
 
@@ -475,22 +651,25 @@ void Display::tick(int cycles)
                     // exit vblank
                     new_vblank = true;
                     mode = display_mode::visible;
-                    disp_io.disp_stat.vblank = false;
                     ly = 0;
+                }
+                // not set on line 227
+                else if(ly == 227)
+                {
+                    disp_io.disp_stat.vblank = false;
                 }
             }
 
 
-            // todo is the hblank flag still delayed in vblank
-            // where a oam search should not be happening?
+
 
             // hblank is still active even in vblank
-            else if(cyc_cnt >= 960 && !disp_io.disp_stat.hblank) 
+            else if(cyc_cnt >= 1006 && !disp_io.disp_stat.hblank) 
             {
                 // enter hblank (dont set the internal mode here)
                 disp_io.disp_stat.hblank = true;
 
-                // only the flag gets set
+                // should the irq be delayed as well?
                 if(disp_io.disp_stat.hblank_irq_enable)
                 {
                     cpu.request_interrupt(interrupt::hblank);
