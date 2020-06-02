@@ -46,7 +46,7 @@ void KeyCnt::write(int idx, uint8_t v)
         case 1:
         {
             key_cnt &= ~0xff00;
-            key_cnt |= (v << 8);
+            key_cnt |= ((v & 3) << 8);
             irq_enable_flag = is_set(v,6);
             irq_cond = is_set(v,7);
             break;

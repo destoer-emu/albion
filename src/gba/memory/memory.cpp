@@ -473,32 +473,34 @@ void Mem::check_joypad_intr()
     const auto &key_control = mem_io.key_control;
     const auto &keyinput = mem_io.keyinput;
 
-    // keep track of has this last time we checked
-    // as we want it edge triggered
-    static bool fire = false;
 
-    bool old = fire;
+   
 
-    // keyinput irqs enabled
     if(key_control.irq_enable_flag)
     {
-        int res = key_control.key_cnt & keyinput & 0x3FF; 
+        bool fire = false;
+
+        // need to intvert key input as low means its pressed
 
         // one pressed
-        if(key_control.irq_cond)
+        if(!key_control.irq_cond)
         {
+            const int res = (key_control.key_cnt & 0x3ff) & (~keyinput & 0x3FF); 
+
             // if any key is pressed we care about fire
-            fire = (res > 0);
+            fire = res > 0;
         }
 
-        // all pressed
-        fire = (res == (key_control.key_cnt & 0x3ff));
+        else
+        {
+            // all pressed
+            fire = (~keyinput & 0x3FF) == (key_control.key_cnt & 0x3ff);
+        }
 
-        if(fire && !old)
+        if(fire)
         {
             cpu.request_interrupt(interrupt::keypad);    
         }
-
     }
 }
 
