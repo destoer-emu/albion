@@ -26,9 +26,7 @@ struct MemIo
 {
     MemIo();
     void init();
-
-    // input
-    uint16_t keyinput;
+    uint16_t keyinput;    
     KeyCnt key_control;
 };
 

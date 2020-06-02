@@ -44,6 +44,8 @@ public:
     template<typename access_type>    
     void write_memt(uint32_t addr,access_type v);
 
+    void check_joypad_intr();
+
     
     // probablly a better way do this than to just give free reign 
     // over the array (i.e for the video stuff give display class ownership)

@@ -318,7 +318,6 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_DMA3CNT_H+1: dma.write_control(3,1,v); break;
 
 
-
         // stubbed
         case IO_SOUNDCNT_H: apu.apu_io.sound_cnt.write_h(0,v); break;
         case IO_SOUNDCNT_H+1: apu.apu_io.sound_cnt.write_h(1,v); break;
@@ -341,6 +340,19 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_FIFO_B+2: apu.apu_io.fifo_b.write(v); break;
         case IO_FIFO_B+3: apu.apu_io.fifo_b.write(v); break;
 
+        case IO_KEYCNT: 
+        {
+            mem_io.key_control.write(0,v);
+            check_joypad_intr(); 
+            break;
+        }
+
+        case IO_KEYCNT+1: 
+        {
+            mem_io.key_control.write(1,v); 
+            check_joypad_intr();
+            break;
+        }
 
         case IO_IME: cpu.cpu_io.ime = is_set(v,0); break;
         case IO_IME+1: case IO_IME+2: case IO_IME+3: break; // unused
@@ -454,8 +466,41 @@ uint8_t Mem::read_io_regs(uint32_t addr)
     }
 }
 
+// todo write a proper test rom to verify this
+// as the quirks of how its triggered aernt docced in gbatek
+void Mem::check_joypad_intr()
+{
+    const auto &key_control = mem_io.key_control;
+    const auto &keyinput = mem_io.keyinput;
 
+    // keep track of has this last time we checked
+    // as we want it edge triggered
+    static bool fire = false;
 
+    bool old = fire;
+
+    // keyinput irqs enabled
+    if(key_control.irq_enable_flag)
+    {
+        int res = key_control.key_cnt & keyinput & 0x3FF; 
+
+        // one pressed
+        if(key_control.irq_cond)
+        {
+            // if any key is pressed we care about fire
+            fire = (res > 0);
+        }
+
+        // all pressed
+        fire = (res == (key_control.key_cnt & 0x3ff));
+
+        if(fire && !old)
+        {
+            cpu.request_interrupt(interrupt::keypad);    
+        }
+
+    }
+}
 
 
 //access handler for reads (for non io mapped mem) 
