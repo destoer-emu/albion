@@ -155,7 +155,9 @@ void Ppu::stat_update() noexcept
 
 	// check coincidence  (lyc == ly)
 	// if lyc is current line set coincidence bit else deset it
-	bool lyc_hit = mem.io[IO_LYC] == current_line;
+	// line 153 acts as line zero?
+	const int compare_line = current_line == 153? 0 : current_line;
+	bool lyc_hit = mem.io[IO_LYC] == compare_line;
 	status = lyc_hit? set_bit(status,2) : deset_bit(status,2);
 
 	bool lyc_signal = is_set(status,6) && lyc_hit;

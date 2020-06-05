@@ -50,9 +50,12 @@ private:
     void advance_line();
 
 
+    void render_mode_zero();
+
 
     // renderer helper functions
-    uint16_t read_palette(uint32_t pal_num,uint32_t idx);
+    uint16_t read_bg_palette(uint32_t pal_num,uint32_t idx);
+    uint16_t read_obj_palette(uint32_t pal_num,uint32_t idx);
     void read_tile(TileData tile[],bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
         uint32_t y,bool x_flip, bool y_flip);
 

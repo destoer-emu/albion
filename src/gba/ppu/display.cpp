@@ -46,11 +46,17 @@ void Display::load_reference_point_regs()
 }
 
 // renderer helper functions
-uint16_t Display::read_palette(uint32_t pal_num,uint32_t idx)
+uint16_t Display::read_bg_palette(uint32_t pal_num,uint32_t idx)
 {
     return mem.handle_read<uint16_t>(mem.pal_ram,(0x20*pal_num)+idx*2);        
 }
 
+
+uint16_t Display::read_obj_palette(uint32_t pal_num,uint32_t idx)
+{
+    // 0x200 base for sprites into pal ram
+    return mem.handle_read<uint16_t>(mem.pal_ram,0x200+(0x20*pal_num)+(idx*2));        
+}
 
 
 void Display::read_tile(TileData tile[],bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, uint32_t y,bool x_flip, bool y_flip)
@@ -247,6 +253,224 @@ void Display::render_palette(uint32_t *palette, size_t size)
     }   
 }
 
+
+
+void Display::render_mode_zero()
+{
+    const auto disp_cnt = disp_io.disp_cnt;
+
+    for(int bg = 0; bg < 4; bg++)
+    {
+        if(disp_cnt.bg_enable[bg]) // if bg enabled!
+        {
+            render_text(bg);
+        }
+    }
+    
+
+    // employ painters algortihm for now
+    // im not sure if we should just reverse iterate over it
+    // and find the first non transparent pixel
+    // also we should ideally cache this bg_priority array on bg_cnt writes
+
+    struct BgPriority
+    {
+        int bg;
+        int priority;
+    };
+
+    BgPriority bg_priority[4];
+
+    for(int i = 0; i < 4; i++)
+    {
+        bg_priority[i].bg = i;
+        bg_priority[i].priority = disp_io.bg_cnt[i].priority;
+    }
+
+    // reverse sort so highest priority is at the end of the array
+    std::sort(&bg_priority[0],&bg_priority[4],
+    [](const BgPriority &a, const BgPriority &b)
+    {
+        // if they have equal priority the lower bg idx wins
+        if(a.priority == b.priority)
+        {
+            return b.bg > a.bg;
+        }
+
+        // else by the bg_cnt priority
+        return a.priority > b.priority;
+    });
+
+
+    // probably need to split this step
+    // and the color conversion for when we attempt to overlay sprites on it
+    // but ignore this for now 
+    for(size_t x = 0; x < SCREEN_WIDTH; x++)
+    {
+        // default to backdrop color
+        screen[(ly*SCREEN_WIDTH)+x] = convert_color(read_bg_palette(0,0));
+        for(int i = 0; i < 4; i++)
+        {
+            int bg = bg_priority[i].bg;
+            if(disp_cnt.bg_enable[bg]) // if bg enabled!
+            {
+                const auto &data = bg_lines[bg][x];
+                if(data.col_num != 0)
+                {
+                    const uint32_t full_color = convert_color(read_bg_palette(data.pal_num,data.col_num));
+                    screen[(ly*SCREEN_WIDTH)+x] = full_color;
+                }
+            }
+        }
+    }
+
+
+    return;
+
+
+
+    // lets try rendering some sprites
+    // for simplicty we will just assume theh win over the background for now and push
+    // then directly onto the screen without caring for priority
+
+    // struct to hold all the obj information
+    // we should probably cache this on oam writes
+    // but for now we will just do it here
+    // we dont have to care for speed just yet
+    struct Obj
+    {
+        // attr 0
+        int y;
+        bool scaling;
+        union
+        {
+            bool double_size;
+            bool obj_disable;
+        };
+        int mode;
+        bool mosaic;
+        bool color;
+        int shape;
+
+        // attr 1
+        int x_cord;
+
+        // if scaling is set
+        int rotation_param;
+
+
+        // if scanling is not set
+        bool x_flip;
+        bool y_flip;
+
+        int obj_size;
+
+        // attr 2
+        int tile_num;
+        int priority;
+
+        // unused in color mode
+        int palette;
+    };
+
+
+    for(int i = 127; i >= 0; i--)
+    {
+        int obj_idx = i * 8;
+        
+
+        // determine if the object intersects with this line
+        // for now we will assume its 8 by 8 during this
+        // and handle the size later
+
+        const auto attr0 = mem.handle_read<uint16_t>(mem.oam,obj_idx);
+
+
+        int y_cord = attr0 & 0xff;
+
+        if(!(y_cord + 8 >= ly && y_cord < ly))
+        {
+            continue;
+        }
+
+        bool color = is_set(attr0,13);
+
+        if(color)
+        {
+            puts("256 sprites unsupported!");
+            exit(1);
+        }
+
+        // assume palette
+
+        const auto attr1 = mem.handle_read<uint16_t>(mem.oam,obj_idx+2);
+        int x_cord = attr1 & 511;
+
+        if(x_cord >= 240)
+        {
+            // should -512 here...
+            puts("out of range x cord unhandled");
+            exit(1);
+        }
+
+
+        // assume no scaling for now
+        const bool x_flip = is_set(attr1,12);
+
+
+        const auto attr2 = mem.handle_read<uint16_t>(mem.oam,obj_idx+4);
+
+
+        int tile_num = attr2 & 0x3ff;
+
+        int pal =  (attr2 >> 8) & 0xf;
+
+
+
+        // each tile accounts for 8 vertical pixels but is 32 bytes long
+        const uint32_t addr = 0x10000+(tile_num*0x20) + (y_cord * 4); 
+
+        int x_pix = x_flip? 6 : 0;
+        const int x_step = x_flip? -2 : +2;
+
+        // depending on x flip we need to swap the nibbles
+        // ie with no xflip we need to use the lower nibble first
+        // then shift down the 2nd nibble out of the byte
+        // when we are x flipping the 1st part of the data
+        // will be in the higher part of the  byte
+        // as we are reading it backwards
+        const int shift_one = x_flip << 2;
+        const int shift_two = !x_flip << 2;
+
+        for(int x = 0; x < 8; x += 2, x_pix += x_step)
+        {
+            // read out the color indexs from the tile
+            const uint32_t tile_offset = (x_pix / 2);
+            const uint8_t tile_data = mem.handle_read<uint8_t>(mem.vram,addr+tile_offset);
+
+            const uint32_t idx1 = (tile_data >> shift_one) & 0xf;
+            const uint32_t idx2 = (tile_data >> shift_two) & 0xf;
+/*
+            tile[x].col_num = idx1; 
+            tile[x].pal_num = pal_num;
+
+            tile[x+1].col_num = idx2; 
+            tile[x+1].pal_num = pal_num;
+*/
+            
+            screen[(ly*SCREEN_WIDTH)+x_cord+x] = convert_color(read_obj_palette(pal,idx1));
+            screen[(ly*SCREEN_WIDTH)+x_cord+x+1] = convert_color(read_obj_palette(pal,idx2));
+
+
+
+        }
+
+
+    }
+
+}
+
+
 void Display::render()
 {
     const auto disp_cnt = disp_io.disp_cnt;
@@ -259,71 +483,7 @@ void Display::render()
 
         case 0x0: // text mode
         {
-            for(int bg = 0; bg < 4; bg++)
-            {
-                if(disp_cnt.bg_enable[bg]) // if bg enabled!
-                {
-                    render_text(bg);
-                }
-            }
-            
-
-            // employ painters algortihm for now
-            // im not sure if we should just reverse iterate over it
-            // and find the first non transparent pixel
-            // also we should ideally cache this bg_priority array on bg_cnt writes
-
-            struct BgPriority
-            {
-                int bg;
-                int priority;
-            };
-
-            BgPriority bg_priority[4];
-
-            for(int i = 0; i < 4; i++)
-            {
-                bg_priority[i].bg = i;
-                bg_priority[i].priority = disp_io.bg_cnt[i].priority;
-            }
-
-            // reverse sort so highest priority is at the end of the array
-            std::sort(&bg_priority[0],&bg_priority[4],
-            [](const BgPriority &a, const BgPriority &b)
-            {
-                // if they have equal priority the lower bg idx wins
-                if(a.priority == b.priority)
-                {
-                    return b.bg > a.bg;
-                }
-
-                // else by the bg_cnt priority
-                return a.priority > b.priority;
-            });
-
-
-            // probably need to split this step
-            // and the color conversion for when we attempt to overlay sprites on it
-            // but ignore this for now 
-            for(size_t x = 0; x < SCREEN_WIDTH; x++)
-            {
-                // default to backdrop color
-                screen[(ly*SCREEN_WIDTH)+x] = convert_color(read_palette(0,0));
-                for(int i = 0; i < 4; i++)
-                {
-                    int bg = bg_priority[i].bg;
-                    if(disp_cnt.bg_enable[bg]) // if bg enabled!
-                    {
-                        const auto &data = bg_lines[bg][x];
-                        if(data.col_num != 0)
-                        {
-                            const uint32_t full_color = convert_color(read_palette(data.pal_num,data.col_num));
-                            screen[(ly*SCREEN_WIDTH)+x] = full_color;
-                        }
-                    }
-                }
-            }
-                
+            render_mode_zero();
             break;
         }
 
@@ -378,7 +538,7 @@ void Display::render()
             for(size_t x = 0; x < SCREEN_WIDTH; x++)
             {
                 // default to backdrop color
-                screen[(ly*SCREEN_WIDTH)+x] = convert_color(read_palette(0,0));
+                screen[(ly*SCREEN_WIDTH)+x] = convert_color(read_bg_palette(0,0));
                 for(int i = 0; i < 4; i++)
                 {
                     int bg = bg_priority[i].bg;
@@ -387,7 +547,7 @@ void Display::render()
                         const auto &data = bg_lines[bg][x];
                         if(data.col_num != 0)
                         {
-                            const uint32_t full_color = convert_color(read_palette(data.pal_num,data.col_num));
+                            const uint32_t full_color = convert_color(read_bg_palette(data.pal_num,data.col_num));
                             screen[(ly*SCREEN_WIDTH)+x] = full_color;
                         }
                     }
@@ -448,7 +608,7 @@ void Display::render()
             for(size_t x = 0; x < SCREEN_WIDTH; x++)
             {
                 // default to backdrop color
-                screen[(ly*SCREEN_WIDTH)+x] = convert_color(read_palette(0,0));
+                screen[(ly*SCREEN_WIDTH)+x] = convert_color(read_bg_palette(0,0));
                 for(int i = 2; i < 4; i++)
                 {
                     int bg = bg_priority[i-2].bg;
@@ -457,7 +617,7 @@ void Display::render()
                         const auto &data = bg_lines[bg][x];
                         if(data.col_num != 0)
                         {
-                            const uint32_t full_color = convert_color(read_palette(data.pal_num,data.col_num));
+                            const uint32_t full_color = convert_color(read_bg_palette(data.pal_num,data.col_num));
                             screen[(ly*SCREEN_WIDTH)+x] = full_color;
                         }
                     }
@@ -652,7 +812,9 @@ void Display::tick(int cycles)
                     new_vblank = true;
                     mode = display_mode::visible;
                     ly = 0;
+                    update_vcount_compare();
                 }
+
                 // not set on line 227
                 else if(ly == 227)
                 {

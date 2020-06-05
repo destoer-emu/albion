@@ -682,6 +682,7 @@ void Mem::tick_mem_access()
         // 1 -> 0 (byte)
         // our waitstates are busted ive stubbed them for now
         // we need to read up and S and N cycles
+        // before we add them
         //cpu.cycle_tick(wait_states[static_cast<int>(mem_region)][sizeof(access_type) >> 1]);
     }
 }
