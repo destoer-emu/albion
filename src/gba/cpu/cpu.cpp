@@ -438,7 +438,7 @@ void Cpu::timer_overflow(int timer_num)
     // if fire irq on timer overflow
     if(timer.irq) 
     {
-        request_interrupt(timer.timer_interrupt[timer_num]);
+        request_interrupt(timer.timer_interrupt);
     }
 
 

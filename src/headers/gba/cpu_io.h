@@ -26,9 +26,9 @@ struct HaltCnt
 };
 
 
-struct TimerCounter
+struct Timer
 {
-    TimerCounter();
+    Timer(int timer);
 
     void init();
 
@@ -56,13 +56,16 @@ struct TimerCounter
 
     static constexpr int cycle_limit[4] = {1,64,256,1024};
     static constexpr int shift_table[4] = {0,6,8,10};
-    static constexpr interrupt timer_interrupt[4] = 
+    static constexpr interrupt timer_interrupts[4] = 
     {
         interrupt::timer0,
         interrupt::timer1,
         interrupt::timer2,
         interrupt::timer3
     };
+
+    const interrupt timer_interrupt;
+
 };
 
 // cpu io registers
@@ -79,7 +82,7 @@ struct CpuIo
     HaltCnt halt_cnt;
 
 
-    std::array<TimerCounter,4> timers;
+    std::array<Timer,4> timers{0,1,2,3};
 };
 
 } 

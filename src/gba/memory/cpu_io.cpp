@@ -22,12 +22,13 @@ void HaltCnt::write(uint8_t v)
 
 
 
-TimerCounter::TimerCounter()
+Timer::Timer(int timer) : timer_interrupt(timer_interrupts[timer])
 {
+    assert(timer >= 0 && timer < 4);
     init();
 }
 
-void TimerCounter::init()
+void Timer::init()
 {
     reload = 0;
     counter = 0;
@@ -38,7 +39,7 @@ void TimerCounter::init()
     enable = false;
 }
 
-uint8_t TimerCounter::read_counter(int idx) const
+uint8_t Timer::read_counter(int idx) const
 {
     switch(idx)
     {
@@ -58,7 +59,7 @@ uint8_t TimerCounter::read_counter(int idx) const
 }
 
 // actually writes the reload but is at the same addr
-void TimerCounter::write_counter(int idx, uint8_t v)
+void Timer::write_counter(int idx, uint8_t v)
 {
     switch(idx)
     {
@@ -76,12 +77,12 @@ void TimerCounter::write_counter(int idx, uint8_t v)
     }
 }
 
-uint8_t TimerCounter::read_control() const
+uint8_t Timer::read_control() const
 {
     return scale | (count_up << 2) | (irq << 6) | (enable << 7);
 }
 
-void TimerCounter::write_control(uint8_t v)
+void Timer::write_control(uint8_t v)
 {
     scale = v & 0x3;
     count_up = is_set(v,2);
