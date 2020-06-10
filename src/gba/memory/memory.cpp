@@ -511,7 +511,7 @@ template<typename access_type>
 access_type Mem::handle_read(std::vector<uint8_t> &buf,uint32_t addr)
 {
 
-#ifdef DEBUG // bounds check the memory access (we are very screwed if this happens)
+#ifdef BOUNDS_CHECK // bounds check the memory access (we are very screwed if this happens)
     if(buf.size() < addr + sizeof(access_type))
     {
         auto err = fmt::format("out of range handle read at: {:08x}:{:08x}\n",
@@ -819,7 +819,7 @@ template<typename access_type>
 void Mem::handle_write(std::vector<uint8_t> &buf,uint32_t addr,access_type v)
 {
 
-#ifdef DEBUG // bounds check the memory access (we are very screwed if this happens)
+#ifdef BOUNDS_CHECK // bounds check the memory access (we are very screwed if this happens)
     if(buf.size() < addr + sizeof(access_type))
     {
         auto err = fmt::format("out of range handle write at: {:08x}\n",cpu.get_pc());

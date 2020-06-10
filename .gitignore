@@ -2,6 +2,8 @@ Release/
 mooneye-gb_hwtests/
 CMakeFiles/
 x64/
+destoer-emu_autogen/
+destoer-emu.dir/
 CmakeCache.txt
 ZERO_CHECK.vcxproj
 ZERO_CHECK.vcxproj.filters
@@ -11,3 +13,6 @@ destoer-emu.sln
 ALL_BUILD.vcxproj.filters
 ALL_BUILD.vcxproj
 cmake_install.cmake
+Makefile
+GBA.BIOS
+emu.log

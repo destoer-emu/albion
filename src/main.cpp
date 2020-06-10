@@ -86,7 +86,7 @@ void gb_run_tests()
     gb_run_test_helper(filter_ext(get_dir_tree("mooneye-gb_hwtests"),"gb"),10);
     auto current = std::chrono::system_clock::now();
     auto count = std::chrono::duration_cast<std::chrono::seconds>(current - start).count();
-    printf("total time taken %ld\n",count);
+    printf("total time taken %zd\n",count);
 }
 
 int main(int argc, char *argv[])

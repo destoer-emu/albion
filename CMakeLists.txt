@@ -15,6 +15,7 @@ set(FRONTEND "IMGUI")
 
 
 add_definitions(-DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL)
+#add_definitions(-DBOUNDS_CHECK)
 if(${FRONTEND} STREQUAL "IMGUI")
 	add_definitions(-DFRONTEND_IMGUI -DIMGUI_IMPL_OPENGL_LOADER_GLEW -DDEBUG)
 endif()
@@ -38,12 +39,13 @@ if(WIN32)
 		list(APPEND CMAKE_PREFIX_PATH "C:/glew-2.1.0")
 
 		#why does this not work nicely?
-		find_package(GLEW REQUIRED)
-		if (GLEW_FOUND)
-			include_directories(${GLEW_INCLUDE_DIRS})
+		#find_package(GLEW REQUIRED)
+		#if (GLEW_FOUND)
+			#include_directories(${GLEW_INCLUDE_DIRS})
 			#link_libraries(${GLEW_LIBRARIES})
+			include_directories("C:/glew-2.1.0/include/")
 			link_libraries("C:/glew-2.1.0/lib/Release/x64/glew32.lib" "C:/glew-2.1.0/lib/Release/x64/glew32s.lib")
-		endif()
+		#endif()
 
 
 		find_package(OPENGL REQUIRED)
@@ -52,9 +54,14 @@ if(WIN32)
 			link_libraries(${OPENGL_LIBRARIES})
 		endif()
 
-		#this could probably be better done
-		include_directories("C:/glfw/include")
-		link_libraries("C:/glfw/lib-vc2010-64/glfw3.lib")
+		#this doesent work either :P
+		#find_package(GLFW REQUIRED)
+		#if(GLFW_FOUND)
+			#include_directories(${GLFW_INCLUDE_DIRS})
+			#include_directories(${GLFW_LIBRARIES})
+			include_directories("C:/glfw/include")
+			link_libraries("C:/glfw/lib-vc2010-64/glfw3.lib")
+		#endif()
 	endif()
 
 
@@ -87,18 +94,12 @@ if(${FRONTEND} STREQUAL "QT")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lGL")
 	endif()
 
-
-
 	set(CMAKE_AUTOMOC ON)
 	set(CMAKE_AUTORCC ON)
 	set(CMAKE_AUTOUIC ON)
 	find_package(Qt5 COMPONENTS Widgets OpenGL REQUIRED)
 	link_libraries(Qt5::Widgets)
 	link_libraries(Qt5::OpenGL)
-
-	
-
-
 endif()
 
 

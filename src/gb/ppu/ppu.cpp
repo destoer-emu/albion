@@ -200,7 +200,8 @@ void Ppu::turn_lcd_off() noexcept
 	signal = false;
 }
 
-
+// 1st line after this turns on oam search will fail
+// and stat return as if its in hblank?
 void Ppu::turn_lcd_on() noexcept
 {
 	//printf("lcd enabled %x\n",mem.is_lcd_enabled());
