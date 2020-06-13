@@ -39,6 +39,7 @@ private:
     {
         uint16_t col_num;
         uint32_t pal_num;
+        uint32_t bg;
     };
 
 
@@ -48,6 +49,7 @@ private:
     void render();
     void render_text(int id);
     void advance_line();
+    void render_sprites(int mode);
 
 
     void render_mode_zero();

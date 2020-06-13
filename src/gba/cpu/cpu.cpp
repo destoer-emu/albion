@@ -387,7 +387,7 @@ void Cpu::tick_timers(int cycles)
             const auto old = timer.counter;
 
             // timer += how many limits passed
-            // / (compilier is not smart enough to use a shit here)
+            // / (compilier is not smart enough to use a shift here)
             timer.counter += timer.cycle_count >> timer.shift_table[timer.scale];
 
             // adjust cycle count accordingly

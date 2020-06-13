@@ -282,6 +282,152 @@ void Display::render_mode_zero()
     }
 }
 
+/*
+// struct to hold all the obj information
+// may or may not need this
+struct Obj
+{
+    // attr 0
+    int y;
+    bool scaling;
+    union
+    {
+        bool double_size;
+        bool obj_disable;
+    };
+    int mode;
+    bool mosaic;
+    bool color;
+    int shape;
+
+    // attr 1
+    int x_cord;
+
+    // if scaling is set
+    int rotation_param;
+
+
+    // if scanling is not set
+    bool x_flip;
+    bool y_flip;
+
+    int obj_size;
+
+    // attr 2
+    int tile_num;
+    int priority;
+
+    // unused in color mode
+    int palette;
+};
+*/
+
+// need to get this handling priority and sizes
+// amongst other things
+// which we will probably just panic on for now
+// we need to render this to a buf
+// and then overlay it with the screen buffer
+// im not sure how "transparency" is handled between sprite and gb
+void Display::render_sprites(int mode)
+{
+
+    const bool is_bitmap = mode >= 3;
+
+    for(int i = 127; i >= 0; i--)
+    {
+        int obj_idx = i * 8;
+        
+
+        // determine if the object intersects with this line
+        // for now we will assume its 8 by 8 during this
+        // and handle the size later
+
+        const auto attr0 = mem.handle_read<uint16_t>(mem.oam,obj_idx);
+        int y_cord = attr0 & 0xff;
+
+        if(!(y_cord + 8 > ly && y_cord <= ly))
+        {
+            continue;
+        }
+
+        const bool color = is_set(attr0,13);
+
+        if(color)
+        {
+            puts("256 sprites unsupported!");
+            exit(1);
+        }
+
+        // assume palette
+
+        const auto attr1 = mem.handle_read<uint16_t>(mem.oam,obj_idx+2);
+        int x_cord = attr1 & 511;
+
+        if(x_cord >= 240)
+        {
+            // should -512 here...
+            puts("out of range x cord unhandled");
+            exit(1);
+        }
+        // assume no scaling for now
+        const bool x_flip = is_set(attr1,12);
+        const bool y_flip = is_set(attr1,13);
+
+
+        const auto attr2 = mem.handle_read<uint16_t>(mem.oam,obj_idx+4);
+        int tile_num = attr2 & 0x3ff;
+        int pal =  (attr2 >> 12) & 0xf;
+
+        // bitmap modes starts at  0x14000 instead of 0x10000
+        // because of bg map tiles below this are simply ignored
+        if(is_bitmap && tile_num < 512)
+        {
+            continue;
+        }
+
+
+        const int y_pix = y_flip?  7 - ((ly-y_cord) & 7) : ((ly-y_cord) & 7);
+
+
+        // each tile accounts for 8 vertical pixels but is 32 bytes long
+        const uint32_t addr = 0x10000+(tile_num*0x20) + (y_pix * 4); 
+
+        int x_pix = x_flip? 3 : 0;
+        const int x_step = x_flip? -1 : +1;
+
+        // depending on x flip we need to swap the nibbles
+        // ie with no xflip we need to use the lower nibble first
+        // then shift down the 2nd nibble out of the byte
+        // when we are x flipping the 1st part of the data
+        // will be in the higher part of the  byte
+        // as we are reading it backwards
+        const int shift_one = x_flip << 2;
+        const int shift_two = !x_flip << 2;
+
+        for(int x = 0; x < 8; x += 2, x_pix += x_step)
+        {
+            // read out the color indexs from the tile
+            const uint8_t tile_data = mem.handle_read<uint8_t>(mem.vram,addr+x_pix);
+
+            const uint32_t idx1 = (tile_data >> shift_one) & 0xf;
+            const uint32_t idx2 = (tile_data >> shift_two) & 0xf;
+/*
+            tile[x].col_num = idx1; 
+            tile[x].pal_num = pal_num;
+
+            tile[x+1].col_num = idx2; 
+            tile[x+1].pal_num = pal_num;
+*/
+            
+            screen[(ly*SCREEN_WIDTH)+x_cord+x] = convert_color(read_obj_palette(pal,idx1));
+            screen[(ly*SCREEN_WIDTH)+x_cord+x+1] = convert_color(read_obj_palette(pal,idx2));
+
+
+
+        }
+    }
+}
+
 
 void Display::render()
 {
@@ -451,140 +597,7 @@ void Display::render()
                 screen[(ly*SCREEN_WIDTH)+x] = c;
             }
 
-
-            // lets try rendering some sprites
-            // for simplicty we will just assume theh win over the background for now and push
-            // then directly onto the screen without caring for priority
-
-            // struct to hold all the obj information
-            // we should probably cache this on oam writes
-            // but for now we will just do it here
-            // we dont have to care for speed just yet
-            struct Obj
-            {
-                // attr 0
-                int y;
-                bool scaling;
-                union
-                {
-                    bool double_size;
-                    bool obj_disable;
-                };
-                int mode;
-                bool mosaic;
-                bool color;
-                int shape;
-
-                // attr 1
-                int x_cord;
-
-                // if scaling is set
-                int rotation_param;
-
-
-                // if scanling is not set
-                bool x_flip;
-                bool y_flip;
-
-                int obj_size;
-
-                // attr 2
-                int tile_num;
-                int priority;
-
-                // unused in color mode
-                int palette;
-            };
-
-
-            for(int i = 127; i >= 0; i--)
-            {
-                int obj_idx = i * 8;
-                
-
-                // determine if the object intersects with this line
-                // for now we will assume its 8 by 8 during this
-                // and handle the size later
-
-                const auto attr0 = mem.handle_read<uint16_t>(mem.oam,obj_idx);
-                int y_cord = attr0 & 0xff;
-
-                if(!(y_cord + 8 > ly && y_cord <= ly))
-                {
-                    continue;
-                }
-
-                bool color = is_set(attr0,13);
-
-                if(color)
-                {
-                    puts("256 sprites unsupported!");
-                    exit(1);
-                }
-
-                // assume palette
-
-                const auto attr1 = mem.handle_read<uint16_t>(mem.oam,obj_idx+2);
-                int x_cord = attr1 & 511;
-
-                if(x_cord >= 240)
-                {
-                    // should -512 here...
-                    puts("out of range x cord unhandled");
-                    exit(1);
-                }
-                // assume no scaling for now
-                const bool x_flip = is_set(attr1,12);
-
-
-                const auto attr2 = mem.handle_read<uint16_t>(mem.oam,obj_idx+4);
-                int tile_num = attr2 & 0x3ff;
-                int pal =  (attr2 >> 12) & 0xf;
-
-                // this only applies to bitmap modes
-                if(tile_num < 512)
-                {
-                    continue;
-                }
-
-
-                // each tile accounts for 8 vertical pixels but is 32 bytes long
-                const uint32_t addr = 0x10000+(tile_num*0x20) + (y_cord * 4); 
-
-                int x_pix = x_flip? 3 : 0;
-                const int x_step = x_flip? -1 : +1;
-
-                // depending on x flip we need to swap the nibbles
-                // ie with no xflip we need to use the lower nibble first
-                // then shift down the 2nd nibble out of the byte
-                // when we are x flipping the 1st part of the data
-                // will be in the higher part of the  byte
-                // as we are reading it backwards
-                const int shift_one = x_flip << 2;
-                const int shift_two = !x_flip << 2;
-
-                for(int x = 0; x < 8; x += 2, x_pix += x_step)
-                {
-                    // read out the color indexs from the tile
-                    const uint8_t tile_data = mem.handle_read<uint8_t>(mem.vram,addr+x_pix);
-
-                    const uint32_t idx1 = (tile_data >> shift_one) & 0xf;
-                    const uint32_t idx2 = (tile_data >> shift_two) & 0xf;
-        /*
-                    tile[x].col_num = idx1; 
-                    tile[x].pal_num = pal_num;
-
-                    tile[x+1].col_num = idx2; 
-                    tile[x+1].pal_num = pal_num;
-        */
-                    
-                    screen[(ly*SCREEN_WIDTH)+x_cord+x] = convert_color(read_obj_palette(pal,idx1));
-                    screen[(ly*SCREEN_WIDTH)+x_cord+x+1] = convert_color(read_obj_palette(pal,idx2));
-
-
-
-                }
-            }
+            render_sprites(3);
             break;
         }
 
