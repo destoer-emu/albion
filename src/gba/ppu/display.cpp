@@ -26,6 +26,8 @@ Display::Display(GBA &gba) : mem(gba.mem), cpu(gba.cpu)
     {
         x.resize(SCREEN_WIDTH);
     }
+    sprite_line.resize(SCREEN_WIDTH);
+    bg_line.resize(SCREEN_WIDTH);
 }
 
 void Display::init()

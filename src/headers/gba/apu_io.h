@@ -59,13 +59,13 @@ struct SoundFifo
     void init();
 
 
-    void write(uint8_t v);
-    uint8_t read(); // not used by the memory handler only interrnally
+    void write(int8_t v);
+    int8_t read(); // not used by the memory handler only interrnally
 
     int len;
     int read_idx;
     int write_idx;
-    uint8_t fifo[32];
+    int8_t fifo[32];
 };
 
 struct ApuIo

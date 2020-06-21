@@ -37,6 +37,15 @@ private:
 
     struct TileData
     {
+        TileData() {}
+
+        TileData(uint16_t c, uint32_t p, uint32_t b)
+        {
+            col_num = c;
+            pal_num = p;
+            bg = b;
+        }
+
         uint16_t col_num;
         uint32_t pal_num;
         uint32_t bg;
@@ -58,12 +67,12 @@ private:
     // renderer helper functions
     uint16_t read_bg_palette(uint32_t pal_num,uint32_t idx);
     uint16_t read_obj_palette(uint32_t pal_num,uint32_t idx);
-    void read_tile(TileData tile[],bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
+    void read_tile(TileData tile[],unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
         uint32_t y,bool x_flip, bool y_flip);
 
 
-    int cyc_cnt = 0; // current number of elapsed cycles
-    int ly = 0; // current number of cycles
+    unsigned int cyc_cnt = 0; // current number of elapsed cycles
+    unsigned int ly = 0; // current number of cycles
     
     Mem &mem;
     Cpu &cpu;
@@ -71,6 +80,8 @@ private:
     display_mode mode = display_mode::visible;
 
     std::vector<std::vector<TileData>> bg_lines;
+    std::vector<TileData> bg_line;
+    std::vector<TileData> sprite_line;
 };
 
 // this needs color correction at some point

@@ -28,15 +28,15 @@ struct BgCnt
     uint8_t read(int idx) const;
 
 
-    int priority;
-    int char_base_block;
+    unsigned int priority;
+    unsigned int char_base_block;
     bool mosaic;
     bool col_256;
         
 
-    int screen_base_block;
-    int area_overflow;
-    int screen_size;
+    unsigned int screen_base_block;
+    unsigned int area_overflow;
+    unsigned int screen_size;
 };
 
 
@@ -87,7 +87,7 @@ struct DispStat
     bool vblank_irq_enable;
     bool hblank_irq_enable;
     bool lyc_irq_enable;
-    int lyc;
+    unsigned int lyc;
 };
 
 // eg bg2pa

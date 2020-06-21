@@ -174,7 +174,7 @@ void Dma::write_control(int reg_num,int idx, uint8_t v)
                 r.src_shadow = r.src;
                 r.dst_shadow = r.dst;
 
-                printf("[%08x]reloaded to %x:%08x:%08x:%d\n",cpu.get_pc(),reg_num,r.src_shadow,r.dst_shadow,r.dst_cnt);
+                //printf("[%08x]reloaded to %x:%08x:%08x:%d\n",cpu.get_pc(),reg_num,r.src_shadow,r.dst_shadow,r.dst_cnt);
 
                 if(r.start_time == dma_type::immediate)
                 {
@@ -263,7 +263,7 @@ void Dma::do_dma(int reg_num, dma_type req_type)
 
                 // dst is not incremented when doing fifo dma
             }
-            return;
+            break;
         }
 
 

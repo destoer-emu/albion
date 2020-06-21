@@ -16,8 +16,8 @@ public:
     void init();
     void tick(int cylces); 
 
-    void push_dma_a(uint8_t x);
-    void push_dma_b(uint8_t x);
+    void push_dma_a(int8_t x);
+    void push_dma_b(int8_t x);
     
 
     ApuIo apu_io;
@@ -27,8 +27,8 @@ private:
     Mem &mem;
     Cpu &cpu;
 
-    uint8_t dma_a_sample;
-    uint8_t dma_b_sample;
+    int8_t dma_a_sample;
+    int8_t dma_b_sample;
 
     
 	// sound playback

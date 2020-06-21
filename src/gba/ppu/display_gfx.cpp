@@ -16,7 +16,7 @@ uint16_t Display::read_obj_palette(uint32_t pal_num,uint32_t idx)
 }
 
 
-void Display::read_tile(TileData tile[],bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, uint32_t y,bool x_flip, bool y_flip)
+void Display::read_tile(TileData tile[],unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, uint32_t y,bool x_flip, bool y_flip)
 {
     uint32_t tile_y = y % 8;
     tile_y = y_flip? 7-tile_y : tile_y;
@@ -39,6 +39,7 @@ void Display::read_tile(TileData tile[],bool col_256,uint32_t base,uint32_t pal_
             tile[x].col_num = tile_data;
             // set pal as zero so that the col num is the sole indexer
             tile[x].pal_num = 0;
+            tile[x].bg = bg;
         }
 
     }
@@ -72,9 +73,11 @@ void Display::read_tile(TileData tile[],bool col_256,uint32_t base,uint32_t pal_
 
             tile[x].col_num = idx1; 
             tile[x].pal_num = pal_num;
+            tile[x].bg = bg;
 
             tile[x+1].col_num = idx2; 
             tile[x+1].pal_num = pal_num;
+            tile[x+1].bg = bg;
         }
     }
 }
@@ -171,7 +174,7 @@ void Display::render_text(int id)
         const uint32_t tile_num = bg_map_entry & 0x3ff; 
         const uint32_t pal_num = (bg_map_entry >> 12) & 0xf;
 
-        read_tile(tile_data,col_256,bg_tile_data_base,pal_num,tile_num,line,x_flip,y_flip);
+        read_tile(tile_data,id,col_256,bg_tile_data_base,pal_num,tile_num,line,x_flip,y_flip);
         
 
 
@@ -251,7 +254,7 @@ void Display::render_mode_zero()
         // if they have equal priority the lower bg idx wins
         if(a.priority == b.priority)
         {
-            return b.bg > a.bg;
+            return a.bg > b.bg;
         }
 
         // else by the bg_cnt priority
@@ -259,27 +262,28 @@ void Display::render_mode_zero()
     });
 
 
-    // probably need to split this step
-    // and the color conversion for when we attempt to overlay sprites on it
-    // but ignore this for now 
+    const TileData backdrop(0,0,0);
     for(size_t x = 0; x < SCREEN_WIDTH; x++)
     {
         // default to backdrop color
-        screen[(ly*SCREEN_WIDTH)+x] = convert_color(read_bg_palette(0,0));
+        bg_line[x] = backdrop;
         for(int i = 0; i < 4; i++)
         {
-            int bg = bg_priority[i].bg;
-            if(disp_cnt.bg_enable[bg]) // if bg enabled!
+            const auto bg = bg_priority[i].bg;
+            // if bg enabled!
+            // should move this check into the sort so we completly ignore
+            // drawing it ideally
+            if(disp_cnt.bg_enable[bg]) 
             {
-                const auto &data = bg_lines[bg][x];
+                const auto data = bg_lines[bg][x];
                 if(data.col_num != 0)
                 {
-                    const uint32_t full_color = convert_color(read_bg_palette(data.pal_num,data.col_num));
-                    screen[(ly*SCREEN_WIDTH)+x] = full_color;
+                    bg_line[x] = data;
                 }
             }
         }
     }
+
 }
 
 /*
@@ -328,8 +332,16 @@ struct Obj
 // we need to render this to a buf
 // and then overlay it with the screen buffer
 // im not sure how "transparency" is handled between sprite and gb
+// may only need to pass the wether or not we are in a bitmap
+// instead of the mode
 void Display::render_sprites(int mode)
 {
+
+    TileData lose_bg(0,0,0);
+    // make all of the line lose
+    // until something is rendred over it
+    std::fill(sprite_line.begin(),sprite_line.end(),lose_bg);
+
 
     const bool is_bitmap = mode >= 3;
 
@@ -343,9 +355,99 @@ void Display::render_sprites(int mode)
         // and handle the size later
 
         const auto attr0 = mem.handle_read<uint16_t>(mem.oam,obj_idx);
-        int y_cord = attr0 & 0xff;
+        const auto attr1 = mem.handle_read<uint16_t>(mem.oam,obj_idx+2);
+        const auto attr2 = mem.handle_read<uint16_t>(mem.oam,obj_idx+4);
 
-        if(!(y_cord + 8 > ly && y_cord <= ly))
+
+        // to handle drawing from off screen vertically and horizontally
+        // on the upper and left hand sides
+
+        const unsigned int y_cord = attr0 & 0xff;
+        const bool scale = is_set(attr0,8);
+
+        // should check mosaic by here but we will just ignore it for now
+
+
+        // from here on out we assume this isnt using affine sprites
+        if(scale)
+        {
+            //puts("scaling/rotation unsupported!");
+            //exit(1);
+        }
+
+        // disable bit
+        if(is_set(attr0,9))
+        {
+            continue;
+        }
+
+        const int obj_mode = (attr0 >> 10) & 0x3;
+
+        if(obj_mode != 0)
+        {
+            //printf("unhandled obj mode %d\n",obj_mode);
+            //exit(1);
+        }
+
+        // prohibited is this ignored on hardware
+        // or does it behave like another?
+        if(obj_mode == 3)
+        {
+            continue;
+        }
+
+        const int shape = (attr0 >> 14) & 0x3;
+
+        // prohibited is this ignored on hardware
+        // or does it behave like another?
+        if(shape == 3)
+        {
+            continue;
+        }
+
+
+        const int obj_size = (attr1 >> 14) & 0x3;
+
+        static constexpr int x_size_lookup[3][4] = 
+        {
+            {8,16,32,64},
+            {16,32,32,64},
+            {8,8,16,32}
+        };
+
+        static constexpr int y_size_lookup[3][4] = 
+        {
+            {8,16,32,64},
+            {8,8,16,32},
+            {16,32,32,64}
+        };
+
+
+
+        // replace with a lookup table for shapes later
+        const unsigned int y_size = y_size_lookup[shape][obj_size];
+        unsigned int x_size = x_size_lookup[shape][obj_size];
+        const unsigned int y_max = y_size-1;
+
+
+
+
+        bool line_overlap;
+
+        if(y_cord < SCREEN_HEIGHT)
+        {
+            line_overlap = ((y_cord + y_size) > ly && y_cord <= ly);
+        }
+
+        // overflowed from 255
+        else
+        {
+            // by definiton it is allways greater than ly before it overflows
+            uint8_t y_end = (y_cord + y_size) & 255;
+            line_overlap = y_end >= ly && y_end < SCREEN_HEIGHT; 
+        }
+
+        if(!line_overlap)
         {
             continue;
         }
@@ -360,23 +462,29 @@ void Display::render_sprites(int mode)
 
         // assume palette
 
-        const auto attr1 = mem.handle_read<uint16_t>(mem.oam,obj_idx+2);
-        int x_cord = attr1 & 511;
 
-        if(x_cord >= 240)
+
+        // current x cords greater than screen width are handled in the decode loop
+        // by ignoring them until they are in range
+        const unsigned int x_cord = attr1 & 511;
+
+        // if cordinate out of screen bounds and does not wrap around
+        // then we dont care
+        if(x_cord >= SCREEN_WIDTH && x_cord + x_size < 512)
         {
-            // should -512 here...
-            puts("out of range x cord unhandled");
-            exit(1);
+            continue;
         }
+
+
         // assume no scaling for now
         const bool x_flip = is_set(attr1,12);
         const bool y_flip = is_set(attr1,13);
 
 
-        const auto attr2 = mem.handle_read<uint16_t>(mem.oam,obj_idx+4);
-        int tile_num = attr2 & 0x3ff;
-        int pal =  (attr2 >> 12) & 0xf;
+        const unsigned int tile_num = attr2 & 0x3ff;
+        const unsigned int pal =  (attr2 >> 12) & 0xf;
+        const unsigned int priority = (attr2 >> 10) & 3;
+
 
         // bitmap modes starts at  0x14000 instead of 0x10000
         // because of bg map tiles below this are simply ignored
@@ -386,13 +494,27 @@ void Display::render_sprites(int mode)
         }
 
 
-        const int y_pix = y_flip?  7 - ((ly-y_cord) & 7) : ((ly-y_cord) & 7);
-
+        const unsigned int y_pix = y_flip?  y_max - ((ly-y_cord) & y_max) : ((ly-y_cord) & y_max);
 
         // each tile accounts for 8 vertical pixels but is 32 bytes long
-        const uint32_t addr = 0x10000+(tile_num*0x20) + (y_pix * 4); 
+        uint32_t addr;
 
-        int x_pix = x_flip? 3 : 0;
+        // 1d object mapping
+        if(disp_io.disp_cnt.obj_vram_mapping)
+        {
+            // base + ((tile_num + (tile_map_y*x_map_width)) * TILE_SIZE) + (tile_line * LINE_SIZE)
+            addr = 0x10000 + ((tile_num + ((x_size / 8) * (y_pix / 8)) ) * 8 * 4) + ((y_pix % 8) * 4);
+        }
+
+        // 2d object mapping
+        // in 4bpp 1024 tiles split into 32 by 32
+        else
+        {
+            // base + ((tile_num + (tile_map_y*x_map_width)) * TILE_SIZE) + (tile_line * LINE_SIZE)
+            addr = 0x10000 + ((tile_num + (32 * (y_pix / 8)) ) * 8 * 4) + ((y_pix % 8) * 4);            
+        }
+
+        unsigned int x_pix = x_flip? (x_size/2)-1 : 0;
         const int x_step = x_flip? -1 : +1;
 
         // depending on x flip we need to swap the nibbles
@@ -404,27 +526,45 @@ void Display::render_sprites(int mode)
         const int shift_one = x_flip << 2;
         const int shift_two = !x_flip << 2;
 
-        for(int x = 0; x < 8; x += 2, x_pix += x_step)
+        for(unsigned int x = 0; x < x_size; x += 2, x_pix += x_step)
         {
             // read out the color indexs from the tile
-            const uint8_t tile_data = mem.handle_read<uint8_t>(mem.vram,addr+x_pix);
+            // x_byte_tile_offset + (tile_map_x * tile_size)
+            const uint32_t x_data_offset = (x_pix % 4) + ((x_pix / 4) * 8 * 4);
+            const uint8_t tile_data = mem.handle_read<uint8_t>(mem.vram,addr+x_data_offset);
 
             const uint32_t idx1 = (tile_data >> shift_one) & 0xf;
             const uint32_t idx2 = (tile_data >> shift_two) & 0xf;
-/*
-            tile[x].col_num = idx1; 
-            tile[x].pal_num = pal_num;
+    
+            const uint32_t x_offset = (x_cord + x) & 511;
 
-            tile[x+1].col_num = idx2; 
-            tile[x+1].pal_num = pal_num;
-*/
-            
-            screen[(ly*SCREEN_WIDTH)+x_cord+x] = convert_color(read_obj_palette(pal,idx1));
-            screen[(ly*SCREEN_WIDTH)+x_cord+x+1] = convert_color(read_obj_palette(pal,idx2));
+            // probably a nicer way to do this but this is fine for now
+            if(x_offset >= SCREEN_WIDTH || x_offset+1 >= SCREEN_WIDTH)
+            {
+                continue;
+            }
 
+            // may be better to just have an array with sprites
+            // that has arrays of the pixels as we are doing many extra comps
+            // and hold a length that takes account of the screen cut off
+            // when we merge the bg and sprites
 
+            // if our cur pixel is transparent dont write it
+            if(idx1 != 0)
+            {
+                sprite_line[x_offset].col_num = idx1;
+                sprite_line[x_offset].pal_num = pal;
+                sprite_line[x_offset].bg = priority;
+            }
 
+            if(idx2 != 0)
+            {
+                sprite_line[x_offset+1].col_num = idx2;
+                sprite_line[x_offset+1].pal_num = pal;
+                sprite_line[x_offset+1].bg = priority;
+            }
         }
+
     }
 }
 
@@ -435,6 +575,7 @@ void Display::render()
     const int render_mode = disp_cnt.bg_mode; 
 
 
+    const bool is_bitmap = render_mode >= 3;
 
     switch(render_mode)
     {
@@ -596,8 +737,6 @@ void Display::render()
                 uint32_t c = convert_color(mem.handle_read<uint16_t>(mem.vram,(ly*SCREEN_WIDTH*2)+x*2));
                 screen[(ly*SCREEN_WIDTH)+x] = c;
             }
-
-            render_sprites(3);
             break;
         }
 
@@ -632,6 +771,54 @@ void Display::render()
             throw std::runtime_error(err);
         }
     }
+
+    render_sprites(render_mode);
+
+    // does a lesser priority obj pixel 
+    // draw over a transparent bg pixel ?
+
+
+    // now to merge sprite and bg
+    // this needs to be split off into its own function
+    if(is_bitmap)
+    {
+        // check directly against the screen
+        // if sprite loses 
+        // (ideally we would not render the bitmap at all if has lost priority)
+        for(unsigned int x = 0; x < SCREEN_WIDTH; x++)
+        {
+            const auto s = sprite_line[x];
+            // col number zero is transparent
+            if(s.col_num != 0)
+            {
+                screen[(ly*SCREEN_WIDTH) + x] = convert_color(read_obj_palette(s.pal_num,s.col_num));
+            }
+        }
+    }
+
+    else
+    {
+        // compare sprites against our final bg line
+        // and convert colors accordingly
+        for(unsigned int x = 0; x < SCREEN_WIDTH; x++)
+        {
+            const auto s = sprite_line[x];
+            const auto b = bg_line[x];
+
+            // sprite has higher priority and is not transparent
+            if((s.bg <= disp_io.bg_cnt[b.bg].priority || b.col_num == 0) && s.col_num != 0)
+            {
+                screen[(ly*SCREEN_WIDTH) + x] = convert_color(read_obj_palette(s.pal_num,s.col_num));
+            }
+
+            else
+            {
+                screen[(ly*SCREEN_WIDTH) + x] = convert_color(read_bg_palette(b.pal_num,b.col_num));
+            }
+
+        }
+    }
+
 }
 
 }

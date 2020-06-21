@@ -117,7 +117,7 @@ void SoundFifo::init()
     write_idx = 0;
 }
 
-void SoundFifo::write(uint8_t v)
+void SoundFifo::write(int8_t v)
 {
     if(len < 32)
     {
@@ -128,7 +128,7 @@ void SoundFifo::write(uint8_t v)
 
 }
 
-uint8_t SoundFifo::read()
+int8_t SoundFifo::read()
 {
 
     uint8_t res = 0;

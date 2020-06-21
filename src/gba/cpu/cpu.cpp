@@ -451,7 +451,7 @@ void Cpu::timer_overflow(int timer_num)
         uint8_t x = apu.apu_io.fifo_a.read();
         //printf("fifo a %x\n",x);
         apu.push_dma_a(x);
-        if(apu.apu_io.fifo_a.len < 16)
+        if(apu.apu_io.fifo_a.len <= 16)
         {
             mem.dma.handle_dma(dma_type::sound);
         }
@@ -462,7 +462,7 @@ void Cpu::timer_overflow(int timer_num)
         uint8_t x = apu.apu_io.fifo_b.read();
         //printf("fifo b %x\n",x);
         apu.push_dma_b(x);
-        if(apu.apu_io.fifo_b.len < 16)
+        if(apu.apu_io.fifo_b.len <= 16)
         {
             mem.dma.handle_dma(dma_type::sound);
         }
@@ -515,7 +515,7 @@ void Cpu::handle_power_state()
 
         case HaltCnt::power_state::halt:
         {
-            puts("halt");
+            //puts("halt");
 
             // need a better check here to prevent the emulator just locking up
             if(!cpu_io.interrupt_enable)

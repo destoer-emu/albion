@@ -12,8 +12,8 @@ void Apu::init()
 {
     apu_io.init();
 
-    // dont enable playback atm as the sound is awful
-	//playback.start();
+    // sound is broken?
+	playback.start();
     audio_buf_idx = 0;
     down_sample_cnt = (16 * 1024 * 1024) / 44100;
     dma_a_sample = 0;
@@ -86,12 +86,12 @@ void Apu::push_samples(int cycles)
 }
 
 
-void Apu::push_dma_a(uint8_t x)
+void Apu::push_dma_a(int8_t x)
 {
     dma_a_sample = x;
 }
 
-void Apu::push_dma_b(uint8_t x)
+void Apu::push_dma_b(int8_t x)
 {
     dma_b_sample = x;
 }

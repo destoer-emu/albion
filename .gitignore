@@ -16,3 +16,4 @@ cmake_install.cmake
 Makefile
 GBA.BIOS
 emu.log
+converted.gb

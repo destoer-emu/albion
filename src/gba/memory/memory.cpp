@@ -329,16 +329,16 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_SOUNDCNT_X+3: break; // unused
 
         // fifo a
-        case IO_FIFO_A: apu.apu_io.fifo_a.write(v); break;
-        case IO_FIFO_A+1: apu.apu_io.fifo_a.write(v); break;
-        case IO_FIFO_A+2: apu.apu_io.fifo_a.write(v); break;
-        case IO_FIFO_A+3: apu.apu_io.fifo_a.write(v); break;
+        case IO_FIFO_A: apu.apu_io.fifo_a.write(static_cast<int8_t>(v)); break;
+        case IO_FIFO_A+1: apu.apu_io.fifo_a.write(static_cast<int8_t>(v)); break;
+        case IO_FIFO_A+2: apu.apu_io.fifo_a.write(static_cast<int8_t>(v)); break;
+        case IO_FIFO_A+3: apu.apu_io.fifo_a.write(static_cast<int8_t>(v)); break;
 
         // fifo b
-        case IO_FIFO_B: apu.apu_io.fifo_b.write(v); break;
-        case IO_FIFO_B+1: apu.apu_io.fifo_b.write(v); break;
-        case IO_FIFO_B+2: apu.apu_io.fifo_b.write(v); break;
-        case IO_FIFO_B+3: apu.apu_io.fifo_b.write(v); break;
+        case IO_FIFO_B: apu.apu_io.fifo_b.write(static_cast<int8_t>(v)); break;
+        case IO_FIFO_B+1: apu.apu_io.fifo_b.write(static_cast<int8_t>(v)); break;
+        case IO_FIFO_B+2: apu.apu_io.fifo_b.write(static_cast<int8_t>(v)); break;
+        case IO_FIFO_B+3: apu.apu_io.fifo_b.write(static_cast<int8_t>(v)); break;
 
         case IO_KEYCNT: 
         {
