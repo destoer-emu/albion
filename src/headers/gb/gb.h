@@ -26,7 +26,6 @@ enum class button
 class GB
 {
 public:
-    // sets up a new emulator state!
     GB();
     void reset(std::string rom_name, bool with_rom=true, bool use_bios = false);
     void run();

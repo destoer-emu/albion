@@ -2,6 +2,10 @@
 #include <gba/memory.h>
 #include <gba/disass.h>
 
+
+// i need to properly handle pipeline effects
+// within thumb mode as well as in arm mode
+
 namespace gameboyadvance
 {
 
@@ -260,6 +264,8 @@ void Cpu::thumb_push_pop(uint16_t opcode)
     const uint8_t reg_range = opcode & 0xff;
 
     int n = 0;
+
+    // todo (emtpy r list timings here)
 
     if(pop)
     {
@@ -565,7 +571,7 @@ void Cpu::thumb_multiple_load_store(uint16_t opcode)
     int n = 0;
 
 
-    // empty r list store pc sb += 0x40
+    // empty r list store pc, sb += 0x40
     if(reg_range == 0)
     {
         n++;

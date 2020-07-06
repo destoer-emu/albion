@@ -129,7 +129,7 @@ std::vector<std::string> read_sorted_directory(const std::string &file_path)
     // add back the directory path
     for(auto &x : dir_list)
     {
-        x = file_path + path_seperator + x;
+        x = file_path + path_separator + x;
     }
 
     return dir_list;    

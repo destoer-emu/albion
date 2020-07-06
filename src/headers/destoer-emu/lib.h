@@ -84,7 +84,7 @@ inline bool is_valid_hex_string(char *input_str) noexcept
 void read_file(const std::string &filename, std::vector<uint8_t> &buf);
 
 
-constexpr char path_seperator = std::filesystem::path::preferred_separator;
+constexpr char path_separator = std::filesystem::path::preferred_separator;
 std::vector<std::string> read_sorted_directory(const std::string &file_path);
 std::vector<std::string> get_dir_tree(const std::string &file_path);
 std::vector<std::string> filter_ext(const std::vector<std::string> &files,const std::string &str);
