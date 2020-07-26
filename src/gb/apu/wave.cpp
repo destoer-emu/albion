@@ -6,7 +6,10 @@ namespace gameboy
 
 //CHANNEL 3 WAVE
 
-Wave::Wave(GB &gb, int c) : Channel(gb,c), FreqReg(gb,c)
+//09 of blarggs test will be off due to the apu operating
+// 2 cycles at a time
+
+Wave::Wave(GB &gb, int c,EventCallback func) : Channel(gb,c), FreqReg(gb,c,func)
 {
 
 }
@@ -20,8 +23,7 @@ void Wave::init() noexcept
 
 void Wave::wave_trigger() noexcept
 {
-    // reset the duty
-    duty_idx = 0;
+	reset_duty();
 }
 
 void Wave::tick_period(int cycles) noexcept

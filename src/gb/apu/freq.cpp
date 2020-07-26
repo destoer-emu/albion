@@ -5,8 +5,8 @@ namespace gameboy
 
 // CHANNEL 1,2,3 FREQUENCY
 
-FreqReg::FreqReg(GB &gb,int c) : freq_lower_mask(freq_lower_masks[c]), period_scale(freq_period_scales[c]), 
-    scheduler(gb.scheduler), channel_event(channel_events[c])
+FreqReg::FreqReg(GB &gb,int c,EventCallback func) : freq_lower_mask(freq_lower_masks[c]), period_scale(freq_period_scales[c]), 
+    scheduler(gb.scheduler), channel_event(channel_events[c]), period_callback(func)
 {
 
 }
@@ -15,6 +15,8 @@ int FreqReg::get_period() const noexcept
 {
     return period;
 }
+
+
 
 void FreqReg::freq_init() noexcept
 {
@@ -37,10 +39,12 @@ void FreqReg::freq_reload_period() noexcept
 {
     period = (2048 - freq)*period_scale;
 
+
+
     // create  a new event as the period has changed
     // need to half to double the ammount in double speed
     // so it still operates as if it was at 4mhz
-    const auto event = scheduler.create_event(period << scheduler.is_double(),channel_event);
+    const auto event = scheduler.create_event(period << scheduler.is_double(),channel_event,period_callback);
 
     // dont tick off the old event as 
     // it will use the new value as we have just overwritten 
@@ -48,7 +52,6 @@ void FreqReg::freq_reload_period() noexcept
     // this is not an event we are dropping and expecting to start later 
 
     scheduler.insert(event,false);
-
 }
 
 int FreqReg::get_duty_idx() const noexcept
@@ -56,6 +59,13 @@ int FreqReg::get_duty_idx() const noexcept
     return duty_idx;
 }
 
+void FreqReg::reset_duty() noexcept
+{
+	duty_idx = 0;
+}
+
+// extra 6 cycle patch can make 09 pass on blarggs
+// https://forums.nesdev.com/viewtopic.php?f=20&t=13730
 void FreqReg::freq_trigger() noexcept
 {
     // reload frequency peroid on trigger

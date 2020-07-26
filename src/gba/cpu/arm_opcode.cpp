@@ -146,10 +146,8 @@ void Cpu::arm_mull(uint32_t opcode)
     {
         set_nz_flag_long(result);
 
-        // c & v destroyed
+        // c destroyed
         cpsr = deset_bit(cpsr,C_BIT);
-        cpsr = deset_bit(cpsr,V_BIT);
-
     }
 }
 

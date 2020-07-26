@@ -91,12 +91,17 @@ void Display::render_sprites(int mode)
         // bounding box even if double isnt going to draw outside 
         // because of how we operate on it
         // how to get this working?
+
+
+        // on the top and left side its not going to extend
+        // only to the postive so we need to find a way to "centre" it
+        // see tonc graphical artifacts
         if(double_size)
         {
             y_cord += y_sprite_size / 2;
             x_cord += x_sprite_size / 2;
-            //x_size *= 2;
-            //y_size *= 2;
+            x_size *= 2;
+            y_size *= 2;
         }
 
 
@@ -121,13 +126,13 @@ void Display::render_sprites(int mode)
         else
         {
             // by definiton it is allways greater than ly before it overflows
-            uint8_t y_end = (y_cord + y_size) & 255;
+            uint8_t y_end = (y_cord + y_size) & 0xff;
             line_overlap = y_end >= ly && y_end < SCREEN_HEIGHT; 
         }
 
         if(!line_overlap)
         {
-            continue;
+            continue;   
         }
 
         const bool color = is_set(attr0,13);
@@ -164,7 +169,6 @@ void Display::render_sprites(int mode)
 
         for(uint32_t x1 = 0; x1 < x_size; x1++)
         {
-
             const uint32_t x_offset = (x_cord + x1) & 511;
 
             // probably a nicer way to do this but this is fine for now
@@ -172,7 +176,6 @@ void Display::render_sprites(int mode)
             {
                 continue;
             }
-
 
 
             uint32_t y2 = y1;
@@ -187,8 +190,8 @@ void Display::render_sprites(int mode)
             else if(affine)
             {
                 // rotation centre
-                const uint32_t x0 = x_sprite_size / 2;
-                const uint32_t y0 = y_sprite_size / 2; 
+                const int32_t x0 = x_sprite_size / 2;
+                const int32_t y0 = y_sprite_size / 2; 
 
                 const auto base = aff_param*0x20;
 
@@ -198,15 +201,16 @@ void Display::render_sprites(int mode)
                 const int16_t pc = mem.handle_read<uint16_t>(mem.oam,base+0x16);
                 const int16_t pd = mem.handle_read<uint16_t>(mem.oam,base+0x1e);
 
-                const int x_param = x1 - x0;
-                const int y_param = y1 - y0;
+
+                const int32_t x_param = x1 - x0;
+                const int32_t y_param = y1 - y0;
 
                 // perform the affine transform
                 x2 = ((pa*x_param + pb*y_param) >> 8) + x0;
                 y2 = ((pc*x_param + pd*y_param) >> 8) + y0;
 
                 // out of range transform is transparent
-                if(x2 >= x_size || y2 >= y_size)
+                if(x2 >= x_sprite_size || y2 >= y_sprite_size)
                 {
                     continue;
                 }

@@ -26,6 +26,7 @@ public:
 
     void init(bool use_bios = false);
     void step();
+    void tick_pending_cycles() noexcept;
     void cycle_tick(int cycles) noexcept; 
     void cycle_tick_t(int cycles) noexcept;
     void cycle_delay(int cycles) noexcept;

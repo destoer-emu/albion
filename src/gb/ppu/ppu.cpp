@@ -1,7 +1,10 @@
 #include <gb/gb.h>
 
 
-// regressions with timigns tests after rewrite
+// prehistorik man is broken and i dont know when... 
+// final fantasy has a a corrupted vram
+// shantae doesent show sprites
+
 // and even when hard coding the minimum pixel transfer time
 // for scanline rendering
 // which should make no difference as we 
@@ -22,8 +25,9 @@ void Ppu::reset_fetcher() noexcept
 {
 	x_cord = 0; // current x cord of the ppu
 	tile_cord = 0;
-	fetcher.ready = false; 
 	scx_cnt = 0;
+
+	window_triggered = false; 
 
 	obj_fifo.reset();
 	bg_fifo.reset();
@@ -53,6 +57,23 @@ void Ppu::init() noexcept
 
 	memset(bg_pal,0x00,sizeof(bg_pal)); // bg palette data
 	memset(sp_pal,0x00,sizeof(sp_pal)); // sprite pallete data 
+
+	// check if game can use in built pal in cgb rom
+	if(!mem.rom_cgb_enabled())
+	{
+	/*
+		// calc header checksum from 134 to 143 for name
+		uint8_t checksum = 0;
+		for(uint16_t i = 0x134; i < 0x143; i++)
+		{
+			checksum += mem.read_mem(i);
+		}
+
+		printf("checumsum %x\n",checksum);
+	*/
+		memcpy(dmg_pal,dmg_colors,sizeof(dmg_pal));
+
+	} 
 
 }
 
@@ -240,9 +261,9 @@ void Ppu::switch_hblank() noexcept
 	if(window_drawn)
 	{
 		window_y_line++;
+		window_drawn = false;
 	}
-
-	window_drawn = false;
+	
 	window_x_line = 0;
 
 	stat_update();	
@@ -335,14 +356,16 @@ void Ppu::update_graphics(int cycles) noexcept
 				
 				emulate_pixel_fifo = false;
 				pixel_transfer_end = calc_pixel_transfer_end();
-
+/*
 				// if using fifo allways for testing
-				//reset_fetcher();
-				//scx_cnt = mem.io[IO_SCX] & 0x7;
+				reset_fetcher();
+				scx_cnt = mem.io[IO_SCX] & 0x7;
+*/
 
 				// read in the sprites we are about to draw
 				read_sprites();
-				stat_update();				
+				stat_update();
+				
 			}
 			break;
 		}
@@ -350,23 +373,32 @@ void Ppu::update_graphics(int cycles) noexcept
 		// pixel transfer
 		case ppu_mode::pixel_transfer: 
 		{
-			
+
 			if(emulate_pixel_fifo)
 			{
 				draw_scanline(cycles);
 			}
 			
-			else
+			else if(scanline_counter >= pixel_transfer_end)
 			{
-				if(scanline_counter >= pixel_transfer_end)
-				{
-					render_scanline();
-					switch_hblank();
-				}
+				render_scanline();
+				switch_hblank();
 			}
-			
-			// testing
-			//draw_scanline(cycles);
+
+
+/*		
+			// testing just fetcher
+			draw_scanline(cycles);
+*/
+
+/*
+			// testing just scanline
+			if(scanline_counter >= pixel_transfer_end)
+			{
+				render_scanline();
+				switch_hblank();
+			}
+*/
 			break;
 		}	
 	}
@@ -391,28 +423,20 @@ void Ppu::ppu_write() noexcept
 
 uint32_t Ppu::calc_pixel_transfer_end() noexcept
 {
-	// does not handle the sprite, window, scx
-	// stalls and just assumes the minimum for now
-	return 252;
+	// does not handle the sprite, window delays
+	return 252 + mem.io[IO_SCX] % 8;
 }
 
 uint32_t Ppu::get_dmg_color(int color_num, pixel_source source) noexcept
 {
-	int colour_address = static_cast<uint16_t>(source) + 0xff47;	
-	dmg_colors col = get_colour(color_num,colour_address); 
+	auto source_idx = static_cast<int>(source);
 
-	// black is default
-	uint32_t full_color = 0xff000000;
 
-	switch(col)
-	{
-		case dmg_colors::black: /*full_color = 0xff000000;*/ break;
-		case dmg_colors::white: full_color = 0xffffffff; break;
-		case dmg_colors::light_gray: full_color = 0xffcccccc;  break;
-		case dmg_colors::dark_gray: full_color = 0xff777777; break;
-	}
-
-	return full_color;	
+	int color_address = + source_idx + 0xff47;	
+	const uint8_t palette = mem.io[color_address & 0xff];
+	const int color_idx = (palette >> (color_num * 2)) & 3; 
+	
+	return (0xff << 24) | dmg_pal[source_idx][color_idx];
 }
 
 uint32_t Ppu::get_cgb_color(int color_num, int cgb_pal, pixel_source source) noexcept
@@ -466,25 +490,50 @@ void Ppu::render_scanline() noexcept
 	auto scx_offset = mem.io[IO_SCX] & 0x7;
 	// is sprite drawing enabled?
 	const bool obj_enabled = is_set(mem.io[IO_LCDC],1);
+	
 
-	Pixel_Obj scanline_fifo[176];
+	// enough to allow two tiles either side
+	// plus the odd window and scx cords
+	// 160 + 8 + 8 + 8 + 8
+	Pixel_Obj scanline_fifo[194];
 
-	// this will just render nicely without modifying it
-	for(tile_cord = 0; tile_cord < 176; tile_cord += 8)
+	// is the window drawn on this line?
+	const bool window_rendered = mem.io[IO_WX] <= 166 && 
+		mem.io[IO_WY] <= current_line && is_set(mem.io[IO_LCDC],5);
+
+	
+
+	if(!window_rendered)
 	{
-		tile_fetch(&scanline_fifo[tile_cord]);
+		for(tile_cord = 0; tile_cord < 176; tile_cord += 8)
+		{
+			tile_fetch(&scanline_fifo[tile_cord],false);
+		}
 	}
 
-	// window does not scroll
-	// we many have to handle it triggering in the middle of the line
-	if(window_drawn)
+
+	// window rendering
+	else
 	{
-		scx_offset = 0;
+
+		// draw up to the window and then start re rendering from it 
+		for(tile_cord = 0; tile_cord < mem.io[IO_WX]; tile_cord += 8)
+		{
+			tile_fetch(&scanline_fifo[tile_cord],false);
+		}
+
+		// is there a cleaner way to achieve this?
+		const uint8_t win_offset = mem.io[IO_WX] < 7? 0 : mem.io[IO_WX] - 7;
+
+		for(tile_cord = win_offset; tile_cord < 176; tile_cord += 8)
+		{
+			tile_fetch(&scanline_fifo[tile_cord+scx_offset],true);
+		}
 	}
+
 
 	if(obj_enabled)
 	{
-		//printf("rendering sprites %d\n",no_sprites);
 		sprite_fetch(&scanline_fifo[scx_offset],false);
 	}
 
@@ -525,7 +574,7 @@ bool Ppu::push_pixel() noexcept
 	// if we fetched a bg tile
 	// i highly doubt there is a hard coded dont do the shift is this aint the window
 	// on real hardware i need to find out how this is actually done
-	if(scx_cnt > 0 && !window_drawn)
+	if(scx_cnt > 0 && !window_triggered)
 	{
 
 
@@ -571,8 +620,8 @@ bool Ppu::push_pixel() noexcept
 		screen[(current_line*SCREEN_WIDTH)+x_cord] = full_color;
 	}
 	
-
-	if(++x_cord == 160)
+	x_cord += 1;
+	if(x_cord == 160)
 	{
 		// done drawing enter hblank
 		switch_hblank();
@@ -603,8 +652,8 @@ void Ppu::tick_fetcher() noexcept
 	// 1 cycle is tile num 
 	// 2nd is lb of data 
 	// 3rd is high byte of data 
-	// 4th is pushing it into the fifo	
-	fetcher.cyc += 1; // further along 
+	// 4th attempt to push 
+	fetcher.cyc++; 
 	
 	// advance the fetcher if we dont have a tile dump waiting
 	// fetcher operates at half of base clock (4mhz)
@@ -613,12 +662,12 @@ void Ppu::tick_fetcher() noexcept
 	{
 		// should fetch the number then low and then high byte
 		// but we will ignore this fact for now
-		if(fetcher.cyc >= 6) // takes 3 cycles to fetch 8 pixels
+		// takes 3 cycles to fetch 8 pixels
+		if(fetcher.cyc >= 6) 
 		{
-			tile_fetch(fetcher.buf);
+			tile_fetch(fetcher.buf,window_triggered);
 			fetcher.ready = true;
 		}
-		return;
 	}
 	
 	// if we have room to dump into the fifo
@@ -647,10 +696,23 @@ void Ppu::draw_scanline(int cycles) noexcept
 	// is sprite drawing enabled?
 	const bool obj_enabled = is_set(mem.io[IO_LCDC],1);
 	
-	
+
+
 	// advance the fetcher and the fifo
 	for(int i = 0; i < cycles; i++) // 1 pixel pushed per cycle
 	{
+	
+		// just started drawing window
+		// reset bg fifo and fetcher
+		// ideally id cache this for the draw
+		const bool using_window = window_active();
+		if(!window_triggered && using_window)
+		{
+			bg_fifo.reset();
+			fetcher.reset();
+		}
+		window_triggered = using_window;
+	
 		// ignore sprite timings for now
 		// sprites are fetched instantly into the fifo
 		// and not into the fetcher as they should be
@@ -658,7 +720,9 @@ void Ppu::draw_scanline(int cycles) noexcept
 		{
 			sprite_fetch(obj_fifo.fifo);
 		}
-	
+
+		tick_fetcher();
+
 		// blit the pixel
 		// fifo will check if it can push for us
 		const auto hblank = push_pixel();
@@ -668,14 +732,27 @@ void Ppu::draw_scanline(int cycles) noexcept
 		{
 			return;
 		}
-
-		tick_fetcher();
 	}
+}
+
+
+bool Ppu::window_active() const noexcept
+{
+
+	// is the window enabled check in lcd control
+	// and is the current scanline the window pos?
+	// if we are using window 
+	// it starts drawing at window_x 
+	// so if we are less than it dont draw 
+	const bool using_window = is_set(mem.io[IO_LCDC],5) && (mem.io[IO_WY] <= current_line) 
+		&&  (mem.io[IO_WX] <= 166) && (mem.io[IO_WX] <= x_cord + 7);	
+
+	return using_window;
 }
 
 // fetch a single tile into the fifo
 
-void Ppu::tile_fetch(Pixel_Obj *buf) noexcept
+void Ppu::tile_fetch(Pixel_Obj *buf, bool use_window) noexcept
 {
 
     const bool is_cgb = cpu.get_cgb();
@@ -695,20 +772,7 @@ void Ppu::tile_fetch(Pixel_Obj *buf) noexcept
 	}
 
 	// where to draw the visual area and window
-	const uint8_t scroll_y = mem.io[IO_SCY];
-	const uint8_t scroll_x = mem.io[IO_SCX];
-	const uint8_t window_y = mem.io[IO_WY];
-	const uint8_t window_x = mem.io[IO_WX]; 
 	const int scanline = current_line;
-	
-
-	// is the window enabled check in lcd control
-	// and is the current scanline the window pos?
-	// if we are using window 
-	// it starts drawing at window_x 
-	// so if we are less than it dont draw 
-	const bool using_window = is_set(lcd_control,5) && (window_y <= scanline) 
-		&&  (window_x <= 166) && (mem.io[IO_WX] <= tile_cord + 7);
 	
 	// which of the 32 horizontal tiles are we currently drawing
 	uint8_t x_pos = tile_cord;
@@ -717,14 +781,14 @@ void Ppu::tile_fetch(Pixel_Obj *buf) noexcept
 	// the current scanline is drawing	
 	uint8_t y_pos = scanline;
 
-	int background_mem = 0;
+	unsigned int background_mem = 0;
 
 	// which background mem?
-	if(!using_window)
+	if(!use_window)
 	{
 		background_mem = is_set(lcd_control,3) ? 0x1c00 : 0x1800;
-		y_pos += scroll_y;
-		x_pos += scroll_x;
+		y_pos += mem.io[IO_SCY];
+		x_pos += mem.io[IO_SCX];
 	}
 	
 	else
@@ -805,7 +869,7 @@ void Ppu::tile_fetch(Pixel_Obj *buf) noexcept
 	// tile to get the tile data		
 	// read the sprite backwards in y axis if y flipped
 	// must be times by 2 as each line takes up 2 bytes
-	const int line = y_flip? (7 - y_pos) * 2 : y_pos*2;
+	const unsigned int line = y_flip? (7 - y_pos) * 2 : y_pos*2;
 		
 			
 	const uint8_t data1 = mem.vram[vram_bank][tile_location+line];
@@ -814,7 +878,7 @@ void Ppu::tile_fetch(Pixel_Obj *buf) noexcept
 	// pixel 0 in the tile is bit 7 of data1 and data2
 	// pixel 1 is bit 6 etc
 	
-	int color_bit = x_flip? 0 : 7;
+	unsigned int color_bit = x_flip? 0 : 7;
 	
 	const int shift = x_flip ? 1 : -1;
 
@@ -822,7 +886,7 @@ void Ppu::tile_fetch(Pixel_Obj *buf) noexcept
 	// unless lcdc has the master overide enabled
 	const auto source = priority ? pixel_source::tile_cgbd : pixel_source::tile;	
 
-	for(int i = 0; i < 8; i++, color_bit += shift)
+	for(unsigned int i = 0; i < 8; i++, color_bit += shift)
 	{
 		// combine data 2 and data 1 to get the color id for the pixel
 		// in the tile
@@ -837,18 +901,6 @@ void Ppu::tile_fetch(Pixel_Obj *buf) noexcept
 		buf[i].colour_num = colour_num;
 		buf[i].source = source;	
 	}
-}
-
-dmg_colors Ppu::get_colour(uint8_t colour_num, uint16_t address) noexcept
-{
-	const uint8_t palette = mem.io[address & 0xff];
-
-	const int colour = (palette >> (colour_num * 2)) & 3; 
-
-	static constexpr dmg_colors colors[] = {dmg_colors::white,dmg_colors::light_gray,
-        dmg_colors::dark_gray,dmg_colors::black};
-
-	return colors[colour];
 }
 
 
@@ -1202,217 +1254,6 @@ void Ppu::sprite_fetch(Pixel_Obj *buf,bool use_fifo) noexcept
 			cur_sprite += 1;				
 		}	
 	}
-}
-
-
-
-// -----------
-// ppu viewer
-// only used by the some frontends but its
-// not code dependant on a frontend so its best placed here
-
-std::vector<uint32_t> Ppu::render_bg(bool higher) noexcept
-{
-
-	std::vector<uint32_t> bg_map(256*256);
-
-	const uint8_t lcd_control = mem.io[IO_LCDC]; // get lcd control reg
-	int background_mem = higher ? 0x1c00 : 0x1800;
-
-	bool is_cgb = cpu.get_cgb();
-
-	// for each line
-	for(int tile_y = 0; tile_y < 32; tile_y++)
-	{
-		// for each tile in the line
-		for(int tile_x = 0; tile_x < 32; tile_x++)
-		{
-			const int bg_location =  background_mem + ((tile_y*32)+tile_x);
-
-			int tile_location;
-
-			// tile number is allways bank 0
-			if(is_set(lcd_control,4)) // unsigned
-			{
-				const auto tile_num =  mem.vram[0][bg_location];
-				tile_location = tile_num * 16;
-			}
-			
-			else // signed tile index 0x1000 is used as base pointer relative to start of vram
-			{
-				const auto tile_num = static_cast<int8_t>(mem.vram[0][bg_location]);
-				tile_location = 0x1000 + (tile_num * 16);
-			}
-
-
-			int buf_offset = (tile_y * 256 * 8) + (tile_x * 8);
-
-
-
-			int cgb_pal = -1;
-			bool x_flip = false;
-			bool y_flip = false;
-			int vram_bank = 0;
-
-
-			if(is_cgb) // we are drawing in cgb mode 
-			{
-				// bg attributes allways in bank 1
-				const uint8_t attr = mem.vram[1][bg_location];
-				cgb_pal = attr & 0x7; // get the pal number
-											
-				x_flip = is_set(attr,5);
-				y_flip = is_set(attr,6);
-
-				// decide what bank data is coming out of
-				// allready one so dont check the other condition
-				vram_bank = is_set(attr,3) ? 1 : 0;
-			}
-
-
-
-
-
-			// for each line in the tile
-			for(int y = 0; y < 8; y++)
-			{
-
-				const int line = y_flip? (7 - y) * 2 : y*2;
-
-				// 2 bytes per line in vram
-				uint16_t data_address = tile_location + line;
-
-				const uint8_t data1 = mem.vram[vram_bank][data_address];
-				const uint8_t data2 = mem.vram[vram_bank][data_address+1];
-
-
-				int color_bit = x_flip? 0 : 7;
-				
-				const int shift = x_flip ? 1 : -1;
-
-				// for each pixel in the line of the tile
-				for(int x = 0; x < 8; x++, color_bit += shift)
-				{
-
-					// rest same as tiles
-					int color_num = val_bit(data2,color_bit) << 1;
-					color_num |= val_bit(data1,color_bit);
-
-					if(!is_cgb)
-					{
-						const uint32_t full_color = get_dmg_color(color_num,pixel_source::tile);
-						bg_map[buf_offset + (y * 256) + x] = full_color;
-					}
-
-
-					else
-					{
-						// dont care about the priority here just smash it
-						const uint32_t full_color = get_cgb_color(color_num,cgb_pal, pixel_source::tile);
-						bg_map[buf_offset + (y * 256) + x] = full_color;
-					}
-					
-				}
-			}
-		}
-	}
-
-
-
-	// now render a black box over the viewing area
-
-	const uint8_t scy = mem.io[IO_SCY];
-	const uint8_t scx = mem.io[IO_SCX];
-
-	// draw x bounds
-	// draw two vertical lines to indicate scx start
-	// and scx + screen width
-	for(uint32_t y = 0; y < SCREEN_HEIGHT; y++)
-	{
-		const int y_offset = ((scy + y) & 0xff) * 256;
-
-		bg_map[scx + y_offset] = 0xff0000ff;
-		bg_map[((scx + SCREEN_WIDTH) & 0xff) +  y_offset] = 0xff0000ff;
-	}
-
-	// draw y bounds
-	// draw two horizontal lines to indicate scy start
-	// and scy + screen HEIGHT
-	for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
-	{
-		const int x_offset = (scx + x) & 0xff; 
-
-		bg_map[(scy * 256) + x_offset] = 0xff0000ff;
-		bg_map[(((scy + SCREEN_HEIGHT) & 0xff)*256) + x_offset] = 0xff0000ff;		
-	}
-
-
-	return bg_map;
-}
-
-void Ppu::render_palette(uint32_t *palette_bg,uint32_t *palette_sp) noexcept
-{
-	for(int cgb_pal = 0; cgb_pal < 8; cgb_pal++)
-	{
-		for(int color_num = 0; color_num < 4; color_num++)
-		{
-			palette_bg[(cgb_pal*4)+color_num] = get_cgb_color(color_num,cgb_pal, pixel_source::tile);
-			palette_sp[(cgb_pal*4)+color_num] = get_cgb_color(color_num,cgb_pal,pixel_source::sprite_one);
-		}
-	}
-}
-
-std::vector<uint32_t> Ppu::render_tiles() noexcept
-{
-
-	std::vector<uint32_t> tiles(384*8*8*2);
-
-	int banks = cpu.get_cgb()? 2 : 1;
-
-
-	for(int bank = 0; bank < banks; bank++)
-	{
-		// 384 tiles total
-		for(int tile_y = 0; tile_y < 0x18; tile_y++)
-		{
-			for(int tile_x = 0; tile_x < 0x10; tile_x++)
-			{
-				const int tile_num  = (tile_y * 0x10) + tile_x;
-
-				// 0x80 bytes in a single line
-				// however we do 8 at a time (8 by 8 tiles)
-				// * 2 because there can be two banks
-				const int buf_offset = (tile_y * 0x80 * 8 * 2) + (tile_x * 8) + (bank * 0x80);
-
-				// for each line in the tile
-				for(int y = 0; y < 8; y++)
-				{
-
-					// 2 bytes per line in vram
-					const uint16_t data_address = (tile_num * 16) + (y * 2);
-
-					const uint8_t data1 = mem.vram[bank][data_address];
-					const uint8_t data2 = mem.vram[bank][data_address+1];
-
-					// for each pixel in the line of the tile
-					for(int x = 7; x >= 0; x--)
-					{
-
-						// rest same as tiles
-						int color_num = val_bit(data2,x) << 1;
-						color_num |= val_bit(data1,x);
-
-
-						const uint32_t full_color = get_dmg_color(color_num,pixel_source::tile);
-						tiles[buf_offset + (y * 0x80 * 2) + (7-x)] = full_color;
-										
-					}
-				}		
-			}
-		}
-	}
-
-	return tiles;
 }
 
 }

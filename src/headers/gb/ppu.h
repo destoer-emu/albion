@@ -18,15 +18,6 @@ enum class ppu_mode
 };
 
 
-enum class dmg_colors
-{
-    white = 1,
-    light_gray =  2,
-    dark_gray =  3,
-    black =  4
-};
-
-
 struct Obj // struct for holding sprites on a scanline
 {
     uint16_t index = 0;
@@ -176,13 +167,14 @@ private:
     bool push_pixel() noexcept;
     void tick_fetcher() noexcept;
     void render_scanline() noexcept;
-    void tile_fetch(Pixel_Obj *buf) noexcept;
-    dmg_colors get_colour(uint8_t colour_num, uint16_t address) noexcept;
+    void tile_fetch(Pixel_Obj *buf, bool use_window) noexcept;
     uint32_t get_cgb_color(int color_num, int cgb_pal, pixel_source source) noexcept;
     uint32_t get_dmg_color(int color_num, pixel_source source) noexcept;
     void read_sprites() noexcept;
     void sprite_fetch(Pixel_Obj *buf,bool use_fifo=true) noexcept;
     void switch_hblank() noexcept;
+
+    bool window_active() const noexcept;
 
 
     void reset_fetcher() noexcept;
@@ -225,7 +217,7 @@ private:
     unsigned int window_y_line = 0;
     unsigned int window_x_line = 0;
     bool window_drawn = false; // did we draw the window on this line?
-
+    bool window_triggered = false;
 
     // cgb pal
 	uint8_t bg_pal[0x40] = {0xff}; // bg palette data
@@ -233,6 +225,22 @@ private:
 	unsigned int sp_pal_idx = 0;
 	unsigned int bg_pal_idx = 0; // index into the bg pal (entry takes two bytes)
 
+
+    // default colors
+    static constexpr uint32_t dmg_colors[3][4] = 
+    {
+        {0xffffff,0xcccccc,0x77777777,0x000000},
+        {0xffffff,0xcccccc,0x77777777,0x000000},
+        {0xffffff,0xcccccc,0x77777777,0x000000}
+    };		
+
+    // todo properly handle cgb in dmg
+	uint32_t dmg_pal[3][4] = 
+	{
+		{0xffffff,0xcccccc,0x77777777,0x000000},
+		{0xffffff,0xcccccc,0x77777777,0x000000},
+		{0xffffff,0xcccccc,0x77777777,0x000000}
+	};
 
 };
 

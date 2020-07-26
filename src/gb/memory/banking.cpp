@@ -114,7 +114,12 @@ void Memory::ram_bank_change_mbc1() noexcept
 {
 	cart_ram_bank = mbc1_bank2;
 
-	if(rom_info.no_ram_banks <= 1) 
+	if(rom_info.no_ram_banks == 0)
+	{
+		cart_ram_bank = CART_RAM_BANK_INVALID;
+	}
+
+	else if(rom_info.no_ram_banks <= 1) 
 	{
 		cart_ram_bank = 0;
 	}
@@ -195,7 +200,7 @@ void Memory::mbc3_ram_bank_change(uint16_t address,uint8_t v) noexcept
 	
 	else if(rom_info.no_ram_banks == 0)
 	{
-		cart_ram_bank = 0;
+		cart_ram_bank = CART_RAM_BANK_INVALID;
 	}
 	
 	else if(cart_ram_bank <= 3 && cart_ram_bank >= rom_info.no_ram_banks)
@@ -239,7 +244,12 @@ void Memory::mbc5_ram_bank_change(uint16_t address,uint8_t data) noexcept
 	UNUSED(address);
 	cart_ram_bank = data & 0xf;
 	
-	if(cart_ram_bank >= rom_info.no_ram_banks)
+	if(rom_info.no_ram_banks == 0)
+	{
+		cart_ram_bank = CART_RAM_BANK_INVALID;
+	}
+
+	else if(cart_ram_bank >= rom_info.no_ram_banks)
 	{
 		cart_ram_bank %= rom_info.no_ram_banks;	
 	}	

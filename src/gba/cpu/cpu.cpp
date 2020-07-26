@@ -976,7 +976,7 @@ uint32_t Cpu::sbc(uint32_t v1, uint32_t v2, bool s)
     {
         bool set_v = __builtin_sub_overflow((int32_t)v1,(int32_t)v2,&ans);
         set_v ^= __builtin_sub_overflow((int32_t)ans,(int32_t)v3,&ans);
-        cpsr = (v1 >= (v2+v3))? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
+        cpsr = (v1 >= v2 && v1-v2 >= v3)? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
         cpsr = set_v? set_bit(cpsr,V_BIT) : deset_bit(cpsr,V_BIT);
 
 

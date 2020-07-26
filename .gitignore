@@ -15,5 +15,7 @@ ALL_BUILD.vcxproj
 cmake_install.cmake
 Makefile
 GBA.BIOS
+gbc_bios.bin
+dmg_bios.bin
 emu.log
 converted.gb

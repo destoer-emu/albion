@@ -31,50 +31,59 @@ void fix_checksums(std::vector<uint8_t> &rom)
     rom[0x14f] = (c & 0xff);    
 }
 
+
+
+template<typename T>
+T read_var(size_t &src,std::vector<uint8_t> &buf)
+{
+    size_t size =  sizeof(T);
+    if(src + size >= buf.size())
+    {
+        throw std::runtime_error("isx: out of range read");
+    }
+    T var;
+    memcpy(&var,&buf[src],size);
+    src += size;
+    return var;
+}
+
 void convert_isx(std::vector<uint8_t> &rom)
 {
-    // how do we detect extended headers so we can skip past them :P ?
-
+    puts("converting isx to rom...");
 
     std::vector<uint8_t> new_rom;
+    
+    if(rom.size() <= 4)
+    {
+        throw std::runtime_error("isx: buf too small");
+    }
+
+    std::string magic = "";
+    for(int i = 0; i < 4; i++)
+    {
+        magic += static_cast<char>(rom[i]);
+    }
+    const bool extended = magic == "ISX ";
 
     // no header lets parse it :P
-    size_t len = 0;
+    // if extended skip header
+    size_t len = extended? 0x20: 0;
     while(len < rom.size())
     {
         switch(rom[len++])
         {
             case 0x1: // binary record
             {
-                if(len + 1 >= rom.size())
-                {
-                    throw std::runtime_error("malformed isx");
-                }
-
-
-                uint8_t bank = rom[len++];
-
+                auto bank = read_var<uint8_t>(len,rom);
                 if(bank >= 0x80)
                 {
-                    if(len + 1 >= rom.size())
-                    {
-                        throw std::runtime_error("malformed isx");
-                    }
-                    // actual bank is in the next byte
-                    bank = rom[len++];
+                    bank |= read_var<uint8_t>(len,rom) << 8;
                 }
 
-                if(len + 4 >= rom.size())
-                {
-                    throw std::runtime_error("malformed isx");
-                }
 
-                uint16_t addr = rom[len++];
-                addr |= rom[len++] << 8;
-                addr &= 0x3fff;            
-
-                uint16_t data_len = rom[len++];
-                data_len |= rom[len++] << 8;
+                const auto addr = read_var<uint16_t>(len,rom) & 0x3fff;        
+                
+                auto data_len = read_var<uint16_t>(len,rom);
 
                 if(data_len + len >= rom.size())
                 {
@@ -87,7 +96,7 @@ void convert_isx(std::vector<uint8_t> &rom)
                 }
 
 
-                // if need more space resize to accomodate it 
+                // if we need more space resize to accomodate it 
                 if(0x4000U * (bank+1) > new_rom.size())
                 {
                     new_rom.resize(0x4000 * (bank+1),0);
@@ -99,10 +108,58 @@ void convert_isx(std::vector<uint8_t> &rom)
                 break;
             }
 
+            // symbol
+            case 0x4:
+            {
+                const auto number = read_var<uint16_t>(len,rom);
+                for(int i = 0; i < number; i++)
+                {
+                    const auto sym_len = read_var<uint8_t>(len,rom);
+                    len += sym_len + 1; // flag
+                    uint16_t bank = read_var<uint8_t>(len,rom);
+                    if(bank > 0x80)
+                    {
+                        bank |= read_var<uint8_t>(len,rom) << 8;
+                    }
+                    len += 2; // address
+                }
+                break;
+            }
+
             case 0x11:
             {
-                puts("extend binary");
+                puts("isx extend binary 0x11");
                 exit(1);
+            }
+
+
+            case 0x13:
+            {
+                const auto number = read_var<uint16_t>(len,rom);
+                /* // dont know what this is for
+                for(int i = 0; i < number; i++)
+                {
+                    const auto bank = read_var<uint8_t>(len,rom);
+                    const auto start = read_var<uint16_t>(len,rom);
+                    const auto end = read_var<uint16_t>(len,rom);
+                    const auto type = read_var<uint8_t>(len,rom);
+                    printf("%x:%x:%x:%x\n",bank,start,end,type);
+                }
+                */
+                len += 9 * number; // block repeated that many times
+                break;
+            }
+
+            case 0x14: // symbol extended binary
+            {
+                const auto number = read_var<uint16_t>(len,rom);
+                for(int i = 0; i < number; i++)
+                {
+                    // exta byte on symbol here?
+                    const auto sym_len = read_var<uint8_t>(len,rom);
+                    len += sym_len + 6; // flag and addr
+                }
+                break;
             }
 
             // dont care about anything else we are done
@@ -176,7 +233,15 @@ void Rom_info::init(std::vector<uint8_t> &rom, std::string romname)
 
         if(ext == "isx")
         {
-            convert_isx(rom);
+            try
+            {
+                convert_isx(rom);
+            }
+
+            catch(std::runtime_error &ex)
+            {
+                throw std::runtime_error(fmt::format("error converting isx!: {}",ex.what()));
+            }
         }
     }
 
@@ -261,9 +326,9 @@ void Rom_info::init(std::vector<uint8_t> &rom, std::string romname)
 
     // get the number of ram banks
     uint32_t ram_type = rom[0x149];
-    constexpr uint32_t ram_table[5] = {0,1,1,4,16};
+    constexpr uint32_t ram_table[6] = {0,1,1,4,16,8};
 
-    if(ram_type > 4)
+    if(ram_type > 5)
     {
         throw std::runtime_error(fmt::format("invalid ram type: {:x}",ram_type));
     }

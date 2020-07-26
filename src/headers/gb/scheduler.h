@@ -7,13 +7,16 @@ namespace gameboy
 {
 
 
+using EventCallback = std::function<void(int)>; 
+
 struct EventNode
 {
-    EventNode(uint32_t c, uint32_t e, event_type t)
+    EventNode(uint32_t c, uint32_t e, event_type t,EventCallback func)
     {
         current = c;
         end = e;
         type = t;
+        callback = func;
     }
 
     // when event was added
@@ -23,6 +26,8 @@ struct EventNode
     uint32_t end;
 
     event_type type;
+
+    std::function<void(int)> callback;
 };
 
 /*
@@ -57,7 +62,7 @@ public:
     uint32_t get_timestamp() const;
 
     // helper to create events
-    EventNode create_event(uint32_t duration, event_type t);
+    EventNode create_event(uint32_t duration, event_type t,EventCallback func);
 
 private:
     void service_event(const EventNode & node);

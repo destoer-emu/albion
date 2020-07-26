@@ -22,40 +22,7 @@ void Scheduler::init()
 void Scheduler::service_event(const EventNode & node)
 {
     const auto cycles_to_tick = timestamp - node.current;
-
-    switch(node.type)
-    {
-        case event_type::oam_dma_end:
-        {
-            mem.tick_dma(cycles_to_tick);
-            break;
-        }
-
-        case event_type::c1_period_elapse:
-        {
-            apu.c1.tick_period(cycles_to_tick);
-            break;
-        }
-
-        case event_type::c2_period_elapse:
-        {
-            apu.c2.tick_period(cycles_to_tick);
-            break;
-        }
-
-        case event_type::c3_period_elapse:
-        {
-            apu.c3.tick_period(cycles_to_tick);
-            break;
-        }
-
-        case event_type::c4_period_elapse:
-        {
-            apu.c4.tick_period(cycles_to_tick);
-            break;
-        }
-
-    }
+    node.callback(cycles_to_tick);
 }
 
 void Scheduler::tick(uint32_t cycles)
@@ -145,9 +112,9 @@ uint32_t Scheduler::get_timestamp() const
 }
 
 
-EventNode Scheduler::create_event(uint32_t duration, event_type t)
+EventNode Scheduler::create_event(uint32_t duration, event_type t,EventCallback func)
 {
-    return EventNode(timestamp,duration+timestamp,t);
+    return EventNode(timestamp,duration+timestamp,t,func);
 }
 
 // just because its convenient 

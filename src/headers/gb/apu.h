@@ -3,6 +3,7 @@
 #include <frontend/gb/playback.h>
 #include <gb/forward_def.h>
 #include <gb/mem_constants.h>
+#include <gb/scheduler.h>
 
 namespace gameboy
 {
@@ -43,7 +44,7 @@ protected:
 
 	int output = 0;
 
-	
+	bool length_extra_tick;
 
 	// ideally these should be consts...
 	const uint16_t trigger_addr;
@@ -66,16 +67,19 @@ class FreqReg
 {
 
 public:
-	FreqReg(GB &gb,int c);
+	FreqReg(GB &gb,int c,EventCallback func);
 	void freq_init() noexcept;
 	void freq_write_lower(uint8_t v) noexcept;
 	void freq_write_higher(uint8_t v) noexcept;
 	void freq_reload_period() noexcept;
 	int get_duty_idx() const noexcept;
+	void reset_duty() noexcept;
 	void freq_save_state(std::ofstream &fp);
 	void freq_load_state(std::ifstream &fp);
 	void freq_trigger() noexcept;
 	int get_period() const noexcept;
+
+	const EventCallback period_callback;
 protected:
 	int freq = 0;
 	int period = 0;
@@ -99,7 +103,6 @@ protected:
 	};
 
 	const event_type channel_event;
-
 
 	int duty_idx = 0;
 };
@@ -128,7 +131,7 @@ protected:
 class Square : public Channel, public FreqReg, public Envelope
 {
 public:
-	Square(GB &gb,int c);
+	Square(GB &gb,int c,EventCallback func);
 	void init() noexcept;
 	void tick_period(int cycles) noexcept;
 	void write_cur_duty(uint8_t v) noexcept;
@@ -150,7 +153,7 @@ protected:
 class Sweep : public Square
 {
 public:
-	Sweep(GB &gb, int c);
+	Sweep(GB &gb, int c,EventCallback func);
 	void sweep_init() noexcept;
 	void sweep_trigger() noexcept;
 	void sweep_write(uint8_t v) noexcept;
@@ -171,7 +174,7 @@ private:
 class Wave : public Channel, public FreqReg
 {
 public:
-	Wave(GB &gb, int c);
+	Wave(GB &gb, int c,EventCallback func);
 	void init() noexcept;
 	void wave_trigger() noexcept;
 	void vol_trigger() noexcept;
@@ -188,7 +191,7 @@ private:
 class Noise : public Channel, public Envelope
 {
 public:
-	Noise(GB &gb, int c);
+	Noise(GB &gb, int c,EventCallback func);
 
 
 	void init() noexcept;
@@ -198,6 +201,8 @@ public:
 	void noise_trigger() noexcept;
 	void save_state(std::ofstream &fp);
 	void load_state(std::ifstream &fp);	
+
+	const EventCallback period_callback;
 private:
 
 	Scheduler &scheduler;

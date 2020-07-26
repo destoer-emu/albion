@@ -202,23 +202,25 @@ void ImguiMainWindow::gameboy_start_instance(bool step)
 
 void ImguiMainWindow::gameboy_new_instance(std::string filename, bool use_bios)
 {
-    gameboy_reset_instance(filename,use_bios);
+    try
+    {
+        gameboy_reset_instance(filename,use_bios);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+        return; 
+    }
+    
+   
     gameboy_start_instance();     
 }
 
 
 void ImguiMainWindow::gameboy_reset_instance(std::string filename,bool use_bios)
 {
-    try
-    {
-        gb.reset(filename,true,use_bios);
-    }
 
-    catch(std::exception &ex)
-    {
-        std::cout << ex.what()  << "\n";
-        return;
-    }    
+    gb.reset(filename,true,use_bios);
 }
 
 

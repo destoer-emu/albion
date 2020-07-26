@@ -2,6 +2,7 @@
 #include <destoer-emu/lib.h>
 #include <destoer-emu/debug.h>
 
+// todo on what cycles are read and writes asserted on the bus?
 namespace gameboy
 {
 
@@ -651,15 +652,17 @@ void Memory::write_word(uint16_t addr, uint16_t v) noexcept
 // memory accesses (timed)
 uint8_t Memory::read_memt(uint16_t addr) noexcept
 {
-	cpu.cycle_tick(1); // tick for the memory access 
+	cpu.tick_pending_cycles();
     uint8_t v = read_mem(addr);
+	cpu.cycle_tick(1); // tick for the memory access 
     return v;
 }
 
 void Memory::write_memt(uint16_t addr, uint8_t v) noexcept
 {
-	cpu.cycle_tick(1); // tick for the memory access    
+	cpu.tick_pending_cycles();
     write_mem(addr,v);
+	cpu.cycle_tick(1); // tick for the memory access    
 }
 
 
@@ -850,7 +853,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		// nr 41
 		case IO_NR41:
 		{
-			return io[IO_NR41] | 192;
+			return 0xff;
 		}
 
 		// nr 44 bit 6
@@ -1052,8 +1055,9 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 
 uint8_t Memory::read_iot(uint16_t addr) noexcept
 {
-	cpu.cycle_tick(1); // tick for mem access
+	cpu.tick_pending_cycles();
     uint8_t v = read_io(addr);
+	cpu.cycle_tick(1); // tick for mem access
     return v;
 }
 
@@ -1178,7 +1182,6 @@ void Memory::do_dma(uint8_t v) noexcept
 	if(dma_address < 0xe000)
 	{
 		oam_dma_active = false;
-		// old implementaiton
 		for(int i = 0; i < 0xA0; i++)
 		{
 			oam[i] =  read_mem(dma_address+i); 	
@@ -1187,7 +1190,8 @@ void Memory::do_dma(uint8_t v) noexcept
 		oam_dma_address = dma_address; // the source address
 		oam_dma_index = 0; // how far along the dma transfer we are	
 
-		const auto event = scheduler.create_event((0xa0 * 4)+0x8,event_type::oam_dma_end);
+
+		const auto event = scheduler.create_event((0xa0 * 4)+0x8,event_type::oam_dma_end,oam_callback);
 		scheduler.insert(event);
 	
 	}
@@ -1205,6 +1209,8 @@ void Memory::tick_dma(int cycles) noexcept
 	oam_dma_index += cycles;
 	// We are done with our dma
 	// 8 extra cycles to start and stop
+	// this should not be part of the main time
+	// as the dma does not block for all of this...
 	// 4 cycles per byte
 	if(oam_dma_index >= (0xa0 * 4)+8) 
 	{
@@ -1678,9 +1684,13 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 					apu.c1.duty_trigger();
 				}
 
-				apu.c1.length_write(v);
 
+				apu.c1.length_write(v);
 				io[IO_NR14] = v;
+
+				// after all the trigger events have happend
+				// if the dac is off switch channel off				
+				apu.c1.check_dac();
 			}
 			break;
 		}
@@ -1725,6 +1735,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			{
 				apu.c2.freq_write_higher(v);
 
+
 				if(is_set(v,7)) // trigger
 				{
 					apu.c2.length_trigger();
@@ -1734,8 +1745,10 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 				}
 
 				apu.c2.length_write(v);
-
 				io[IO_NR24] = v;
+
+
+				apu.c2.check_dac();	
 			}
 			break;
 		}
@@ -1788,6 +1801,8 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			{
 				apu.c3.freq_write_higher(v);
 
+
+
 				if(is_set(v,7)) // trigger
 				{
 					apu.c3.length_trigger();
@@ -1797,8 +1812,9 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 				}
 
 				apu.c3.length_write(v);
-
 				io[IO_NR34] = v | (16 + 32 + 8);
+
+				apu.c3.check_dac();	
 			}
 			break;
 		}
@@ -1848,10 +1864,9 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 				}
 
 				apu.c4.length_write(v);		
+				io[IO_NR44] = v | 63;
 
 				apu.c4.check_dac();	
-
-				io[IO_NR44] = v | 63;
 			}
 			break;
 		}		
@@ -1898,8 +1913,6 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			else if(!is_set(io[IO_NR52],7) && is_set(v,7))
 			{
 				apu.enable_sound();
-				// power up resets the fetcher
-				apu.reset_sequencer();
 			}			
 			break;
 		}
@@ -2001,8 +2014,9 @@ void Memory::do_hdma() noexcept
 
 void Memory::write_iot(uint16_t addr,uint8_t v) noexcept
 {
-	cpu.cycle_tick(1); // tick for mem access
+	cpu.tick_pending_cycles();
     write_io(addr,v);
+	cpu.cycle_tick(1); // tick for mem access
 }
 
 // wram zero bank 0xc000 - 0xd000

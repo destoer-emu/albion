@@ -50,6 +50,7 @@ void Channel::init_channel() noexcept
     lengthc = 0;
     length_enabled = false;
     output = 0;
+    length_extra_tick = false;
 }
 
 int Channel::get_output() const noexcept 
@@ -57,58 +58,56 @@ int Channel::get_output() const noexcept
     return output;
 }
 
-// done upon NRX4 write
 void Channel::length_trigger() noexcept
 {
+
     enable_chan();
 
-    // if the length counter is 0 it should be loaded with max upon a trigger event
     if(!lengthc)
     {
         lengthc = max_len;
-        
+
         // disable the chan length
         // if the value enables the length this will cause an extra tick :P
         // disable chan in NRX4
-        mem.io[trigger_addr] = deset_bit(mem.io[trigger_addr],6); 
-    }
+        length_enabled = false; 
+    }             
 }
 
-
+// also handles trigger effects
 void Channel::length_write(uint8_t v) noexcept
 {
-
-    auto sequencer_step = apu.get_sequencer_step();
+    const auto sequencer_step = apu.get_sequencer_step();
 
     // if previously clear and now is enabled 
     // + next step doesent clock, clock the length counter
-    if(!is_set(mem.io[trigger_addr],6) && is_set(v,6) && !(sequencer_step & 1))
+    if(!length_enabled && is_set(v,6)  && (sequencer_step & 1))
     {
-        // decrement and if now zero and there is no trigger 
-        // switch the channel off
-        if(lengthc != 0 && --lengthc == 0)
+        // if non zero decremt
+        if(lengthc)
         {
-            if(is_set(v,7)) 
-            { 
-                // if we have hit a trigger it should be max len - 1
-                lengthc = max_len - 1;
-            }
-                
-            else
+            if(!--lengthc)
             {
-                disable_chan();
-            }       
-        }	
-        
+                // if now zero it goes off if trigger is clear
+                if(!is_set(v,7))
+                {
+                    disable_chan();
+                }
+
+                // else it becomes max len - 1
+                else
+                {
+                    lengthc = max_len - 1;
+                }
+            }
+            
+        }
     }
 
-	// after all the trigger events have happend
-	// if the dac is off switch channel off				
-	check_dac();
 
-    // bit 6 enables legnth counter
-    length_enabled = is_set(v,6);  
+    length_enabled = is_set(v,6);
 }
+
 
 // length counter write = max len - bits in reg
 void Channel::write_lengthc(uint8_t v) noexcept

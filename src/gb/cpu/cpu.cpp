@@ -73,24 +73,15 @@ void Cpu::init(bool use_bios)
 	pending_cycles = 0;
 }
 
-// cycles that dont need to be ticked yet
-// as there is no memory access involed
-// takes t cycles
-void Cpu::cycle_delay(int cycles) noexcept
-{
-	pending_cycles += cycles;
-}
-
 void Cpu::step()
 {
-	// interrupts checked before the opcode fetch
-    exec_instr();
-
-
 	// now we need to test if an ei or di instruction
 	// has just occured if it has step a cpu instr and then 
 	// perform the requested operation and set the ime flag	
 	handle_instr_effects();
+
+	// interrupts checked before the opcode fetch
+    exec_instr();
 }
 
 
@@ -116,6 +107,23 @@ uint8_t Cpu::fetch_opcode() noexcept
 	}
 	
 }
+
+// cycles that dont need to be ticked yet
+// as there is no memory access involed
+// takes t cycles
+void Cpu::cycle_delay(int cycles) noexcept
+{
+	pending_cycles += cycles;
+}
+
+void Cpu::tick_pending_cycles() noexcept
+{
+	if(pending_cycles > 0)
+	{
+		cycle_tick_t(0);
+	}
+}
+
 
 // m cycle tick
 void Cpu::cycle_tick(int cycles) noexcept
@@ -227,10 +235,7 @@ void Cpu::update_timers(int cycles) noexcept
 void Cpu::handle_halt()
 {
 	// smash off all pending cycles before the halt check
-	if(pending_cycles > 0)
-	{
-		cycle_tick(0);
-	}
+	tick_pending_cycles(); 
 
 	instr_side_effect = instr_state::normal;
 	uint8_t req = mem.io[IO_IF]; // requested ints 
@@ -247,8 +252,8 @@ void Cpu::handle_halt()
 	
 
 	// sanity check to check if this thing will actually fire
-	const uint8_t stat = mem.io[IO_STAT];
-	if(enabled == 0 || ((((stat >> 3) & 0x7) == 0) && enabled == val_bit(enabled,1)))
+	// needs to be improved to check for specific intrs being unable to fire...
+	if(enabled == 0)
 	{
 		write_log(debug,"[ERROR] halt infinite loop");
 		throw std::runtime_error("halt infinite loop");
@@ -257,12 +262,9 @@ void Cpu::handle_halt()
 	
 	while( ( req & enabled & 0x1f) == 0) 
 	{
-		// just tick it
-		cycle_tick(1);
-			
+		cycle_tick(1);		
 		req = mem.io[IO_IF];
 	}
-
 
 	/*
 	// ideally we should just figure out how many cycles to the next interrupt
@@ -322,7 +324,6 @@ void Cpu::handle_instr_effects()
 			{
 				handle_halt();
 			}
-
 			break;
 		}
 				
