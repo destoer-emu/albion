@@ -3,7 +3,6 @@
 #include <destoer-emu/lib.h>
 #include <destoer-emu/debug.h>
 #include <destoer-emu/emulator.h>
-#include <gb/scheduler.h>
 #include "rom.h"
 #include "mem_constants.h"
 
@@ -78,10 +77,6 @@ public:
 	static constexpr int GEKKIO_FAIL_SIZE = 6;
 
 
-    const EventCallback oam_callback = [=](int cycles) 
-    {
-        this->tick_dma(cycles);
-    };
 private:
 
     Cpu &cpu;

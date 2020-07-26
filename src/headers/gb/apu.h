@@ -3,7 +3,6 @@
 #include <frontend/gb/playback.h>
 #include <gb/forward_def.h>
 #include <gb/mem_constants.h>
-#include <gb/scheduler.h>
 
 namespace gameboy
 {
@@ -67,7 +66,7 @@ class FreqReg
 {
 
 public:
-	FreqReg(GB &gb,int c,EventCallback func);
+	FreqReg(GB &gb,int c);
 	void freq_init() noexcept;
 	void freq_write_lower(uint8_t v) noexcept;
 	void freq_write_higher(uint8_t v) noexcept;
@@ -78,8 +77,6 @@ public:
 	void freq_load_state(std::ifstream &fp);
 	void freq_trigger() noexcept;
 	int get_period() const noexcept;
-
-	const EventCallback period_callback;
 protected:
 	int freq = 0;
 	int period = 0;
@@ -103,6 +100,7 @@ protected:
 	};
 
 	const event_type channel_event;
+
 
 	int duty_idx = 0;
 };
@@ -131,7 +129,7 @@ protected:
 class Square : public Channel, public FreqReg, public Envelope
 {
 public:
-	Square(GB &gb,int c,EventCallback func);
+	Square(GB &gb,int c);
 	void init() noexcept;
 	void tick_period(int cycles) noexcept;
 	void write_cur_duty(uint8_t v) noexcept;
@@ -153,7 +151,7 @@ protected:
 class Sweep : public Square
 {
 public:
-	Sweep(GB &gb, int c,EventCallback func);
+	Sweep(GB &gb, int c);
 	void sweep_init() noexcept;
 	void sweep_trigger() noexcept;
 	void sweep_write(uint8_t v) noexcept;
@@ -174,7 +172,7 @@ private:
 class Wave : public Channel, public FreqReg
 {
 public:
-	Wave(GB &gb, int c,EventCallback func);
+	Wave(GB &gb, int c);
 	void init() noexcept;
 	void wave_trigger() noexcept;
 	void vol_trigger() noexcept;
@@ -191,7 +189,7 @@ private:
 class Noise : public Channel, public Envelope
 {
 public:
-	Noise(GB &gb, int c,EventCallback func);
+	Noise(GB &gb, int c);
 
 
 	void init() noexcept;
@@ -201,8 +199,6 @@ public:
 	void noise_trigger() noexcept;
 	void save_state(std::ofstream &fp);
 	void load_state(std::ifstream &fp);	
-
-	const EventCallback period_callback;
 private:
 
 	Scheduler &scheduler;

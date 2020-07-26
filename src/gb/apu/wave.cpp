@@ -9,7 +9,7 @@ namespace gameboy
 //09 of blarggs test will be off due to the apu operating
 // 2 cycles at a time
 
-Wave::Wave(GB &gb, int c,EventCallback func) : Channel(gb,c), FreqReg(gb,c,func)
+Wave::Wave(GB &gb, int c) : Channel(gb,c), FreqReg(gb,c)
 {
 
 }

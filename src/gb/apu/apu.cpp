@@ -5,40 +5,8 @@
 namespace gameboy
 {
 
-Apu::Apu(GB &gb) : 
-c1{gb,0,
-    // c1 period event callback
-    [=](int cycles)
-    {
-        c1.tick_period(cycles);
-    }
-}, 
-
-c2{gb,1,
-    // c2 period event callback
-    [=](int cycles)
-    {
-        c2.tick_period(cycles);
-    }
-}, 
-
-c3{gb,2,
-    // c3 period event callbak
-    [=](int cycles)
-    {
-        c3.tick_period(cycles);
-    }
-},
-c4{gb,3,
-    // c4 period event callback
-    [=](int cycles)
-    {
-        c4.tick_period(cycles);
-    }
-}, 
-
-mem(gb.mem), scheduler(gb.scheduler)
-
+Apu::Apu(GB &gb) : c1{gb,0}, c2{gb,1}, c3{gb,2},c4{gb,3}, 
+    mem(gb.mem), scheduler(gb.scheduler)
 {
     // init our audio playback
     playback.init(freq_playback,2048);
@@ -190,10 +158,10 @@ void Apu::enable_sound() noexcept
 
 
     // renable our events in the scheduler
-    const auto event_c1 = scheduler.create_event(c1.get_period(),event_type::c1_period_elapse,c1.period_callback);
-    const auto event_c2 = scheduler.create_event(c2.get_period(),event_type::c2_period_elapse,c2.period_callback);
-    const auto event_c3 = scheduler.create_event(c3.get_period(),event_type::c3_period_elapse,c3.period_callback);
-    const auto event_c4 = scheduler.create_event(c3.get_period(),event_type::c4_period_elapse,c4.period_callback);
+    const auto event_c1 = scheduler.create_event(c1.get_period(),event_type::c1_period_elapse);
+    const auto event_c2 = scheduler.create_event(c2.get_period(),event_type::c2_period_elapse);
+    const auto event_c3 = scheduler.create_event(c3.get_period(),event_type::c3_period_elapse);
+    const auto event_c4 = scheduler.create_event(c3.get_period(),event_type::c4_period_elapse);
 
     scheduler.insert(event_c1);
     scheduler.insert(event_c2);

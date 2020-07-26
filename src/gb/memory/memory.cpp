@@ -1191,7 +1191,7 @@ void Memory::do_dma(uint8_t v) noexcept
 		oam_dma_index = 0; // how far along the dma transfer we are	
 
 
-		const auto event = scheduler.create_event((0xa0 * 4)+0x8,event_type::oam_dma_end,oam_callback);
+		const auto event = scheduler.create_event((0xa0 * 4)+0x8,event_type::oam_dma_end);
 		scheduler.insert(event);
 	
 	}

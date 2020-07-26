@@ -3,8 +3,7 @@
 namespace gameboy
 {
 
-Noise::Noise(GB &gb,int c,EventCallback func) : Channel(gb,c), 
-	scheduler(gb.scheduler), period_callback(func)
+Noise::Noise(GB &gb,int c) : Channel(gb,c), scheduler(gb.scheduler)
 {
 
 }
@@ -79,7 +78,7 @@ void Noise::reload_period() noexcept
 
     // create  a new event as the period has changed
     // need to half the ammount if we are in double speed
-    const auto event = scheduler.create_event(period << scheduler.is_double(),event_type::c4_period_elapse,period_callback);
+    const auto event = scheduler.create_event(period << scheduler.is_double(),event_type::c4_period_elapse);
 
     // dont tick off the old event as 
     // it will use the new value as we have just overwritten 
@@ -87,6 +86,7 @@ void Noise::reload_period() noexcept
     // this is not an event we are dropping and expecting to start later 
 
     scheduler.insert(event,false);
+
 
 }
 

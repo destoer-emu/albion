@@ -5,7 +5,7 @@ namespace gameboy
 
 // CHANNEL 1 & 2 SQAURE WAVE
 
-Square::Square(GB &gb, int c,EventCallback func) : Channel(gb,c), FreqReg(gb,c,func)
+Square::Square(GB &gb, int c) : Channel(gb,c), FreqReg(gb,c)
 {
 
 }

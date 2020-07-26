@@ -5,7 +5,7 @@ namespace gameboy
 
 // CHANNEL 1 SWEEP
 
-Sweep::Sweep(GB &gb, int c,EventCallback func) : Square(gb,c,func)
+Sweep::Sweep(GB &gb, int c) : Square(gb,c)
 {
 
 }
