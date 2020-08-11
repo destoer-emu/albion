@@ -1,157 +1,98 @@
 #include<gb/gb.h>
 
 
+// investiage oracle games audio cut out
+// and alone in the dark
+// think former is because of the remove change
+// and not having insertion handle weird behavior
+
 namespace gameboy
 {
 
-Scheduler::Scheduler(GB &gb) : cpu(gb.cpu), ppu(gb.ppu), 
+// this needs a save state impl
+
+GameboyScheduler::GameboyScheduler(GB &gb) : cpu(gb.cpu), ppu(gb.ppu), 
     apu(gb.apu), mem(gb.mem)
 {
     init();
 }
 
-
-void Scheduler::init()
+// option to align cycles for things like waitloop dec may be required
+void GameboyScheduler::skip_to_event()
 {
-    event_list.clear();
-    timestamp = 0;
-}
+    timestamp = event_list.peek().end;
+
+    // make sure we are on a 4 cycle boundary
+    timestamp = (timestamp + 3) & ~0x3; 
+
+    tick(0);
+} 
 
 
 // better way to handle this? std::function is slow
-void Scheduler::service_event(const EventNode & node)
+void GameboyScheduler::service_event(const EventNode<gameboy_event> & node)
 {
+    return;
+
+    // if its double speed we need to push half the cycles
+    // through the function even though we delay for double
     const auto cycles_to_tick = timestamp - node.current;
 
     switch(node.type)
     {
-        case event_type::oam_dma_end:
+        case gameboy_event::oam_dma_end:
         {
             mem.tick_dma(cycles_to_tick);
             break;
         }
 
-        case event_type::c1_period_elapse:
+        case gameboy_event::c1_period_elapse:
         {
-            apu.c1.tick_period(cycles_to_tick);
+            apu.c1.tick_period(cycles_to_tick >> is_double());
             break;
         }
 
-        case event_type::c2_period_elapse:
+        case gameboy_event::c2_period_elapse:
         {
-            apu.c2.tick_period(cycles_to_tick);
+            apu.c2.tick_period(cycles_to_tick >> is_double());
             break;
         }
 
-        case event_type::c3_period_elapse:
+        case gameboy_event::c3_period_elapse:
         {
-            apu.c3.tick_period(cycles_to_tick);
+            apu.c3.tick_period(cycles_to_tick >> is_double());
             break;
         }
 
-        case event_type::c4_period_elapse:
+        case gameboy_event::c4_period_elapse:
         {
-            apu.c4.tick_period(cycles_to_tick);
+            apu.c4.tick_period(cycles_to_tick >> is_double());
             break;
         }
 
-    }
-}
-
-void Scheduler::tick(uint32_t cycles)
-{
-    timestamp += cycles;
-
-    // prevent overflows in our timestamps
-    if(is_set(timestamp,(sizeof(timestamp)*8) - 1))
-    {
-        // find earliest timestamp start
-        auto min = timestamp;
-
-        for(const auto &x: event_list)
+        case gameboy_event::sample_push:
         {
-            min = std::min(min,x.current);
+            apu.push_samples(cycles_to_tick >> is_double());
+            break;
         }
 
-        // subtract from every timestamp
-        for(auto &x: event_list)
+        case gameboy_event::internal_timer:
         {
-            x.current -= min;
-            x.end -= min;
-        }
-        timestamp -= min;
-    }
-
-    for(auto it = event_list.begin(); it != event_list.end(); )
-    {
-        // if the timestamp is greater than the event fire
-        // handle the event and remove it
-        // we are not handling events that repeat atm
-        if(timestamp >= it->end)
-        {
-            const auto event = *it;
-            it = event_list.erase(it);
-            service_event(event);
+            cpu.update_timers(cycles_to_tick);
+            break;
         }
 
-        // as the list is sorted so the next event is first
-        // any subsequent events aernt going to fire so return early
-        else
+        case gameboy_event::ppu:
         {
+            ppu.update_graphics(cycles_to_tick >> is_double());
             break;
         }
     }
 }
 
-void Scheduler::insert(const EventNode &node,bool tick_old)
-{
-    remove(node.type,tick_old);
-
-    // insert into the correct place
-    auto found = std::find_if(event_list.begin(),event_list.end(),
-    [&node](EventNode const &event)
-    {
-        return event.end >= node.end;
-    });
-
-    event_list.insert(found,node);
-}
-
-void Scheduler::remove(event_type type,bool tick_old)
-{
-    // insert into the correct place
-    auto found = std::find_if(event_list.begin(),event_list.end(),
-    [&type](EventNode const &event)
-    {
-        return event.type == type;
-    });
-
-    if(found != event_list.end())
-    {
-        const auto event = *found;
-        event_list.erase(found);
-
-        if(tick_old)
-        {
-            // smash off any accumluated cycles
-            service_event(event);
-        }
-    }
-}
-
-uint32_t Scheduler::get_timestamp() const
-{
-    return timestamp;
-}
-
-
-EventNode Scheduler::create_event(uint32_t duration, event_type t)
-{
-    return EventNode(timestamp,duration+timestamp,t);
-}
 
 // just because its convenient 
-bool Scheduler::is_double() const
+bool GameboyScheduler::is_double() const
 {
     return cpu.get_double();
 }

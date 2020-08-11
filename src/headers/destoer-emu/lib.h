@@ -18,6 +18,7 @@
 #include <fstream>
 #include <type_traits>
 #include <atomic>
+#include <optional>
 #include <stdint.h>
 #include <assert.h>
 #include <stdio.h>
@@ -195,7 +196,7 @@ inline void file_read_vec(std::ifstream &fp,std::vector<T> &buf)
 	auto sz = get_remaining_ifstream_size(fp);
 	if(sz < sizeof(T) * buf.size())
 	{
-		throw std::runtime_error("file_read_var error");
+		throw std::runtime_error("file_read_vec error");
 	}		
 	fp.read(reinterpret_cast<char*>(buf.data()),sizeof(T)*buf.size());
 }

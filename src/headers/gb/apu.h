@@ -3,6 +3,7 @@
 #include <frontend/gb/playback.h>
 #include <gb/forward_def.h>
 #include <gb/mem_constants.h>
+#include <gb/scheduler.h>
 
 namespace gameboy
 {
@@ -90,16 +91,16 @@ protected:
 	static constexpr int freq_period_scales[] = {4,4,2};
 
 
-	Scheduler &scheduler;
+	GameboyScheduler &scheduler;
 
-	static constexpr event_type channel_events[] =
+	static constexpr gameboy_event channel_events[] =
 	{
-		event_type::c1_period_elapse,
-		event_type::c2_period_elapse,
-		event_type::c3_period_elapse
+		gameboy_event::c1_period_elapse,
+		gameboy_event::c2_period_elapse,
+		gameboy_event::c3_period_elapse
 	};
 
-	const event_type channel_event;
+	const gameboy_event channel_event;
 
 
 	int duty_idx = 0;
@@ -195,13 +196,14 @@ public:
 	void init() noexcept;
 	void tick_period(int cycles) noexcept;
 	void reload_period() noexcept;
+	int get_period() const noexcept;
 	void noise_write(uint8_t v) noexcept;
 	void noise_trigger() noexcept;
 	void save_state(std::ofstream &fp);
 	void load_state(std::ifstream &fp);	
 private:
 
-	Scheduler &scheduler;
+	GameboyScheduler &scheduler;
 
 	//http://gbdev.gg8.se/wiki/articles/Gameboy_sound_hardware#Noise_Channel
 	static constexpr int divisors[8] = { 8, 16, 32, 48, 64, 80, 96, 112 };
@@ -217,6 +219,8 @@ class Apu
 {	
 public:
 	Apu(GB &gb);
+
+	void insert_new_sample_event() noexcept;
 
 	void push_samples(int cycles) noexcept;
 
@@ -249,7 +253,7 @@ public:
 private:
 
 	Memory &mem;
-	Scheduler &scheduler;
+	GameboyScheduler &scheduler;
 
 	void tick_length_counters() noexcept;
 	void clock_envelopes() noexcept;

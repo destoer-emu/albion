@@ -1,4 +1,7 @@
 Release/
+RelWithDebInfo/
+.vs/
+.vscode/
 mooneye-gb_hwtests/
 CMakeFiles/
 x64/
@@ -19,3 +22,6 @@ gbc_bios.bin
 dmg_bios.bin
 emu.log
 converted.gb
+ALL_BUILD.vcxproj.user
+converted.sav
+destoer-emu.vcxproj.user

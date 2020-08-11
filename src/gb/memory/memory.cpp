@@ -774,11 +774,15 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 
         case IO_LY:
         {
-            return ppu.current_line;
+            return ppu.get_current_line();
         }
 
 		case IO_DIV:
 		{
+			// reinsert the event so div can update
+			scheduler.remove(gameboy_event::internal_timer);
+			cpu.insert_new_timer_event();
+
 			// div register is upper 8 bits of the internal timer
 			return (cpu.internal_timer & 0xff00) >> 8;
 		}
@@ -1191,8 +1195,8 @@ void Memory::do_dma(uint8_t v) noexcept
 		oam_dma_index = 0; // how far along the dma transfer we are	
 
 
-		const auto event = scheduler.create_event((0xa0 * 4)+0x8,event_type::oam_dma_end);
-		scheduler.insert(event);
+		const auto event = scheduler.create_event((0xa0 * 4)+0x8,gameboy_event::oam_dma_end);
+		scheduler.insert(event,false);
 	
 	}
 }
@@ -1269,6 +1273,9 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// update the timer freq (tac in gb docs)
 		case IO_TMC:
 		{
+			// tick off the event while its still under the old settings
+			scheduler.remove(gameboy_event::internal_timer);
+
 			bool is_set = cpu.internal_tima_bit_set();
 
 			bool enabled = cpu.tima_enabled();
@@ -1289,6 +1296,8 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 				cpu.tima_inc();
 			}
 
+			// dosent matter if the timer is not enabled as the internal one allways is 
+			cpu.insert_new_timer_event();
 			break;
 		}		
 
@@ -1296,12 +1305,18 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// should account for this internal behavior
 		case IO_DIV:
 		{
+			// tick off remaining event as its about to get deset
+			scheduler.remove(gameboy_event::internal_timer);
+
 			if(cpu.internal_tima_bit_set() && cpu.tima_enabled())
 			{
 				cpu.tima_inc();
 			}
 
 			cpu.internal_timer = 0;
+
+            // timer reset dump a new event in
+            cpu.insert_new_timer_event();
 			break;
 		}
 			

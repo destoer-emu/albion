@@ -91,6 +91,11 @@ void Memory::load_state(std::ifstream &fp)
     file_read_var(fp,cgb_wram_bank_idx);
     file_read_var(fp,vram_bank);
 
+    if(vram_bank > 1)
+    {
+        throw std::runtime_error("invalid vram bank");
+    }
+
 	// dont dump the memory table as its unecessary and unsafe
 	// same goes for the rom and info struct
 

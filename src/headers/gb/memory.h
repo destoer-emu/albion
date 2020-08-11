@@ -1,10 +1,11 @@
 #pragma once
-#include "forward_def.h"
+#include <gb/forward_def.h>
 #include <destoer-emu/lib.h>
 #include <destoer-emu/debug.h>
 #include <destoer-emu/emulator.h>
-#include "rom.h"
-#include "mem_constants.h"
+#include <gb/scheduler.h>
+#include <gb/rom.h>
+#include <gb/mem_constants.h>
 
 namespace gameboy
 {
@@ -82,7 +83,7 @@ private:
     Cpu &cpu;
     Ppu &ppu;
     Apu &apu;
-    Scheduler &scheduler;
+    GameboyScheduler &scheduler;
     Debug &debug;
 
     void do_dma(uint8_t v) noexcept;

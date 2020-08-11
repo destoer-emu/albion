@@ -16,6 +16,8 @@ void Cpu::check_rst_loop(uint16_t addr, uint8_t op)
 	}
 }
 
+// consider implementing an algorithmic decoder
+// https://gb-archive.github.io/salvage/decoding_gbz80_opcodes/Decoding%20Gamboy%20Z80%20Opcodes.html
 void Cpu::exec_instr()
 {
 
@@ -30,7 +32,7 @@ void Cpu::exec_instr()
 #endif
 
 
-    uint8_t opcode = fetch_opcode();
+    const uint8_t opcode = fetch_opcode();
 
 	// pc fails to increment if halt bug happens
 	if(halt_bug)
@@ -127,7 +129,8 @@ void Cpu::exec_instr()
 			if(is_cgb && is_set(mem.io[IO_SPEED],0))
 			{
 				mem.io[IO_SPEED] = deset_bit(mem.io[IO_SPEED],0); // clear the bit
-				is_double = !is_double;
+				
+				switch_double_speed();
 				
 				if(is_double)
 				{

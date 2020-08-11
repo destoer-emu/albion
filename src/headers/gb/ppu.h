@@ -1,7 +1,7 @@
 #pragma once
 #include "forward_def.h"
 #include <destoer-emu/lib.h>
-
+#include <gb/scheduler.h>
 
 namespace gameboy
 {
@@ -33,6 +33,15 @@ public:
     void init() noexcept;
     ppu_mode get_mode() const noexcept;
 
+    int get_next_ppu_event() const noexcept;
+    void insert_new_ppu_event() noexcept;
+
+    bool using_fifo() const noexcept
+    { 
+        return emulate_pixel_fifo; 
+    }
+
+
     std::vector<uint32_t> screen; // 160 by 144
 
     // inform ppu that registers that can affect
@@ -40,7 +49,6 @@ public:
     void ppu_write() noexcept;
     
 
-    int current_line = 0;
     bool new_vblank = false;
 
     void update_graphics(int cycles) noexcept;
@@ -48,6 +56,11 @@ public:
     void set_scanline_counter(int v) noexcept
     {
         scanline_counter = v;
+    }
+
+    unsigned int get_current_line() const noexcept
+    {
+        return early_line_zero? 0 : current_line;
     }
 
 
@@ -86,7 +99,8 @@ public:
 private:
 
     Cpu &cpu;
-    Memory &mem;    
+    Memory &mem;
+    GameboyScheduler &scheduler;    
 
     enum class pixel_source
     {
@@ -188,6 +202,7 @@ private:
     ppu_mode mode = ppu_mode::oam_search;
 	bool signal = false;
     uint32_t scanline_counter = 0;
+    unsigned int current_line = 0;
 
     static constexpr uint32_t OAM_END = 80;
     static constexpr uint32_t LINE_END = 456;
@@ -205,7 +220,7 @@ private:
     unsigned int cur_sprite = 0; // current sprite
 
 
-	
+    bool early_line_zero = false;
 
 	unsigned int x_cord = 0; // current x cord of the ppu
 	unsigned int tile_cord = 0;

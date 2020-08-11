@@ -108,11 +108,10 @@ endif()
 file(GLOB src_files
 	"src/*.h"
 	"src/*.cpp"
-	"src/common/lib/*.cpp"
-	"src/common/debug/*.cpp"
+	"src/common/destoer-emu/*.cpp"
 	"src/headers/destoer-emu/*.h"
-	"src/common/lib/fmt/*.cpp"
-	"src/common/lib/fmt/*.h"	
+	"src/common/thirdparty/fmt/*.cpp"
+	"src/common/thirdparty/fmt/*.h"	
     "src/gb/*.cpp"	
     "src/gb/cpu/*.cpp"
     "src/gb/apu/*.cpp"
@@ -133,8 +132,7 @@ file(GLOB src_files
 
 # add some includes
 include_directories("src/headers")
-include_directories("src/headers")
-include_directories("src/common/headers" "src/common/lib")
+include_directories("src/common/thirdparty")
 include_directories("src")
 
 
@@ -142,8 +140,8 @@ if(${FRONTEND} STREQUAL "IMGUI")
 	file(GLOB frontend_files
 		"src/frontend/imgui/*.h"
 		"src/frontend/imgui/*.cpp"
-		"src/common/lib/imgui/*.cpp"
-		"src/common/lib/imgui/*.h"	
+		"src/common/thirdparty/imgui/*.cpp"
+		"src/common/thirdparty/imgui/*.h"	
 	)
 endif()
 

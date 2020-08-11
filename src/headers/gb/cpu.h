@@ -2,6 +2,7 @@
 #include <gb/forward_def.h>
 #include <destoer-emu/lib.h>
 #include <destoer-emu/debug.h>
+#include <gb/scheduler.h>
 
 namespace gameboy
 {
@@ -24,6 +25,12 @@ public:
 
     bool get_double() const;
 
+    void insert_new_timer_event() noexcept;
+    int get_next_timer_event() const noexcept;
+
+    // timer
+    void update_timers(int cycles) noexcept;
+
     void init(bool use_bios = false);
     void step();
     void tick_pending_cycles() noexcept;
@@ -42,6 +49,8 @@ public:
     
     uint8_t joypad_state = 0xff;
 
+    // freq bits for internal timer
+    static constexpr int freq_arr[4] = {9,3,5,7};
 
 
     /* register reads for the debugger */
@@ -70,7 +79,7 @@ private:
     Memory &mem;
     Apu &apu;
     Ppu &ppu;
-    Scheduler &scheduler;
+    GameboyScheduler &scheduler;
     Debug &debug;
     Disass &disass;
 
@@ -87,11 +96,6 @@ private:
     instr_state instr_side_effect = instr_state::normal;
     bool interrupt_enable = false;
     bool halt_bug = false;
-
-
-    // timer
-    void update_timers(int cycles) noexcept;
-    
 
     int pending_cycles = 0;
 
@@ -119,6 +123,7 @@ private:
     void handle_instr_effects();
     void handle_halt();
 
+    void switch_double_speed() noexcept;
 
     uint8_t fetch_opcode() noexcept;
 

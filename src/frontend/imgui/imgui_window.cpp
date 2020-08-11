@@ -303,7 +303,6 @@ void ImguiMainWindow::load_state(std::string filename)
         {
             break;
         }
-
     }
 }
 
@@ -379,6 +378,7 @@ void ImguiMainWindow::file_browser()
                 catch(std::exception &ex)
                 {
                     std::cout << ex.what() << "\n";
+                    stop_instance();
                 }
                 start_instance();                
             }

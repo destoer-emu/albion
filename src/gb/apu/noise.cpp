@@ -78,7 +78,7 @@ void Noise::reload_period() noexcept
 
     // create  a new event as the period has changed
     // need to half the ammount if we are in double speed
-    const auto event = scheduler.create_event(period << scheduler.is_double(),event_type::c4_period_elapse);
+    const auto event = scheduler.create_event(period << scheduler.is_double(),gameboy_event::c4_period_elapse);
 
     // dont tick off the old event as 
     // it will use the new value as we have just overwritten 
@@ -88,6 +88,11 @@ void Noise::reload_period() noexcept
     scheduler.insert(event,false);
 
 
+}
+
+int Noise::get_period() const noexcept
+{
+	return period;
 }
 
 }

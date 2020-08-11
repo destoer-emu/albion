@@ -40,9 +40,9 @@ void Cpu::load_state(std::ifstream &fp)
     file_read_var(fp,sp);
     file_read_var(fp,pc);
     file_read_var(fp,instr_side_effect);
-    if(instr_side_effect > instr_state::di || instr_side_effect < instr_state::normal)
+    if(instr_side_effect > instr_state::di)
     {
-        throw std::runtime_error("load_state instr state");
+        throw std::runtime_error("load_state invalid instr state");
     }
     file_read_var(fp,interrupt_enable);
     file_read_var(fp,is_cgb);

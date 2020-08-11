@@ -15,7 +15,7 @@
 namespace gameboy
 {
 
-Ppu::Ppu(GB &gb) : cpu(gb.cpu), mem(gb.mem) 
+Ppu::Ppu(GB &gb) : cpu(gb.cpu), mem(gb.mem),scheduler(gb.scheduler) 
 {
 	screen.resize(SCREEN_WIDTH*SCREEN_HEIGHT);
 	std::fill(screen.begin(),screen.end(),0);	
@@ -75,7 +75,57 @@ void Ppu::init() noexcept
 
 	} 
 
+	insert_new_ppu_event();
+	early_line_zero = false;
 }
+
+// used for queing next ppu event
+// callee will check if ppu is using pixel rendering
+// or is off
+int Ppu::get_next_ppu_event() const noexcept
+{
+	switch(mode)
+	{
+		case ppu_mode::oam_search:
+		{
+			return OAM_END - scanline_counter;
+		}
+
+		case ppu_mode::pixel_transfer:
+		{
+			return pixel_transfer_end - scanline_counter;
+		}
+
+		case ppu_mode::hblank:
+		{
+			return LINE_END - scanline_counter;
+
+		}
+
+		case ppu_mode::vblank:
+		{
+		
+			// 153 ly zero read
+			if(current_line == 153 && scanline_counter < 4)
+			{
+				return 4 - scanline_counter;
+			}
+	
+			return LINE_END - scanline_counter;
+		}
+	}
+	//unreached
+	return 0;
+}
+
+void Ppu::insert_new_ppu_event() noexcept
+{
+	const auto event = scheduler.create_event(get_next_ppu_event() << cpu.get_double(),gameboy_event::ppu);
+	scheduler.insert(event,false); 
+}
+
+
+
 
 
 // cgb
@@ -176,12 +226,11 @@ void Ppu::stat_update() noexcept
 
 	// check coincidence  (lyc == ly)
 	// if lyc is current line set coincidence bit else deset it
-	// line 153 acts as line zero?
-	const int compare_line = current_line == 153? 0 : current_line;
-	bool lyc_hit = mem.io[IO_LYC] == compare_line;
+	// line 153 acts as line zero 4 cycles after line start
+	const bool lyc_hit = mem.io[IO_LYC] == get_current_line();
 	status = lyc_hit? set_bit(status,2) : deset_bit(status,2);
 
-	bool lyc_signal = is_set(status,6) && lyc_hit;
+	const bool lyc_signal = is_set(status,6) && lyc_hit;
 
 
 	// check nterrupts
@@ -219,6 +268,11 @@ void Ppu::turn_lcd_off() noexcept
 	mode = ppu_mode::hblank;
 	mem.io[IO_STAT] = (mem.io[IO_STAT] & ~3) | static_cast<uint8_t>(mode);
 	signal = false;
+
+	// this just gets shut off dont tick it
+	scheduler.remove(gameboy_event::ppu,false);
+	emulate_pixel_fifo = false;
+	early_line_zero = false;
 }
 
 // 1st line after this turns on oam search will fail
@@ -238,6 +292,8 @@ void Ppu::turn_lcd_on() noexcept
 
 	//printf("lyc bit %x\n",is_set(mem.io[IO_STAT],2));
 	//printf("stat on: %x\n",mem.io[IO_STAT]);
+
+	insert_new_ppu_event();
 }
 
 void Ppu::window_disable() noexcept
@@ -266,7 +322,11 @@ void Ppu::switch_hblank() noexcept
 	
 	window_x_line = 0;
 
-	stat_update();	
+	emulate_pixel_fifo = false;
+
+	stat_update();
+	insert_new_ppu_event();	
+
 }
 
 void Ppu::update_graphics(int cycles) noexcept
@@ -320,7 +380,8 @@ void Ppu::update_graphics(int cycles) noexcept
 				{
 					mode = ppu_mode::oam_search;
 				}
-				stat_update();		
+				stat_update();
+				insert_new_ppu_event();		
 			}
 			break;
 		}
@@ -339,10 +400,22 @@ void Ppu::update_graphics(int cycles) noexcept
 					current_line = 0;
 					window_y_line = 0;
 					// enter oam search on the first line :)
-					mode = ppu_mode::oam_search; 				
+					mode = ppu_mode::oam_search; 
+					early_line_zero = false;				
 				}
-				stat_update();		
+				stat_update();
+				insert_new_ppu_event();		
 			}
+
+			// line 153 ly will read out zero after 4 cycles
+			// this affects lyc intrs
+			else if(current_line == 153 && !early_line_zero && scanline_counter >= 4)
+			{
+				early_line_zero = true;
+				stat_update();
+				insert_new_ppu_event();
+			}
+
 			break;
 		}
 		
@@ -365,7 +438,7 @@ void Ppu::update_graphics(int cycles) noexcept
 				// read in the sprites we are about to draw
 				read_sprites();
 				stat_update();
-				
+				insert_new_ppu_event();
 			}
 			break;
 		}
@@ -416,7 +489,9 @@ void Ppu::ppu_write() noexcept
 			reset_fetcher();
 			scx_cnt = mem.io[IO_SCX] & 0x7;
 			emulate_pixel_fifo = true;
-			draw_scanline(scanline_counter-OAM_END);
+			// until we leave mode 3 remove it
+			scheduler.remove(gameboy_event::ppu);
+			//draw_scanline(scanline_counter-OAM_END);
 		}
 	}
 }
@@ -481,13 +556,13 @@ uint32_t Ppu::get_cgb_color(int color_num, int cgb_pal, pixel_source source) noe
 
 
 
-
+// considering taking copies and threading this
 void Ppu::render_scanline() noexcept
 {
 
 
     const bool is_cgb = cpu.get_cgb();
-	auto scx_offset = mem.io[IO_SCX] & 0x7;
+	const auto scx_offset = mem.io[IO_SCX] & 0x7;
 	// is sprite drawing enabled?
 	const bool obj_enabled = is_set(mem.io[IO_LCDC],1);
 	

@@ -44,7 +44,7 @@ public:
     Ppu ppu{*this};
     Apu apu{*this};
     Disass disass{*this};
-    Scheduler scheduler{*this};
+    GameboyScheduler scheduler{*this};
     Debug debug;
 
 

@@ -71,6 +71,8 @@ void Cpu::init(bool use_bios)
     halt_bug = false;
 
 	pending_cycles = 0;
+
+	insert_new_timer_event();
 }
 
 void Cpu::step()
@@ -144,12 +146,95 @@ void Cpu::cycle_tick_t(int cycles) noexcept
 	update_timers(cycles); 
 
 	// handler will check if its enabled
-	//mem.tick_dma(cycles);
-	scheduler.tick(cycles);
+	mem.tick_dma(cycles);
 	
 	// in double speed mode gfx and apu should operate at half
 	ppu.update_graphics(cycles >> is_double); // handle the lcd emulation
 	apu.tick(cycles >> is_double); // advance the apu state	
+
+
+/*
+	scheduler.tick(cycles);
+
+	// if we are using the fifo this needs to be ticked each time
+	if(ppu.using_fifo())
+	{
+		ppu.update_graphics(cycles >> is_double); // handle the lcd emulation
+	}
+*/
+}
+
+void Cpu::switch_double_speed() noexcept
+{
+	puts("double speed");
+	
+	tick_pending_cycles();
+
+	const bool c1_active = scheduler.is_active(gameboy_event::c1_period_elapse);
+	const bool c2_active = scheduler.is_active(gameboy_event::c2_period_elapse);
+	const bool c3_active = scheduler.is_active(gameboy_event::c3_period_elapse);
+	const bool c4_active = scheduler.is_active(gameboy_event::c4_period_elapse);
+	const bool sample_push_active = scheduler.is_active(gameboy_event::sample_push);
+	const bool internal_timer_active = scheduler.is_active(gameboy_event::internal_timer);
+	const bool ppu_active = scheduler.is_active(gameboy_event::ppu);
+
+	static constexpr std::array<gameboy_event,7> double_speed_events = 
+	{
+		gameboy_event::sample_push,gameboy_event::internal_timer,
+		gameboy_event::c1_period_elapse,gameboy_event::c2_period_elapse,
+		gameboy_event::c3_period_elapse,gameboy_event::c4_period_elapse,
+		gameboy_event::ppu
+	};
+
+	// remove all double speed events so they can be ticked off
+	for(const auto &e: double_speed_events)
+	{
+		scheduler.remove(e);
+	}
+
+	is_double = !is_double;
+
+
+	if(c1_active)
+	{
+		const auto event = scheduler.create_event(apu.c1.get_period() << is_double,gameboy_event::c1_period_elapse);
+		scheduler.insert(event,false);
+	}
+
+	if(c2_active)
+	{
+		const auto event = scheduler.create_event(apu.c2.get_period() << is_double,gameboy_event::c2_period_elapse);
+		scheduler.insert(event,false);
+	}
+
+	if(c3_active)
+	{
+		const auto event = scheduler.create_event(apu.c3.get_period() << is_double,gameboy_event::c3_period_elapse);
+		scheduler.insert(event,false);
+	}
+
+	if(c4_active)
+	{
+		const auto event = scheduler.create_event(apu.c4.get_period() << is_double,gameboy_event::c4_period_elapse);
+		scheduler.insert(event,false);
+	}
+
+	if(sample_push_active)
+	{
+		apu.insert_new_sample_event();
+	}
+
+	if(internal_timer_active)
+	{
+		insert_new_timer_event();
+	}
+
+	if(ppu_active)
+	{
+		ppu.insert_new_ppu_event();
+	}
+
+
 }
 
 void Cpu::tima_inc() noexcept
@@ -169,14 +254,48 @@ void Cpu::tima_inc() noexcept
 
 bool Cpu::internal_tima_bit_set() const noexcept
 {
-    // freq bits for internal timer
-    static constexpr int freq_arr[4] = {9,3,5,7};
 
 	const uint8_t freq = mem.io[IO_TMC] & 0x3;
-
 	const int bit = freq_arr[freq];
 
 	return is_set(internal_timer,bit);
+}
+
+int Cpu::get_next_timer_event() const noexcept
+{
+	// find what happens next
+	const uint8_t freq = mem.io[IO_TMC] & 0x3;
+	const int timer_bit = freq_arr[freq];
+
+	const int sequencer_bit = is_double? 13 : 12;
+
+	
+	const int sequencer_lim = 1 << sequencer_bit;
+	int seq_cycles = sequencer_lim - (internal_timer & (sequencer_lim - 1));
+
+	// falling edge so if its not set we need to wait
+	// for another one to have it set again
+	if(!is_set(internal_timer,sequencer_bit))
+	{
+		seq_cycles += sequencer_lim;	
+	}
+
+	// if the tima is inactive then the seq event is next
+	if(!tima_enabled())
+	{
+		return seq_cycles;
+	}
+
+	const int timer_lim = 1 << timer_bit;
+	int timer_cycles = timer_lim - (internal_timer & (timer_lim - 1));
+
+	if(!is_set(internal_timer,timer_bit))
+	{
+		timer_cycles += timer_lim;
+	}
+
+
+	return std::min(seq_cycles,timer_cycles);
 }
 
 bool Cpu::tima_enabled() const noexcept
@@ -184,51 +303,83 @@ bool Cpu::tima_enabled() const noexcept
 	return is_set(mem.io[IO_TMC],2);	
 }
 
+// insert a new event and dont tick of the old one as its not there
+void Cpu::insert_new_timer_event() noexcept
+{
+	const auto timer_event = scheduler.create_event(get_next_timer_event(),gameboy_event::internal_timer);
+	scheduler.insert(timer_event,false); 
+}
+
 void Cpu::update_timers(int cycles) noexcept
 {
-	
-	const int sound_bit = is_double? 13 : 12;
 
-	const bool sound_bit_set = is_set(internal_timer,sound_bit);
+	// internal timer actions occur on a falling edge
+	// however what this means here in practice is that
+	// the next bit over from one that falls gets a carry
+	// and therefore is no longer its old value
+	// we take advantage of this to make calculating event times easier
+	// in our memory handlers we are still using the standard bits
+
+
+	// note bit is + 1 as we are checking the next one over has changed
+	const uint8_t freq = mem.io[IO_TMC] & 0x3;
+	const int timer_bit = freq_arr[freq]+1;
+
+
+	const int sound_bit = (is_double? 13 : 12) + 1;
+
+	const bool sound_bit_old = is_set(internal_timer,sound_bit);
 	
 
-	// if our bit is deset and it was before (falling edge)
+	// if a falling edge has occured
 	// and the timer is enabled of course
 	if(tima_enabled())
 	{
-		bool bit_set = internal_tima_bit_set();
+		const bool timer_bit_old = is_set(internal_timer,timer_bit);
 
 		internal_timer += cycles;
 
-		if(!internal_tima_bit_set() && bit_set)
+		const bool timer_bit_new = is_set(internal_timer,timer_bit);
+
+		bool event_trigger = false;
+
+		if(timer_bit_new != timer_bit_old)
 		{
 			tima_inc();
+			event_trigger = true;
 		}
-        
+		
 		// we repeat this here because we have to add the cycles
 		// at the proper time for the falling edge det to work
 		// and we dont want to waste time handling the falling edge
 		// for the timer when its off
-		if(!is_set(internal_timer,sound_bit) && sound_bit_set)
+		if(is_set(internal_timer,sound_bit) != sound_bit_old)
 		{
 			apu.advance_sequencer(); // advance the sequencer
+			event_trigger = true;
 		}
-        
+
+		if(event_trigger)
+		{
+			insert_new_timer_event();
+		}
 	}
 
-    
+	
 	// falling edge for sound clk which allways ticks
 	// done when timer is off 
 	// (cycles should only ever be added once per function call)
 	else 
 	{
 		internal_timer += cycles;
-		if(!is_set(internal_timer,sound_bit) && sound_bit_set)
+		if(is_set(internal_timer,sound_bit) != sound_bit_old)
 		{
 			apu.advance_sequencer(); // advance the sequencer
+			insert_new_timer_event();
 		}
-	} 
-       
+	}
+
+
 }
 
 
@@ -259,40 +410,35 @@ void Cpu::handle_halt()
 		throw std::runtime_error("halt infinite loop");
 	}
 
-	
-	while( ( req & enabled & 0x1f) == 0) 
+	// if in mid scanline mode tick till done
+	// else just service events
+/*
+	while(ppu.using_fifo())
 	{
-		cycle_tick(1);		
+		cycle_tick(1);
+	}
+
+	req = mem.io[IO_IF];
+	while((req & enabled & 0x1f) == 0)
+	{
+		// if there are no events 
+		// we are stuck
+		if(scheduler.size() == 0)
+		{
+			throw std::runtime_error("halt infinite loop");
+		}
+
+		scheduler.skip_to_event();
 		req = mem.io[IO_IF];
 	}
+*/
 
-	/*
-	// ideally we should just figure out how many cycles to the next interrupt
-
-	// halt is immediatly over we are done
-	if(req & enabled & 0x1f)
+	// old impl
+	while((req & enabled & 0x1f) == 0)
 	{
-		return;
+		cycle_tick(1);
+		req = mem.io[IO_IF];
 	}
-
-	int cycles_to_event;
-
-	// check if timer interrupt enabled (and the timer is enabled) if it is
-	// determine when it will fire
-	if(is_set(mem.io[IO_TMC],2) && is_set(enabled,2))
-	{
-
-	}
-
-	// determine when next stat inerrupt will fire
-	// because of the irq stat glitches if its on we have to figure out when it first goes off
-	// and then re run the check additonally if our target ends in hblank we need to step it manually
-	// as pixel transfer -> hblank takes a variable number of cycles
-	// (allthough try to come up with a method to actually calculate it based on number of sprites scx etc)
-
-
-	// whichever interrupt hits first tick until it :)
-	*/
 
 }
 

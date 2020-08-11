@@ -92,11 +92,17 @@ void GB::save_state(std::string filename)
 try
 {
 	std::ofstream fp(filename,std::ios::binary);
+	if(!fp)
+	{
+		throw std::runtime_error("could not open file");
+	}
+
 
 	cpu.save_state(fp);
 	mem.save_state(fp);
 	ppu.save_state(fp);
 	apu.save_state(fp);
+	scheduler.save_state(fp);
 
 	fp.close();
 }
@@ -115,11 +121,16 @@ void GB::load_state(std::string filename)
 try
 {	
 	std::ifstream fp(filename,std::ios::binary);
+	if(!fp)
+	{
+		throw std::runtime_error("could not open file");
+	}
 
 	cpu.load_state(fp);
 	mem.load_state(fp);
 	ppu.load_state(fp);
 	apu.load_state(fp);
+	scheduler.load_state(fp);
 
 	fp.close();
 }
@@ -127,6 +138,8 @@ try
 
 catch(std::exception &ex)
 {
+	// put system back into a safe state
+	reset("",false,false);
 	std::string err = fmt::format("failed to load state: {}",ex.what());
 	debug.write_logger(err);
 	throw std::runtime_error(err);
