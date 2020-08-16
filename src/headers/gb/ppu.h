@@ -51,7 +51,7 @@ public:
 
     bool new_vblank = false;
 
-    void update_graphics(int cycles) noexcept;
+    void update_graphics(uint32_t cycles) noexcept;
 
     void set_scanline_counter(int v) noexcept
     {
@@ -195,13 +195,13 @@ private:
 
 
     // scanline drawing (used when no pixel transfer writes happen)
-    void draw_scanline(int cycles) noexcept;
+    void draw_scanline(uint32_t cycles) noexcept;
 
 
     // main ppu state
     ppu_mode mode = ppu_mode::oam_search;
 	bool signal = false;
-    uint32_t scanline_counter = 0;
+    int32_t scanline_counter = 0;
     unsigned int current_line = 0;
 
     static constexpr uint32_t OAM_END = 80;

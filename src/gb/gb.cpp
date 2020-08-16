@@ -14,10 +14,10 @@ void GB::reset(std::string rom_name, bool with_rom, bool use_bios)
 {
 	scheduler.init();
     mem.init(rom_name,with_rom,use_bios);
+	cpu.init(use_bios);
     ppu.init();
     disass.init();
 	apu.init();
-	cpu.init(use_bios);
 	throttle_emu = true;
 	if(use_bios)
 	{

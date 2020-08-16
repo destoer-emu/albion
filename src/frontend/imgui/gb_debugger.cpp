@@ -366,7 +366,7 @@ void ImguiMainWindow::gameboy_draw_disassembly_child()
     ImGui::EndChild();
 }
 
-
+// this is causing crashes?
 void ImguiMainWindow::gameboy_draw_memory()
 {
     static uint32_t addr = 0x0;
@@ -543,9 +543,9 @@ void ImguiMainWindow::gameboy_draw_breakpoints()
     
         std::string break_str = fmt::format(
             "{:04x}: {}{}{} {} {:x} {}",b.addr,
-                b.r? "r" : "",
-                b.w? "w" : "",
-                b.x? "x" : "",
+                b.break_setting & static_cast<int>(break_type::read)? "r" : "",
+                b.break_setting & static_cast<int>(break_type::write)? "w" : "",
+                b.break_setting & static_cast<int>(break_type::execute)? "x" : "",
                 b.break_enabled? "enabled" : "disabled",
                 b.value,
                 b.value_enabled? "enabled" : "disabled"

@@ -78,6 +78,7 @@ public:
 	void freq_load_state(std::ifstream &fp);
 	void freq_trigger() noexcept;
 	int get_period() const noexcept;
+	void insert_new_period_event() noexcept;
 protected:
 	int freq = 0;
 	int period = 0;
@@ -132,7 +133,7 @@ class Square : public Channel, public FreqReg, public Envelope
 public:
 	Square(GB &gb,int c);
 	void init() noexcept;
-	void tick_period(int cycles) noexcept;
+	void tick_period(uint32_t cycles) noexcept;
 	void write_cur_duty(uint8_t v) noexcept;
 	void duty_trigger() noexcept;
 	void save_state(std::ofstream &fp);
@@ -178,7 +179,7 @@ public:
 	void wave_trigger() noexcept;
 	void vol_trigger() noexcept;
 	void write_vol(uint8_t v) noexcept;
-	void tick_period(int cycles) noexcept;
+	void tick_period(uint32_t cycles) noexcept;
 	void save_state(std::ofstream &fp);
 	void load_state(std::ifstream &fp);
 private:
@@ -194,8 +195,9 @@ public:
 
 
 	void init() noexcept;
-	void tick_period(int cycles) noexcept;
+	void tick_period(uint32_t cycles) noexcept;
 	void reload_period() noexcept;
+	void insert_new_period_event() noexcept;
 	int get_period() const noexcept;
 	void noise_write(uint8_t v) noexcept;
 	void noise_trigger() noexcept;
@@ -222,11 +224,11 @@ public:
 
 	void insert_new_sample_event() noexcept;
 
-	void push_samples(int cycles) noexcept;
+	void push_samples(uint32_t cycles) noexcept;
 
 	void init() noexcept;
 
-	void tick(int cycles) noexcept;
+	void tick(uint32_t cycles) noexcept;
 
 	void disable_sound() noexcept;
 	void enable_sound() noexcept;

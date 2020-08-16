@@ -25,7 +25,7 @@ public:
 
     bool is_lcd_enabled() const noexcept;
 
-    void tick_dma(int cycles) noexcept;
+    void tick_dma(uint32_t cycles) noexcept;
 
     // public access functions
     uint8_t read_mem(uint16_t addr) noexcept;

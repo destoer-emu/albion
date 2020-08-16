@@ -46,6 +46,7 @@ void Ppu::init() noexcept
     scanline_counter = 0;
     current_line = 0;
     new_vblank = false;
+	early_line_zero = false;
 
 	reset_fetcher();
 
@@ -76,14 +77,17 @@ void Ppu::init() noexcept
 	} 
 
 	insert_new_ppu_event();
-	early_line_zero = false;
 }
 
 // used for queing next ppu event
 // callee will check if ppu is using pixel rendering
 // or is off
+
+// ppu scheduler causes bugs under pokemon yellow,
+// prehistorik man and alone in the dark
 int Ppu::get_next_ppu_event() const noexcept
 {
+
 	switch(mode)
 	{
 		case ppu_mode::oam_search:
@@ -99,7 +103,6 @@ int Ppu::get_next_ppu_event() const noexcept
 		case ppu_mode::hblank:
 		{
 			return LINE_END - scanline_counter;
-
 		}
 
 		case ppu_mode::vblank:
@@ -120,7 +123,16 @@ int Ppu::get_next_ppu_event() const noexcept
 
 void Ppu::insert_new_ppu_event() noexcept
 {
-	const auto event = scheduler.create_event(get_next_ppu_event() << cpu.get_double(),gameboy_event::ppu);
+	const auto cycles = get_next_ppu_event();
+/*
+	printf("event insertion %d:%d:%d:%d\n",static_cast<int>(mode),scanline_counter,current_line,cycles);
+	if(cycles < 0)
+	{
+		printf("negative cycles %d:%d:%d\n",static_cast<int>(mode),scanline_counter,current_line);
+		exit(1);
+	}
+*/
+	const auto event = scheduler.create_event(cycles << cpu.get_double(),gameboy_event::ppu);
 	scheduler.insert(event,false); 
 }
 
@@ -261,9 +273,6 @@ void Ppu::stat_update() noexcept
 
 void Ppu::turn_lcd_off() noexcept
 {
-	scanline_counter = 0; // counter is reset?
-	current_line = 0; // reset ly
-
 	// i think the behavior is this but im honestly not sure
 	mode = ppu_mode::hblank;
 	mem.io[IO_STAT] = (mem.io[IO_STAT] & ~3) | static_cast<uint8_t>(mode);
@@ -273,6 +282,10 @@ void Ppu::turn_lcd_off() noexcept
 	scheduler.remove(gameboy_event::ppu,false);
 	emulate_pixel_fifo = false;
 	early_line_zero = false;
+
+
+	scanline_counter = 0; // counter is reset?
+	current_line = 0; // reset ly
 }
 
 // 1st line after this turns on oam search will fail
@@ -329,14 +342,16 @@ void Ppu::switch_hblank() noexcept
 
 }
 
-void Ppu::update_graphics(int cycles) noexcept
+void Ppu::update_graphics(uint32_t cycles) noexcept
 {
 
 	// lcd is off nothing to do
 	if(!mem.is_lcd_enabled()) // <-- should re enable on a delay?
 	{
-		return; // can exit if ppu is disabled nothing else to do
+		return; 
 	}
+
+	//printf("cycles: %d\n",cycles);
 
 
 	//-----------------------
@@ -354,6 +369,7 @@ void Ppu::update_graphics(int cycles) noexcept
 		{
 			if(scanline_counter >= LINE_END)
 			{
+				//printf("hblank ended at %d:%d\n",scanline_counter,current_line);
 				// reset the counter extra cycles should tick over
 				scanline_counter -= LINE_END;
 
@@ -366,13 +382,10 @@ void Ppu::update_graphics(int cycles) noexcept
 					cpu.request_interrupt(0); // vblank interrupt
 					
 					// edge case oam stat interrupt is triggered here if enabled
-					if(is_set(status,5))
+					if(is_set(status,5) && !signal)
 					{
-						if(signal == false)
-						{
-							cpu.request_interrupt(1);
-							signal = true;
-						}	
+						cpu.request_interrupt(1);
+						signal = true;
 					}				
 				}
 				
@@ -391,6 +404,7 @@ void Ppu::update_graphics(int cycles) noexcept
 		{
 			if(scanline_counter >= LINE_END)
 			{
+				//printf("vblank line ended at %d:%d\n",scanline_counter,current_line);
 				scanline_counter -= LINE_END;
 				current_line++;
 				
@@ -459,7 +473,7 @@ void Ppu::update_graphics(int cycles) noexcept
 			}
 
 
-/*		
+/*	
 			// testing just fetcher
 			draw_scanline(cycles);
 */
@@ -471,7 +485,7 @@ void Ppu::update_graphics(int cycles) noexcept
 				render_scanline();
 				switch_hblank();
 			}
-*/
+*/			
 			break;
 		}	
 	}
@@ -498,8 +512,21 @@ void Ppu::ppu_write() noexcept
 
 uint32_t Ppu::calc_pixel_transfer_end() noexcept
 {
-	// does not handle the sprite, window delays
-	return 252 + mem.io[IO_SCX] % 8;
+	// does not handle the sprite delay
+	uint32_t cycles = 252; // base
+	cycles += mem.io[IO_SCX] % 8; // scx delay
+
+	// is the window drawn on this line?
+	const bool window_rendered = mem.io[IO_WX] <= 166 && 
+		mem.io[IO_WY] <= current_line && is_set(mem.io[IO_LCDC],5);
+
+	// verify window delay
+	if(window_rendered && mem.io[IO_SCX] != 0)
+	{
+		cycles += 16;
+	}
+
+	return cycles;
 }
 
 uint32_t Ppu::get_dmg_color(int color_num, pixel_source source) noexcept
@@ -766,7 +793,7 @@ void Ppu::tick_fetcher() noexcept
 }	
 	
 
-void Ppu::draw_scanline(int cycles) noexcept 
+void Ppu::draw_scanline(uint32_t cycles) noexcept 
 {
 	// is sprite drawing enabled?
 	const bool obj_enabled = is_set(mem.io[IO_LCDC],1);

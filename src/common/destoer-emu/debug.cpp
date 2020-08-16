@@ -67,16 +67,31 @@ void Debug::set_breakpoint(uint32_t addr,bool r, bool w, bool x, bool value_enab
 }
 
 
-void Breakpoint::set(uint32_t Addr, bool R, bool W, bool X, 
+void Breakpoint::set(uint32_t Addr, bool r, bool w, bool x, 
     bool Value_enabled,uint32_t Value,bool Break_enabled)
 {
     value = Value;
     addr = Addr;
     break_enabled = Break_enabled;
     value_enabled = Value_enabled;
-    r = R;
-    w = W;
-    x = X;
+
+    break_setting = 0;
+
+    if(r)
+    {
+        break_setting |= static_cast<int>(break_type::read);
+    }
+
+    if(w)
+    {
+        break_setting |= static_cast<int>(break_type::write);
+    }
+
+    if(x)
+    {
+        break_setting |= static_cast<int>(break_type::execute);
+    }
+
 }
 
 void Breakpoint::disable()
@@ -101,34 +116,9 @@ bool Breakpoint::is_hit(uint32_t Addr,break_type type,uint32_t Value)
 
     // if the type the breakpoint has been triggered for
     // is not being watched then we aernt interested
-    switch(type)
+    if(!(static_cast<int>(type) & break_setting) == 0)
     {
-        case break_type::read:
-        {
-            if(!r)
-            {
-                return false;
-            }
-            break;
-        }
-
-        case break_type::write:
-        {
-            if(!w)
-            {
-                return false;
-            }
-            break;
-        }
-
-        case break_type::execute:
-        {
-            if(!x)
-            { 
-                return false;
-            }
-            break;
-        }
+        return false;
     }
 
     // in many cases this will be checked be callee

@@ -4,7 +4,10 @@
 #ifdef DEBUG
 enum class break_type
 {
-    write, read, execute
+    
+    write = 1,
+    read = 2,
+    execute = 3
 };
 
 
@@ -24,9 +27,7 @@ struct Breakpoint
     bool value_enabled = false;
     bool break_enabled = false;
     uint32_t addr = 0xdeadbeef;
-    bool x = false; // execute enable
-    bool r = false; // read enable
-    bool w = false; // write enabled
+    int break_setting;
 };
 
 

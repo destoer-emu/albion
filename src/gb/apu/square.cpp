@@ -22,7 +22,7 @@ void Square::write_cur_duty(uint8_t v) noexcept
     cur_duty = (v >> 6) & 0x3;    
 }
 
-void Square::tick_period(int cycles) noexcept
+void Square::tick_period(uint32_t cycles) noexcept
 {
 	period -= cycles;
 

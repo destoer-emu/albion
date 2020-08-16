@@ -26,7 +26,7 @@ void Wave::wave_trigger() noexcept
 	reset_duty();
 }
 
-void Wave::tick_period(int cycles) noexcept
+void Wave::tick_period(uint32_t cycles) noexcept
 {
 	// handle wave ticking (square 3)	
 	period -= cycles;

@@ -21,7 +21,7 @@ void Noise::init() noexcept
 	period = 0;
 }
 
-void Noise::tick_period(int cycles) noexcept
+void Noise::tick_period(uint32_t cycles) noexcept
 {
 	period -= cycles; // polynomial counter
 
@@ -76,6 +76,11 @@ void Noise::reload_period() noexcept
 	// "The noise channel's frequency timer period is set by a base divisor shifted left some number of bits. "
 	period = divisors[divisor_idx] << clock_shift;
 
+	insert_new_period_event();
+}
+
+void Noise::insert_new_period_event() noexcept
+{
     // create  a new event as the period has changed
     // need to half the ammount if we are in double speed
     const auto event = scheduler.create_event(period << scheduler.is_double(),gameboy_event::c4_period_elapse);
@@ -86,8 +91,6 @@ void Noise::reload_period() noexcept
     // this is not an event we are dropping and expecting to start later 
 
     scheduler.insert(event,false);
-
-
 }
 
 int Noise::get_period() const noexcept

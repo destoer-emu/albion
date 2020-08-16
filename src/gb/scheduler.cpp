@@ -17,26 +17,24 @@ GameboyScheduler::GameboyScheduler(GB &gb) : cpu(gb.cpu), ppu(gb.ppu),
     init();
 }
 
-// option to align cycles for things like waitloop dec may be required
+// option to align cycles for things like waitloop may be required
 void GameboyScheduler::skip_to_event()
 {
-    timestamp = event_list.peek().end;
+    auto cycles = event_list.peek().end - timestamp;
 
     // make sure we are on a 4 cycle boundary
-    timestamp = (timestamp + 3) & ~0x3; 
+    cycles = (cycles + 3) & ~0x3; 
 
-    tick(0);
+    cpu.cycle_tick_t(cycles);
 } 
 
 
 // better way to handle this? std::function is slow
-void GameboyScheduler::service_event(const EventNode<gameboy_event> & node)
+void GameboyScheduler::service_event(const EventNode<gameboy_event> &node)
 {
-    return;
-
     // if its double speed we need to push half the cycles
     // through the function even though we delay for double
-    const auto cycles_to_tick = timestamp - node.current;
+    const auto cycles_to_tick = timestamp - node.start;
 
     switch(node.type)
     {
@@ -84,6 +82,7 @@ void GameboyScheduler::service_event(const EventNode<gameboy_event> & node)
 
         case gameboy_event::ppu:
         {
+            //printf("service: %d:%d:%d\n",node.start,node.end,timestamp);
             ppu.update_graphics(cycles_to_tick >> is_double());
             break;
         }

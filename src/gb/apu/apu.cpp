@@ -90,18 +90,18 @@ void Apu::clock_envelopes() noexcept
     c4.clock_envelope();
 }
 
-void Apu::tick(int cycles) noexcept
+void Apu::tick(uint32_t cycles) noexcept
 {
     if(!enabled())
     {
         return;
     }
 
-    // handled by scheduler
     c1.tick_period(cycles);
     c2.tick_period(cycles);
     c3.tick_period(cycles);
     c4.tick_period(cycles);
+
     push_samples(cycles);
 }
 
@@ -156,16 +156,12 @@ void Apu::enable_sound() noexcept
     c3.reset_duty();
 
 
-    // renable our events in the scheduler
-    const auto event_c1 = scheduler.create_event(c1.get_period(),gameboy_event::c1_period_elapse);
-    const auto event_c2 = scheduler.create_event(c2.get_period(),gameboy_event::c2_period_elapse);
-    const auto event_c3 = scheduler.create_event(c3.get_period(),gameboy_event::c3_period_elapse);
-    const auto event_c4 = scheduler.create_event(c4.get_period(),gameboy_event::c4_period_elapse);
 
-    scheduler.insert(event_c1);
-    scheduler.insert(event_c2);
-    scheduler.insert(event_c3);
-    scheduler.insert(event_c4); 
+    // renable our events in the scheduler
+    c1.insert_new_period_event();
+    c2.insert_new_period_event();
+    c3.insert_new_period_event();
+    c4.insert_new_period_event();
 }
 
 void Apu::reset_sequencer() noexcept
@@ -196,17 +192,14 @@ void Apu::insert_new_sample_event() noexcept
     scheduler.insert(event,false);
 }
 
-void Apu::push_samples(int cycles) noexcept
+void Apu::push_samples(uint32_t cycles) noexcept
 {
 	// handle audio output 
     down_sample_cnt -= cycles;
 	if(down_sample_cnt <= 0)
 	{
-		// any cycles that "spill over" should get added
-        // down_sample_cnt is negative if this happens
-		down_sample_cnt = down_sample_lim + down_sample_cnt;
+		down_sample_cnt = down_sample_lim;
         insert_new_sample_event();
-
 
 		if(!playback.is_playing()) 
 		{ 

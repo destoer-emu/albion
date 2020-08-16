@@ -468,10 +468,10 @@ void ImguiMainWindow::gba_draw_breakpoints()
         Breakpoint b = it.second;    
     
         std::string break_str = fmt::format(
-            "{:08x}: {}{}{} {} {:x} {}",b.addr,
-                b.r? "r" : "",
-                b.w? "w" : "",
-                b.x? "x" : "",
+            "{:04x}: {}{}{} {} {:x} {}",b.addr,
+                b.break_setting & static_cast<int>(break_type::read)? "r" : "",
+                b.break_setting & static_cast<int>(break_type::write)? "w" : "",
+                b.break_setting & static_cast<int>(break_type::execute)? "x" : "",
                 b.break_enabled? "enabled" : "disabled",
                 b.value,
                 b.value_enabled? "enabled" : "disabled"

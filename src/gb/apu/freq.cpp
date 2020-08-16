@@ -39,9 +39,15 @@ void FreqReg::freq_reload_period() noexcept
 {
     period = (2048 - freq)*period_scale;
 
+
+    insert_new_period_event();
+}
+
+void FreqReg::insert_new_period_event() noexcept
+{
     // create  a new event as the period has changed
-    // need to half to double the ammount in double speed
-    // so it still operates as if it was at 4mhz
+    // to double the ammount in double speed
+    // so it still operates as if the cpu was at 4mhz
     const auto event = scheduler.create_event(period << scheduler.is_double(),channel_event);
 
     // dont tick off the old event as 
@@ -50,7 +56,6 @@ void FreqReg::freq_reload_period() noexcept
     // this is not an event we are dropping and expecting to start later 
 
     scheduler.insert(event,false);
-
 }
 
 int FreqReg::get_duty_idx() const noexcept

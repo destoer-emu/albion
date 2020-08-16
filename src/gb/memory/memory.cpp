@@ -1202,7 +1202,7 @@ void Memory::do_dma(uint8_t v) noexcept
 }
 
 // this needs work
-void Memory::tick_dma(int cycles) noexcept
+void Memory::tick_dma(uint32_t cycles) noexcept
 {
     // not active do nothing!
     if(!oam_dma_active) 
@@ -1971,14 +1971,14 @@ void Memory::do_gdma() noexcept
 	// hdma5 stores how many 16 byte incremnts we have to transfer
 	const int len = ((io[IO_HDMA5] & 0x7f) + 1) * 0x10;
 
-	
-	// find out how many cycles we tick but for now just copy the whole damb thing 
-	for(int i = 0; i < len; i++)
+	// 8 t cycles to xfer one 0x10 block
+
+	for(int i = 0; i < len; i += 2)
 	{
 		write_mem(dest+i,read_mem(source+i));
+		write_mem(dest+i+1,read_mem(source+i+1));
+		cpu.cycle_tick_t(1);
 	}
-
-	cpu.cycle_tick(8*(len / 0x10)); // 8 M cycles for each 10 byte block
 
 	io[IO_HDMA5] = 0xff; // terminate the transfer
 }
@@ -2003,14 +2003,15 @@ void Memory::do_hdma() noexcept
 	}
 	*/
 
+	// 8 t cycles to xfer one 0x10 block
+
 	// find out how many cycles we tick but for now just copy the whole damb thing 						
-	for(int i = 0; i < 0x10; i++)
+	for(int i = 0; i < 0x10; i += 2)
 	{
 		write_mem(dest+i,read_mem(source+i));
+		write_mem(dest+i+1,read_mem(source+i+1));
+		cpu.cycle_tick_t(1);
 	}
-
-	// 8 M cycles for each 0x10 block
-	cpu.cycle_tick(8);
 	
 	// hdma is over 
 	if(--hdma_len <= 0)

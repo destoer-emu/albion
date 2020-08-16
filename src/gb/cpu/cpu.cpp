@@ -113,7 +113,7 @@ uint8_t Cpu::fetch_opcode() noexcept
 // cycles that dont need to be ticked yet
 // as there is no memory access involed
 // takes t cycles
-void Cpu::cycle_delay(int cycles) noexcept
+void Cpu::cycle_delay(uint32_t cycles) noexcept
 {
 	pending_cycles += cycles;
 }
@@ -128,20 +128,20 @@ void Cpu::tick_pending_cycles() noexcept
 
 
 // m cycle tick
-void Cpu::cycle_tick(int cycles) noexcept
+void Cpu::cycle_tick(uint32_t cycles) noexcept
 {
 	//  convert to t cycles and tick
 	cycle_tick_t(cycles * 4);
 }
 
 // t cycle tick
-void Cpu::cycle_tick_t(int cycles) noexcept
+void Cpu::cycle_tick_t(uint32_t cycles) noexcept
 {
 	// tick off any cycles that are pending
 	// from instr cycles that dont do memory accesses
 	cycles += pending_cycles;
 	pending_cycles = 0;
-
+/*
 	// timers act at constant speed
 	update_timers(cycles); 
 
@@ -149,11 +149,10 @@ void Cpu::cycle_tick_t(int cycles) noexcept
 	mem.tick_dma(cycles);
 	
 	// in double speed mode gfx and apu should operate at half
-	ppu.update_graphics(cycles >> is_double); // handle the lcd emulation
+	//ppu.update_graphics(cycles >> is_double); // handle the lcd emulation
+
 	apu.tick(cycles >> is_double); // advance the apu state	
-
-
-/*
+*/
 	scheduler.tick(cycles);
 
 	// if we are using the fifo this needs to be ticked each time
@@ -161,7 +160,7 @@ void Cpu::cycle_tick_t(int cycles) noexcept
 	{
 		ppu.update_graphics(cycles >> is_double); // handle the lcd emulation
 	}
-*/
+
 }
 
 void Cpu::switch_double_speed() noexcept
@@ -197,26 +196,22 @@ void Cpu::switch_double_speed() noexcept
 
 	if(c1_active)
 	{
-		const auto event = scheduler.create_event(apu.c1.get_period() << is_double,gameboy_event::c1_period_elapse);
-		scheduler.insert(event,false);
+		apu.c1.insert_new_period_event();
 	}
 
 	if(c2_active)
 	{
-		const auto event = scheduler.create_event(apu.c2.get_period() << is_double,gameboy_event::c2_period_elapse);
-		scheduler.insert(event,false);
+		apu.c2.insert_new_period_event();
 	}
 
 	if(c3_active)
 	{
-		const auto event = scheduler.create_event(apu.c3.get_period() << is_double,gameboy_event::c3_period_elapse);
-		scheduler.insert(event,false);
+		apu.c3.insert_new_period_event();
 	}
 
 	if(c4_active)
 	{
-		const auto event = scheduler.create_event(apu.c4.get_period() << is_double,gameboy_event::c4_period_elapse);
-		scheduler.insert(event,false);
+		apu.c4.insert_new_period_event();
 	}
 
 	if(sample_push_active)
@@ -310,7 +305,7 @@ void Cpu::insert_new_timer_event() noexcept
 	scheduler.insert(timer_event,false); 
 }
 
-void Cpu::update_timers(int cycles) noexcept
+void Cpu::update_timers(uint32_t cycles) noexcept
 {
 
 	// internal timer actions occur on a falling edge
@@ -341,12 +336,9 @@ void Cpu::update_timers(int cycles) noexcept
 
 		const bool timer_bit_new = is_set(internal_timer,timer_bit);
 
-		bool event_trigger = false;
-
 		if(timer_bit_new != timer_bit_old)
 		{
 			tima_inc();
-			event_trigger = true;
 		}
 		
 		// we repeat this here because we have to add the cycles
@@ -356,12 +348,6 @@ void Cpu::update_timers(int cycles) noexcept
 		if(is_set(internal_timer,sound_bit) != sound_bit_old)
 		{
 			apu.advance_sequencer(); // advance the sequencer
-			event_trigger = true;
-		}
-
-		if(event_trigger)
-		{
-			insert_new_timer_event();
 		}
 	}
 
@@ -375,11 +361,10 @@ void Cpu::update_timers(int cycles) noexcept
 		if(is_set(internal_timer,sound_bit) != sound_bit_old)
 		{
 			apu.advance_sequencer(); // advance the sequencer
-			insert_new_timer_event();
 		}
 	}
 
-
+	insert_new_timer_event();
 }
 
 
@@ -412,7 +397,7 @@ void Cpu::handle_halt()
 
 	// if in mid scanline mode tick till done
 	// else just service events
-/*
+
 	while(ppu.using_fifo())
 	{
 		cycle_tick(1);
@@ -431,15 +416,15 @@ void Cpu::handle_halt()
 		scheduler.skip_to_event();
 		req = mem.io[IO_IF];
 	}
-*/
 
+/*
 	// old impl
 	while((req & enabled & 0x1f) == 0)
 	{
 		cycle_tick(1);
 		req = mem.io[IO_IF];
 	}
-
+*/
 }
 
 // handle the side affects of instructions

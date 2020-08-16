@@ -29,14 +29,14 @@ public:
     int get_next_timer_event() const noexcept;
 
     // timer
-    void update_timers(int cycles) noexcept;
+    void update_timers(uint32_t cycles) noexcept;
 
     void init(bool use_bios = false);
     void step();
     void tick_pending_cycles() noexcept;
-    void cycle_tick(int cycles) noexcept; 
-    void cycle_tick_t(int cycles) noexcept;
-    void cycle_delay(int cycles) noexcept;
+    void cycle_tick(uint32_t cycles) noexcept; 
+    void cycle_tick_t(uint32_t cycles) noexcept;
+    void cycle_delay(uint32_t cycles) noexcept;
     void tima_inc() noexcept;
     bool internal_tima_bit_set() const noexcept;
     bool tima_enabled() const noexcept;
@@ -97,7 +97,7 @@ private:
     bool interrupt_enable = false;
     bool halt_bug = false;
 
-    int pending_cycles = 0;
+    uint32_t pending_cycles = 0;
 
     // next opcode
     uint8_t opcode = 0;

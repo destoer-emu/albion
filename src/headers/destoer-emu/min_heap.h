@@ -8,15 +8,15 @@ struct EventNode
 {
     EventNode() {}
 
-    EventNode(uint64_t c, uint64_t e, event_type t)
+    EventNode(uint64_t s, uint64_t e, event_type t)
     {
-        current = c;
+        start = s;
         end = e;
         type = t;
     }
 
     // when event was added
-    uint64_t current;
+    uint64_t start;
 
     // when it will trigger
     uint64_t end;
@@ -76,6 +76,7 @@ public:
 
 private:
     void heapify(size_t idx);
+    void verify();
     EventNode<event_type> remove(size_t idx);
 
 	size_t left(size_t idx) const;
@@ -182,8 +183,8 @@ void MinHeap<SIZE,event_type>::insert(EventNode<event_type> event)
 	// insert at end
 	size_t idx = len;
 	heap[len++] = event;
-    // update idx here incase it is first insertion
 
+    // update idx here incase it is first insertion
     type_idx[static_cast<size_t>(event.type)] = idx;
 
 	// while parent is greater swap
@@ -193,8 +194,32 @@ void MinHeap<SIZE,event_type>::insert(EventNode<event_type> event)
 		swap(idx,parent_idx);
 		idx = parent_idx;
 	}
+
+    //verify();
 }
 
+// verify min heap property is not violated used for debugging
+template<size_t SIZE,typename event_type>
+void MinHeap<SIZE,event_type>::verify()
+{
+    for(size_t i = 0; i < len; i++)
+    {
+        const auto r = right(i);
+        const auto l = left(i);
+
+        if(l < len && heap[i] > heap[l])
+        {
+            printf("min heap violated\n");
+            exit(1);
+        }
+
+        if(r < len && heap[i] > heap[r])
+        {
+            printf("min heap violated\n");
+            exit(1);
+        }
+    }
+}
 
 // how to do an arbitary remove?
 template<size_t SIZE,typename event_type>
@@ -266,7 +291,12 @@ template<size_t SIZE,typename event_type>
 EventNode<event_type> MinHeap<SIZE,event_type>::remove(size_t idx)
 {
     //printf("removed %zd\n",idx);
-	
+	if(len == 0)
+    {
+        puts("attempted to remove from empty heap");
+        exit(1);
+    }
+
 	const auto v = heap[idx];
 	len--;
 	// swap end with deleted
@@ -278,6 +308,9 @@ EventNode<event_type> MinHeap<SIZE,event_type>::remove(size_t idx)
 
 	// ensure we have a valid heap after the swap
 	heapify(idx);
+
+    //verify();
+
 	return v;
 }
 
