@@ -98,8 +98,6 @@ void Display::render_sprites(int mode)
         // see tonc graphical artifacts
         if(double_size)
         {
-            y_cord += y_sprite_size / 2;
-            x_cord += x_sprite_size / 2;
             x_size *= 2;
             y_size *= 2;
         }
@@ -163,12 +161,21 @@ void Display::render_sprites(int mode)
         const bool x_flip = is_set(attr1,12) && !affine;
         const bool y_flip = is_set(attr1,13) && !affine;
 
-        const uint32_t y_max = y_size - 1;
-        const uint32_t y1 = y_flip?  y_max - ((ly-y_cord) & y_max) : ((ly-y_cord) & y_max);
+
         const uint32_t aff_param = (attr1 >> 9) & 31;
 
-        for(uint32_t x1 = 0; x1 < x_size; x1++)
+        // rotation centre
+        const int32_t x0 = x_sprite_size / 2;
+        const int32_t y0 = y_sprite_size / 2; 
+
+
+        const int32_t y_max = y_size - 1;
+        const int32_t y1 = y_flip?  y_max - ((ly-y_cord) & y_max) : ((ly-y_cord) & y_max);
+
+        for(int32_t x1 = 0; x1 < x_size; x1++)
         {
+
+
             const uint32_t x_offset = (x_cord + x1) & 511;
 
             // probably a nicer way to do this but this is fine for now
@@ -178,21 +185,11 @@ void Display::render_sprites(int mode)
             }
 
 
-            uint32_t y2 = y1;
-            uint32_t x2 = x1;
+            int32_t y2 = y1;
+            int32_t x2 = x1;
 
-
-            if(x_flip)
+            if(affine)
             {
-                x2 = x_size - x2 - 1;
-            }
-
-            else if(affine)
-            {
-                // rotation centre
-                const int32_t x0 = x_sprite_size / 2;
-                const int32_t y0 = y_sprite_size / 2; 
-
                 const auto base = aff_param*0x20;
 
                 // 8.8 fixed point
@@ -202,20 +199,26 @@ void Display::render_sprites(int mode)
                 const int16_t pd = mem.handle_read<uint16_t>(mem.oam,base+0x1e);
 
 
-                const int32_t x_param = x1 - x0;
-                const int32_t y_param = y1 - y0;
+                
+                const int32_t x_param = x1 - (x_size / 2);
+                const int32_t y_param = y1 - (y_size / 2);
 
-                // perform the affine transform
+                // perform the affine transform (8.8 fixed point)
                 x2 = ((pa*x_param + pb*y_param) >> 8) + x0;
                 y2 = ((pc*x_param + pd*y_param) >> 8) + y0;
 
-                // out of range transform is transparent
+                // out of range transform pixel is transparent
                 if(x2 >= x_sprite_size || y2 >= y_sprite_size)
                 {
                     continue;
                 }
             }
 
+
+            if(x_flip)
+            {
+                x2 = x_size - x2 - 1;
+            }
 
             // base tile we index into for our current sprite tile
             uint32_t tile_base;

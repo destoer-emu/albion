@@ -893,6 +893,7 @@ bool did_overflow(uint32_t v1, uint32_t v2, uint32_t ans)
     return  is_set((v1 ^ ans) & (v2 ^ ans),31); 
 }
 ^ old code now replaced with compilier builtins
+thanks yaed :P
 */
 
 uint32_t Cpu::add(uint32_t v1, uint32_t v2, bool s)

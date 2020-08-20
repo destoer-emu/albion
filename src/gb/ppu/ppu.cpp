@@ -83,8 +83,8 @@ void Ppu::init() noexcept
 // callee will check if ppu is using pixel rendering
 // or is off
 
-// ppu scheduler causes bugs under pokemon yellow,
-// prehistorik man and alone in the dark
+// ppu scheduler causes bugs under 
+// prehistorik man 
 int Ppu::get_next_ppu_event() const noexcept
 {
 
@@ -504,9 +504,25 @@ void Ppu::ppu_write() noexcept
 			scx_cnt = mem.io[IO_SCX] & 0x7;
 			emulate_pixel_fifo = true;
 			// until we leave mode 3 remove it
-			scheduler.remove(gameboy_event::ppu);
 			//draw_scanline(scanline_counter-OAM_END);
+			scheduler.remove(gameboy_event::ppu);
+
+			/*
+			// should allways have an event during pixel xfer
+			const auto event = scheduler.get(gameboy_event::ppu).value();
+			const auto cycles = (scheduler.get_timestamp() - event.start) >> cpu.get_double();
+			scheduler.remove(gameboy_event::ppu,false);
+			scanline_counter += cycles;
+			draw_scanline(cycles);
+			*/
 		}
+		// reinsert with updated end (does not work)
+/*
+		scheduler.remove(gameboy_event::ppu);
+		pixel_transfer_end = calc_pixel_transfer_end();
+		const auto event = scheduler.create_event((pixel_transfer_end-scanline_counter) << cpu.get_double(),gameboy_event::ppu);
+		scheduler.insert(event,false);
+*/
 	}
 }
 

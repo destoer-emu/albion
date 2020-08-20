@@ -56,13 +56,11 @@ private:
     uint32_t reference_point_y;
 
     void render();
+    void render_bg(unsigned int start, unsigned int end);
     void render_text(int id);
     void advance_line();
     void render_sprites(int mode);
-
-
-    void render_mode_zero();
-
+    void merge_layers(int render_mode);
 
     // renderer helper functions
     uint16_t read_bg_palette(uint32_t pal_num,uint32_t idx);

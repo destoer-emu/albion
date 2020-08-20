@@ -63,6 +63,7 @@ public:
     void pop();
     size_t size() const;
     void clear();
+    std::optional<EventNode<event_type>> get(event_type t) const;
 
     std::optional<EventNode<event_type>> remove(event_type t);
     bool is_active(event_type t) const;
@@ -285,6 +286,19 @@ std::optional<EventNode<event_type>> MinHeap<SIZE,event_type>::remove(event_type
     // not there nothing was removed
     return std::nullopt;
 }
+
+template<size_t SIZE,typename event_type>
+std::optional<EventNode<event_type>> MinHeap<SIZE,event_type>::get(event_type t) const
+{
+    const auto idx = static_cast<size_t>(t);
+    if(type_idx[idx] != IDX_INVALID)
+    {
+        return heap[idx];
+    }
+
+    return std::nullopt;
+}
+
 
 // this can probably be faster but leave for now
 template<size_t SIZE,typename event_type>

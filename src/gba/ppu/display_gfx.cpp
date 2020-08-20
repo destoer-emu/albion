@@ -213,13 +213,11 @@ void Display::render_palette(uint32_t *palette, size_t size)
 }
 
 
-
-void Display::render_mode_zero()
+void Display::render_bg(unsigned int start, unsigned int end)
 {
-
     const auto disp_cnt = disp_io.disp_cnt;
 
-    for(int bg = 0; bg < 4; bg++)
+    for(auto bg = start; bg < end; bg++)
     {
         if(disp_cnt.bg_enable[bg]) // if bg enabled!
         {
@@ -239,16 +237,19 @@ void Display::render_mode_zero()
         int priority;
     };
 
+    // max of four but we may end up using less
     BgPriority bg_priority[4];
 
-    for(int i = 0; i < 4; i++)
+    const unsigned int lim = end-start;
+
+    for(unsigned int i = 0; i < lim; i++)
     {
-        bg_priority[i].bg = i;
-        bg_priority[i].priority = disp_io.bg_cnt[i].priority;
+        bg_priority[i].bg = i+start;
+        bg_priority[i].priority = disp_io.bg_cnt[i+start].priority;
     }
 
     // reverse sort so highest priority is at the end of the array
-    std::sort(&bg_priority[0],&bg_priority[4],
+    std::sort(&bg_priority[0],&bg_priority[lim],
     [](const BgPriority &a, const BgPriority &b)
     {
         // if they have equal priority the lower bg idx wins
@@ -267,7 +268,7 @@ void Display::render_mode_zero()
     {
         // default to backdrop color
         bg_line[x] = backdrop;
-        for(int i = 0; i < 4; i++)
+        for(unsigned int i = start; i < end; i++)
         {
             const auto bg = bg_priority[i].bg;
             // if bg enabled!
@@ -282,10 +283,57 @@ void Display::render_mode_zero()
                 }
             }
         }
-    }
-
+    }    
 }
 
+// merge bg and sprite layers etc together
+void Display::merge_layers(int render_mode)
+{
+    // does a lesser priority obj pixel 
+    // draw over a transparent bg pixel ?
+    bool is_bitmap = render_mode >= 3;
+
+    // now to merge sprite and bg
+    // this needs to be split off into its own function
+    if(is_bitmap)
+    {
+        // check directly against the screen
+        // if sprite loses 
+        // (ideally we would not render the bitmap at all if has lost priority)
+        for(unsigned int x = 0; x < SCREEN_WIDTH; x++)
+        {
+            const auto s = sprite_line[x];
+            // col number zero is transparent
+            if(s.col_num != 0)
+            {
+                screen[(ly*SCREEN_WIDTH) + x] = convert_color(read_obj_palette(s.pal_num,s.col_num));
+            }
+        }
+    }
+
+    else
+    {
+        // compare sprites against our final bg line
+        // and convert colors accordingly
+        for(unsigned int x = 0; x < SCREEN_WIDTH; x++)
+        {
+            const auto s = sprite_line[x];
+            const auto b = bg_line[x];
+
+            // sprite has higher priority and is not transparent
+            if((s.bg <= disp_io.bg_cnt[b.bg].priority || b.col_num == 0) && s.col_num != 0)
+            {
+                screen[(ly*SCREEN_WIDTH) + x] = convert_color(read_obj_palette(s.pal_num,s.col_num));
+            }
+
+            else
+            {
+                screen[(ly*SCREEN_WIDTH) + x] = convert_color(read_bg_palette(b.pal_num,b.col_num));
+            }
+
+        }
+    }
+}
 
 void Display::render()
 {
@@ -300,152 +348,28 @@ void Display::render()
 
         case 0x0: // text mode
         {
-            render_mode_zero();
+            //render_mode_zero();
+            render_bg(0,4);
             break;
         }
 
-/*
-        // very buggy needs proper impl
+
+        // needs checking
         case 0x1: // text mode
         {
-            for(int bg = 0; bg < 4; bg++)
-            {
-                if(disp_cnt.bg_enable[bg]) // if bg enabled!
-                {
-                    render_text(bg);
-                }
-            }
-            
-
-            // employ painters algortihm for now
-            // im not sure if we should just reverse iterate over it
-            // and find the first non transparent pixel
-            // also we should ideally cache this bg_priority array on bg_cnt writes
-
-            struct BgPriority
-            {
-                int bg;
-                int priority;
-            };
-
-            BgPriority bg_priority[4];
-
-            for(int i = 0; i < 4; i++)
-            {
-                bg_priority[i].bg = i;
-                bg_priority[i].priority = disp_io.bg_cnt[i].priority;
-            }
-
-            // reverse sort so highest priority is at the end of the array
-            std::sort(&bg_priority[0],&bg_priority[4],
-            [](const BgPriority &a, const BgPriority &b)
-            {
-                // if they have equal priority the lower bg idx wins
-                if(a.priority == b.priority)
-                {
-                    return b.bg > a.bg;
-                }
-
-                // else by the bg_cnt priority
-                return a.priority > b.priority;
-            });
-
-
-
-            for(size_t x = 0; x < SCREEN_WIDTH; x++)
-            {
-                // default to backdrop color
-                screen[(ly*SCREEN_WIDTH)+x] = convert_color(read_bg_palette(0,0));
-                for(int i = 0; i < 4; i++)
-                {
-                    int bg = bg_priority[i].bg;
-                    if(disp_cnt.bg_enable[bg]) // if bg enabled!
-                    {
-                        const auto &data = bg_lines[bg][x];
-                        if(data.col_num != 0)
-                        {
-                            const uint32_t full_color = convert_color(read_bg_palette(data.pal_num,data.col_num));
-                            screen[(ly*SCREEN_WIDTH)+x] = full_color;
-                        }
-                    }
-                }
-            }
-                
+            render_bg(0,4);
             break;
         }
-*/
 
-/*      need to impl properly
+
+/*      // needs checking
         case 0x2: // bg mode 2
         {
-            for(int bg = 2; bg < 4; bg++)
-            {
-                if(disp_cnt.bg_enable[bg]) // if bg enabled!
-                {
-                    render_text(bg);
-                }                
-            }
-
-
-
-            // employ painters algortihm for now
-            // im not sure if we should just reverse iterate over it
-            // and find the first non transparent pixel
-            // also we should ideally cache this bg_priority array on bg_cnt writes
-
-            struct BgPriority
-            {
-                int bg;
-                int priority;
-            };
-
-            BgPriority bg_priority[2];
-
-            for(int i = 0; i < 2; i++)
-            {
-                bg_priority[i].bg = i;
-                bg_priority[i].priority = disp_io.bg_cnt[i].priority;
-            }
-
-            // reverse sort so highest priority is at the end of the array
-            std::sort(&bg_priority[0],&bg_priority[2],
-            [](const BgPriority &a, const BgPriority &b)
-            {
-                // if they have equal priority the lower bg idx wins
-                if(a.priority == b.priority)
-                {
-                    return b.bg > a.bg;
-                }
-
-                // else by the bg_cnt priority
-                return a.priority > b.priority;
-            });
-
-
-            for(size_t x = 0; x < SCREEN_WIDTH; x++)
-            {
-                // default to backdrop color
-                screen[(ly*SCREEN_WIDTH)+x] = convert_color(read_bg_palette(0,0));
-                for(int i = 2; i < 4; i++)
-                {
-                    int bg = bg_priority[i-2].bg;
-                    if(disp_cnt.bg_enable[bg]) // if bg enabled!
-                    {
-                        const auto &data = bg_lines[bg][x];
-                        if(data.col_num != 0)
-                        {
-                            const uint32_t full_color = convert_color(read_bg_palette(data.pal_num,data.col_num));
-                            screen[(ly*SCREEN_WIDTH)+x] = full_color;
-                        }
-                    }
-                }
-            }
-
+            render_bg(2,4);
             break;
         }
 */
 
-        // currently testing sprites under the assumptions of txt_obj
         case 0x3: // bg mode 3 
         { 
 
@@ -492,51 +416,8 @@ void Display::render()
 
     render_sprites(render_mode);
 
-    // does a lesser priority obj pixel 
-    // draw over a transparent bg pixel ?
 
-
-    // now to merge sprite and bg
-    // this needs to be split off into its own function
-    if(is_bitmap)
-    {
-        // check directly against the screen
-        // if sprite loses 
-        // (ideally we would not render the bitmap at all if has lost priority)
-        for(unsigned int x = 0; x < SCREEN_WIDTH; x++)
-        {
-            const auto s = sprite_line[x];
-            // col number zero is transparent
-            if(s.col_num != 0)
-            {
-                screen[(ly*SCREEN_WIDTH) + x] = convert_color(read_obj_palette(s.pal_num,s.col_num));
-            }
-        }
-    }
-
-    else
-    {
-        // compare sprites against our final bg line
-        // and convert colors accordingly
-        for(unsigned int x = 0; x < SCREEN_WIDTH; x++)
-        {
-            const auto s = sprite_line[x];
-            const auto b = bg_line[x];
-
-            // sprite has higher priority and is not transparent
-            if((s.bg <= disp_io.bg_cnt[b.bg].priority || b.col_num == 0) && s.col_num != 0)
-            {
-                screen[(ly*SCREEN_WIDTH) + x] = convert_color(read_obj_palette(s.pal_num,s.col_num));
-            }
-
-            else
-            {
-                screen[(ly*SCREEN_WIDTH) + x] = convert_color(read_bg_palette(b.pal_num,b.col_num));
-            }
-
-        }
-    }
-
+    merge_layers(render_mode);
 }
 
 }

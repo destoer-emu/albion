@@ -14,6 +14,8 @@ public:
     void tick(uint32_t cycles);
     bool is_active(event_type t) const;
 
+    std::optional<EventNode<event_type>> get(event_type t) const;
+
     void insert(const EventNode<event_type> &node, bool tick_old=true);
 
     // remove events of the specifed type
@@ -98,6 +100,12 @@ void Scheduler<SIZE,event_type>::remove(event_type type,bool tick_old)
         service_event(event.value());
         event_list.remove(type);
     }
+}
+
+template<size_t SIZE,typename event_type>
+std::optional<EventNode<event_type>> Scheduler<SIZE,event_type>::get(event_type t) const
+{
+    return event_list.get(t);
 }
 
 template<size_t SIZE,typename event_type>
