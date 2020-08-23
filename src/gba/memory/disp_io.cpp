@@ -356,6 +356,97 @@ void WindowDimensionV::write(int idx, uint8_t v)
     }
 }
 
+/*
+struct Window
+{
+
+    Window();
+    void init();
+
+    uint8_t read(int idx) const;
+    void write(int idx, uint8_t v);
+
+
+
+    bool bg_enable_lower[4];
+    bool obj_enable_lower;
+    bool special_enable_lower;
+
+
+    bool bg_enable_upper[4];
+    bool obj_enable_upper;
+    bool special_enable_upper;
+};
+*/
+
+Window::Window()
+{
+    init();
+}
+
+void Window::init()
+{
+    for(int i = 0; i < 4; i++)
+    {
+        bg_enable_lower[i] = false;
+        bg_enable_upper[i] = false;
+    }
+
+    obj_enable_lower = false;
+    obj_enable_upper = false;
+    special_enable_lower = false;
+    special_enable_upper = false;
+}
+
+
+uint8_t Window::read(int idx) const
+{
+    switch(idx)
+    {
+        case 0:
+        {
+            return bg_enable_lower[0] | bg_enable_lower[1]
+                | bg_enable_lower[2] | bg_enable_lower[3]
+                | obj_enable_lower | special_enable_lower;
+        }
+
+        case 1:
+        {
+            return bg_enable_upper[0] | bg_enable_upper[1]
+                | bg_enable_upper[2] | bg_enable_upper[3]
+                | obj_enable_upper | special_enable_upper;
+        }
+    }
+    // unreached
+    return 0;
+}
+
+void Window::write(int idx, uint8_t v)
+{
+    switch(idx)
+    {
+        case 0:
+        {
+            bg_enable_lower[1] = is_set(v,1);
+            bg_enable_lower[2] = is_set(v,2);
+            bg_enable_lower[3] = is_set(v,3);
+            obj_enable_lower = is_set(v,4);
+            special_enable_lower = is_set(v,5);
+            break;
+        }
+
+        case 1:
+        {
+            bg_enable_upper[0] = is_set(v,0);
+            bg_enable_upper[1] = is_set(v,1);
+            bg_enable_upper[2] = is_set(v,2);
+            bg_enable_upper[3] = is_set(v,3);
+            obj_enable_upper = is_set(v,4);
+            special_enable_upper = is_set(v,5);
+            break;
+        }
+    }
+}
 
 DispIo::DispIo()
 {
@@ -401,7 +492,8 @@ void DispIo::init()
 
     win0v.init();
     win1v.init();
-
+    win_in.init();
+    win_out.init();
 }
 
 }

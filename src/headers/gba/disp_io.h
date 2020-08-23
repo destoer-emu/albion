@@ -40,6 +40,28 @@ struct BgCnt
 };
 
 
+struct Window
+{
+
+    Window();
+    void init();
+
+    uint8_t read(int idx) const;
+    void write(int idx, uint8_t v);
+
+
+
+    bool bg_enable_lower[4];
+    bool obj_enable_lower;
+    bool special_enable_lower;
+
+
+    bool bg_enable_upper[4];
+    bool obj_enable_upper;
+    bool special_enable_upper;
+};
+
+
 struct BgOffset
 {
     BgOffset();
@@ -156,6 +178,9 @@ struct DispIo
 
     WindowDimensionV win0v;
     WindowDimensionV win1v;
+
+    Window win_in;
+    Window win_out;
 
     std::array<BgCnt,4> bg_cnt;
     std::array<BgOffset,4> bg_offset_x;

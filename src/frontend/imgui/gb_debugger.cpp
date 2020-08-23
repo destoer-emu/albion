@@ -145,7 +145,6 @@ void ImguiMainWindow::gameboy_emu_instance()
                 gb_display_viewer.update(gb);
             }
 
-
             // throttle the emulation
             if(gb.throttle_emu)
             {
@@ -154,10 +153,11 @@ void ImguiMainWindow::gameboy_emu_instance()
 
             else
             {
-                std::this_thread::sleep_for(std::chrono::milliseconds(time_left(next_time) / 8));
+                //std::this_thread::sleep_for(std::chrono::milliseconds(time_left(next_time) / 8));
             }
 
             next_time = current_time() + screen_ticks_per_frame;
+
         }
     }
 

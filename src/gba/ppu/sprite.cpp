@@ -60,26 +60,26 @@ void Display::render_sprites(int mode)
 
         const int obj_size = (attr1 >> 14) & 0x3;
 
-        static constexpr int x_size_lookup[3][4] = 
+        static constexpr int32_t x_size_lookup[3][4] = 
         {
             {8,16,32,64},
             {16,32,32,64},
             {8,8,16,32}
         };
 
-        static constexpr int y_size_lookup[3][4] = 
+        static constexpr int32_t y_size_lookup[3][4] = 
         {
             {8,16,32,64},
             {8,8,16,32},
             {16,32,32,64}
         };
 
-        uint32_t y_size = y_size_lookup[shape][obj_size];
-        uint32_t x_size = x_size_lookup[shape][obj_size];
+        auto y_size = y_size_lookup[shape][obj_size];
+        auto x_size = x_size_lookup[shape][obj_size];
 
         // original size of the sprite that is not affected by the double size flag
-        const uint32_t x_sprite_size = x_size;
-        const uint32_t y_sprite_size = y_size;
+        const auto x_sprite_size = x_size;
+        const auto y_sprite_size = y_size;
         const bool double_size = is_set(attr0,9) && affine;
 
         uint32_t y_cord = attr0 & 0xff;
@@ -208,7 +208,7 @@ void Display::render_sprites(int mode)
                 y2 = ((pc*x_param + pd*y_param) >> 8) + y0;
 
                 // out of range transform pixel is transparent
-                if(x2 >= x_sprite_size || y2 >= y_sprite_size)
+                if(x2 >= x_sprite_size || y2 >= y_sprite_size || x2 < 0 || y2 < 0)
                 {
                     continue;
                 }

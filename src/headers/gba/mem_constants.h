@@ -48,7 +48,8 @@ constexpr uint32_t IO_WIN0H = 0x04000040 & IO_MASK; // window 0 horizontal dimen
 constexpr uint32_t IO_WIN1H = 0x04000042 & IO_MASK; // window 0 horizontal dimensions
 constexpr uint32_t IO_WIN0V = 0x04000044 & IO_MASK; // window 0 horizontal dimensions
 constexpr uint32_t IO_WIN1V = 0x04000046 & IO_MASK; // window 0 horizontal dimensions
-
+constexpr uint32_t IO_WININ = 0x04000048 & IO_MASK; // window in
+constexpr uint32_t IO_WINOUT = 0x0400004A & IO_MASK; // window out
 
 // dma 0
 constexpr uint32_t IO_DMA0SAD = 0x040000b0 & IO_MASK;

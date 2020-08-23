@@ -817,7 +817,7 @@ void Ppu::draw_scanline(uint32_t cycles) noexcept
 
 
 	// advance the fetcher and the fifo
-	for(int i = 0; i < cycles; i++) // 1 pixel pushed per cycle
+	for(uint32_t i = 0; i < cycles; i++) // 1 pixel pushed per cycle
 	{
 	
 		// just started drawing window

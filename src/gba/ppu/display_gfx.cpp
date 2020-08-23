@@ -274,7 +274,8 @@ void Display::render_bg(unsigned int start, unsigned int end)
             // if bg enabled!
             // should move this check into the sort so we completly ignore
             // drawing it ideally
-            if(disp_cnt.bg_enable[bg]) 
+            // need a function by here that checks the bg enable for a specific x and y cord
+            if(disp_cnt.bg_enable[bg] && bg_window_enabled(bg,x,ly)) 
             {
                 const auto data = bg_lines[bg][x];
                 if(data.col_num != 0)
@@ -284,6 +285,118 @@ void Display::render_bg(unsigned int start, unsigned int end)
             }
         }
     }    
+}
+
+
+// account for l > r behavior
+bool window_in_range(const unsigned int c, const unsigned int w1, const unsigned int w2)
+{
+    // in this case the nearest screen edge to
+    // the window is bound is valid
+    if(w1 > w2)
+    {
+        return c >= w1 || c < w2;
+    }
+
+    else
+    {
+        return c >= w1 && c < w2;
+    }
+}
+
+
+// this can be optimsed to lesson checks
+// ideally we would just have a lookup array of bools
+// that marks if something is enabled
+// or split up loops on window bounds (need an array of bounds for obj window)
+bool Display::bg_window_enabled(unsigned int bg, unsigned int x, unsigned int y) const
+{
+    // check either window is enabled
+    // if not bg is enabled
+    const auto dispcnt = disp_io.disp_cnt;
+
+    // if no windows are active then out of window is not enabled
+    if(!dispcnt.window0_enable && !dispcnt.window1_enable)
+    {
+        return true;
+    }
+
+    // figure out which is enabled at current cords
+    // if both are prefer win 0
+
+    // first check win0
+    // if not enabled check win 1
+
+    if(dispcnt.window0_enable)
+    {
+        if(window_in_range(x,disp_io.win0h.x1,disp_io.win0h.x2))
+        {
+            if(window_in_range(y,disp_io.win0v.y1,disp_io.win0v.y2))
+            {
+                return disp_io.win_in.bg_enable_lower[bg];
+            }
+        }
+    }
+
+    if(dispcnt.window1_enable)
+    {
+        if(window_in_range(x,disp_io.win1h.x1,disp_io.win1h.x2))
+        {
+            if(window_in_range(y,disp_io.win1v.y1,disp_io.win1v.y2))
+            {
+                return disp_io.win_in.bg_enable_upper[bg];
+            }
+        }
+    }
+
+    // win out
+    return disp_io.win_out.bg_enable_lower[bg];
+    
+}
+
+bool Display::sprite_window_enabled(unsigned int x,unsigned y) const
+{
+    // check either window is enabled
+    // if not bg is enabled
+    const auto dispcnt = disp_io.disp_cnt;
+
+    // if no windows are active then out of window is not enabled
+    if(!dispcnt.window0_enable && !dispcnt.window1_enable)
+    {
+        return true;
+    }
+
+    // figure out which is enabled at current cords
+    // if both are prefer win 0
+
+    // first check win0
+    // if not enabled check win 1
+
+    if(dispcnt.window0_enable)
+    {
+        if(window_in_range(x,disp_io.win0h.x1,disp_io.win0h.x2))
+        {
+            if(window_in_range(y,disp_io.win0v.y1,disp_io.win0v.y2))
+            {
+                return disp_io.win_in.obj_enable_lower;
+            }
+        }
+    }
+
+    if(dispcnt.window1_enable)
+    {
+        if(window_in_range(x,disp_io.win1h.x1,disp_io.win1h.x2))
+        {
+            if(window_in_range(y,disp_io.win1v.y1,disp_io.win1v.y2))
+            {
+                return disp_io.win_in.obj_enable_upper;
+            }
+        }
+    }
+
+    // win out
+    return disp_io.win_out.obj_enable_lower;
+    
 }
 
 // merge bg and sprite layers etc together
@@ -304,7 +417,7 @@ void Display::merge_layers(int render_mode)
         {
             const auto s = sprite_line[x];
             // col number zero is transparent
-            if(s.col_num != 0)
+            if(s.col_num != 0 && sprite_window_enabled(x,ly))
             {
                 screen[(ly*SCREEN_WIDTH) + x] = convert_color(read_obj_palette(s.pal_num,s.col_num));
             }
@@ -321,7 +434,8 @@ void Display::merge_layers(int render_mode)
             const auto b = bg_line[x];
 
             // sprite has higher priority and is not transparent
-            if((s.bg <= disp_io.bg_cnt[b.bg].priority || b.col_num == 0) && s.col_num != 0)
+            if(sprite_window_enabled(x,ly) && s.col_num != 0 && 
+                (s.bg <= disp_io.bg_cnt[b.bg].priority || b.col_num == 0) )
             {
                 screen[(ly*SCREEN_WIDTH) + x] = convert_color(read_obj_palette(s.pal_num,s.col_num));
             }
@@ -339,9 +453,6 @@ void Display::render()
 {
     const auto disp_cnt = disp_io.disp_cnt;
     const int render_mode = disp_cnt.bg_mode; 
-
-
-    const bool is_bitmap = render_mode >= 3;
 
     switch(render_mode)
     {

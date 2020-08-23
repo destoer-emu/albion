@@ -14,7 +14,7 @@ void GBA::reset(std::string filename)
 	apu.init();
     cpu.init();
 	debug.write_logger("[new gba instance] {}",filename);
-
+	debug.disable_everything();
 }
 
 

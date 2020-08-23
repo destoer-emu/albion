@@ -199,6 +199,13 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_WIN1V: disp.disp_io.win1v.write(0,v); break;
         case IO_WIN1V+1: disp.disp_io.win1v.write(1,v); break;
 
+        case IO_WININ: disp.disp_io.win_in.write(0,v); break;
+        case IO_WININ+1: disp.disp_io.win_in.write(1,v); break;
+
+        case IO_WINOUT: disp.disp_io.win_out.write(0,v); break;
+        case IO_WINOUT+1: disp.disp_io.win_out.write(1,v); break;
+
+
         case IO_BG0HOFS: disp.disp_io.bg_offset_x[0].write(0,v); break;
         case IO_BG0HOFS+1: disp.disp_io.bg_offset_x[0].write(1,v); break;
         case IO_BG0VOFS: disp.disp_io.bg_offset_y[0].write(0,v); break;
@@ -417,6 +424,12 @@ uint8_t Mem::read_io_regs(uint32_t addr)
 
         case IO_VCOUNT: return disp.get_vcount();
         case IO_VCOUNT+1: return 0;
+
+        case IO_WININ: return disp.disp_io.win_in.read(0);
+        case IO_WININ+1: return disp.disp_io.win_in.read(1);
+
+        case IO_WINOUT: return disp.disp_io.win_out.read(0);
+        case IO_WINOUT+1: return disp.disp_io.win_out.read(1); 
 
 
         // timers

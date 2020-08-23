@@ -62,6 +62,12 @@ private:
     void render_sprites(int mode);
     void merge_layers(int render_mode);
 
+    // is this inside a window if so is it enabled?
+    bool bg_window_enabled(unsigned int bg, unsigned int x, unsigned int y) const;
+
+    // are sprites enabled inside a window
+    bool sprite_window_enabled(unsigned int x,unsigned y) const;
+
     // renderer helper functions
     uint16_t read_bg_palette(uint32_t pal_num,uint32_t idx);
     uint16_t read_obj_palette(uint32_t pal_num,uint32_t idx);

@@ -201,7 +201,7 @@ private:
     // main ppu state
     ppu_mode mode = ppu_mode::oam_search;
 	bool signal = false;
-    int32_t scanline_counter = 0;
+    uint32_t scanline_counter = 0;
     unsigned int current_line = 0;
 
     static constexpr uint32_t OAM_END = 80;
