@@ -23,7 +23,6 @@ public:
     display_mode get_mode() const { return mode; }
     void set_mode(display_mode mode) { this->mode = mode; }
     void set_cycles(int cycles) { cyc_cnt = cycles; }
-    void load_reference_point_regs();
     int get_vcount() const { return ly; } 
 
     void update_vcount_compare();
@@ -46,18 +45,15 @@ private:
             bg = b;
         }
 
-        uint16_t col_num;
-        uint32_t pal_num;
-        uint32_t bg;
+        uint16_t col_num = 0;
+        uint32_t pal_num = 0;
+        uint32_t bg = 0;
     };
-
-
-    uint32_t reference_point_x;
-    uint32_t reference_point_y;
 
     void render();
     void render_bg(unsigned int start, unsigned int end);
     void render_text(int id);
+    void render_affine(int id);
     void advance_line();
     void render_sprites(int mode);
     void merge_layers(int render_mode);

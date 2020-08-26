@@ -135,7 +135,7 @@ void Display::render_sprites(int mode)
 
         const bool color = is_set(attr0,13);
 
-        if(color)
+      if(color)
         {
             puts("256 sprites unsupported!");
             exit(1);

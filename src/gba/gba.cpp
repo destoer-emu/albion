@@ -5,6 +5,13 @@
 namespace gameboyadvance
 {
 
+// init memory here are make init function
+// allow a dummy init
+GBA::GBA()
+{
+
+}
+
 // init all sub compenents
 void GBA::reset(std::string filename)
 {
@@ -14,7 +21,6 @@ void GBA::reset(std::string filename)
 	apu.init();
     cpu.init();
 	debug.write_logger("[new gba instance] {}",filename);
-	debug.disable_everything();
 }
 
 

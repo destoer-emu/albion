@@ -11,11 +11,21 @@ struct RefPoint
     void init();
 
     // write only
-    void write(int idx, uint8_t v);
+    void write_x(int idx, uint8_t v);
+    void write_y(int idx, uint8_t v);
 
     // bg reference point registers
     // 28bit signed write only
-    uint32_t ref_point;
+    int32_t ref_point_x;
+    int32_t ref_point_y;
+
+    // internal reference points
+    int32_t int_ref_point_x;
+    int32_t int_ref_point_y;
+
+private:
+    void write(int idx, uint8_t v, int32_t &ref_point, int32_t &int_ref_point);
+
 };
 
 
@@ -113,17 +123,26 @@ struct DispStat
 };
 
 // eg bg2pa
+// theres likely a nicer way to do this one
+// thatwill still make it easy to use in the display class
 struct ScalingParam
 {
     ScalingParam();
     void init();
 
-    uint8_t read(int idx) const;
-    void write(int idx, uint8_t v);
+    // write only
+    void write_a(int idx,uint8_t v);
+    void write_b(int idx,uint8_t v);
+    void write_c(int idx,uint8_t v);
+    void write_d(int idx,uint8_t v);
 
-    int fract;
-    int integer;
-    bool sign;
+    int16_t a; //dx
+    int16_t b; //dmx
+    int16_t c; //dy
+    int16_t d; //dmy
+
+private:
+    void write(int idx, uint8_t v, int16_t &param);
 };
 
 struct WindowDimensionH
@@ -157,21 +176,11 @@ struct DispIo
     void init();
 
 
-    ScalingParam bg2pa; // dx
-    ScalingParam bg2pb; // dmx
-    ScalingParam bg2pc; // dy
-    ScalingParam bg2pd; // dmy
+    ScalingParam bg2_scale_param; 
+    ScalingParam bg3_scale_param; 
 
-    ScalingParam bg3pa; // dx
-    ScalingParam bg3pb; // dmx
-    ScalingParam bg3pc; // dy
-    ScalingParam bg3pd; // dmy
-
-    RefPoint bg2x;
-    RefPoint bg2y; 
-
-    RefPoint bg3x;
-    RefPoint bg3y;
+    RefPoint bg2_ref_point;
+    RefPoint bg3_ref_point;
 
     WindowDimensionH win0h;
     WindowDimensionH win1h;

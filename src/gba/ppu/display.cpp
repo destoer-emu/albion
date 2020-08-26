@@ -3,14 +3,8 @@
 namespace gameboyadvance
 {
 
-// get devkitpro on linux
-// port our lyc test to asm (text printing is all)
-// and get a proper 3ds setup
-// and write some intr and dma tests amongst others
-
-
 /*
-    fix rendering issues,baisc sprite, window impl, affine transforms
+    fix rendering issues obj window impl, bg affine transforms mosiac, alpha
     fix our dma sound, then unstub the memory writes
 */
 
@@ -38,13 +32,6 @@ void Display::init()
     mode = display_mode::visible;
     new_vblank = false;
     disp_io.init();
-}
-
-// need to update these during vblank?
-// bg2pa etc not sure how they work
-void Display::load_reference_point_regs()
-{
-
 }
 
 // not asserted on irq enable changes
@@ -155,6 +142,14 @@ void Display::tick(int cycles)
                         cpu.request_interrupt(interrupt::vblank);
                     }
                     mem.dma.handle_dma(dma_type::vblank);
+
+                    // reload internal ref point registers
+                    disp_io.bg2_ref_point.int_ref_point_x = disp_io.bg2_ref_point.ref_point_x;
+                    disp_io.bg2_ref_point.int_ref_point_y = disp_io.bg2_ref_point.ref_point_y;
+     
+                    disp_io.bg3_ref_point.int_ref_point_x = disp_io.bg3_ref_point.ref_point_x;
+                    disp_io.bg3_ref_point.int_ref_point_y = disp_io.bg3_ref_point.ref_point_y;
+
                 }
 
                 else

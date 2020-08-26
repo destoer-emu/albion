@@ -1,16 +1,10 @@
 #include <gb/gb.h>
 
 
-// prehistorik man is broken and i dont know when... 
-// final fantasy has a a corrupted vram
-// shantae doesent show sprites
+// prehistorik man is broken because of the scheduler
 
-// and even when hard coding the minimum pixel transfer time
-// for scanline rendering
-// which should make no difference as we 
-// didnt handle sprite and win stalls in the fifo anyways...
-// seems to cause 2 of the ppu tests to fail?
-// need to look into this
+
+// need to impl lcd enable timing side effects
 
 namespace gameboy
 {

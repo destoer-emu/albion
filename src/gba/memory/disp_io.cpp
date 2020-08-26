@@ -10,11 +10,25 @@ RefPoint::RefPoint()
     
 void RefPoint::init()
 {
-    ref_point = 0;
+    ref_point_x = 0;
+    ref_point_y = 0;
+
+    int_ref_point_x = 0;
+    int_ref_point_y = 0;
 }
 
 
-void RefPoint::write(int idx, uint8_t v)
+void RefPoint::write_x(int idx, uint8_t v)
+{
+    write(idx,v,ref_point_x,int_ref_point_x);
+}
+
+void RefPoint::write_y(int idx, uint8_t v)
+{
+    write(idx,v,ref_point_y,int_ref_point_y);
+}
+
+void RefPoint::write(int idx, uint8_t v, int32_t &ref_point, int32_t &int_ref_point)
 {
     auto ref_arr = reinterpret_cast<char*>(&ref_point);
     ref_arr[idx] = v;
@@ -27,7 +41,12 @@ void RefPoint::write(int idx, uint8_t v)
     {
         ref_point = sign_extend(ref_point,28);
     }
+
+    // reload internal ref point on write
+    int_ref_point = ref_point;
 }
+
+
 
 BgCnt::BgCnt()
 {
@@ -270,46 +289,46 @@ ScalingParam::ScalingParam()
     
 void ScalingParam::init()
 {
-    fract = 0;
-    integer = 0;
-    sign = false;
+    a = 0;
+    b = 0;
+    c = 0;
+    d = 0;
 }
 
 
-uint8_t ScalingParam::read(int idx) const
+void ScalingParam::write_a(int idx,uint8_t v)
+{
+    write(idx,v,a);
+}
+
+void ScalingParam::write_b(int idx,uint8_t v)
+{
+    write(idx,v,b);
+}
+
+void ScalingParam::write_c(int idx,uint8_t v)
+{
+    write(idx,v,c);
+}
+
+void ScalingParam::write_d(int idx,uint8_t v)
+{
+    write(idx,v,d);
+}
+
+void ScalingParam::write(int idx, uint8_t v,int16_t &param)
 {
     switch(idx)
     {
         case 0:
         {
-            return fract;
+            param = (param & 0xff00) | v;     
             break;
         }
 
         case 1:
         {
-            return (integer & 0x7f) | sign << 7;
-            break;
-        }
-    }
-    return 0;
-}
-
-
-void ScalingParam::write(int idx, uint8_t v)
-{
-    switch(idx)
-    {
-        case 0:
-        {
-            fract = v;
-            break;
-        }
-
-        case 1:
-        {
-            integer = (v & 0x7f);
-            sign = is_set(v,7);
+            param = (param & 0x00ff) | v << 8;
             break;
         }
     }
@@ -427,6 +446,7 @@ void Window::write(int idx, uint8_t v)
     {
         case 0:
         {
+            bg_enable_lower[0] = is_set(v,0);
             bg_enable_lower[1] = is_set(v,1);
             bg_enable_lower[2] = is_set(v,2);
             bg_enable_lower[3] = is_set(v,3);
@@ -455,12 +475,6 @@ DispIo::DispIo()
 
 void DispIo::init()
 {
-    // reference points
-    bg2x.init();
-    bg2y.init();
-    bg3x.init();
-    bg3y.init();
-
     // background control
     for(auto &x: bg_cnt)
     {
@@ -477,15 +491,11 @@ void DispIo::init()
     disp_stat.init();
 
 
-    bg2pa.init(); // dx
-    bg2pb.init(); // dmx
-    bg2pc.init(); // dy
-    bg2pd.init(); // dmy
+    bg2_scale_param.init();
+    bg3_scale_param.init();
 
-    bg3pa.init(); // dx
-    bg3pb.init(); // dmx
-    bg3pc.init(); // dy
-    bg3pd.init(); // dmy
+    bg2_ref_point.init();
+    bg3_ref_point.init();
 
     win0h.init();
     win1h.init();

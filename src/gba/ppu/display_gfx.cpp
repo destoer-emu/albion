@@ -83,10 +83,119 @@ void Display::read_tile(TileData tile[],unsigned int bg,bool col_256,uint32_t ba
 }
 
 
+void Display::render_affine(int id)
+{
+    const auto bg_cnt = disp_io.bg_cnt[id];
+
+    const auto bg_tile_data_base = bg_cnt.char_base_block * 0x4000;
+    const auto bg_map_base = bg_cnt.screen_base_block * 0x800;
+    const auto size = bg_cnt.screen_size;
+
+    // need to figure out the size in pixel and set of map
+    // this is treated as if its one giant screen rather than multiple sections
+
+    // for now we will just handle overflow or showing something as transparent
+    // and iter thru each pixel one bit at a time
+
+    // each one is same width and height
+    static constexpr int32_t bg_size[] = {128,256,512,1024};
+    const auto cord_size = bg_size[size];
+    const auto map_size = cord_size / 8;
+    const auto area_overflow = bg_cnt.area_overflow;
+
+    const TileData transparent(0,0,0);
+
+    auto &buf = bg_lines[id];
+
+    auto &ref_point = id == 2? disp_io.bg2_ref_point : disp_io.bg3_ref_point;
+
+    // what do i do with actual paramaters here?
+    const auto &scale_param = id == 2? disp_io.bg2_scale_param : disp_io.bg3_scale_param;
+    UNUSED(scale_param);
+
+    auto &ref_point_x = ref_point.int_ref_point_x;
+    auto &ref_point_y = ref_point.int_ref_point_y;
+
+    for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
+    {
+        int32_t x_affine = x + (ref_point_x >> 8);
+        int32_t y_affine = ly + (ref_point_y >> 8);
+
+/*
+        // unsure as hell on this xform
+        const auto cord0 = size / 2;
+
+        const int32_t x_param = x_affine - cord0;
+        const int32_t y_param = y_affine - cord0; 
+
+        x_affine = ((scale_param.a*x_param + scale_param.b*y_param) >> 8) + cord0;
+        y_affine = ((scale_param.c*x_param + scale_param.d*y_param) >> 8) + cord0;
+*/
+        // depending on what setting we have make pixel
+        // trasparent or wrap around the x cord
+        if(x_affine >= cord_size || x_affine < 0)
+        {
+            if(area_overflow)
+            {
+                x_affine &= cord_size - 1;
+                if(x_affine < 0)
+                {
+                    x_affine += cord_size;
+                }
+            }
+
+            else
+            {
+                buf[x] = transparent;
+                continue;
+            }
+        }
+        // same for y
+        if(y_affine >= cord_size || y_affine < 0)
+        {
+            if(area_overflow)
+            {
+                y_affine &= cord_size - 1;
+                if(y_affine < 0)
+                {
+                    y_affine += cord_size;
+                }
+            }
+
+            else
+            {
+                buf[x] = transparent;
+                continue;
+            }
+        }
+
+        // get tile num from bg map
+        const auto tile_num = mem.handle_read<uint8_t>(mem.vram,bg_map_base + ((y_affine / 8) * map_size) + (x_affine / 8));
+
+        // now figure out where we are offset into the current tile and smash it into the line
+        const auto tile_x = x_affine % 8;
+        const auto tile_y = y_affine % 8;
+
+        // each tile accounts for 8 vertical pixels but is 64 bytes long
+        const uint32_t addr = bg_tile_data_base+(tile_num*0x40) + (tile_y * 8); 
+        
+        // affine is allways 8bpp
+        const uint8_t tile_data = mem.handle_read<uint8_t>(mem.vram,addr+tile_x);
+
+        buf[x].col_num = tile_data;
+        // set pal as zero so that the col num is the sole indexer
+        buf[x].pal_num = 0;
+        buf[x].bg = id;
+    }
+
+    // unsure how internal ref points work
+    ref_point_x += scale_param.b;
+    ref_point_y += scale_param.d;
+
+}
 
 void Display::render_text(int id)
 {
-
     const auto &cnt = disp_io.bg_cnt[id];
     const uint32_t bg_tile_data_base = cnt.char_base_block * 0x4000;
     uint32_t bg_map_base =  cnt.screen_base_block * 0x800;
@@ -216,12 +325,45 @@ void Display::render_palette(uint32_t *palette, size_t size)
 void Display::render_bg(unsigned int start, unsigned int end)
 {
     const auto disp_cnt = disp_io.disp_cnt;
-
+    const auto render_mode = disp_cnt.bg_mode; 
     for(auto bg = start; bg < end; bg++)
     {
         if(disp_cnt.bg_enable[bg]) // if bg enabled!
         {
-            render_text(bg);
+            // check if we need this is a normal 
+            // text or affine bg here
+
+            switch(render_mode)
+            {
+                case 0:
+                {
+                    render_text(bg);
+                    break;
+                }
+
+                case 1:
+                {
+                    // bg 2 is affine in render mode 1
+                    if(bg == 2)
+                    {
+                        render_affine(bg);
+                    }
+
+                    else
+                    {
+                        render_text(bg);
+                    }
+                    break;
+                }
+
+                default:
+                {
+                    printf("[render_bg]unknown render mode %x\n",render_mode);
+                    exit(1);
+                }
+            }
+
+            
         }
     }
     
@@ -268,7 +410,7 @@ void Display::render_bg(unsigned int start, unsigned int end)
     {
         // default to backdrop color
         bg_line[x] = backdrop;
-        for(unsigned int i = start; i < end; i++)
+        for(unsigned int i = 0; i < lim; i++)
         {
             const auto bg = bg_priority[i].bg;
             // if bg enabled!
@@ -452,14 +594,13 @@ void Display::merge_layers(int render_mode)
 void Display::render()
 {
     const auto disp_cnt = disp_io.disp_cnt;
-    const int render_mode = disp_cnt.bg_mode; 
+    const auto render_mode = disp_cnt.bg_mode; 
 
     switch(render_mode)
     {
 
         case 0x0: // text mode
         {
-            //render_mode_zero();
             render_bg(0,4);
             break;
         }
@@ -468,7 +609,7 @@ void Display::render()
         // needs checking
         case 0x1: // text mode
         {
-            render_bg(0,4);
+            render_bg(0,3);
             break;
         }
 

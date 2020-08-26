@@ -19,6 +19,8 @@ enum class button
 class GBA
 {
 public:
+    GBA();
+
     void reset(std::string filename);
     void run();
     

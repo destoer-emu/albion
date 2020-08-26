@@ -137,54 +137,53 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
 
 
         // bg 2 scalaing / rotation params
-        case IO_BG2PA: disp.disp_io.bg2pa.write(0,v); break;
-        case IO_BG2PA+1: disp.disp_io.bg2pa.write(1,v); break;
+        case IO_BG2PA: disp.disp_io.bg2_scale_param.write_a(0,v); break;
+        case IO_BG2PA+1: disp.disp_io.bg2_scale_param.write_a(1,v); break;
 
-        case IO_BG2PB: disp.disp_io.bg2pb.write(0,v); break;
-        case IO_BG2PB+1: disp.disp_io.bg2pb.write(1,v); break;
+        case IO_BG2PB: disp.disp_io.bg2_scale_param.write_b(0,v); break;
+        case IO_BG2PB+1: disp.disp_io.bg2_scale_param.write_b(1,v); break;
 
-        case IO_BG2PC: disp.disp_io.bg2pc.write(0,v); break;
-        case IO_BG2PC+1: disp.disp_io.bg2pc.write(1,v); break;
+        case IO_BG2PC: disp.disp_io.bg2_scale_param.write_c(0,v); break;
+        case IO_BG2PC+1: disp.disp_io.bg2_scale_param.write_c(1,v); break;
 
-        case IO_BG2PD: disp.disp_io.bg2pd.write(0,v); break;
-        case IO_BG2PD+1: disp.disp_io.bg2pd.write(1,v); break;
+        case IO_BG2PD: disp.disp_io.bg2_scale_param.write_d(0,v); break;
+        case IO_BG2PD+1: disp.disp_io.bg2_scale_param.write_d(1,v); break;
 
         // bg2 reference point
-        case IO_BG2X_L: disp.disp_io.bg2x.write(0,v); break;
-        case IO_BG2X_L+1: disp.disp_io.bg2x.write(1,v); break;
-        case IO_BG2X_H: disp.disp_io.bg2x.write(2,v); break;
-        case IO_BG2X_H+1: disp.disp_io.bg2x.write(3,v); break;
+        case IO_BG2X_L: disp.disp_io.bg2_ref_point.write_x(0,v); break;
+        case IO_BG2X_L+1: disp.disp_io.bg2_ref_point.write_x(1,v); break;
+        case IO_BG2X_H: disp.disp_io.bg2_ref_point.write_x(2,v); break;
+        case IO_BG2X_H+1: disp.disp_io.bg2_ref_point.write_x(3,v); break;
 
-        case IO_BG2Y_L: disp.disp_io.bg2y.write(0,v); break;
-        case IO_BG2Y_L+1: disp.disp_io.bg2y.write(1,v); break;
-        case IO_BG2Y_H: disp.disp_io.bg2y.write(2,v); break;
-        case IO_BG2Y_H+1: disp.disp_io.bg2y.write(3,v); break;
+        case IO_BG2Y_L: disp.disp_io.bg2_ref_point.write_y(0,v); break;
+        case IO_BG2Y_L+1: disp.disp_io.bg2_ref_point.write_y(1,v); break;
+        case IO_BG2Y_H: disp.disp_io.bg2_ref_point.write_y(2,v); break;
+        case IO_BG2Y_H+1: disp.disp_io.bg2_ref_point.write_y(3,v); break;
 
 
         // bg 3 scalaing / rotation params
-        case IO_BG3PA: disp.disp_io.bg3pa.write(0,v); break;
-        case IO_BG3PA+1: disp.disp_io.bg3pa.write(1,v); break;
+        case IO_BG3PA: disp.disp_io.bg3_scale_param.write_a(0,v); break;
+        case IO_BG3PA+1: disp.disp_io.bg3_scale_param.write_a(1,v); break;
 
-        case IO_BG3PB: disp.disp_io.bg3pb.write(0,v); break;
-        case IO_BG3PB+1: disp.disp_io.bg3pb.write(1,v); break;
+        case IO_BG3PB: disp.disp_io.bg3_scale_param.write_b(0,v); break;
+        case IO_BG3PB+1: disp.disp_io.bg3_scale_param.write_b(1,v); break;
 
-        case IO_BG3PC: disp.disp_io.bg3pc.write(0,v); break;
-        case IO_BG3PC+1: disp.disp_io.bg3pc.write(1,v); break;
+        case IO_BG3PC: disp.disp_io.bg3_scale_param.write_c(0,v); break;
+        case IO_BG3PC+1: disp.disp_io.bg3_scale_param.write_c(1,v); break;
 
-        case IO_BG3PD: disp.disp_io.bg3pd.write(0,v); break;
-        case IO_BG3PD+1: disp.disp_io.bg3pd.write(1,v); break;
-
+        case IO_BG3PD: disp.disp_io.bg3_scale_param.write_d(0,v); break;
+        case IO_BG3PD+1: disp.disp_io.bg3_scale_param.write_d(1,v); break;
 
         // bg3 reference point
-        case IO_BG3X_L: disp.disp_io.bg3x.write(0,v); break;
-        case IO_BG3X_L+1: disp.disp_io.bg3x.write(1,v); break;
-        case IO_BG3X_H: disp.disp_io.bg3x.write(2,v); break;
-        case IO_BG3X_H+1: disp.disp_io.bg3x.write(3,v); break;
+        case IO_BG3X_L: disp.disp_io.bg3_ref_point.write_x(0,v); break;
+        case IO_BG3X_L+1: disp.disp_io.bg3_ref_point.write_x(1,v); break;
+        case IO_BG3X_H: disp.disp_io.bg3_ref_point.write_x(2,v); break;
+        case IO_BG3X_H+1: disp.disp_io.bg3_ref_point.write_x(3,v); break;
 
-        case IO_BG3Y_L: disp.disp_io.bg3y.write(0,v); break;
-        case IO_BG3Y_L+1: disp.disp_io.bg3y.write(1,v); break;
-        case IO_BG3Y_H: disp.disp_io.bg3y.write(2,v); break;
-        case IO_BG3Y_H+1: disp.disp_io.bg3y.write(3,v); break;
+        case IO_BG3Y_L: disp.disp_io.bg3_ref_point.write_y(0,v); break;
+        case IO_BG3Y_L+1: disp.disp_io.bg3_ref_point.write_y(1,v); break;
+        case IO_BG3Y_H: disp.disp_io.bg3_ref_point.write_y(2,v); break;
+        case IO_BG3Y_H+1: disp.disp_io.bg3_ref_point.write_y(3,v); break;
 
 
         case IO_WIN0H: disp.disp_io.win0h.write(0,v); break;

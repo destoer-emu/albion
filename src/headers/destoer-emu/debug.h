@@ -2,12 +2,12 @@
 #include <destoer-emu/lib.h>
 
 #ifdef DEBUG
-enum class break_type
+enum class break_type : int
 {
     
-    write = 1,
-    read = 2,
-    execute = 3
+    write = 1 << 0,
+    read = 1 << 1,
+    execute = 1 << 2
 };
 
 
@@ -27,7 +27,7 @@ struct Breakpoint
     bool value_enabled = false;
     bool break_enabled = false;
     uint32_t addr = 0xdeadbeef;
-    int break_setting;
+    int break_setting = 0;
 };
 
 

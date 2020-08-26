@@ -149,10 +149,11 @@ void Cpu::cycle_tick_t(uint32_t cycles) noexcept
 	mem.tick_dma(cycles);
 	
 	// in double speed mode gfx and apu should operate at half
-	//ppu.update_graphics(cycles >> is_double); // handle the lcd emulation
+	ppu.update_graphics(cycles >> is_double); // handle the lcd emulation
 
 	apu.tick(cycles >> is_double); // advance the apu state	
 */
+
 	scheduler.tick(cycles);
 
 	// if we are using the fifo this needs to be ticked each time

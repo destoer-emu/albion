@@ -104,9 +104,9 @@ void Breakpoint::enable()
     break_enabled = true;
 }
 
+// breakpoints are broken
 bool Breakpoint::is_hit(uint32_t Addr,break_type type,uint32_t Value)
 {
-
     // if the its not enabled or the value does not match if enabled
     // then it is not hit
     if(!break_enabled || (value_enabled && value != Value))
@@ -116,7 +116,8 @@ bool Breakpoint::is_hit(uint32_t Addr,break_type type,uint32_t Value)
 
     // if the type the breakpoint has been triggered for
     // is not being watched then we aernt interested
-    if(!(static_cast<int>(type) & break_setting) == 0)
+    if((static_cast<int>(type) & break_setting) == 0)
+    //if(type != break_type::execute)
     {
         return false;
     }

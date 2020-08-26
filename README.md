@@ -23,3 +23,23 @@ and the current test passes of gekkios test suite can be seen in TEST_RESULT
 
 gba support is very early and can only boot test roms such as armwrestler
 
+# thanks
+
+# gba
+fleroviux https://github.com/fleroviux/
+YetAnotherEmuDev https://github.com/YetAnotherEmuDev
+rockpolish https://github.com/RockPolish
+dillon https://github.com/Dillonb
+ladystarbreeze https://github.com/ladystarbreeze
+
+# gb
+gekkio https://github.com/gekkio
+mattcurrie https://github.com/mattcurrie
+LIJI https://github.com/LIJI32
+
+and anyone else i missed
+
+# resources used
+https://problemkaputt.de/gbatek.htm
+https://gbdev.gg8.se/wiki/articles/Pan_Docs
+https://www.coranac.com/tonc/text/
