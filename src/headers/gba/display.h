@@ -51,12 +51,11 @@ private:
     };
 
     void render();
-    void render_bg(unsigned int start, unsigned int end);
     void render_text(int id);
     void render_affine(int id);
     void advance_line();
     void render_sprites(int mode);
-    void merge_layers(int render_mode);
+    void merge_layers();
 
     // is this inside a window if so is it enabled?
     bool bg_window_enabled(unsigned int bg, unsigned int x, unsigned int y) const;

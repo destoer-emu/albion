@@ -11,6 +11,12 @@ void Display::render_sprites(int mode)
     // until something is rendred over it
     std::fill(sprite_line.begin(),sprite_line.end(),lose_bg);
 
+    // objects aernt enabled do nothing more
+    if(!disp_io.disp_cnt.obj_enable)
+    {
+        return;
+    }
+
 
     const bool is_bitmap = mode >= 3;
 
@@ -135,14 +141,13 @@ void Display::render_sprites(int mode)
 
         const bool color = is_set(attr0,13);
 
-      if(color)
-        {
-            puts("256 sprites unsupported!");
-            exit(1);
-        }
-
         // assume palette
-        const unsigned int tile_num = attr2 & 0x3ff;
+        unsigned int tile_num = attr2 & 0x3ff;
+        // lower bit ignored in 2d mapping
+        if(color && !disp_io.disp_cnt.obj_vram_mapping)
+        {
+            tile_num &= ~1;
+        }
         const unsigned int pal =  (attr2 >> 12) & 0xf;
         const unsigned int priority = (attr2 >> 10) & 3;
 
@@ -236,24 +241,47 @@ void Display::render_sprites(int mode)
                 tile_base = tile_num + ((y2 / 8) * 32) + (x2 / 8);
             }
 
-
-            // note this part by here relies on 4bpp
-            // the idx decode will require a different one for 8bpp
-            // base + tile_base * tile_size
-            const uint32_t addr = 0x10000 + (tile_base * 8 * 4);
-
-            const uint32_t data_offset = ((x2 % 8) / 2) + ((y2 % 8) * 4);
-            const uint8_t tile_data = mem.handle_read<uint8_t>(mem.vram,addr+data_offset);
-
-            // lower x cord stored in lower nibble
-            const uint32_t idx = (x2 & 1)? (tile_data >> 4) & 0xf : tile_data & 0xf;
-
-            if(idx != 0)
+            // 4bpp
+            if(!color)
             {
-                sprite_line[x_offset].col_num = idx;
-                sprite_line[x_offset].pal_num = pal;
-                sprite_line[x_offset].bg = priority;
+
+                // base + tile_base * tile_size
+                const uint32_t addr = 0x10000 + (tile_base * 8 * 4);
+
+                const uint32_t data_offset = ((x2 % 8) / 2) + ((y2 % 8) * 4);
+                const auto tile_data = mem.handle_read<uint8_t>(mem.vram,addr+data_offset);
+
+                // lower x cord stored in lower nibble
+                const uint32_t idx = (x2 & 1)? (tile_data >> 4) & 0xf : tile_data & 0xf;
+
+                if(idx != 0)
+                {
+                    sprite_line[x_offset].col_num = idx;
+                    sprite_line[x_offset].pal_num = pal;
+                    sprite_line[x_offset].bg = priority;
+                }
             }
+
+
+            // 256 col sprites bugged on pokemon emerald title screen
+            // dont know why...
+            else
+            {
+
+                // base + tile_base * tile_size
+                const uint32_t addr = 0x10000 + (tile_base * 8 * 8);
+
+                const uint32_t data_offset = (x2 % 8) + ((y2 % 8) * 8);
+                const auto tile_data = mem.handle_read<uint8_t>(mem.vram,addr+data_offset);
+
+                if(tile_data != 0)
+                {
+                    sprite_line[x_offset].col_num = tile_data;
+                    sprite_line[x_offset].pal_num = 0;
+                    sprite_line[x_offset].bg = priority;
+                }
+            }
+
         }                
 
     }
