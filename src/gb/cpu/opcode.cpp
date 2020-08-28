@@ -75,7 +75,7 @@ void Cpu::exec_instr()
 			
 		case 0x7: // rlca (rotate a left bit 7 to carry)
 			a = instr_rlc(a);
-			f = deset_bit(f,Z);
+			zero = false;
 			break;
 		
 		
@@ -119,7 +119,7 @@ void Cpu::exec_instr()
 			
 		case 0xf: // rrca
 			a = instr_rrc(a);
-			f = deset_bit(f,Z);
+			zero = false;
 			break;
 			
 			// most games should never even execute this 
@@ -178,7 +178,7 @@ void Cpu::exec_instr()
 		
 		case 0x17: // rla (rotate left through carry flag) 
 			a = instr_rl(a);
-			f = deset_bit(f,Z);
+			zero = false;
 			break;
 		
 		case 0x18: // jr n
@@ -214,11 +214,11 @@ void Cpu::exec_instr()
 		
 		case 0x1f: // rra
 			a = instr_rr(a);
-			f = deset_bit(f,Z);
+			zero = false;
 			break;
 		
 		case 0x20: // jr nz, n
-			instr_jr_cond(false,Z);
+			instr_jr_cond(false,zero);
 			break;
 			
 		case 0x21: // ld hl, nn
@@ -250,15 +250,15 @@ void Cpu::exec_instr()
 		
 		case 0x27: // daa (lots of edge cases)
 			//https://forums.nesdev.com/viewtopic.php?f=20&t=15944
-			if (!is_set(f,N)) 
+			if (!negative) 
             {  
 				// after an addition, adjust if (half-)carry occurred or if result is out of bounds
-				if (is_set(f,C)|| a > 0x99) 
+				if (carry || a > 0x99) 
                 { 
 					a += 0x60; 
-                    f = set_bit(f,C); 
+                    carry = true;
 				}
-				if (is_set(f,H) || (a & 0x0f) > 0x09)  
+				if (half || (a & 0x0f) > 0x09)  
                 { 
 					a += 0x6; 
 				}
@@ -267,25 +267,26 @@ void Cpu::exec_instr()
 			else 
             {  
 				// after a subtraction, only adjust if (half-)carry occurred
-				if (is_set(f,C)) 
+				if (carry) 
                 {
 					a -= 0x60; 
 				}
 				
-				if (is_set(f,H)) 
+				if (half) 
                 { 
 					a -= 0x6; 
 				}
 			}
 			
 			// preserve C and N flags
-			f &= (1 << C) | (1 << N);
+			//f &= (1 << C) | (1 << N);
+			half = false;
 
 			set_zero(a);
 			break;
 			
 		case 0x28: // jr z, n
-			instr_jr_cond(true,Z);
+			instr_jr_cond(true,zero);
 			break;
 		
 		case 0x29: // add hl, hl
@@ -319,13 +320,13 @@ void Cpu::exec_instr()
 			
 		case 0x2f: // cpl (flip bits in a)
 			// set H and N
-			f = set_bit(f,N);
-			f = set_bit(f,H);
+			half = true;
+			negative = true;
 			a = ~a;
 			break;
 		
 		case 0x30: // jr nc, nn
-			instr_jr_cond(false,C);
+			instr_jr_cond(false,carry);
 			break;
 		
 		case 0x31: // ld sp, nn
@@ -365,13 +366,13 @@ void Cpu::exec_instr()
 		
 		case 0x37: // scf
 			// set the carry flag deset h and N
-			f = set_bit(f,C);
-			f = deset_bit(f,N);
-			f = deset_bit(f,H);
+			carry = true;
+			negative = false;
+			half = false;
 			break;
 		
 		case 0x38: // jr c, nnnn
-			instr_jr_cond(true,C);
+			instr_jr_cond(true,carry);
 			break;
 			
 		case 0x39: // add hl, sp 
@@ -403,18 +404,10 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0x3f: // ccf
-			if(is_set(f,C))
-			{ // complement the carry flag (probably a neat way to do this)
-				f = deset_bit(f,C);
-			}
-			
-			else
-			{
-				f = set_bit(f,C);
-			}
-			
-			f = deset_bit(f,N);
-			f = deset_bit(f,H);
+
+			carry = !carry;
+			negative = false;
+			half = false;
 			break;
 		
 		case 0x40: // ld b, b
@@ -924,7 +917,10 @@ void Cpu::exec_instr()
 			//instr_or(a);
 			// a | a = a 
 			// only thing that can happen is the zero flag setting
-			f = 0; // clear flags
+			// clear flags
+			half = false;
+			carry = false;
+			negative = false;
 			set_zero(a);
 			break;
 		
@@ -964,7 +960,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xc0: // ret nz
-			ret_cond(false,Z);
+			ret_cond(false,zero);
 			break;
 	
 		case 0xc1: // pop bc	
@@ -973,13 +969,7 @@ void Cpu::exec_instr()
 		
 		case 0xc2: // jp nz, nnnn
         {
-			uint16_t v =  mem.read_wordt(pc);
-			pc += 2;
-			if(!is_set(f,Z))
-			{
-				pc = v;
-				cycle_delay(4); // internal delay
-			}
+			instr_jp_cond(false,zero);
 			break;
         }
 
@@ -991,7 +981,7 @@ void Cpu::exec_instr()
 		
 		case 0xc4: // call nz
         {
-			call_cond(false,Z);
+			call_cond(false,zero);
 			break;
         }
 
@@ -1014,7 +1004,7 @@ void Cpu::exec_instr()
 		
 		case 0xc8: // ret z
         {
-			ret_cond(true,Z);
+			ret_cond(true,zero);
 			break;
         }
 
@@ -1025,13 +1015,7 @@ void Cpu::exec_instr()
 		
 		case 0xca: // jp z, nnnn
         {
-			uint16_t v = mem.read_wordt(pc);
-			pc += 2;
-			if(is_set(f, Z))
-			{
-				pc = v;
-				cycle_delay(4); // internal
-			}
+			instr_jp_cond(true,zero);
 			break;
         }
 
@@ -1045,7 +1029,7 @@ void Cpu::exec_instr()
 		
 		case 0xcc: // call z
         {
-			call_cond(true,Z);
+			call_cond(true,zero);
 			break;
         }
 		case 0xCD: // call nn 
@@ -1070,7 +1054,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xd0: // ret nc
-			ret_cond(false,C);
+			ret_cond(false,carry);
 			break;
 		
 		case 0xd1: // pop de
@@ -1079,19 +1063,13 @@ void Cpu::exec_instr()
 		
 		case 0xd2: // jp nc u16
         {
-			uint16_t v = mem.read_wordt(pc);
-			pc += 2;
-			if(!is_set(f,C))
-			{
-				pc = v;
-				cycle_delay(4);// internal
-			}
+			instr_jp_cond(false,carry);
 			break;
         }
 
 		case 0xd4: // call nc nnnn
         {
-			call_cond(false,C);
+			call_cond(false,carry);
 			break;			
         }
 
@@ -1114,7 +1092,7 @@ void Cpu::exec_instr()
 			break;
 		
 		case 0xd8: // ret c
-			ret_cond(true,C);
+			ret_cond(true,carry);
 			break;
 			
 		case 0xd9: // reti
@@ -1125,19 +1103,13 @@ void Cpu::exec_instr()
 		
 		case 0xda: // jp c, u16
         {
-			uint16_t v = mem.read_wordt(pc);
-			pc += 2;
-			if(is_set(f,C))
-			{
-				pc = v;
-				cycle_delay(4); // internal
-			}
+			instr_jp_cond(true,carry);
 			break;
         }
 
 		case 0xdc: // call c, u16
         {
-			call_cond(true,C);
+			call_cond(true,carry);
 			break;
         }
 

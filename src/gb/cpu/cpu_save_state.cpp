@@ -8,7 +8,10 @@ void Cpu::save_state(std::ofstream &fp)
     file_write_var(fp,internal_timer);
     file_write_var(fp,joypad_state);
     file_write_var(fp,a);
-    file_write_var(fp,f);
+    file_write_var(fp,carry);
+    file_write_var(fp,half);
+    file_write_var(fp,negative);
+    file_write_var(fp,zero);
     file_write_var(fp,b);
     file_write_var(fp,c);
     file_write_var(fp,d);
@@ -30,7 +33,10 @@ void Cpu::load_state(std::ifstream &fp)
     file_read_var(fp,internal_timer);
     file_read_var(fp,joypad_state);
     file_read_var(fp,a);
-    file_read_var(fp,f);
+    file_read_var(fp,carry);
+    file_read_var(fp,half);
+    file_read_var(fp,negative);
+    file_read_var(fp,zero);
     file_read_var(fp,b);
     file_read_var(fp,c);
     file_read_var(fp,d);

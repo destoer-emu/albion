@@ -27,14 +27,20 @@ gba support is very early and can only boot test roms such as armwrestler
 
 # gba
 fleroviux https://github.com/fleroviux/
+
 YetAnotherEmuDev https://github.com/YetAnotherEmuDev
+
 rockpolish https://github.com/RockPolish
+
 dillon https://github.com/Dillonb
+
 ladystarbreeze https://github.com/ladystarbreeze
 
 # gb
 gekkio https://github.com/gekkio
+
 mattcurrie https://github.com/mattcurrie
+
 LIJI https://github.com/LIJI32
 
 and anyone else i missed

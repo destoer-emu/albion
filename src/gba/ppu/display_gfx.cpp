@@ -111,26 +111,28 @@ void Display::render_affine(int id)
 
     // what do i do with actual paramaters here?
     const auto &scale_param = id == 2? disp_io.bg2_scale_param : disp_io.bg3_scale_param;
-    UNUSED(scale_param);
-
+    
+    // unsure how internal ref points work
     auto &ref_point_x = ref_point.int_ref_point_x;
     auto &ref_point_y = ref_point.int_ref_point_y;
 
     for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
     {
-        int32_t x_affine = x + (ref_point_x >> 8);
-        int32_t y_affine = ly + (ref_point_y >> 8);
 
-/*
-        // unsure as hell on this xform
-        const auto cord0 = size / 2;
+        const auto x_param = static_cast<int32_t>(x);
+        const auto y_param = static_cast<int32_t>(ly); 
 
-        const int32_t x_param = x_affine - cord0;
-        const int32_t y_param = y_affine - cord0; 
+        // transform applied and then the displacemnt
+        // origin at 0,0 of screen
 
-        x_affine = ((scale_param.a*x_param + scale_param.b*y_param) >> 8) + cord0;
-        y_affine = ((scale_param.c*x_param + scale_param.d*y_param) >> 8) + cord0;
-*/
+        // transform cords
+        int32_t x_affine = ((scale_param.a*x_param + scale_param.b*y_param) >> 8);
+        int32_t y_affine = ((scale_param.c*x_param + scale_param.d*y_param) >> 8);
+
+        // apply displacemnt
+        x_affine += ref_point_x >> 8;
+        y_affine += ref_point_y >> 8;
+
         // depending on what setting we have make pixel
         // trasparent or wrap around the x cord
         if(x_affine >= cord_size || x_affine < 0)
@@ -188,10 +190,8 @@ void Display::render_affine(int id)
         buf[x].bg = id;
     }
 
-    // unsure how internal ref points work
-    ref_point_x += scale_param.b;
-    ref_point_y += scale_param.d;
-
+    ref_point_x += scale_param.b >> 8;
+    ref_point_y += scale_param.d >> 8;
 }
 
 void Display::render_text(int id)

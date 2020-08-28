@@ -64,7 +64,11 @@ public:
     uint8_t get_h() const noexcept { return h; }
     uint8_t get_l() const noexcept { return l; }
     uint8_t get_a() const noexcept { return a; }
-    uint8_t get_f() const noexcept { return f; }
+    uint8_t get_f() const noexcept 
+    { 
+        return carry << C | half << H
+		| zero << Z | negative << N; 
+    }
     uint8_t get_b() const noexcept { return b; }
     uint8_t get_c() const noexcept { return c; }
     uint8_t get_d() const noexcept { return d; }
@@ -84,12 +88,24 @@ private:
     Disass &disass;
 
     // registers
-    uint8_t a; uint8_t f; //af
+    uint8_t a; /*uint8_t f*/; //af
     uint8_t b; uint8_t c; //bc
     uint8_t d; uint8_t e; //de
     uint8_t h; uint8_t l; //hl
     uint16_t sp;
     uint16_t pc;
+
+
+    static constexpr uint32_t Z = 7; // zero flag
+    static constexpr uint32_t N = 6; // negative flag
+    static constexpr uint32_t H = 5; // half carry flag
+    static constexpr uint32_t C = 4; // carry flag
+
+
+    bool zero;
+    bool negative;
+    bool half;
+    bool carry;
 
 
     // interrupts
@@ -154,9 +170,10 @@ private:
     uint8_t instr_rrc(uint8_t reg) noexcept;
     uint8_t instr_rlc(uint8_t reg) noexcept;
     void instr_jr() noexcept;
-    void instr_jr_cond(bool cond, int bit) noexcept;
-    void call_cond(bool cond, int bit) noexcept;
-    void ret_cond(bool cond, int bit) noexcept;
+    void instr_jr_cond(bool cond, bool flag) noexcept;
+    void instr_jp_cond(bool cond, bool flag) noexcept;
+    void call_cond(bool cond, bool flag) noexcept;
+    void ret_cond(bool cond, bool falg) noexcept;
 
 
     // stack helpers
@@ -170,11 +187,4 @@ private:
     void check_rst_loop(uint16_t addr, uint8_t op);
 
 };
-
-
-constexpr uint32_t Z = 7; // zero flag
-constexpr uint32_t N = 6; // negative flag
-constexpr uint32_t H = 5; // half carry flag
-constexpr uint32_t C = 4; // carry flag
-
 }
