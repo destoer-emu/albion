@@ -448,24 +448,39 @@ void Cpu::timer_overflow(int timer_num)
     // then request a fifo dma if it doesent have 16 bytes
     if(timer_num == apu.apu_io.sound_cnt.timer_num_a)
     {
-        uint8_t x = apu.apu_io.fifo_a.read();
-        //printf("fifo a %x\n",x);
-        apu.push_dma_a(x);
+/*
+        if(apu.apu_io.fifo_a.len == 0)
+        {
+            exit(1);
+        }
+*/
         if(apu.apu_io.fifo_a.len <= 16)
         {
             mem.dma.handle_dma(dma_type::sound);
         }
+
+        const auto x = apu.apu_io.fifo_a.read();
+        //printf("fifo a %x\n",x);
+        apu.push_dma_a(x);
+
     }
 
     if(timer_num == apu.apu_io.sound_cnt.timer_num_b)
     {
-        uint8_t x = apu.apu_io.fifo_b.read();
-        //printf("fifo b %x\n",x);
-        apu.push_dma_b(x);
+/*
+        if(apu.apu_io.fifo_b.len == 0)
+        {
+            exit(1);
+        }
+*/
         if(apu.apu_io.fifo_b.len <= 16)
         {
             mem.dma.handle_dma(dma_type::sound);
         }
+
+        const auto x = apu.apu_io.fifo_b.read();
+        //printf("fifo b %x\n",x);
+        apu.push_dma_b(x);
     }
 }
 

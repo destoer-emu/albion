@@ -56,22 +56,25 @@ void Apu::push_samples(int cycles)
     // (this is nice and jank and doesent handle the output properly but just roll with it for a sec)
     // (also the audio on the one rom that works is earbleeding cause it doesent run the rom at the correct speed)
     // (this code also aint checking if the channels are enabled)
+    // we also need to handle soundbias
+    // and eventually the internal resampling rate
+    // pokemon fire red is clicking during the intro
     int volume = 50;
 
 
     // mix left and right channels
-    float bufferin0 = 0;
-    float bufferin1 = dma_a_sample / 128;
+    float bufferin0 = 0.0;
+    float bufferin1 = static_cast<float>(dma_a_sample) / 128.0;
     playback.mix_samples(bufferin0,bufferin1,volume);
-    bufferin1 = dma_b_sample / 128;
+    bufferin1 = static_cast<float>(dma_b_sample) / 128.0;
     playback.mix_samples(bufferin0,bufferin1,volume);
     audio_buf[audio_buf_idx] = bufferin0;
 
     // right output
     bufferin0 = 0;
-    bufferin1 = dma_a_sample / 128;
+    bufferin1 = static_cast<float>(dma_a_sample) / 128.0;
     playback.mix_samples(bufferin0,bufferin1,volume);
-    bufferin1 = dma_b_sample / 128;
+    bufferin1 = static_cast<float>(dma_b_sample) / 128.0;
     playback.mix_samples(bufferin0,bufferin1,volume);
     audio_buf[audio_buf_idx+1] = bufferin0;
 
