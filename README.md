@@ -23,6 +23,27 @@ and the current test passes of gekkios test suite can be seen in TEST_RESULT
 
 gba support is very early and can only boot test roms such as armwrestler
 
+
+# todo
+
+fix regressions from gb scheduler 
+multithread scanline renderer
+fix save states
+
+gba bitmap affine transforms
+256 color sprite fix
+mosaic
+alpha blending
+obj window
+open bus
+cpu pipeline
+bus limitations
+memory timing (seq, nonseq)
+gamepak prefetch
+waitcnt
+gb psg port to gba
+save support
+
 # thanks
 
 # gba

@@ -50,6 +50,11 @@ constexpr uint32_t IO_WIN0V = 0x04000044 & IO_MASK; // window 0 horizontal dimen
 constexpr uint32_t IO_WIN1V = 0x04000046 & IO_MASK; // window 0 horizontal dimensions
 constexpr uint32_t IO_WININ = 0x04000048 & IO_MASK; // window in
 constexpr uint32_t IO_WINOUT = 0x0400004A & IO_MASK; // window out
+constexpr uint32_t IO_MOSAIC = 0x0400004c & IO_MASK;
+
+constexpr uint32_t IO_BLDCNT = 0x04000050 & IO_MASK;
+constexpr uint32_t IO_BLDALPHA = 0x04000052 & IO_MASK;
+constexpr uint32_t IO_BLDY = 0x04000054 & IO_MASK;
 
 // dma 0
 constexpr uint32_t IO_DMA0SAD = 0x040000b0 & IO_MASK;
@@ -104,4 +109,7 @@ constexpr uint32_t IO_SOUNDCNT_X = 0x4000084 & IO_MASK;
 constexpr uint32_t IO_FIFO_A = 0x040000A0 & IO_MASK;
 constexpr uint32_t IO_FIFO_B = 0x040000A4 & IO_MASK;
 
+
+// serial
+constexpr uint32_t SIOCNT = 0x04000128 & IO_MASK;
 }

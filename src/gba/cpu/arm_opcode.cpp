@@ -84,6 +84,8 @@ void Cpu::arm_swi(uint32_t opcode)
     cycle_tick(3); // 2s + 1n;
 }
 
+// mul timings need to be worked on
+
 void Cpu::arm_mull(uint32_t opcode)
 {
     UNUSED(opcode);

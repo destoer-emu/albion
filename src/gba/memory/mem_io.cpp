@@ -26,7 +26,7 @@ uint8_t KeyCnt::read(int idx) const
 
         case 1:
         {
-            return ((key_cnt >> 8) & 3) | irq_enable_flag << 14 | irq_cond << 15;
+            return ((key_cnt >> 8) & 3) | irq_enable_flag << 6 | irq_cond << 7;
         }
     }    
     return 0;
@@ -55,6 +55,70 @@ void KeyCnt::write(int idx, uint8_t v)
 }
 
 
+SioCnt::SioCnt()
+{
+    init();
+}
+
+void SioCnt::init()
+{
+    shift_clock = 0;
+    internal_shift_clock = 0; // 256khz / 2mhz
+    si_state = false;
+    so_during_activity = false;
+    start = false;
+    transfer_length = false;
+    irq = false;
+}
+
+
+void SioCnt::write(int idx, uint8_t v)
+{
+    switch(idx)
+    {
+        case 0:
+        {
+            shift_clock = is_set(v,0);
+            internal_shift_clock = is_set(v,1);
+            // si state is read only
+            so_during_activity = is_set(v,2);
+            start = is_set(v,7);
+            break;
+        }
+
+        case 1:
+        {
+            transfer_length = is_set(v,4);
+            irq = is_set(v,6);
+            break;
+        }
+    }
+}
+
+
+uint8_t SioCnt::read(int idx) const
+{
+    switch(idx)
+    {
+        case 0:
+        {
+            return shift_clock | 
+                internal_shift_clock  << 1 |
+                so_during_activity  << 2 |
+                start << 7;
+            break;
+        }
+
+        case 1:
+        {
+            return transfer_length << 4 |
+                irq << 6;
+            break;
+        }
+    }
+
+    return 0;
+}
 
 MemIo::MemIo()
 {
@@ -63,7 +127,9 @@ MemIo::MemIo()
 
 void MemIo::init()
 {
-    keyinput = 0x3ff;    
+    keyinput = 0x3ff; 
+    postflg = 0;   
+    siocnt.init();
     key_control.init();
 }
 

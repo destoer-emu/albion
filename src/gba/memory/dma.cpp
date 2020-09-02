@@ -58,13 +58,14 @@ void Dma::write_source(int reg_num,int idx, uint8_t v)
         case 2: r.src = (r.src & 0x0f00ffff) | (v << 16); break;
         case 3: r.src = (r.src & 0x00ffffff) | ((v & 0xf) << 24); break;            
     }
-
-
+/*  todo verify?
     // probably a cleaner way to handle the 27 bit limit 
     if(reg_num != 3)
     {
         r.src = deset_bit(r.src,27);
     }
+*/
+    //printf("dma source written! %08x:%08x\n",r.src,cpu.get_pc());
 }
 
 void Dma::write_dest(int reg_num, int idx, uint8_t v)
@@ -161,6 +162,7 @@ void Dma::write_control(int reg_num,int idx, uint8_t v)
                         case 2: r.start_time = dma_type::sound; break;
                         case 3: r.start_time = dma_type::video_capture; break;
                     }
+                    break;
                 }
             }
 
@@ -186,6 +188,10 @@ void Dma::write_control(int reg_num,int idx, uint8_t v)
     }
 }
 
+
+// investiage the case that a dma starts another one
+// do we switch over and resume from where it left off
+// or block and service the one with the higest priority when we are done
 
 // do we check dmas constatnly or can we get away with only requesting ones
 // of a specific type?
@@ -246,19 +252,22 @@ void Dma::do_dma(int reg_num, dma_type req_type)
         // implement soundcnt_h and the dma fires and we will find out :P
         case dma_type::sound:
         {
-            //printf("fifo dma %x from %08x to %08x\n",reg_num,r.src_shadow,r.dst_shadow);
+            printf("fifo dma %x from %08x to %08x\n",reg_num,r.src_shadow,r.dst_shadow);
 
 
+            // need to rework our memory model to handle
+            // the n & s cycles implictly at some point
+            // dma takes 2N + 2(n-1)s +xI
             for(int i = 0; i < 4; i++)
             {
-                const uint32_t v = mem.read_memt<uint32_t>(r.src_shadow);
+                const auto v = mem.read_memt<uint32_t>(r.src_shadow);
                 mem.write_memt<uint32_t>(r.dst_shadow,v);
                 
                 // increment + reload is forbidden dont use it
                 if(r.src_cnt != 3)
                 {
                     // allways in word mode here
-                    r.src_shadow += addr_increment_table[1][r.src_cnt];
+                    r.src_shadow += addr_increment_table[r.is_word][r.src_cnt];
                 }
 
                 // dst is not incremented when doing fifo dma

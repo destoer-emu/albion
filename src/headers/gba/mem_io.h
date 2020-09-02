@@ -18,7 +18,22 @@ struct KeyCnt
 };
 
 
+struct SioCnt
+{
+    SioCnt();
+    void init();
 
+    uint8_t read(int idx) const;
+    void write(int idx, uint8_t v);
+
+    int shift_clock;
+    int internal_shift_clock;
+    bool si_state;
+    bool so_during_activity;
+    bool start;
+    bool transfer_length; // 8 / 32
+    bool irq;
+};
 
 
 
@@ -28,6 +43,8 @@ struct MemIo
     void init();
     uint16_t keyinput;    
     KeyCnt key_control;
+    SioCnt siocnt;
+    uint8_t postflg;
 };
 
 }

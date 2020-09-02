@@ -280,6 +280,111 @@ void DispStat::write(int idx, uint8_t v)
 }
 
 
+BldCnt::BldCnt()
+{
+    init();
+}
+
+void BldCnt::init()
+{
+    for(int i = 0; i < 4; i++)
+    {
+        bg_1st_target[i] = false;
+        bg_2nd_target[i] = false;
+    }
+
+    obj_1st_target = false;
+    obj_2nd_target = false;
+    
+    bd_1st_target = false;
+    bd_2nd_target = false;
+}
+
+void BldCnt::write(int idx, uint8_t v)
+{
+    switch(idx)
+    {
+        case 0:
+        {
+            for(int i = 0; i < 4; i++)
+            {
+                bg_1st_target[i] = is_set(v,i);
+            }
+            obj_1st_target = is_set(v,4);
+            bd_1st_target = is_set(v,5);
+            special_effect = (v >> 6) & 0x3;
+            break;
+        }
+
+        case 1:
+        {
+            for(int i = 0; i < 4; i++)
+            {
+                bg_2nd_target[i] = is_set(v,i);
+            }
+            obj_2nd_target = is_set(v,4);
+            bd_2nd_target = is_set(v,5);
+            break;
+        }
+    }
+}
+
+uint8_t BldCnt::read(int idx) const
+{
+    switch(idx)
+    {
+        case 0:
+        {
+            return bg_1st_target[0] | bg_1st_target[1] << 1 |
+                bg_1st_target[2] << 2 | bg_1st_target[3] << 3 |
+                obj_1st_target << 4 | bd_1st_target << 5 |
+                special_effect << 6;
+        }
+
+        case 1:
+        {
+            return bg_2nd_target[0] | bg_2nd_target[1] << 1 |
+                bg_2nd_target[2] << 2 | bg_2nd_target[3] << 3 |
+                obj_2nd_target << 4 | bd_2nd_target << 5;
+        }
+    }
+
+    return 0;
+}
+
+Mosaic::Mosaic()
+{
+    init();
+}
+
+void Mosaic::init()
+{
+    bg_h_size = 0;
+    bg_v_size = 0;
+    obj_h_size = 0;
+    obj_v_size = 0;
+}
+
+
+void Mosaic::write(int idx, uint8_t v)
+{
+    switch(idx)
+    {
+        case 0:
+        {
+            bg_h_size = (v & 0b1111);
+            bg_v_size = (v & 0b11110000) >> 4;
+            break;
+        }
+
+        case 1:
+        {
+            obj_h_size = (v & 0b1111);
+            obj_v_size = (v & 0b11110000) >> 4;            
+            break;
+        }
+    }
+}
 
 
 ScalingParam::ScalingParam()
@@ -504,6 +609,13 @@ void DispIo::init()
     win1v.init();
     win_in.init();
     win_out.init();
+
+    mosaic.init();
+    bldcnt.init();
+
+    eva = 0;
+    evb = 0;
+    evy = 0;
 }
 
 }

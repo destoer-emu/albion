@@ -103,6 +103,44 @@ struct DispCnt
     bool obj_window_enable;
 };
 
+struct Mosaic
+{
+    Mosaic();
+    void init();
+
+    void write(int idx, uint8_t v);
+
+    int bg_h_size;
+    int bg_v_size;
+
+    int obj_h_size;
+    int obj_v_size;
+};
+
+
+struct BldCnt
+{
+    BldCnt();
+    void init();
+
+    void write(int idx, uint8_t v);
+    uint8_t read(int idx) const;
+
+    
+
+    // 0 none, 1 alpha blend, 2 bright inc, 3 bright dec
+    int special_effect;
+
+    bool bg_1st_target[4];
+
+    bool bg_2nd_target[4];
+
+    bool obj_1st_target;
+    bool obj_2nd_target;
+
+    bool bd_1st_target;
+    bool bd_2nd_target;
+};
 
 struct DispStat
 {
@@ -169,7 +207,6 @@ struct WindowDimensionV
     uint8_t y1; // leftmost
 };
 
-
 struct DispIo
 {
     DispIo();
@@ -195,7 +232,17 @@ struct DispIo
     std::array<BgOffset,4> bg_offset_x;
     std::array<BgOffset,4> bg_offset_y;
 
+    Mosaic mosaic;
+    BldCnt bldcnt;
+
     DispCnt disp_cnt;
     DispStat disp_stat;
+
+
+    // bld param
+    int32_t eva;
+    int32_t evb;
+    int32_t evy;
+
 };
 }

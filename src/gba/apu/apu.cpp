@@ -58,7 +58,6 @@ void Apu::push_samples(int cycles)
     // (this code also aint checking if the channels are enabled)
     // we also need to handle soundbias
     // and eventually the internal resampling rate
-    // pokemon fire red is clicking during the intro
     int volume = 50;
 
 

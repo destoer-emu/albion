@@ -1972,6 +1972,7 @@ void Memory::do_gdma() noexcept
 	const int len = ((io[IO_HDMA5] & 0x7f) + 1) * 0x10;
 
 	// 8 t cycles to xfer one 0x10 block
+	// (need to verify the timings on this!)
 
 	for(int i = 0; i < len; i += 2)
 	{

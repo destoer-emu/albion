@@ -4,7 +4,7 @@ namespace gameboyadvance
 {
 
 /*
-    fix rendering issues obj window impl, bg affine transforms mosiac, alpha
+    fix rendering issues obj window impl, mosiac, alpha
     fix our dma sound, then unstub the memory writes
 */
 

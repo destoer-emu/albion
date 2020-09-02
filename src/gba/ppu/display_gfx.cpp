@@ -335,11 +335,98 @@ void Display::merge_layers()
 {
     const auto disp_cnt = disp_io.disp_cnt;
     const auto render_mode = disp_cnt.bg_mode;
-    
+
+
+    // see notes below for what i think is better... 
  
+    // right so we wanna impl bldcnt
+    // we are gonna change up the sort of bg
+    // so that we include the obj layer in the array
+    // and have a source so we can easily index the priority + the bldcnt settings
+    // and then just run a blend by hitting 1st target and looking for 2nd below it
+    // (if we hit the bottom we have to check bldcnt we may just have this as a bottom (really high value so it allways loses))
+    // (array section for ease and look into the perf implications later)
+    // im not sure how we will handle obj thought because they can have a different priority
+    // on each pixel whereas every other layer has to have the same priority on it
+    // so more than likely on each transparency descend we will have to hard check the obj layer each time?
+    // we will look into impl this tomorrow just run bldcnt and a couple roms when done
+    // to check we havent messed anything up
+
+
+/*
+        // this should work but it involves very uncessary descends for data we may never use
+        // it would be nicer if we could just find the 1st and 2nd target and test if they are adjacent
+        // at any given pixel...
+        // (this mehtod also means we dont need to change our current structure (infact its easier not to))
+
+
+        // operation for handling bld mode 1
+
+        // default to backdrop!
+
+        // so instead we could just jump to highest priority of 1st target if trans
+        // go to next highest 
+        // (we need to check if sprite is highest as a hard code before we decsned bgs)
+        // if first was bg check sprite for 2nd target
+        // if its not keep going down to the 2nd target
+        // if at any point we see a non transparent pixel we will just break out early
+        // if its not there at all then check if backdrop is a target  
+        // else we dont give a damb and just draw the damb thing
+        // for the latter idealy we would just when we get the first pixel that aint trans
+        // with the highest priority save it
+        // at the fail point we can then just quickly dump it in place
+        // (in impl we will probs just do as a default color decode)
+        // ( and then overwrite with a blended one if found )
+
+        // note that if the semi trans bit is set for an object in this postion and it wins ...
+        // then we need to run the above procedure regardless of bldcnt mode
+
+
+        // for bright / dark mode we simply need to just run the normal code
+        // and apply a brightness calc on the color if the winning pixel is a 1st target :P
+
+        // lets say this is the effect mode 1 handler
+        const TileData backdrop(0,0,0);
+        for(size_t x = 0; x < SCREEN_WIDTH; x++)
+        {
+            // default to backdrop color
+            bg_line[x] = backdrop;
+            for(unsigned int i = 0; i < lim; i++)
+            {
+                // this will override anything drawn by the fail case...
+                if(first_target(bg) && opaque)
+                {
+                    // search for 2nd if not found
+                    // draw
+                }
+
+                else // push this as line data
+                {
+                    const auto bg = bg_priority[i].bg;
+                    // if bg enabled!
+                    // should move this check into the sort so we completly ignore
+                    // drawing it ideally
+                    // need a function by here that checks the bg enable for a specific x and y cord
+                    if(disp_cnt.bg_enable[bg] && bg_window_enabled(bg,x,ly)) 
+                    {
+                        const auto data = bg_lines[bg][x];
+                        if(data.col_num != 0)
+                        {
+                            bg_line[x] = data;
+                        }
+                    }
+                }
+            }
+        }
+*/
+
+
+
     // does a lesser priority obj pixel 
     // draw over a transparent bg pixel ?
     bool is_bitmap = render_mode >= 3;
+
+    // ignore blending in bitmap modes for :)
 
     // now to merge sprite and bg
     // this needs to be split off into its own function
@@ -411,59 +498,58 @@ void Display::merge_layers()
             return a.priority > b.priority;
         });
 
-        // i need to handle alpha here
-        // i will likely have to merge the sprite overlay and color production code here
-        const TileData backdrop(0,0,0);
+        //const auto &bldcnt = disp_io.bldcnt;
+
+        const TileData backdrop(0,0,std::numeric_limits<int>::max());
+
+        enum class pixel_source
+        {
+            bg,
+            obj
+        };
+
         for(size_t x = 0; x < SCREEN_WIDTH; x++)
         {
+            // assume bg wins
+            auto source = pixel_source::bg;
+
             // default to backdrop color
-            bg_line[x] = backdrop;
-            for(unsigned int i = 0; i < lim; i++)
+            auto pixel = backdrop;
+
+            // find first active bg pixel
+            // if none are found the backdrop will win
+            for(int i = lim-1; i >= 0; i--)
             {
                 const auto bg = bg_priority[i].bg;
-                // if bg enabled!
-                // should move this check into the sort so we completly ignore
-                // drawing it ideally
-                // need a function by here that checks the bg enable for a specific x and y cord
+
                 if(disp_cnt.bg_enable[bg] && bg_window_enabled(bg,x,ly)) 
                 {
-                    const auto data = bg_lines[bg][x];
-                    if(data.col_num != 0)
+                    const auto &b = bg_lines[bg][x];
+                    if(b.col_num != 0)
                     {
-                        bg_line[x] = data;
+                        pixel = b;
+                        break;
                     }
                 }
             }
-        }
 
 
-
-
-
-
-        // compare sprites against our final bg line
-        // and convert colors accordingly
-        for(unsigned int x = 0; x < SCREEN_WIDTH; x++)
-        {
-            const auto s = sprite_line[x];
-            const auto b = bg_line[x];
-
-            // sprite has higher priority and is not transparent
-            if(sprite_window_enabled(x,ly) && s.col_num != 0 && 
-                (s.bg <= disp_io.bg_cnt[b.bg].priority || b.col_num == 0) )
+            // sprite has priority
+            // note the lower the better here
+            // if equal a sprite wins
+            const auto &s = sprite_line[x];
+            if((s.bg <= disp_io.bg_cnt[pixel.bg].priority || pixel.col_num == 0) && sprite_window_enabled(x,ly) && s.col_num != 0)
             {
-                screen[(ly*SCREEN_WIDTH) + x] = convert_color(read_obj_palette(s.pal_num,s.col_num));
+                source = pixel_source::obj;
+
+                // sprite has the highest priority update the pixel
+                pixel = s;         
             }
 
-            else
-            {
-                screen[(ly*SCREEN_WIDTH) + x] = convert_color(read_bg_palette(b.pal_num,b.col_num));
-            }
-
+            const auto color = source == pixel_source::obj? read_obj_palette(pixel.pal_num,pixel.col_num) : read_bg_palette(pixel.pal_num,pixel.col_num);
+            screen[(ly*SCREEN_WIDTH) + x] = convert_color(color);
         }
     }
-
-
 }
 
 

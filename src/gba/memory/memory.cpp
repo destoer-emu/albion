@@ -78,6 +78,11 @@ void Mem::init(std::string filename)
     }
     mem_io.init();
     dma.init();
+
+
+    // if we are not using the bios boot we need to set postflg
+    mem_io.postflg = 1;
+
 }
 
 
@@ -226,6 +231,25 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_BG3VOFS+1: disp.disp_io.bg_offset_y[3].write(1,v); break;   
 
 
+        // (write only)
+        case IO_MOSAIC: disp.disp_io.mosaic.write(0,v); break;
+        case IO_MOSAIC+1: disp.disp_io.mosaic.write(1,v); break;
+        // unused
+        case IO_MOSAIC+2: break;
+        case IO_MOSAIC+3:  break;
+
+        case IO_BLDCNT: disp.disp_io.bldcnt.write(0,v); break;
+        case IO_BLDCNT+1: disp.disp_io.bldcnt.write(1,v); break;
+
+        case IO_BLDALPHA: disp.disp_io.eva = v & 0x1f; break;
+        case IO_BLDALPHA+1: disp.disp_io.evb = v & 0x1f; break;
+
+        // write only
+        case IO_BLDY: disp.disp_io.evy = v & 0x1f; break;
+        // unused
+        case IO_BLDY+1: break;
+        case IO_BLDY+2: break;
+        case IO_BLDY+3: break;
 
         // timers
 
@@ -360,6 +384,21 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
             break;
         }
 
+        case SIOCNT:
+        { 
+            mem_io.siocnt.write(0,v);
+            // interrupt hack should fire after
+            // transfer end not instantly 
+            if(mem_io.siocnt.start && mem_io.siocnt.irq)
+            {
+                cpu.request_interrupt(interrupt::serial);
+            }
+            mem_io.siocnt.start = false;
+            break;
+        }
+        case SIOCNT+1: mem_io.siocnt.write(1,v); break;
+
+
         case IO_IME: cpu.cpu_io.ime = is_set(v,0); break;
         case IO_IME+1: case IO_IME+2: case IO_IME+3: break; // unused
 
@@ -369,6 +408,8 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_IF: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & 0xff00) & ~v; break;
         case IO_IF+1: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & 0x00ff) & ~((v & 0x3f) << 8);  break;
 
+        case IO_POSTFLG: mem_io.postflg = v; break;
+
 
         case IO_HALTCNT: cpu.cpu_io.halt_cnt.write(v); break;
 
@@ -377,6 +418,7 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_WAITCNT+1: break;
         case IO_WAITCNT+2: break;
         case IO_WAITCNT+3: break;
+
 
         default: // here we will handle open bus when we have all our io regs done :)
         { 
@@ -430,6 +472,11 @@ uint8_t Mem::read_io_regs(uint32_t addr)
         case IO_WINOUT: return disp.disp_io.win_out.read(0);
         case IO_WINOUT+1: return disp.disp_io.win_out.read(1); 
 
+        case IO_BLDCNT: return disp.disp_io.bldcnt.read(0);
+        case IO_BLDCNT+1: return disp.disp_io.bldcnt.read(1);
+
+        case IO_BLDALPHA: return disp.disp_io.eva;
+        case IO_BLDALPHA+1: return disp.disp_io.evb;
 
         // timers
 
@@ -464,10 +511,15 @@ uint8_t Mem::read_io_regs(uint32_t addr)
         case IO_IF+1: return (cpu.cpu_io.interrupt_flag >> 8) & 0x3f;         
 
         // gamepak wait timings ignore for now
-        case IO_WAITCNT: return 0; break;
-        case IO_WAITCNT+1: return 0; break;
-        case IO_WAITCNT+2: return  0; break;
-        case IO_WAITCNT+3: return 0; break;
+        case IO_WAITCNT: return 0;
+        case IO_WAITCNT+1: return 0; 
+        case IO_WAITCNT+2: return  0; 
+        case IO_WAITCNT+3: return 0; 
+
+        case SIOCNT: return mem_io.siocnt.read(0);  
+        case SIOCNT+1: return mem_io.siocnt.read(0);
+
+        case IO_POSTFLG: return mem_io.postflg;
 
         default:
         {

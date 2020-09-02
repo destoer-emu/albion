@@ -31,6 +31,7 @@ void Cpu::init()
 
     // setup main cpu state
     is_thumb = false;  // cpu in arm mode
+
     regs[PC] = 0x08000000; // cartrige reset vector
     regs[LR] = 0x08000000;
     cpsr = 0x1f;
@@ -38,6 +39,7 @@ void Cpu::init()
     hi_banked[static_cast<int>(cpu_mode::supervisor)][0] = 0x03007FE0;
     hi_banked[static_cast<int>(cpu_mode::irq)][0] = 0x03007FA0;
     //arm_fill_pipeline(); // fill the intitial cpu pipeline
+
     //regs[PC] = 0;
     arm_mode = cpu_mode::system;
     switch_mode(cpu_mode::system);
@@ -407,11 +409,49 @@ void Cpu::timer_overflow(int timer_num)
 {
     auto &timer = cpu_io.timers[timer_num];
 
+    // reload the timer with inital value
+    timer.counter = timer.reload;
+
+    // if fire irq on timer overflow
+    if(timer.irq) 
+    {
+        request_interrupt(timer.timer_interrupt);
+    }
+
+
+   // if the timer num is equal to the dma sound channels dma
+     // request a fifo dma if it doesent have 16 bytes
+    // then push a fifo byte to the apu
+    if(timer_num == apu.apu_io.sound_cnt.timer_num_a)
+    {
+        if(apu.apu_io.fifo_a.len <= 16)
+        {
+            mem.dma.handle_dma(dma_type::sound);
+        }
+
+        const auto x = apu.apu_io.fifo_a.read();
+        //printf("fifo a %x\n",x);
+        apu.push_dma_a(x);
+    }
+
+    if(timer_num == apu.apu_io.sound_cnt.timer_num_b)
+    {
+
+        if(apu.apu_io.fifo_b.len <= 16)
+        {
+            mem.dma.handle_dma(dma_type::sound);
+        }
+
+        const auto x = apu.apu_io.fifo_b.read();
+        //printf("fifo b %x\n",x);
+        apu.push_dma_b(x);
+    }
+
 
     // check if the timer above is subject to cascade
     // in what oreder should this happen 
     // should the current timer fire its irq first?
-    if(timer_num != 3) // cant cascade?
+    if(timer_num != 3) // timer 0 cant cascade
     {
         auto &next_timer = cpu_io.timers[timer_num+1];
 
@@ -428,59 +468,6 @@ void Cpu::timer_overflow(int timer_num)
                 next_timer.counter += 1;
             }
         }
-    }
-
-
-
-    // reload the timer with inital value
-    timer.counter = timer.reload;
-
-    // if fire irq on timer overflow
-    if(timer.irq) 
-    {
-        request_interrupt(timer.timer_interrupt);
-    }
-
-
-
-    // if the timer num is equal to the dma sound channels dma
-    // then push a fifo byte to the apu
-    // then request a fifo dma if it doesent have 16 bytes
-    if(timer_num == apu.apu_io.sound_cnt.timer_num_a)
-    {
-/*
-        if(apu.apu_io.fifo_a.len == 0)
-        {
-            exit(1);
-        }
-*/
-        if(apu.apu_io.fifo_a.len <= 16)
-        {
-            mem.dma.handle_dma(dma_type::sound);
-        }
-
-        const auto x = apu.apu_io.fifo_a.read();
-        //printf("fifo a %x\n",x);
-        apu.push_dma_a(x);
-
-    }
-
-    if(timer_num == apu.apu_io.sound_cnt.timer_num_b)
-    {
-/*
-        if(apu.apu_io.fifo_b.len == 0)
-        {
-            exit(1);
-        }
-*/
-        if(apu.apu_io.fifo_b.len <= 16)
-        {
-            mem.dma.handle_dma(dma_type::sound);
-        }
-
-        const auto x = apu.apu_io.fifo_b.read();
-        //printf("fifo b %x\n",x);
-        apu.push_dma_b(x);
     }
 }
 
