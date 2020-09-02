@@ -468,6 +468,7 @@ void ImguiMainWindow::gameboy_draw_breakpoints()
     static bool break_r = false;
     static bool break_x = false;
     static bool break_w = false;
+    static bool enabled = gb.debug.breakpoints_enabled;
     static int selected = -1;
     static uint32_t addr_selected;
 	ImGui::Begin("Breakpoints");
@@ -480,7 +481,16 @@ void ImguiMainWindow::gameboy_draw_breakpoints()
 	ImGui::SameLine(); ImGui::Checkbox("execute", &break_x);
 
 
-    ImGui::SameLine(); ImGui::Checkbox("enable_all",&gb.debug.breakpoints_enabled);
+    const bool old = enabled;
+
+    ImGui::SameLine(); ImGui::Checkbox("enable_all",&enabled);
+
+    if(old != enabled)
+    {
+        gb.change_breakpoint_enable(enabled);
+    }
+    
+
 
 	ImGui::InputText("", input_breakpoint, IM_ARRAYSIZE(input_breakpoint));
 

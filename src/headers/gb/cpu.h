@@ -78,6 +78,21 @@ public:
     void save_state(std::ofstream &fp);
     void load_state(std::ifstream &fp);
 
+#ifdef DEBUG
+    void change_breakpoint_enable(bool enabled) noexcept
+    {
+        if(enabled)
+        {
+            exec_instr_fptr = &Cpu::exec_instr_debug;         
+        }
+
+        else
+        {
+            exec_instr_fptr = &Cpu::exec_instr_no_debug; 
+        }
+    }
+#endif
+
 private:
 
     Memory &mem;
@@ -132,9 +147,30 @@ private:
     uint16_t read_bc() const noexcept;
     uint16_t read_hl() const noexcept;
 
+#ifdef DEBUG
+    using EXEC_INSTR_FPTR = void (Cpu::*)(void);
 
+    EXEC_INSTR_FPTR exec_instr_fptr = &Cpu::exec_instr_no_debug;
 
-    void exec_instr();
+    inline void exec_instr()
+    {
+        std::invoke(exec_instr_fptr,this);
+    }
+
+    void exec_instr_debug();
+
+#else 
+
+    inline void exec_instr()
+    {
+        exec_instr_no_debug();
+    }
+
+#endif
+
+    void exec_instr_no_debug();
+    
+
     void exec_cb(uint8_t cbop);
     void handle_instr_effects();
     void handle_halt();

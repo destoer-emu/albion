@@ -27,9 +27,52 @@ public:
 
     void tick_dma(uint32_t cycles) noexcept;
 
+#ifdef DEBUG
+    using WRITE_MEM_FPTR = void (Memory::*)(uint16_t addr,uint8_t data) noexcept;
+    using READ_MEM_FPTR = uint8_t (Memory::*)(uint16_t addr) const noexcept;
+
+    WRITE_MEM_FPTR write_mem_fptr;
+    READ_MEM_FPTR read_mem_fptr;
+
+    void change_breakpoint_enable(bool enabled) noexcept
+    {
+        if(enabled)
+        {
+            write_mem_fptr = &Memory::write_mem_debug;
+            read_mem_fptr = &Memory::read_mem_debug;            
+        }
+
+        else
+        {
+            write_mem_fptr = &Memory::write_mem_no_debug;
+            read_mem_fptr = &Memory::read_mem_no_debug;
+        }
+    }
+
+
     // public access functions
-    uint8_t read_mem(uint16_t addr) noexcept;
-    void write_mem(uint16_t addr, uint8_t v) noexcept;
+    inline uint8_t read_mem(uint16_t addr) const noexcept
+    {
+        return std::invoke(read_mem_fptr,this,addr);
+    }
+
+    inline void write_mem(uint16_t addr, uint8_t v) noexcept
+    {
+        std::invoke(write_mem_fptr,this,addr,v);
+    }
+#else
+    // public access functions
+    inline uint8_t read_mem(uint16_t addr) const noexcept
+    {
+        return read_mem_no_debug(addr);
+    }
+
+    inline void write_mem(uint16_t addr, uint8_t v) noexcept
+    {
+        write_mem_no_debug(addr,v);
+    }
+#endif
+
     uint16_t read_word(uint16_t addr) noexcept;
     void write_word(uint16_t addr, uint16_t v) noexcept;
     uint8_t read_iot(uint16_t) noexcept;
@@ -85,6 +128,14 @@ private:
     Apu &apu;
     GameboyScheduler &scheduler;
     Debug &debug;
+
+#ifdef DEBUG
+    uint8_t read_mem_debug(uint16_t addr) const noexcept;
+    void write_mem_debug(uint16_t addr, uint8_t v) noexcept;
+#endif
+
+    uint8_t read_mem_no_debug(uint16_t addr) const noexcept;
+    void write_mem_no_debug(uint16_t addr, uint8_t v) noexcept;
 
     void do_dma(uint8_t v) noexcept;
 
@@ -170,9 +221,6 @@ private:
 
     int cgb_wram_bank_idx = 0;  // default zero
     int vram_bank = 0; // what cgb vram bank are we in?
-
-    using WRITE_MEM_FPTR = void (Memory::*)(uint16_t addr,uint8_t data) noexcept;
-    using READ_MEM_FPTR = uint8_t (Memory::*)(uint16_t addr) const noexcept;
 
     typedef struct
     {

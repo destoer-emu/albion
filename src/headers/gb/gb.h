@@ -37,7 +37,9 @@ public:
     void save_state(std::string filename);
     void load_state(std::string filename);
 
-
+#ifdef DEBUG
+    void change_breakpoint_enable(bool enabled);
+#endif
 
     Cpu cpu{*this};
     Memory mem{*this};

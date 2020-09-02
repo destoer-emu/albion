@@ -8,7 +8,11 @@ GB::GB()
 {
 	// setup a dummy state
 	reset("no rom",false,false);
-	//debug.disable_everything();
+	// default the breakpoints to off
+	// maybe something to consider as a config
+#ifdef DEBUG
+	change_breakpoint_enable(false);
+#endif
 }
 
 void GB::reset(std::string rom_name, bool with_rom, bool use_bios)
@@ -26,6 +30,14 @@ void GB::reset(std::string rom_name, bool with_rom, bool use_bios)
 	}
 }
 
+#ifdef DEBUG
+void GB::change_breakpoint_enable(bool enabled)
+{
+	debug.breakpoints_enabled = enabled;
+	mem.change_breakpoint_enable(enabled);
+	cpu.change_breakpoint_enable(enabled);
+}
+#endif
 
 void GB::key_input(int key, bool pressed)
 {

@@ -605,9 +605,11 @@ uint8_t Memory::raw_read(uint16_t addr) noexcept
 
 
 // public access functions
-uint8_t Memory::read_mem(uint16_t addr) noexcept
-{
+
+// read mem
 #ifdef DEBUG
+uint8_t Memory::read_mem_debug(uint16_t addr) const noexcept
+{
 	const uint8_t value = std::invoke(memory_table[(addr & 0xf000) >> 12].read_memf,this,addr);
 	if(debug.breakpoint_hit(addr,value,break_type::read))
 	{
@@ -616,23 +618,35 @@ uint8_t Memory::read_mem(uint16_t addr) noexcept
 		debug.halt();
 	}
 	return value;
-
-#else 
-    return std::invoke(memory_table[(addr & 0xf000) >> 12].read_memf,this,addr);
+}
 #endif
+
+
+uint8_t Memory::read_mem_no_debug(uint16_t addr) const noexcept
+{
+    return std::invoke(memory_table[(addr & 0xf000) >> 12].read_memf,this,addr);
 }
 
-void Memory::write_mem(uint16_t addr, uint8_t v) noexcept
-{
+
+// write_mem
+
 #ifdef DEBUG
+void Memory::write_mem_debug(uint16_t addr, uint8_t v) noexcept
+{
 	if(debug.breakpoint_hit(addr,v,break_type::write))
 	{
 		// halt until told otherwhise :)
 		write_log(debug,"[DEBUG] write breakpoint hit ({:x}:{:})",addr,v);
 		debug.halt();
 	}
+
+	std::invoke(memory_table[(addr & 0xf000) >> 12].write_memf,this,addr,v);
+}
 #endif
-    return std::invoke(memory_table[(addr & 0xf000) >> 12].write_memf,this,addr,v);    
+
+void Memory::write_mem_no_debug(uint16_t addr, uint8_t v) noexcept
+{
+	std::invoke(memory_table[(addr & 0xf000) >> 12].write_memf,this,addr,v);	
 }
 
 

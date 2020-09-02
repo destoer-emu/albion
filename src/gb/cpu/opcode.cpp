@@ -16,11 +16,8 @@ void Cpu::check_rst_loop(uint16_t addr, uint8_t op)
 	}
 }
 
-// consider implementing an algorithmic decoder
-// https://gb-archive.github.io/salvage/decoding_gbz80_opcodes/Decoding%20Gamboy%20Z80%20Opcodes.html
-void Cpu::exec_instr()
+void Cpu::exec_instr_debug()
 {
-
 #ifdef DEBUG
 	uint8_t x = mem.read_mem(pc);
 	if(debug.step_instr || debug.breakpoint_hit(pc,x,break_type::execute))
@@ -30,8 +27,13 @@ void Cpu::exec_instr()
 		debug.halt();
 	}
 #endif
+	exec_instr_no_debug();	
+}
 
-
+// consider implementing an algorithmic decoder
+// https://gb-archive.github.io/salvage/decoding_gbz80_opcodes/Decoding%20Gamboy%20Z80%20Opcodes.html
+void Cpu::exec_instr_no_debug()
+{
     const uint8_t opcode = fetch_opcode();
 
 	// pc fails to increment if halt bug happens
