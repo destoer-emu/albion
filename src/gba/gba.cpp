@@ -9,7 +9,17 @@ namespace gameboyadvance
 // allow a dummy init
 GBA::GBA()
 {
+#ifdef DEBUG
+	change_breakpoint_enable(false);
+#endif
+}
 
+void GBA::change_breakpoint_enable(bool enabled)
+{
+#ifdef DEBUG
+	cpu.change_breakpoint_enable(enabled);
+	debug.breakpoints_enabled = enabled;
+#endif
 }
 
 // init all sub compenents

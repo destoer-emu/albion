@@ -51,6 +51,21 @@ public:
     
     void request_interrupt(interrupt i);
 
+#ifdef DEBUG
+    void change_breakpoint_enable(bool enabled) noexcept
+    {
+        if(enabled)
+        {
+            exec_instr_fptr = &Cpu::exec_instr_debug;         
+        }
+
+        else
+        {
+            exec_instr_fptr = &Cpu::exec_instr_no_debug; 
+        }
+    }
+#endif
+
 
     // cpu io memory
     CpuIo cpu_io;
@@ -64,6 +79,30 @@ private:
     void init_arm_opcode_table();
     void init_thumb_opcode_table();
     
+
+#ifdef DEBUG
+    using EXEC_INSTR_FPTR = void (Cpu::*)(void);
+
+    EXEC_INSTR_FPTR exec_instr_fptr = &Cpu::exec_instr_no_debug;
+
+    inline void exec_instr()
+    {
+        std::invoke(exec_instr_fptr,this);
+    }
+
+    void exec_instr_debug();
+
+#else 
+
+    inline void exec_instr()
+    {
+        exec_instr_no_debug();
+    }
+
+#endif
+
+    void exec_instr_no_debug();
+
 
     void exec_thumb();
     void exec_arm();

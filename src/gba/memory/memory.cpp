@@ -661,6 +661,7 @@ access_type Mem::read_mem(uint32_t addr)
     return v;
 }
 
+
 // timed memory access
 template<typename access_type>
 access_type Mem::read_memt(uint32_t addr)

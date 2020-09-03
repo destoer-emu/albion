@@ -25,9 +25,12 @@ public:
     void run();
     
     
-    //void handle_input();
     void button_event(button b, bool down); //actual hanlder
     void key_input(int key, bool pressed); // takes the input and passes it on
+
+#ifdef DEBUG
+    void change_breakpoint_enable(bool enabled);
+#endif
 
     Cpu cpu{*this};
     Mem mem{*this};

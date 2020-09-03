@@ -150,7 +150,7 @@ private:
 #ifdef DEBUG
     using EXEC_INSTR_FPTR = void (Cpu::*)(void);
 
-    EXEC_INSTR_FPTR exec_instr_fptr = &Cpu::exec_instr_no_debug;
+    EXEC_INSTR_FPTR exec_instr_fptr;
 
     inline void exec_instr()
     {

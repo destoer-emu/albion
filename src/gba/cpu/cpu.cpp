@@ -472,12 +472,26 @@ void Cpu::timer_overflow(int timer_num)
 }
 
 
-void Cpu::step()
+
+void Cpu::exec_instr_no_debug()
 {
-    // handle interrupts
-    do_interrupts();
+
+    // step the cpu in thumb mode
+    if(is_thumb) 
+    {
+        exec_thumb();
+    }
+
+     // step the cpu in arm mode
+    else
+    {
+        exec_arm();
+    }
+}
 
 #ifdef DEBUG
+void Cpu::exec_instr_debug()
+{
     const uint32_t pc = regs[PC];
     uint32_t v = is_thumb? mem.read_mem<uint16_t>(pc) : mem.read_mem<uint32_t>(pc);
 	if(debug.step_instr || debug.breakpoint_hit(pc,v,break_type::execute))
@@ -486,18 +500,16 @@ void Cpu::step()
 		write_log(debug,"[DEBUG] execute breakpoint hit ({:x}:{:x})",pc,v);
 		debug.halt();
 	}
+    exec_instr_no_debug();
+}
 #endif
 
+void Cpu::step()
+{
+    // handle interrupts
+    do_interrupts();
 
-    if(is_thumb) // step the cpu in thumb mode
-    {
-        exec_thumb();
-    }
-
-    else // step the cpu in arm mode
-    {
-        exec_arm();
-    }
+    exec_instr();
 
     handle_power_state();
 }

@@ -18,7 +18,9 @@ public:
     void init(std::string filename);
 
 
-
+    // TODO change memory accessors to
+    // func pointer call when running under a debugger
+    // will have to specialize the pointer for each type...
 
     // read mem
     template<typename access_type>
