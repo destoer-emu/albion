@@ -287,17 +287,11 @@ BldCnt::BldCnt()
 
 void BldCnt::init()
 {
-    for(int i = 0; i < 4; i++)
+    for(int i = 0; i < 6; i++)
     {
-        bg_1st_target[i] = false;
-        bg_2nd_target[i] = false;
+        first_target_enable[i] = false;
+        second_target_enable[i] = false;
     }
-
-    obj_1st_target = false;
-    obj_2nd_target = false;
-    
-    bd_1st_target = false;
-    bd_2nd_target = false;
 }
 
 void BldCnt::write(int idx, uint8_t v)
@@ -306,24 +300,20 @@ void BldCnt::write(int idx, uint8_t v)
     {
         case 0:
         {
-            for(int i = 0; i < 4; i++)
+            for(int i = 0; i < 6; i++)
             {
-                bg_1st_target[i] = is_set(v,i);
+                first_target_enable[i] = is_set(v,i);
             }
-            obj_1st_target = is_set(v,4);
-            bd_1st_target = is_set(v,5);
             special_effect = (v >> 6) & 0x3;
             break;
         }
 
         case 1:
         {
-            for(int i = 0; i < 4; i++)
+            for(int i = 0; i < 6; i++)
             {
-                bg_2nd_target[i] = is_set(v,i);
+                second_target_enable[i] = is_set(v,i);
             }
-            obj_2nd_target = is_set(v,4);
-            bd_2nd_target = is_set(v,5);
             break;
         }
     }
@@ -335,17 +325,17 @@ uint8_t BldCnt::read(int idx) const
     {
         case 0:
         {
-            return bg_1st_target[0] | bg_1st_target[1] << 1 |
-                bg_1st_target[2] << 2 | bg_1st_target[3] << 3 |
-                obj_1st_target << 4 | bd_1st_target << 5 |
+            return first_target_enable[0] | first_target_enable[1] << 1 |
+                first_target_enable[2] << 2 | first_target_enable[3] << 3 |
+                first_target_enable[4] << 4 | first_target_enable[5] << 5 |
                 special_effect << 6;
         }
 
         case 1:
         {
-            return bg_2nd_target[0] | bg_2nd_target[1] << 1 |
-                bg_2nd_target[2] << 2 | bg_2nd_target[3] << 3 |
-                obj_2nd_target << 4 | bd_2nd_target << 5;
+            return second_target_enable[0] | second_target_enable[1] << 1 |
+                second_target_enable[2] << 2 | second_target_enable[3] << 3 |
+                second_target_enable[4] << 4 | second_target_enable[5] << 5;
         }
     }
 
@@ -480,97 +470,39 @@ void WindowDimensionV::write(int idx, uint8_t v)
     }
 }
 
-/*
-struct Window
-{
-
-    Window();
-    void init();
-
-    uint8_t read(int idx) const;
-    void write(int idx, uint8_t v);
-
-
-
-    bool bg_enable_lower[4];
-    bool obj_enable_lower;
-    bool special_enable_lower;
-
-
-    bool bg_enable_upper[4];
-    bool obj_enable_upper;
-    bool special_enable_upper;
-};
-*/
-
-Window::Window()
+WinCnt::WinCnt()
 {
     init();
 }
 
-void Window::init()
+void WinCnt::init()
 {
     for(int i = 0; i < 4; i++)
     {
-        bg_enable_lower[i] = false;
-        bg_enable_upper[i] = false;
+        win_arr[i] = {};
     }
-
-    obj_enable_lower = false;
-    obj_enable_upper = false;
-    special_enable_lower = false;
-    special_enable_upper = false;
 }
 
 
-uint8_t Window::read(int idx) const
+uint8_t WinCnt::read(int window) const
 {
-    switch(idx)
-    {
-        case 0:
-        {
-            return bg_enable_lower[0] | bg_enable_lower[1]
-                | bg_enable_lower[2] | bg_enable_lower[3]
-                | obj_enable_lower | special_enable_lower;
-        }
+    const auto &w = win_arr[window];
 
-        case 1:
-        {
-            return bg_enable_upper[0] | bg_enable_upper[1]
-                | bg_enable_upper[2] | bg_enable_upper[3]
-                | obj_enable_upper | special_enable_upper;
-        }
-    }
-    // unreached
-    return 0;
+    return w.bg_enable[0] | w.bg_enable[1]
+        | w.bg_enable[2] | w.bg_enable[3]
+        | w.obj_enable | w.special_enable;
 }
 
-void Window::write(int idx, uint8_t v)
+void WinCnt::write(int window,uint8_t v)
 {
-    switch(idx)
-    {
-        case 0:
-        {
-            bg_enable_lower[0] = is_set(v,0);
-            bg_enable_lower[1] = is_set(v,1);
-            bg_enable_lower[2] = is_set(v,2);
-            bg_enable_lower[3] = is_set(v,3);
-            obj_enable_lower = is_set(v,4);
-            special_enable_lower = is_set(v,5);
-            break;
-        }
+    auto &w = win_arr[window];
 
-        case 1:
-        {
-            bg_enable_upper[0] = is_set(v,0);
-            bg_enable_upper[1] = is_set(v,1);
-            bg_enable_upper[2] = is_set(v,2);
-            bg_enable_upper[3] = is_set(v,3);
-            obj_enable_upper = is_set(v,4);
-            special_enable_upper = is_set(v,5);
-            break;
-        }
-    }
+    w.bg_enable[0] = is_set(v,0);
+    w.bg_enable[1] = is_set(v,1);
+    w.bg_enable[2] = is_set(v,2);
+    w.bg_enable[3] = is_set(v,3);
+    w.obj_enable = is_set(v,4);
+    w.special_enable = is_set(v,5);      
 }
 
 DispIo::DispIo()
@@ -607,11 +539,11 @@ void DispIo::init()
 
     win0v.init();
     win1v.init();
-    win_in.init();
-    win_out.init();
+
+    win_cnt.init();
 
     mosaic.init();
-    bldcnt.init();
+    bld_cnt.init();
 
     eva = 0;
     evb = 0;

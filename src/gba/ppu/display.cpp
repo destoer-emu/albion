@@ -4,7 +4,7 @@ namespace gameboyadvance
 {
 
 /*
-    fix rendering issues obj window impl, mosiac, alpha
+    fix rendering issues, mosiac,
     fix our dma sound, then unstub the memory writes
 */
 
@@ -22,6 +22,8 @@ Display::Display(GBA &gba) : mem(gba.mem), cpu(gba.cpu)
     }
     sprite_line.resize(SCREEN_WIDTH);
     bg_line.resize(SCREEN_WIDTH);
+    sprite_semi_transparent.resize(SCREEN_WIDTH);
+    window.resize(SCREEN_WIDTH);
 }
 
 void Display::init()

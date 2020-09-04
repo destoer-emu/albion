@@ -331,95 +331,85 @@ void Display::render_palette(uint32_t *palette, size_t size)
 }
 
 
+
+uint16_t Display::get_color(const TileData &data, const pixel_source source)
+{
+    return source == pixel_source::obj? read_obj_palette(data.pal_num,data.col_num) : read_bg_palette(data.pal_num,data.col_num);
+}
+
+
+// all blend parameters are in 1.4 fixed point
+
+inline int32_t do_blend_calc(int32_t eva, int32_t evb, int32_t color1,int32_t color2)
+{
+    return std::min(31,(eva * color1 + evb * color2) >> 4);
+}
+
+inline int32_t do_blend(int32_t eva, int32_t evb, int32_t color1,int32_t color2)
+{
+    // blend the two colors!
+    // our blend param for this is 1.4 fixed point
+    int r1 = color1 & 0x1f;
+    int g1 = (color1 >> 5) & 0x1f;
+    int b1 = (color1 >> 10) & 0x1f;
+
+    int r2 = color2 & 0x1f;
+    int g2 = (color2 >> 5) & 0x1f;
+    int b2 = (color2 >> 10) & 0x1f;
+
+    const auto r = do_blend_calc(eva,evb,r1,r2);
+    const auto g = do_blend_calc(eva,evb,g1,g2);
+    const auto b = do_blend_calc(eva,evb,b1,b2);
+    
+    return r | (g << 5) | (b << 10);
+}
+
+inline int32_t do_brighten_calc(int32_t evy, int32_t color)
+{
+    return color + (((31-color) * evy) >> 4);
+}
+
+inline int32_t do_brighten(int32_t evy, int32_t color)
+{
+    // blend the two colors!
+    // our blend param for this is 1.4 fixed point
+    int r1 = color & 0x1f;
+    int g1 = (color >> 5) & 0x1f;
+    int b1 = (color >> 10) & 0x1f;
+
+    const auto r = do_brighten_calc(evy,r1);
+    const auto g = do_brighten_calc(evy,g1);
+    const auto b = do_brighten_calc(evy,b1);
+    
+    return r | (g << 5) | (b << 10);
+}
+
+
+
+inline int32_t do_darken_calc(int32_t evy, int32_t color)
+{
+    return color - ((color * evy) >> 4);
+}
+
+inline int32_t do_darken(int32_t evy, int32_t color)
+{
+    // blend the two colors!
+    // our blend param for this is 1.4 fixed point
+    int r1 = color & 0x1f;
+    int g1 = (color >> 5) & 0x1f;
+    int b1 = (color >> 10) & 0x1f;
+
+    const auto r = do_darken_calc(evy,r1);
+    const auto g = do_darken_calc(evy,g1);
+    const auto b = do_darken_calc(evy,b1);
+    
+    return r | (g << 5) | (b << 10);
+}
+
 void Display::merge_layers()
 {
     const auto disp_cnt = disp_io.disp_cnt;
     const auto render_mode = disp_cnt.bg_mode;
-
-
-    // see notes below for what i think is better... 
- 
-    // right so we wanna impl bldcnt
-    // we are gonna change up the sort of bg
-    // so that we include the obj layer in the array
-    // and have a source so we can easily index the priority + the bldcnt settings
-    // and then just run a blend by hitting 1st target and looking for 2nd below it
-    // (if we hit the bottom we have to check bldcnt we may just have this as a bottom (really high value so it allways loses))
-    // (array section for ease and look into the perf implications later)
-    // im not sure how we will handle obj thought because they can have a different priority
-    // on each pixel whereas every other layer has to have the same priority on it
-    // so more than likely on each transparency descend we will have to hard check the obj layer each time?
-    // we will look into impl this tomorrow just run bldcnt and a couple roms when done
-    // to check we havent messed anything up
-
-
-/*
-        // this should work but it involves very uncessary descends for data we may never use
-        // it would be nicer if we could just find the 1st and 2nd target and test if they are adjacent
-        // at any given pixel...
-        // (this mehtod also means we dont need to change our current structure (infact its easier not to))
-
-
-        // operation for handling bld mode 1
-
-        // default to backdrop!
-
-        // so instead we could just jump to highest priority of 1st target if trans
-        // go to next highest 
-        // (we need to check if sprite is highest as a hard code before we decsned bgs)
-        // if first was bg check sprite for 2nd target
-        // if its not keep going down to the 2nd target
-        // if at any point we see a non transparent pixel we will just break out early
-        // if its not there at all then check if backdrop is a target  
-        // else we dont give a damb and just draw the damb thing
-        // for the latter idealy we would just when we get the first pixel that aint trans
-        // with the highest priority save it
-        // at the fail point we can then just quickly dump it in place
-        // (in impl we will probs just do as a default color decode)
-        // ( and then overwrite with a blended one if found )
-
-        // note that if the semi trans bit is set for an object in this postion and it wins ...
-        // then we need to run the above procedure regardless of bldcnt mode
-
-
-        // for bright / dark mode we simply need to just run the normal code
-        // and apply a brightness calc on the color if the winning pixel is a 1st target :P
-
-        // lets say this is the effect mode 1 handler
-        const TileData backdrop(0,0,0);
-        for(size_t x = 0; x < SCREEN_WIDTH; x++)
-        {
-            // default to backdrop color
-            bg_line[x] = backdrop;
-            for(unsigned int i = 0; i < lim; i++)
-            {
-                // this will override anything drawn by the fail case...
-                if(first_target(bg) && opaque)
-                {
-                    // search for 2nd if not found
-                    // draw
-                }
-
-                else // push this as line data
-                {
-                    const auto bg = bg_priority[i].bg;
-                    // if bg enabled!
-                    // should move this check into the sort so we completly ignore
-                    // drawing it ideally
-                    // need a function by here that checks the bg enable for a specific x and y cord
-                    if(disp_cnt.bg_enable[bg] && bg_window_enabled(bg,x,ly)) 
-                    {
-                        const auto data = bg_lines[bg][x];
-                        if(data.col_num != 0)
-                        {
-                            bg_line[x] = data;
-                        }
-                    }
-                }
-            }
-        }
-*/
-
 
 
     // does a lesser priority obj pixel 
@@ -439,7 +429,7 @@ void Display::merge_layers()
         {
             const auto s = sprite_line[x];
             // col number zero is transparent
-            if(s.col_num != 0 && sprite_window_enabled(x,ly))
+            if(s.col_num != 0 && sprite_window_enabled(x))
             {
                 screen[(ly*SCREEN_WIDTH) + x] = convert_color(read_obj_palette(s.pal_num,s.col_num));
             }
@@ -448,6 +438,8 @@ void Display::merge_layers()
 
     else
     {
+        // tuck the sort function away somewhere
+
         static constexpr unsigned int bg_limits[3][2] = 
         {
             {0,4},
@@ -498,56 +490,170 @@ void Display::merge_layers()
             return a.priority > b.priority;
         });
 
-        //const auto &bldcnt = disp_io.bldcnt;
+   
+        const auto &bld_cnt = disp_io.bld_cnt;
 
-        const TileData backdrop(0,0,std::numeric_limits<int>::max());
-
-        enum class pixel_source
-        {
-            bg,
-            obj
-        };
-
+        // ok so now after we find what exsacly is the first to win
+        // we can then check if 1st target
+        // and then redo the search starting from it for 2nd target
+        // and perform whatever effect if we need to :)
         for(size_t x = 0; x < SCREEN_WIDTH; x++)
         {
-            // assume bg wins
-            auto source = pixel_source::bg;
+            // pull the top two opaque layers
+            // ideally we would only pull one if the obj on this x cord is
+            // not semi transparent
+            uint16_t color1 = read_bg_palette(0,0);
+            uint16_t color2 = color1;
+            pixel_source source1 = pixel_source::bd;
+            pixel_source source2 = pixel_source::bd;
 
-            // default to backdrop color
-            auto pixel = backdrop;
+            // presume that there is a valid bg layer
+            // and we will descend to find the first and compare against sprite
+            // and dump whichever in the correct slot
+            // after that we can just check at the end hey is the 1st one still bd
+            // if so then we have to do a extra check on the sprite being enabled
+            // because it means there we no enabled bgs
 
-            // find first active bg pixel
-            // if none are found the backdrop will win
+            const auto &s = sprite_line[x];
             for(int i = lim-1; i >= 0; i--)
             {
                 const auto bg = bg_priority[i].bg;
+                const auto &b = bg_lines[bg][x];
 
-                if(disp_cnt.bg_enable[bg] && bg_window_enabled(bg,x,ly)) 
+                // valid bg pixel now check if there is a sprite at it with <= priority
+                if(disp_cnt.bg_enable[bg] && bg_window_enabled(bg,x) && b.col_num != 0)
                 {
-                    const auto &b = bg_lines[bg][x];
-                    if(b.col_num != 0)
+                    const auto bg_priority = disp_io.bg_cnt[bg].priority;
+
+                    // lower priority is higher sprite wins even if its equal
+                    const bool obj_win = s.col_num != 0 && sprite_window_enabled(x) && s.bg <= bg_priority;
+
+                    // first time
+                    if(source1 == pixel_source::bd)
                     {
-                        pixel = b;
+                        if(obj_win)
+                        {
+                            color1 = read_obj_palette(s.pal_num,s.col_num);
+                            source1 = pixel_source::obj;
+                            color2 = read_bg_palette(b.pal_num,b.col_num);
+                            source2 = static_cast<pixel_source>(bg);
+                            break;
+                        }
+
+                        else
+                        {
+                            color1 = read_bg_palette(b.pal_num,b.col_num);
+                            source1 = static_cast<pixel_source>(bg);                        
+                        }
+                    }
+
+                    // 2nd time (break out and we are done)
+                    else
+                    {
+                        if(obj_win)
+                        {
+                            color2 = read_obj_palette(s.pal_num,s.col_num);
+                            source2 = pixel_source::obj;
+                        }
+
+                        else
+                        {
+                            color2 = read_bg_palette(b.pal_num,b.col_num);
+                            source2 = static_cast<pixel_source>(bg);                        
+                        }
                         break;
                     }
                 }
             }
 
-
-            // sprite has priority
-            // note the lower the better here
-            // if equal a sprite wins
-            const auto &s = sprite_line[x];
-            if((s.bg <= disp_io.bg_cnt[pixel.bg].priority || pixel.col_num == 0) && sprite_window_enabled(x,ly) && s.col_num != 0)
+    
+            if(source1 == pixel_source::bd)
             {
-                source = pixel_source::obj;
-
-                // sprite has the highest priority update the pixel
-                pixel = s;         
+                // bd has no priority
+                if(s.col_num != 0 && sprite_window_enabled(x))
+                {
+                    color1 = read_obj_palette(s.pal_num,s.col_num);
+                    source1 = pixel_source::obj;
+                } 
             }
 
-            const auto color = source == pixel_source::obj? read_obj_palette(pixel.pal_num,pixel.col_num) : read_bg_palette(pixel.pal_num,pixel.col_num);
-            screen[(ly*SCREEN_WIDTH) + x] = convert_color(color);
+
+
+            // special effects disabled dont care
+            if(!special_window_enabled(x))
+            {
+                screen[(ly*SCREEN_WIDTH) + x] = convert_color(color1);
+                continue;
+            }
+
+
+            // handle sfx
+
+            // if semi transparent object is 1st layer
+            // then we need to override the mode to alpha blending
+            int special_effect = bld_cnt.special_effect;
+            const bool second_target_enable = bld_cnt.second_target_enable[static_cast<int>(source2)];
+            // if there are overlapping layers and sprite is semi transparent
+            // do alpha blend
+            const bool semi_transparent = sprite_semi_transparent[x] && source1 == pixel_source::obj
+                && second_target_enable;
+
+
+            if(semi_transparent)
+            {
+                special_effect = 1;
+            }
+            
+
+            // todo account for special effects window
+            // and split this function off
+            
+            switch(special_effect)
+            {
+                // no special effects just slam to screen
+                case 0:
+                {
+                    break;
+                }
+
+                // alpha blending (delayed because we handle it along with semi transparency)
+                case 1:
+                {
+                    const bool first_target_enable = semi_transparent || bld_cnt.first_target_enable[static_cast<int>(source1)];
+                    if(first_target_enable && source1 != pixel_source::bd)
+                    {
+                        // we have a 1st and second target now we just need to blend them :P
+                        if(second_target_enable)
+                        {
+                            color1 = do_blend(disp_io.eva,disp_io.evb,color1,color2);
+                        }
+                    }
+                    break;
+                }
+
+
+                // brighness increase 
+                case 2:
+                {
+                    if(bld_cnt.first_target_enable[static_cast<int>(source1)])
+                    {
+                        color1 = do_brighten(disp_io.evy,color1);
+                    }
+                    break;
+                }
+
+                // brightness decrease
+                case 3:
+                {
+                    if(bld_cnt.first_target_enable[static_cast<int>(source1)])
+                    {
+                        color1 = do_darken(disp_io.evy,color1);
+                    }
+                    break;
+                }
+            }
+
+            screen[(ly*SCREEN_WIDTH) + x] = convert_color(color1);
         }
     }
 }
@@ -570,98 +676,102 @@ bool window_in_range(const unsigned int c, const unsigned int w1, const unsigned
 }
 
 
-// this can be optimsed to lesson checks
-// ideally we would just have a lookup array of bools
-// that marks if something is enabled
-// or split up loops on window bounds (need an array of bounds for obj window)
-bool Display::bg_window_enabled(unsigned int bg, unsigned int x, unsigned int y) const
+// this will be called before sprites are drawn
+// the obj window will overwrite onto this
+// ideally we would just compute index bounds on everything
+// and do loops assuming features are off but this far simpler for now
+void Display::cache_window()
 {
-    // check either window is enabled
-    // if not bg is enabled
-    const auto dispcnt = disp_io.disp_cnt;
+    const auto &disp_cnt = disp_io.disp_cnt;
 
     // if no windows are active then out of window is not enabled
-    if(!dispcnt.window0_enable && !dispcnt.window1_enable)
+    if(!disp_cnt.window0_enable && !disp_cnt.window1_enable)
     {
-        return true;
+        std::fill(window.begin(),window.end(),window_source::out);
     }
 
-    // figure out which is enabled at current cords
-    // if both are prefer win 0
 
-    // first check win0
-    // if not enabled check win 1
-
-    if(dispcnt.window0_enable)
+    for(size_t x = 0; x < SCREEN_WIDTH; x++)
     {
-        if(window_in_range(x,disp_io.win0h.x1,disp_io.win0h.x2))
+
+        // figure out which is enabled at current cords
+        // if both are prefer win 0
+
+        // first check win0
+        // if not enabled check win 1
+
+        if(disp_cnt.window0_enable)
         {
-            if(window_in_range(y,disp_io.win0v.y1,disp_io.win0v.y2))
+            if(window_in_range(x,disp_io.win0h.x1,disp_io.win0h.x2))
             {
-                return disp_io.win_in.bg_enable_lower[bg];
+                if(window_in_range(ly,disp_io.win0v.y1,disp_io.win0v.y2))
+                {
+                    window[x] = window_source::zero;
+                    continue;
+                }
             }
         }
-    }
 
-    if(dispcnt.window1_enable)
-    {
-        if(window_in_range(x,disp_io.win1h.x1,disp_io.win1h.x2))
+        
+        if(disp_cnt.window1_enable)
         {
-            if(window_in_range(y,disp_io.win1v.y1,disp_io.win1v.y2))
+            if(window_in_range(x,disp_io.win1h.x1,disp_io.win1h.x2))
             {
-                return disp_io.win_in.bg_enable_upper[bg];
+                if(window_in_range(ly,disp_io.win1v.y1,disp_io.win1v.y2))
+                {
+                    window[x] = window_source::one;
+                    continue;
+                }
             }
         }
-    }
 
-    // win out
-    return disp_io.win_out.bg_enable_lower[bg];
-    
+
+        window[x] = window_source::out; 
+    }    
 }
 
-bool Display::sprite_window_enabled(unsigned int x,unsigned y) const
+
+bool Display::bg_window_enabled(unsigned int bg, unsigned int x) const
 {
-    // check either window is enabled
-    // if not bg is enabled
-    const auto dispcnt = disp_io.disp_cnt;
+    const auto &disp_cnt = disp_io.disp_cnt;
 
     // if no windows are active then out of window is not enabled
-    if(!dispcnt.window0_enable && !dispcnt.window1_enable)
+    if(!disp_cnt.window0_enable && !disp_cnt.window1_enable && !disp_cnt.obj_window_enable)
     {
         return true;
     }
 
-    // figure out which is enabled at current cords
-    // if both are prefer win 0
+    return disp_io.win_cnt.win_arr[static_cast<size_t>(window[x])].bg_enable[bg];
+}
 
-    // first check win0
-    // if not enabled check win 1
+bool Display::sprite_window_enabled(unsigned int x) const
+{
+    // check either window is enabled
+    // if not bg is enabled
+    const auto &disp_cnt = disp_io.disp_cnt;
 
-    if(dispcnt.window0_enable)
+    // if no windows are active then out of window is not enabled
+    if(!disp_cnt.window0_enable && !disp_cnt.window1_enable && !disp_cnt.obj_window_enable)
     {
-        if(window_in_range(x,disp_io.win0h.x1,disp_io.win0h.x2))
-        {
-            if(window_in_range(y,disp_io.win0v.y1,disp_io.win0v.y2))
-            {
-                return disp_io.win_in.obj_enable_lower;
-            }
-        }
+        return true;
     }
 
-    if(dispcnt.window1_enable)
+    return disp_io.win_cnt.win_arr[static_cast<size_t>(window[x])].obj_enable;
+}
+
+bool Display::special_window_enabled(unsigned int x) const
+{
+    // check either window is enabled
+    // if not bg is enabled
+    const auto &disp_cnt = disp_io.disp_cnt;
+
+    // if no windows are active then out of window is not enabled
+    if(!disp_cnt.window0_enable && !disp_cnt.window1_enable && !disp_cnt.obj_window_enable)
     {
-        if(window_in_range(x,disp_io.win1h.x1,disp_io.win1h.x2))
-        {
-            if(window_in_range(y,disp_io.win1v.y1,disp_io.win1v.y2))
-            {
-                return disp_io.win_in.obj_enable_upper;
-            }
-        }
+        return true;
     }
 
-    // win out
-    return disp_io.win_out.obj_enable_lower;
-    
+    return disp_io.win_cnt.win_arr[static_cast<size_t>(window[x])].special_enable;
 }
 
 
@@ -751,10 +861,11 @@ void Display::render()
         }
     }
 
+    cache_window();
+
     render_sprites(render_mode);
 
     merge_layers();
-
 }
 
 }

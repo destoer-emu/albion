@@ -58,14 +58,20 @@ private:
     void merge_layers();
 
     // is this inside a window if so is it enabled?
-    bool bg_window_enabled(unsigned int bg, unsigned int x, unsigned int y) const;
+    bool bg_window_enabled(unsigned int bg, unsigned int x) const;
 
     // are sprites enabled inside a window
-    bool sprite_window_enabled(unsigned int x,unsigned y) const;
+    bool sprite_window_enabled(unsigned int x) const;
+
+    // are special effects enabled inside a window
+    bool special_window_enabled(unsigned int x) const;
+
+    void cache_window();
 
     // renderer helper functions
     uint16_t read_bg_palette(uint32_t pal_num,uint32_t idx);
     uint16_t read_obj_palette(uint32_t pal_num,uint32_t idx);
+    uint16_t get_color(const TileData &data, const pixel_source source);
     void read_tile(TileData tile[],unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
         uint32_t y,bool x_flip, bool y_flip);
 
@@ -81,6 +87,8 @@ private:
     std::vector<std::vector<TileData>> bg_lines;
     std::vector<TileData> bg_line;
     std::vector<TileData> sprite_line;
+    std::vector<bool> sprite_semi_transparent;
+    std::vector<window_source> window;
 };
 
 // this needs color correction at some point

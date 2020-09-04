@@ -6,10 +6,11 @@ namespace gameboyadvance
 void Display::render_sprites(int mode)
 {
 
-    TileData lose_bg(0,0,0);
+    const TileData lose_bg(0,0,0);
     // make all of the line lose
     // until something is rendred over it
     std::fill(sprite_line.begin(),sprite_line.end(),lose_bg);
+    std::fill(sprite_semi_transparent.begin(),sprite_semi_transparent.end(),false);
 
     // objects aernt enabled do nothing more
     if(!disp_io.disp_cnt.obj_enable)
@@ -39,13 +40,9 @@ void Display::render_sprites(int mode)
             continue;
         }
 
+        // todo handle obj window
         const int obj_mode = (attr0 >> 10) & 0x3;
 
-        if(obj_mode != 0)
-        {
-            //printf("unhandled obj mode %d\n",obj_mode);
-            //exit(1);
-        }
 
         // prohibited is this ignored on hardware
         // or does it behave like another?
@@ -241,6 +238,8 @@ void Display::render_sprites(int mode)
                 tile_base = tile_num + ((y2 / 8) * 32) + (x2 / 8);
             }
 
+            const auto &disp_cnt = disp_io.disp_cnt;
+
             // 4bpp
             if(!color)
             {
@@ -254,7 +253,18 @@ void Display::render_sprites(int mode)
                 // lower x cord stored in lower nibble
                 const uint32_t idx = (x2 & 1)? (tile_data >> 4) & 0xf : tile_data & 0xf;
 
-                if(idx != 0)
+                // object window obj not displayed any non zero pixels are 
+                // the object window
+                if(idx != 0 && obj_mode == 2 && disp_cnt.obj_window_enable)
+                {
+                    // window 0 and 1 have higher priority
+                    if(window[x_offset] == window_source::out)
+                    {
+                        window[x_offset] = window_source::obj;
+                    }
+                }    
+
+                else if(idx != 0)
                 {
                     sprite_line[x_offset].col_num = idx;
                     sprite_line[x_offset].pal_num = pal;
@@ -274,7 +284,18 @@ void Display::render_sprites(int mode)
                 const uint32_t data_offset = (x2 % 8) + ((y2 % 8) * 8);
                 const auto tile_data = mem.handle_read<uint8_t>(mem.vram,addr+data_offset);
 
-                if(tile_data != 0)
+                // object window obj not displayed any non zero pixels are 
+                // the object window
+                if(tile_data != 0 && obj_mode == 2 && disp_cnt.obj_window_enable)
+                {
+                    // window 0 and 1 have higher priority
+                    if(window[x_offset] == window_source::out)
+                    {
+                        window[x_offset] = window_source::obj;
+                    }
+                }    
+
+                else if(tile_data != 0)
                 {
                     sprite_line[x_offset].col_num = tile_data;
                     sprite_line[x_offset].pal_num = 0;
@@ -282,6 +303,10 @@ void Display::render_sprites(int mode)
                 }
             }
 
+            if(obj_mode == 1)
+            {
+                sprite_semi_transparent[x_offset] = true;
+            }
         }                
 
     }

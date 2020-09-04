@@ -31,10 +31,9 @@ multithread scanline renderer
 fix save states
 
 gba bitmap affine transforms
+gba bitmap alpha blending
 256 color sprite fix
 mosaic
-alpha blending
-obj window
 open bus
 cpu pipeline
 bus limitations
@@ -43,6 +42,7 @@ gamepak prefetch
 waitcnt
 gb psg port to gba
 save support
+gba vram viewer
 
 # thanks
 

@@ -50,25 +50,33 @@ struct BgCnt
 };
 
 
-struct Window
+
+enum class window_source
+{
+    zero = 0,
+    one = 1,
+    obj = 2,
+    out = 3
+};
+
+struct WinCnt
 {
 
-    Window();
+    struct Window
+    {
+        bool bg_enable[4] = {false};
+        bool obj_enable = false;
+        bool special_enable = false;        
+    };
+
+    uint8_t read(int window) const;
+    void write(int window, uint8_t v);
+
+
+    WinCnt();
     void init();
 
-    uint8_t read(int idx) const;
-    void write(int idx, uint8_t v);
-
-
-
-    bool bg_enable_lower[4];
-    bool obj_enable_lower;
-    bool special_enable_lower;
-
-
-    bool bg_enable_upper[4];
-    bool obj_enable_upper;
-    bool special_enable_upper;
+    std::array<Window,4> win_arr;
 };
 
 
@@ -117,6 +125,16 @@ struct Mosaic
     int obj_v_size;
 };
 
+enum class pixel_source
+{
+    bg0 = 0,
+    bg1 = 1,
+    bg2 = 2,
+    bg3 = 3,
+    obj = 4,
+    bd = 5,
+};
+
 
 struct BldCnt
 {
@@ -131,15 +149,8 @@ struct BldCnt
     // 0 none, 1 alpha blend, 2 bright inc, 3 bright dec
     int special_effect;
 
-    bool bg_1st_target[4];
-
-    bool bg_2nd_target[4];
-
-    bool obj_1st_target;
-    bool obj_2nd_target;
-
-    bool bd_1st_target;
-    bool bd_2nd_target;
+    bool first_target_enable[6];
+    bool second_target_enable[6];
 };
 
 struct DispStat
@@ -225,15 +236,14 @@ struct DispIo
     WindowDimensionV win0v;
     WindowDimensionV win1v;
 
-    Window win_in;
-    Window win_out;
+    WinCnt win_cnt;
 
     std::array<BgCnt,4> bg_cnt;
     std::array<BgOffset,4> bg_offset_x;
     std::array<BgOffset,4> bg_offset_y;
 
     Mosaic mosaic;
-    BldCnt bldcnt;
+    BldCnt bld_cnt;
 
     DispCnt disp_cnt;
     DispStat disp_stat;
