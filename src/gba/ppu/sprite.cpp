@@ -217,7 +217,7 @@ void Display::render_sprites(int mode)
             }
 
 
-            if(x_flip)
+            else if(x_flip)
             {
                 x2 = x_size - x2 - 1;
             }
@@ -248,7 +248,7 @@ void Display::render_sprites(int mode)
                 const uint32_t addr = 0x10000 + (tile_base * 8 * 4);
 
                 const uint32_t data_offset = ((x2 % 8) / 2) + ((y2 % 8) * 4);
-                const auto tile_data = mem.handle_read<uint8_t>(mem.vram,addr+data_offset);
+                const auto tile_data = mem.vram[addr+data_offset];
 
                 // lower x cord stored in lower nibble
                 const uint32_t idx = (x2 & 1)? (tile_data >> 4) & 0xf : tile_data & 0xf;
@@ -282,7 +282,7 @@ void Display::render_sprites(int mode)
                 const uint32_t addr = 0x10000 + (tile_base * 8 * 8);
 
                 const uint32_t data_offset = (x2 % 8) + ((y2 % 8) * 8);
-                const auto tile_data = mem.handle_read<uint8_t>(mem.vram,addr+data_offset);
+                const auto tile_data = mem.vram[addr+data_offset];
 
                 // object window obj not displayed any non zero pixels are 
                 // the object window

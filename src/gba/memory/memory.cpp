@@ -569,29 +569,6 @@ void Mem::check_joypad_intr()
 }
 
 
-//access handler for reads (for non io mapped mem) 
-// need checks for endianess here for completeness
-template<typename access_type>
-access_type Mem::handle_read(std::vector<uint8_t> &buf,uint32_t addr)
-{
-
-#ifdef BOUNDS_CHECK // bounds check the memory access (we are very screwed if this happens)
-    if(buf.size() < addr + sizeof(access_type))
-    {
-        auto err = fmt::format("out of range handle read at: {:08x}:{:08x}\n",
-            cpu.get_pc(),addr);
-        throw std::runtime_error(err);
-    }
-#endif
-
-
-    //return(*(access_type*)(buf.data()+addr));
-    access_type v;
-    memcpy(&v,buf.data()+addr,sizeof(access_type));  
-    return v;
-}
-
-
 template<typename access_type>
 access_type Mem::read_mem_handler(uint32_t addr)
 {
@@ -878,27 +855,6 @@ void Mem::write_sram(uint32_t addr,access_type v)
 
         
 
-//access handler for reads (for non io mapped mem)
-// need checks for endianess here for completeness
-template<typename access_type>
-void Mem::handle_write(std::vector<uint8_t> &buf,uint32_t addr,access_type v)
-{
-
-#ifdef BOUNDS_CHECK // bounds check the memory access (we are very screwed if this happens)
-    if(buf.size() < addr + sizeof(access_type))
-    {
-        auto err = fmt::format("out of range handle write at: {:08x}\n",cpu.get_pc());
-        throw std::runtime_error(err);
-    }
-#endif
-
-
-
-    //(*(access_type*)(buf.data()+addr)) = v;
-    memcpy(buf.data()+addr,&v,sizeof(access_type));
-}
-
-
 // should probably handle our "waitstate" timings for io by here
 
 // as io has side effects we need to write to it byte by byte
@@ -937,23 +893,71 @@ void Mem::write_io<uint32_t>(uint32_t addr,uint32_t v)
 template<typename access_type>
 void Mem::write_oam(uint32_t addr,access_type v)
 {
-    //oam[addr & 0x3ff] = v;
-    handle_write<access_type>(oam,addr&0x3ff,v);
+    // 8bit write restricted
+    if constexpr(std::is_same<access_type,uint8_t>())
+    {
+
+    }
+
+    else
+    {
+        //oam[addr & 0x3ff] = v;
+        handle_write<access_type>(oam,addr&0x3ff,v);
+    }
 }
+
+
 
 template<typename access_type>
 void Mem::write_vram(uint32_t addr,access_type v)
 {
-    //vram[addr-0x06000000] = v;
-     addr = (addr - 0x06000000) %  0x18000;
-    handle_write<access_type>(vram,addr,v); 
+    addr = (addr - 0x06000000) % 0x18000;
+
+    // 8bit write does weird stuff depending on address
+    if constexpr(std::is_same<access_type,uint8_t>())
+    {
+        const bool is_bitmap = disp.disp_io.disp_cnt.bg_mode >= 3;
+        // data written to upper and lower halfword
+        if(is_bitmap && addr < 0x14000)
+        {
+            vram[addr & ~1] = v;
+            vram[(addr & ~1) + 1] = v;
+        }
+
+        else if(addr < 0x10000)
+        {
+            vram[addr & ~1] = v;
+            vram[(addr & ~1) + 1] = v;
+        }
+        // else we dont care
+        return;
+    }
+
+    else
+    {
+        //vram[addr-0x06000000] = v;
+        handle_write<access_type>(vram,addr,v); 
+    }
 }
 
 template<typename access_type>
 void Mem::write_pal_ram(uint32_t addr,access_type v)
 {
-    //pal_ram[addr & 0x3ff] = v;
-    handle_write<access_type>(pal_ram,addr&0x3ff,v);
+    addr &= 0x3ff;
+
+    // 8bit write causes data to wrote to both bytes
+    // of the accessed halfword
+    if constexpr(std::is_same<access_type,uint8_t>())
+    {
+        vram[addr & ~1] = v;
+        vram[(addr & ~1) + 1] = v;
+    }
+
+    else
+    {
+        //pal_ram[addr & 0x3ff] = v;
+        handle_write<access_type>(pal_ram,addr,v);
+    }
 }
 
 template<typename access_type>

@@ -26,22 +26,22 @@ gba support is very early and can only boot test roms such as armwrestler
 
 # todo
 
-fix regressions from gb scheduler 
-multithread scanline renderer
-fix save states
+fix regressions from gb scheduler, 
+multithread scanline renderer,
+fix save states,
 
-gba bitmap affine transforms
-gba bitmap alpha blending
-256 color sprite fix
-mosaic
-open bus
-cpu pipeline
-bus limitations
-memory timing (seq, nonseq)
-gamepak prefetch
-waitcnt
-gb psg port to gba
-save support
+gba bitmap affine transforms,
+gba bitmap alpha blending,
+256 color sprite fix,
+mosaic,
+open bus,
+cpu pipeline,
+bus limitations,
+memory timing (seq, nonseq),
+gamepak prefetch,
+waitcnt,
+gb psg port to gba,
+save support,
 gba vram viewer
 
 # thanks
@@ -68,5 +68,7 @@ and anyone else i missed
 
 # resources used
 https://problemkaputt.de/gbatek.htm
+
 https://gbdev.gg8.se/wiki/articles/Pan_Docs
+
 https://www.coranac.com/tonc/text/

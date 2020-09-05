@@ -22,9 +22,29 @@ public:
     // func pointer call when running under a debugger
     // will have to specialize the pointer for each type...
 
-    // read mem
+
+    //access handler for reads (for non io mapped mem) 
+    // need checks for endianess here for completeness
     template<typename access_type>
-    access_type handle_read(std::vector<uint8_t> &buf,uint32_t addr);
+    access_type handle_read(std::vector<uint8_t> &buf,uint32_t addr)
+    {
+
+        #ifdef BOUNDS_CHECK // bounds check the memory access (we are very screwed if this happens)
+            if(buf.size() < addr + sizeof(access_type))
+            {
+                auto err = fmt::format("out of range handle read at: {:08x}:{:08x}\n",
+                    cpu.get_pc(),addr);
+                throw std::runtime_error(err);
+            }
+        #endif
+
+
+        //return(*(access_type*)(buf.data()+addr));
+        access_type v;
+        memcpy(&v,buf.data()+addr,sizeof(access_type));  
+        return v;
+    }
+
 
     template<typename access_type>
     access_type read_mem(uint32_t addr);
@@ -37,8 +57,26 @@ public:
 
 
 
+    // read mem
+    //access handler for reads (for non io mapped mem)
+    // need checks for endianess here for completeness
     template<typename access_type>
-    void handle_write(std::vector<uint8_t> &buf,uint32_t addr,access_type v);
+    void handle_write(std::vector<uint8_t> &buf,uint32_t addr,access_type v)
+    {
+        #ifdef BOUNDS_CHECK // bounds check the memory access (we are very screwed if this happens)
+            if(buf.size() < addr + sizeof(access_type))
+            {
+                auto err = fmt::format("out of range handle write at: {:08x}\n",cpu.get_pc());
+                throw std::runtime_error(err);
+            }
+        #endif
+
+
+
+        //(*(access_type*)(buf.data()+addr)) = v;
+        memcpy(buf.data()+addr,&v,sizeof(access_type));
+    }
+
 
     template<typename access_type>
     void write_mem(uint32_t addr,access_type v);

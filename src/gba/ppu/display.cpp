@@ -105,7 +105,7 @@ void Display::tick(int cycles)
 
 
                 // if in vdraw render the line
-                if(ly < 160)
+                if(ly < SCREEN_HEIGHT)
                 {
                     render();
                 }

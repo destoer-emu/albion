@@ -34,7 +34,7 @@ void Display::read_tile(TileData tile[],unsigned int bg,bool col_256,uint32_t ba
         for(int x = 0; x < 8; x++, x_pix += x_step)
         {
             
-            const uint8_t tile_data = mem.handle_read<uint8_t>(mem.vram,addr+x_pix);
+            const auto tile_data = mem.vram[addr+x_pix];
 
             tile[x].col_num = tile_data;
             // set pal as zero so that the col num is the sole indexer
@@ -66,7 +66,7 @@ void Display::read_tile(TileData tile[],unsigned int bg,bool col_256,uint32_t ba
         for(int x = 0; x < 8; x += 2, x_pix += x_step)
         {
             // read out the color indexs from the tile
-            const uint8_t tile_data = mem.handle_read<uint8_t>(mem.vram,addr+x_pix);
+            const uint8_t tile_data = mem.vram[addr+x_pix];
 
             const uint32_t idx1 = (tile_data >> shift_one) & 0xf;
             const uint32_t idx2 = (tile_data >> shift_two) & 0xf;
@@ -176,7 +176,7 @@ void Display::render_affine(int id)
         }
 
         // get tile num from bg map
-        const auto tile_num = mem.handle_read<uint8_t>(mem.vram,bg_map_base + ((y_affine / 8) * map_size) + (x_affine / 8));
+        const auto tile_num = mem.vram[bg_map_base + ((y_affine / 8) * map_size) + (x_affine / 8)];
 
         // now figure out where we are offset into the current tile and smash it into the line
         const auto tile_x = x_affine % 8;
@@ -186,7 +186,7 @@ void Display::render_affine(int id)
         const uint32_t addr = bg_tile_data_base+(tile_num*0x40) + (tile_y * 8); 
         
         // affine is allways 8bpp
-        const uint8_t tile_data = mem.handle_read<uint8_t>(mem.vram,addr+tile_x);
+        const uint8_t tile_data = mem.vram[addr+tile_x];
 
         buf[x].col_num = tile_data;
         // set pal as zero so that the col num is the sole indexer
