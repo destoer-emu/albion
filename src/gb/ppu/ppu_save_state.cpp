@@ -27,8 +27,8 @@ void Ppu::save_state(std::ofstream &fp)
     file_write_var(fp,bg_pal_idx);
     file_write_var(fp,window_y_line);
     file_write_var(fp,window_x_line);
-    file_write_var(fp,window_drawn);
-    file_write_var(fp,window_triggered);
+    file_write_var(fp,window_x_triggered);
+    file_write_var(fp,window_y_triggered);
     file_write_var(fp,pixel_transfer_end);
     file_write_var(fp,emulate_pixel_fifo);
     file_write_var(fp,early_line_zero);
@@ -114,8 +114,8 @@ void Ppu::load_state(std::ifstream &fp)
     file_read_var(fp,bg_pal_idx);
     file_read_var(fp,window_y_line);
     file_read_var(fp,window_x_line);
-    file_read_var(fp,window_drawn);
-    file_read_var(fp,window_triggered);
+    file_read_var(fp,window_x_triggered);
+    file_read_var(fp,window_y_triggered);
     file_read_var(fp,pixel_transfer_end);
     file_read_var(fp,emulate_pixel_fifo);
     file_read_var(fp,early_line_zero);

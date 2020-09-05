@@ -21,8 +21,6 @@ void Ppu::reset_fetcher() noexcept
 	tile_cord = 0;
 	scx_cnt = 0;
 
-	window_triggered = false; 
-
 	obj_fifo.reset();
 	bg_fifo.reset();
 	fetcher.reset();
@@ -49,6 +47,10 @@ void Ppu::init() noexcept
 	bg_pal_idx = 0; // index into the bg pal (entry takes two bytes)
 
 	window_y_line = 0;
+	window_x_line = 0;
+
+	window_x_triggered = false; 
+	window_y_triggered = false;
 
 	memset(bg_pal,0x00,sizeof(bg_pal)); // bg palette data
 	memset(sp_pal,0x00,sizeof(sp_pal)); // sprite pallete data 
@@ -277,6 +279,8 @@ void Ppu::turn_lcd_off() noexcept
 	emulate_pixel_fifo = false;
 	early_line_zero = false;
 
+	window_y_triggered = false;
+	window_x_triggered = false;
 
 	scanline_counter = 0; // counter is reset?
 	current_line = 0; // reset ly
@@ -321,13 +325,14 @@ void Ppu::switch_hblank() noexcept
 
 	// if we draw the window at all this line 
 	// we will draw it from a greater pos next line
-	if(window_drawn)
+	if(window_x_triggered)
 	{
 		window_y_line++;
-		window_drawn = false;
+		window_x_triggered = false;
+		window_x_line = 0;
 	}
 	
-	window_x_line = 0;
+	
 
 	emulate_pixel_fifo = false;
 
@@ -373,6 +378,7 @@ void Ppu::update_graphics(uint32_t cycles) noexcept
 				{
 					mode = ppu_mode::vblank; // switch to vblank
 					new_vblank = true;
+					window_y_triggered = false;
 					cpu.request_interrupt(0); // vblank interrupt
 					
 					// edge case oam stat interrupt is triggered here if enabled
@@ -432,6 +438,11 @@ void Ppu::update_graphics(uint32_t cycles) noexcept
 		{
 			if(scanline_counter >= OAM_END)
 			{
+				if(current_line == mem.io[IO_WY])
+				{
+					window_y_triggered = true;
+				}
+
 				// switch to pixel transfer
 				mode = ppu_mode::pixel_transfer;
 				
@@ -528,7 +539,7 @@ uint32_t Ppu::calc_pixel_transfer_end() noexcept
 
 	// is the window drawn on this line?
 	const bool window_rendered = mem.io[IO_WX] <= 166 && 
-		mem.io[IO_WY] <= current_line && is_set(mem.io[IO_LCDC],5);
+		window_y_triggered && is_set(mem.io[IO_LCDC],5);
 
 	// verify window delay
 	if(window_rendered && mem.io[IO_SCX] != 0)
@@ -611,8 +622,9 @@ void Ppu::render_scanline() noexcept
 
 	// is the window drawn on this line?
 	const bool window_rendered = mem.io[IO_WX] <= 166 && 
-		mem.io[IO_WY] <= current_line && is_set(mem.io[IO_LCDC],5);
+		window_y_triggered && is_set(mem.io[IO_LCDC],5);
 
+	window_x_triggered = window_rendered;
 	
 
 	if(!window_rendered)
@@ -686,7 +698,7 @@ bool Ppu::push_pixel() noexcept
 	// if we fetched a bg tile
 	// i highly doubt there is a hard coded dont do the shift is this aint the window
 	// on real hardware i need to find out how this is actually done
-	if(scx_cnt > 0 && !window_triggered)
+	if(scx_cnt > 0 && !window_x_triggered)
 	{
 
 
@@ -777,7 +789,7 @@ void Ppu::tick_fetcher() noexcept
 		// takes 3 cycles to fetch 8 pixels
 		if(fetcher.cyc >= 6) 
 		{
-			tile_fetch(fetcher.buf,window_triggered);
+			tile_fetch(fetcher.buf,window_x_triggered);
 			fetcher.ready = true;
 		}
 	}
@@ -809,7 +821,6 @@ void Ppu::draw_scanline(uint32_t cycles) noexcept
 	const bool obj_enabled = is_set(mem.io[IO_LCDC],1);
 	
 
-
 	// advance the fetcher and the fifo
 	for(uint32_t i = 0; i < cycles; i++) // 1 pixel pushed per cycle
 	{
@@ -818,12 +829,13 @@ void Ppu::draw_scanline(uint32_t cycles) noexcept
 		// reset bg fifo and fetcher
 		// ideally id cache this for the draw
 		const bool using_window = window_active();
-		if(!window_triggered && using_window)
+		if(!window_x_triggered && using_window)
 		{
+			window_x_triggered = true;
 			bg_fifo.reset();
 			fetcher.reset();
 		}
-		window_triggered = using_window;
+		
 	
 		// ignore sprite timings for now
 		// sprites are fetched instantly into the fifo
@@ -852,11 +864,11 @@ bool Ppu::window_active() const noexcept
 {
 
 	// is the window enabled check in lcd control
-	// and is the current scanline the window pos?
-	// if we are using window 
-	// it starts drawing at window_x 
-	// so if we are less than it dont draw 
-	const bool using_window = is_set(mem.io[IO_LCDC],5) && (mem.io[IO_WY] <= current_line) 
+	// and the window wy was == ly at some point during the frame
+	// note if it is swapped during the frame to an ealier pos it wont trigger
+	// see exponents test :P
+	// and our draw cord is past wx?
+	const bool using_window = is_set(mem.io[IO_LCDC],5) && window_y_triggered 
 		&&  (mem.io[IO_WX] <= 166) && (mem.io[IO_WX] <= x_cord + 7);	
 
 	return using_window;
@@ -910,9 +922,6 @@ void Ppu::tile_fetch(Pixel_Obj *buf, bool use_window) noexcept
 		y_pos = window_y_line;
 		x_pos = window_x_line;
 
-
-		// cache if we have drawn the window on this line 
-		window_drawn = true;
 		window_x_line += 8;
 	}
 

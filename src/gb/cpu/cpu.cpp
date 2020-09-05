@@ -399,12 +399,13 @@ void Cpu::handle_halt()
 	// if in mid scanline mode tick till done
 	// else just service events
 
-	while(ppu.using_fifo())
+	// still need to check that intr are not firing during this
+	while(ppu.using_fifo() && (req & enabled & 0x1f) == 0)
 	{
 		cycle_tick(1);
+		req = mem.io[IO_IF];
 	}
 
-	req = mem.io[IO_IF];
 	while((req & enabled & 0x1f) == 0)
 	{
 		// if there are no events 

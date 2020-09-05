@@ -231,8 +231,8 @@ private:
     // keep track of how much the window has drawn
     unsigned int window_y_line = 0;
     unsigned int window_x_line = 0;
-    bool window_drawn = false; // did we draw the window on this line?
-    bool window_triggered = false;
+    bool window_x_triggered = false;
+    bool window_y_triggered = false;
 
     // cgb pal
 	uint8_t bg_pal[0x40] = {0xff}; // bg palette data
