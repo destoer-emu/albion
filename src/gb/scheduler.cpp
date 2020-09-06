@@ -86,6 +86,13 @@ void GameboyScheduler::service_event(const EventNode<gameboy_event> &node)
             ppu.update_graphics(cycles_to_tick >> is_double());
             break;
         }
+
+        case gameboy_event::serial:
+        {
+            cpu.tick_serial(cycles_to_tick);
+            break;
+        }
+
     }
 }
 

@@ -93,7 +93,7 @@ public:
 
     // direct write access no side affects
     void raw_write(uint16_t addr, uint8_t v) noexcept;
-    uint8_t raw_read(uint16_t addr) noexcept;
+    uint8_t raw_read(uint16_t addr) const noexcept;
 
     // save file helpers
     void save_cart_ram();
@@ -139,6 +139,9 @@ private:
 
     void do_dma(uint8_t v) noexcept;
 
+    void init_mem_table() noexcept;
+    void init_banking_table() noexcept;
+
     // read mem underyling
     uint8_t read_oam(uint16_t addr) const noexcept;
     uint8_t read_vram(uint16_t addr) const noexcept;
@@ -164,6 +167,16 @@ private:
 
     // read out of the bios
     uint8_t read_bios(uint16_t addr) const noexcept;
+
+    void oam_dma_disable() noexcept;
+    void oam_dma_enable() noexcept;
+
+    uint8_t read_oam_dma(uint16_t addr) const noexcept;
+
+    void write_blocked(uint16_t addr, uint8_t v) noexcept;
+    uint8_t read_blocked(uint16_t addr) const noexcept;
+
+
 
     // mbc1
     void change_lo_rom_bank_mbc1(uint16_t address, uint8_t v) noexcept;

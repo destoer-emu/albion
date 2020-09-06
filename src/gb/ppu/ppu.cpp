@@ -52,6 +52,8 @@ void Ppu::init() noexcept
 	window_x_triggered = false; 
 	window_y_triggered = false;
 
+	glitched_oam_mode = false;
+
 	memset(bg_pal,0x00,sizeof(bg_pal)); // bg palette data
 	memset(sp_pal,0x00,sizeof(sp_pal)); // sprite pallete data 
 
@@ -88,7 +90,12 @@ int Ppu::get_next_ppu_event() const noexcept
 	{
 		case ppu_mode::oam_search:
 		{
-			return OAM_END - scanline_counter;
+			if(!glitched_oam_mode)
+			{
+				return OAM_END - scanline_counter;
+			}
+
+			return OAM_END - 4 - scanline_counter;
 		}
 
 		case ppu_mode::pixel_transfer:
@@ -205,6 +212,11 @@ uint8_t Ppu::get_bgpd() const noexcept
 
 ppu_mode Ppu::get_mode() const noexcept
 {
+	// reads hblank in glitched oam mode
+	if(glitched_oam_mode)
+	{
+		return ppu_mode::hblank;
+	}
 	return mode;
 }
 
@@ -303,6 +315,9 @@ void Ppu::turn_lcd_on() noexcept
 
 	//printf("lyc bit %x\n",is_set(mem.io[IO_STAT],2));
 	//printf("stat on: %x\n",mem.io[IO_STAT]);
+
+	// oam fails to lock takes one less m cycle
+	glitched_oam_mode = true;
 
 	insert_new_ppu_event();
 }
@@ -436,8 +451,11 @@ void Ppu::update_graphics(uint32_t cycles) noexcept
 		// mode 2 oam search
 		case ppu_mode::oam_search:
 		{
-			if(scanline_counter >= OAM_END)
+			// mode 2 takes four less cycles in glitched oam mode
+			if(scanline_counter >= OAM_END || (glitched_oam_mode && scanline_counter >= OAM_END - 4))
 			{
+				glitched_oam_mode = false;
+
 				if(current_line == mem.io[IO_WY])
 				{
 					window_y_triggered = true;

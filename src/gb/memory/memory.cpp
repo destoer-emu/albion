@@ -101,86 +101,8 @@ Memory::Memory(GB &gb) : cpu(gb.cpu), ppu(gb.ppu),
 	rom.resize(0x4000);
 } 
 
-void Memory::init(std::string rom_name, bool with_rom, bool use_bios)
+void Memory::init_mem_table() noexcept
 {
-	if(with_rom)
-	{
-		read_file(rom_name,rom); // read our rom in
-
-
-		// propagate an error back with an exception later for now we just bail
-		if(rom.size() < 0x4000)
-		{
-			throw std::runtime_error("rom is too small!");
-		}
-	}
-
-	else
-	{
-		rom.resize(0x4000);
-	}
-
-	if(use_bios)
-	{
-		std::string bios_file = rom_cgb_enabled() ? "gbc_bios.bin" : "dmg_bios.bin";
-		try
-		{
-			read_file(bios_file,bios);
-		}
-
-		catch(std::exception &ex)
-		{
-			UNUSED(ex);
-			throw std::runtime_error(fmt::format("could not load bios file: {}!",bios_file));
-		}
-	}
-
-    // init memory
-    vram.resize(0x2);
-    for(auto &x: vram)
-    {
-		std::fill(x.begin(),x.end(),0);
-    }
-	std::fill(wram.begin(),wram.end(),0); 
-	std::fill(oam.begin(),oam.end(),0);
-	std::fill(io.begin(),io.end(),0);
-    for(auto &x: cgb_wram_bank)
-    {
-		std::fill(x.begin(),x.end(),0);
-    }
-
-
-    // pull out our rom info
-    rom_info.init(rom,rom_name);
-
-
-    cart_ram_banks.resize(rom_info.no_ram_banks);
-    for(auto &x: cart_ram_banks)
-    {
-        x.resize(0x2000);
-		std::fill(x.begin(),x.end(),0);
-    }
-	load_cart_ram();
-
-
-
-
-
-
-
-
-
-    // init our function table
-
-    // read_mem
-	memory_table[0x0].read_memf = &Memory::read_bank_zero;
-	memory_table[0x1].read_memf = &Memory::read_bank_zero;
-	memory_table[0x2].read_memf = &Memory::read_bank_zero;
-	memory_table[0x3].read_memf = &Memory::read_bank_zero;
-	memory_table[0x4].read_memf = &Memory::read_rom_bank;
-	memory_table[0x5].read_memf = &Memory::read_rom_bank;
-	memory_table[0x6].read_memf = &Memory::read_rom_bank;
-	memory_table[0x7].read_memf = &Memory::read_rom_bank;
 	memory_table[0x8].read_memf = &Memory::read_vram;
 	memory_table[0x9].read_memf = &Memory::read_vram;
 	memory_table[0xa].read_memf = &Memory::read_cart_ram;
@@ -199,7 +121,21 @@ void Memory::init(std::string rom_name, bool with_rom, bool use_bios)
 	memory_table[0xc].write_memf = &Memory::write_wram_low;
 	memory_table[0xd].write_memf = &Memory::write_wram_high;
 	memory_table[0xe].write_memf = &Memory::write_wram_low;
-	memory_table[0xf].write_memf = &Memory::write_hram;
+	memory_table[0xf].write_memf = &Memory::write_hram;	
+}
+
+void Memory::init_banking_table() noexcept
+{
+    // banking read mem
+	memory_table[0x0].read_memf = &Memory::read_bank_zero;
+	memory_table[0x1].read_memf = &Memory::read_bank_zero;
+	memory_table[0x2].read_memf = &Memory::read_bank_zero;
+	memory_table[0x3].read_memf = &Memory::read_bank_zero;
+	memory_table[0x4].read_memf = &Memory::read_rom_bank;
+	memory_table[0x5].read_memf = &Memory::read_rom_bank;
+	memory_table[0x6].read_memf = &Memory::read_rom_bank;
+	memory_table[0x7].read_memf = &Memory::read_rom_bank;
+
 
 	switch(rom_info.type)
 	{
@@ -284,12 +220,82 @@ void Memory::init(std::string rom_name, bool with_rom, bool use_bios)
 			}
 			break;
 		}
-		
-		default:
+	}
+}
+
+void Memory::init(std::string rom_name, bool with_rom, bool use_bios)
+{
+	if(with_rom)
+	{
+		read_file(rom_name,rom); // read our rom in
+
+
+		// propagate an error back with an exception later for now we just bail
+		if(rom.size() < 0x4000)
 		{
-			throw std::runtime_error("unknown banking type!");
+			throw std::runtime_error("rom is too small!");
 		}
 	}
+
+	else
+	{
+		rom.resize(0x4000);
+	}
+
+	if(use_bios)
+	{
+		std::string bios_file = rom_cgb_enabled() ? "gbc_bios.bin" : "dmg_bios.bin";
+		try
+		{
+			read_file(bios_file,bios);
+		}
+
+		catch(std::exception &ex)
+		{
+			UNUSED(ex);
+			throw std::runtime_error(fmt::format("could not load bios file: {}!",bios_file));
+		}
+	}
+
+    // init memory
+    vram.resize(0x2);
+    for(auto &x: vram)
+    {
+		std::fill(x.begin(),x.end(),0);
+    }
+	std::fill(wram.begin(),wram.end(),0); 
+	std::fill(oam.begin(),oam.end(),0);
+	std::fill(io.begin(),io.end(),0);
+    for(auto &x: cgb_wram_bank)
+    {
+		std::fill(x.begin(),x.end(),0);
+    }
+
+
+    // pull out our rom info
+    rom_info.init(rom,rom_name);
+
+
+    cart_ram_banks.resize(rom_info.no_ram_banks);
+    for(auto &x: cart_ram_banks)
+    {
+        x.resize(0x2000);
+		std::fill(x.begin(),x.end(),0);
+    }
+	load_cart_ram();
+
+
+
+
+
+
+
+
+
+    // init our function table
+	init_mem_table();
+
+	init_banking_table();
 
 	if(!use_bios)
 	{
@@ -512,7 +518,7 @@ void Memory::raw_write(uint16_t addr, uint8_t v) noexcept
 }
 
 
-uint8_t Memory::raw_read(uint16_t addr) noexcept
+uint8_t Memory::raw_read(uint16_t addr) const noexcept
 {
 	switch((addr & 0xf000) >> 12)
 	{
@@ -704,7 +710,7 @@ uint8_t Memory::read_oam(uint16_t addr) const noexcept
     }
 
     // if not in vblank or hblank cant access it
-    if(ppu.get_mode() != ppu_mode::hblank && ppu.get_mode() != ppu_mode::vblank)
+    if(ppu.get_mode() != ppu_mode::hblank && ppu.get_mode() != ppu_mode::vblank && !ppu.glitched_oam_mode)
     {
         return 0xff;
     }
@@ -1137,7 +1143,7 @@ uint8_t Memory::read_hram(uint16_t addr) const noexcept
     // high wram mirror
     else if(addr >= 0xf000 && addr <= 0xfdff)
     {
-        return read_wram_high(addr);
+        return std::invoke(memory_table[0xd].read_memf,this,addr);
     }
 
 	// oam is accesible during mode 0-1
@@ -1165,7 +1171,7 @@ void Memory::write_oam(uint16_t addr,uint8_t v) noexcept
     }
 
     // if not in vblank or hblank cant access it
-    if(ppu.get_mode() != ppu_mode::hblank && ppu.get_mode() != ppu_mode::vblank)
+    if(ppu.get_mode() != ppu_mode::hblank && ppu.get_mode() != ppu_mode::vblank && !ppu.glitched_oam_mode)
     {
         return;
     }
@@ -1199,19 +1205,19 @@ void Memory::do_dma(uint8_t v) noexcept
 	// technically a oam dma should delay a cycle before writing
 	if(dma_address < 0xe000)
 	{
-		oam_dma_active = false;
+		oam_dma_disable();
 		for(int i = 0; i < 0xA0; i++)
 		{
-			oam[i] =  read_mem(dma_address+i); 	
+			oam[i] = read_mem(dma_address+i); 	
 		}
-		oam_dma_active = true; // indicate a dma is active and to lock memory
+		
 		oam_dma_address = dma_address; // the source address
 		oam_dma_index = 0; // how far along the dma transfer we are	
-
 
 		const auto event = scheduler.create_event((0xa0 * 4)+0x8,gameboy_event::oam_dma_end);
 		scheduler.insert(event,false);
 	
+		oam_dma_enable();
 	}
 }
 
@@ -1232,16 +1238,122 @@ void Memory::tick_dma(uint32_t cycles) noexcept
 	// 4 cycles per byte
 	if(oam_dma_index >= (0xa0 * 4)+8) 
 	{
-		oam_dma_active = false;
+		oam_dma_disable();
 	}	
 }
 
+// todo on ppu modes swich out the vram and oam access ptrs
+// to remove uneeded checks
+void Memory::write_blocked(uint16_t addr, uint8_t v) noexcept
+{
+	UNUSED(addr); UNUSED(v);
+}
+
+uint8_t Memory::read_blocked(uint16_t addr) const noexcept
+{
+	UNUSED(addr);
+	return 0xff;
+}
+
+uint8_t Memory::read_oam_dma(uint16_t addr) const noexcept
+{
+	UNUSED(addr);
+	// cpu gets back what oam is reading
+	// so what we need to do is figure out where the oam dma is
+	const auto dma_event = scheduler.get(gameboy_event::oam_dma_end);
+	if(!dma_event)
+	{
+		printf("dma event not active during read_oam_dma:%x:%x:%x!?\n",oam_dma_active,oam_dma_address,oam_dma_index);
+		exit(1);
+	}
+	// todo for the extra start and stop delay is this still the case?
+	const auto dma_idx = (dma_event.value().start - scheduler.get_timestamp()) / 4;
+	return raw_read(oam_dma_address + dma_idx); // todo this function may fail under some cases
+}
+
+
+//https://www.reddit.com/r/EmuDev/comments/5hahss/gb_readwrite_memory_during_an_oam_dma/?utm_medium=android_app&utm_source=share
+void Memory::oam_dma_disable() noexcept
+{
+	// disabled restore the normal memory ptrs
+	oam_dma_active = false;
+
+	// are we better off just shoving a bool check in all the memory handlers?
+	// this seems kinda heavy
+	init_mem_table();
+	init_banking_table();
+}
+
+void Memory::oam_dma_enable() noexcept
+{
+	// indicate a dma is active and to lock memory
+	oam_dma_active = true; 
+
+	// ok so we have the external vram bus
+	
+	// and the internal bus for everything other than the io range
+	
+	// if oam is accessing that range then the cpu is not allowed to do so
+	// so we have to lock out that section of memory
+
+	// lock out vram
+	if(oam_dma_address >= 0x8000 && oam_dma_address <= 0x9fff)
+	{
+		memory_table[0x8].write_memf = &Memory::write_blocked;
+		memory_table[0x9].write_memf = &Memory::write_blocked;
+		memory_table[0x8].read_memf = &Memory::read_oam_dma;
+		memory_table[0x9].read_memf = &Memory::read_oam_dma;
+	}
+
+	// lock out everything else
+	else
+	{
+		for(int i = 0; i < 8; i++)
+		{
+			memory_table[i].write_memf = &Memory::write_blocked;
+			memory_table[i].read_memf = &Memory::read_oam_dma;
+		}
+
+		for(int i = 0xa; i < 0xf; i++)
+		{
+			memory_table[i].write_memf = &Memory::write_blocked;
+			memory_table[i].read_memf = &Memory::read_oam_dma;
+		}
+	}
+
+}
 
 // io memory has side affects 0xff00
 void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 {
     switch(addr & 0xff)
     {
+
+		case IO_SC:
+		{
+
+			// serial timeout stub does not emulate proper timings
+			// NOTE see src_serial from old emulator for full impl
+			if(is_set(v,7) && !is_set(io[IO_SC],7))
+			{
+				if(cpu.get_cgb() && is_set(v,1))
+				{
+					cpu.serial_cyc = 4;
+				}
+				
+				else 
+				{
+					cpu.serial_cyc = 128;
+				}
+				cpu.serial_cnt = 8;	
+
+				cpu.insert_new_serial_event();
+			}
+			io[IO_SC] = v;
+			break;			
+		}
+
+
 		// serial data (current we just use this for testing purposes)
 		case IO_SB:
 		{
@@ -2076,7 +2188,7 @@ void Memory::write_hram(uint16_t addr,uint8_t v) noexcept
     // high wram mirror
     else if(addr >= 0xf000 && addr <= 0xfdff)
     {
-        write_wram_high(addr,v);
+        std::invoke(memory_table[0xd].write_memf,this,addr,v);
     }
 
 	// oam is accesible during mode 0-1

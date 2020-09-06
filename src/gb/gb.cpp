@@ -164,24 +164,21 @@ void GB::key_pressed(button b)
 {
 	auto key = static_cast<int>(b);
 
-	bool previously_unset = false;
-	
+
+	// verify joypad intr
+
 	// if setting from 1 to 0 we may have to req 
 	// and interrupt
-	if(!is_set(cpu.joypad_state,key))
-	{
-		previously_unset = true;
-	}
+	bool previously_unset = is_set(cpu.joypad_state,key);
 	
 	// remember if a key is pressed its bit is 0 not 1
 	cpu.joypad_state = deset_bit(cpu.joypad_state, key);
 	
-
 	// is the input for a button?
-	bool button = (key > 3);
+	const bool button = (key > 3);
 
 	
-	uint8_t key_req = mem.io[IO_JOYPAD];
+	const auto key_req = mem.io[IO_JOYPAD];
 	bool req_int = false;
 	
 	// only fire interrupts on buttons the game is current trying to read

@@ -3,6 +3,8 @@
 namespace gameboy
 {
 
+// TODO rebuild memory table on save state
+
 // save states
 void Memory::save_state(std::ofstream &fp)
 {

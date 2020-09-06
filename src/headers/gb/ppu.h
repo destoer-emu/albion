@@ -48,6 +48,7 @@ public:
     // pixel transfer have been written
     void ppu_write() noexcept;
     
+    bool glitched_oam_mode = false;
 
     bool new_vblank = false;
 

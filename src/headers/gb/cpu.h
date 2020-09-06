@@ -53,6 +53,13 @@ public:
     static constexpr int freq_arr[4] = {9,3,5,7};
 
 
+    // serial
+    int serial_cyc;
+    int serial_cnt;
+
+    void tick_serial(int cycles) noexcept;
+    void insert_new_serial_event() noexcept;
+
     /* register reads for the debugger */
 
     uint16_t get_pc() const noexcept { return pc; }

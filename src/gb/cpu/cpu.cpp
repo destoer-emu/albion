@@ -1,5 +1,5 @@
 #include<gb/gb.h>
-
+#include <bitset>
 namespace gameboy
 {
 
@@ -70,6 +70,9 @@ void Cpu::init(bool use_bios)
     interrupt_enable = false;
     halt_bug = false;
 
+	serial_cyc = 0;
+	serial_cnt = 0;
+
 	pending_cycles = 0;
 
 	insert_new_timer_event();
@@ -84,6 +87,10 @@ void Cpu::step()
 
 	// interrupts checked before the opcode fetch
     exec_instr();
+
+	//std::bitset<16> x(internal_timer);
+	//std::cout << x << "\n";
+	//printf("tima %x\n",mem.io[IO_TIMA]);
 }
 
 
@@ -152,6 +159,8 @@ void Cpu::cycle_tick_t(uint32_t cycles) noexcept
 	ppu.update_graphics(cycles >> is_double); // handle the lcd emulation
 
 	apu.tick(cycles >> is_double); // advance the apu state	
+
+	tick_serial(cycles);
 */
 
 	scheduler.tick(cycles);
@@ -368,6 +377,50 @@ void Cpu::update_timers(uint32_t cycles) noexcept
 	insert_new_timer_event();
 }
 
+void Cpu::insert_new_serial_event() noexcept
+{
+	const auto serial_event = scheduler.create_event(serial_cyc,gameboy_event::serial);
+	scheduler.insert(serial_event,false); 
+}
+
+
+void Cpu::tick_serial(int cycles) noexcept
+{
+	if(is_set(mem.io[IO_SC],7))
+	{
+		serial_cyc -= cycles;
+		if(serial_cyc <= 0)
+		{
+			// faster xfer set
+			if(is_cgb && is_set(mem.io[IO_SC],1))
+			{
+				serial_cyc = 4;
+			}
+
+			else
+			{
+				serial_cyc = 128;
+			}
+
+
+			// "push" the data out
+			// note we only emulate a disconected serial
+			mem.io[IO_SB] <<= 1; // shift out data out
+			mem.io[IO_SB] |= 1; // recive our data
+
+			if(!--serial_cnt)
+			{
+				mem.io[IO_SC] = deset_bit(mem.io[IO_SC],7); // deset bit 7 to say tranfser has ended
+				request_interrupt(3);				
+			}
+
+			else
+			{
+				insert_new_serial_event();
+			}
+		}
+	}
+}
 
 void Cpu::handle_halt()
 {
