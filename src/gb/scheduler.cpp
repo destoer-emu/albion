@@ -80,6 +80,14 @@ void GameboyScheduler::service_event(const EventNode<gameboy_event> &node)
             break;
         }
 
+        case gameboy_event::timer_reload:
+        {
+            // just do the operation here
+            // how is this affected by double speed?
+            cpu.tima_reload();
+            break;
+        }
+
         case gameboy_event::ppu:
         {
             //printf("service: %d:%d:%d\n",node.start,node.end,timestamp);

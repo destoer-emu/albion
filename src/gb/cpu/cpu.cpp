@@ -1,5 +1,4 @@
 #include<gb/gb.h>
-#include <bitset>
 namespace gameboy
 {
 
@@ -87,15 +86,15 @@ void Cpu::step()
 
 	// interrupts checked before the opcode fetch
     exec_instr();
-
-	//std::bitset<16> x(internal_timer);
-	//std::cout << x << "\n";
-	//printf("tima %x\n",mem.io[IO_TIMA]);
 }
 
 
 uint8_t Cpu::fetch_opcode() noexcept
 {
+	// need to fetch this before we do the tick
+	// just incase we are executing from somewhere volatile
+	const auto opcode = mem.read_mem(pc);
+
 	// at midpoint of instr fetch interrupts are checked
 	// and if so the opcode is thrown away and interrupt dispatch started
 	cycle_tick_t(2);
@@ -112,7 +111,8 @@ uint8_t Cpu::fetch_opcode() noexcept
 
 	else // return the opcode we have just fetched
 	{
-		return mem.read_mem(pc++);
+		pc++;
+		return opcode;
 	}
 	
 }
@@ -242,13 +242,24 @@ void Cpu::switch_double_speed() noexcept
 
 }
 
+void Cpu::tima_reload() noexcept
+{
+	mem.io[IO_TIMA] = mem.io[IO_TMA]; // reset to value in tma
+	// timer overflow interrupt	this happens on the reload
+	request_interrupt(2); 
+}
+
 void Cpu::tima_inc() noexcept
 {
 	// timer about to overflow
 	if(mem.io[IO_TIMA] == 255)
 	{	
-		mem.io[IO_TIMA] = mem.io[IO_TMA]; // reset to value in tma
-		request_interrupt(2); // timer overflow interrupt			
+		// zero until reloaded 4 cycles later
+		mem.io[IO_TIMA] = 0; 
+
+
+		const auto reload_event = scheduler.create_event(4,gameboy_event::timer_reload);
+		scheduler.insert(reload_event,false);	
 	}
 			
 	else

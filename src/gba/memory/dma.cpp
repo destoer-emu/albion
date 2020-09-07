@@ -14,6 +14,8 @@ void Dma::init()
     {
         x.init();
     }
+
+    req_list.clear();
 }
 
 
@@ -176,7 +178,7 @@ void Dma::write_control(int reg_num,int idx, uint8_t v)
                 r.src_shadow = r.src;
                 r.dst_shadow = r.dst;
 
-                //printf("[%08x]reloaded to %x:%08x:%08x:%d\n",cpu.get_pc(),reg_num,r.src_shadow,r.dst_shadow,r.dst_cnt);
+                //printf("[%08x]reloaded to %x:%08x:%08x:%d:%d:%x\n",cpu.get_pc(),reg_num,r.src_shadow,r.dst_shadow,r.dst_cnt,r.src_cnt,r.word_count);
 
                 if(r.start_time == dma_type::immediate)
                 {
@@ -189,13 +191,33 @@ void Dma::write_control(int reg_num,int idx, uint8_t v)
 }
 
 
-// investiage the case that a dma starts another one
-// do we switch over and resume from where it left off
-// or block and service the one with the higest priority when we are done
-
-// do we check dmas constatnly or can we get away with only requesting ones
-// of a specific type?
 void Dma::handle_dma(dma_type req_type)
+{
+    // a active dma will ofhold all others until it is done
+    // even if it has a lower priority
+    if(dma_in_progress)
+    {
+        // push this to a list of types that need to get checked
+        // there are likely faster ways to do this
+        req_list.push_back(req_type);
+        return;
+    }
+
+    check_dma(req_type);
+
+    // dmas could of become queued during the last one
+    // so we need to recheck them until there no more to
+    // service
+    while(req_list.size())
+    {
+        const auto req = req_list.back();
+        req_list.pop_back();
+        check_dma(req);
+    }
+}
+
+
+void Dma::check_dma(dma_type req_type)
 {
     // higher priority dmas can hijack lower ones during transfer
     for(int i = 0; i < 4; i++)
@@ -205,9 +227,11 @@ void Dma::handle_dma(dma_type req_type)
 
         if(r.enable && r.start_time == req_type)
         {
+            dma_in_progress = true;
             do_dma(i,req_type); 
+            dma_in_progress = false;
         }   
-    }
+    }    
 }
 
 
@@ -252,7 +276,7 @@ void Dma::do_dma(int reg_num, dma_type req_type)
         // implement soundcnt_h and the dma fires and we will find out :P
         case dma_type::sound:
         {
-            printf("fifo dma %x from %08x to %08x\n",reg_num,r.src_shadow,r.dst_shadow);
+            //printf("fifo dma %x from %08x to %08x\n",reg_num,r.src_shadow,r.dst_shadow);
 
 
             // need to rework our memory model to handle
@@ -279,7 +303,8 @@ void Dma::do_dma(int reg_num, dma_type req_type)
         default:
         {
 
-            write_log(debug,"dma {:x} from {:08x} to {:08x}\n",reg_num,r.src_shadow,r.dst_shadow);
+            //write_log(debug,"dma {:x} from {:08x} to {:08x}\n",reg_num,r.src_shadow,r.dst_shadow);
+            //std::cout << fmt::format("dma {:x} from {:08x} to {:08x}\n",reg_num,r.src_shadow,r.dst_shadow);
 
             if(r.is_word)
             {

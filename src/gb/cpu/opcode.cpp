@@ -16,9 +16,9 @@ void Cpu::check_rst_loop(uint16_t addr, uint8_t op)
 	}
 }
 
+#ifdef DEBUG
 void Cpu::exec_instr_debug()
 {
-#ifdef DEBUG
 	uint8_t x = mem.read_mem(pc);
 	if(debug.step_instr || debug.breakpoint_hit(pc,x,break_type::execute))
 	{
@@ -26,9 +26,9 @@ void Cpu::exec_instr_debug()
 		write_log(debug,"[DEBUG] execute breakpoint hit ({:x}:{:x})",pc,x);
 		debug.halt();
 	}
-#endif
 	exec_instr_no_debug();	
 }
+#endif
 
 // consider implementing an algorithmic decoder
 // https://gb-archive.github.io/salvage/decoding_gbz80_opcodes/Decoding%20Gamboy%20Z80%20Opcodes.html

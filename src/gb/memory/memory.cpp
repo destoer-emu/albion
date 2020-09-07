@@ -1293,9 +1293,9 @@ void Memory::oam_dma_enable() noexcept
 	
 	// and the internal bus for everything other than the io range
 	
-	// if oam is accessing that range then the cpu is not allowed to do so
-	// so we have to lock out that section of memory
-
+	// if oam is accessing that range then the cpu will get back what oam
+	// dma is reading
+	
 	// lock out vram
 	if(oam_dma_address >= 0x8000 && oam_dma_address <= 0x9fff)
 	{
@@ -1426,6 +1426,12 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			cpu.insert_new_timer_event();
 			break;
 		}		
+
+		case IO_TIMA:
+		{
+			io[IO_TIMA] = v;
+			break;
+		}
 
 		// div and tima share the same internal counter
 		// should account for this internal behavior

@@ -27,9 +27,10 @@ public:
 
     void tick_dma(uint32_t cycles) noexcept;
 
-#ifdef DEBUG
     using WRITE_MEM_FPTR = void (Memory::*)(uint16_t addr,uint8_t data) noexcept;
     using READ_MEM_FPTR = uint8_t (Memory::*)(uint16_t addr) const noexcept;
+
+#ifdef DEBUG
 
     WRITE_MEM_FPTR write_mem_fptr;
     READ_MEM_FPTR read_mem_fptr;

@@ -17,11 +17,12 @@ enum class gameboy_event
     c4_period_elapse,
     sample_push,
     internal_timer,
+    timer_reload,
     ppu,
     serial
 };
 
-constexpr size_t EVENT_SIZE = 9;
+constexpr size_t EVENT_SIZE = 10;
 
 class GameboyScheduler : public Scheduler<EVENT_SIZE,gameboy_event>
 {

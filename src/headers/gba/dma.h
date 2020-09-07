@@ -67,6 +67,7 @@ private:
     Debug &debug;
 
     void do_dma(int reg_num,dma_type req_type);
+    void check_dma(dma_type req_type);
     void handle_increment(int reg_num);
     static constexpr int max_count[4] = {0x4000,0x4000,0x4000,0x10000};
 
@@ -79,6 +80,7 @@ private:
     bool dma_in_progress;
 
     std::array<DmaReg,4> dma_regs;
+    std::vector<dma_type> req_list;
 };
 
 };

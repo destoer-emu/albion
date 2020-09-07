@@ -14,13 +14,13 @@ GBA::GBA()
 #endif
 }
 
+#ifdef DEBUG
 void GBA::change_breakpoint_enable(bool enabled)
 {
-#ifdef DEBUG
 	cpu.change_breakpoint_enable(enabled);
 	debug.breakpoints_enabled = enabled;
-#endif
 }
+#endif
 
 // init all sub compenents
 void GBA::reset(std::string filename)

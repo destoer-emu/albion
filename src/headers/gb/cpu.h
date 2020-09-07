@@ -40,6 +40,7 @@ public:
     void tima_inc() noexcept;
     bool internal_tima_bit_set() const noexcept;
     bool tima_enabled() const noexcept;
+    void tima_reload() noexcept;
 
     void request_interrupt(int interrupt) noexcept;
     bool get_cgb() const noexcept {return is_cgb;}
