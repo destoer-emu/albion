@@ -785,6 +785,11 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 			return 0xff; // return all unset
 		}	
 
+		case IO_SC:
+		{
+			return io[IO_SC] | cpu.get_cgb()? 0x7d : 0x7e;
+		}
+
         case IO_LY:
         {
             return ppu.get_current_line();
@@ -881,7 +886,6 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 
 
 		// unused
-		case 0x02:
 		case 0x2a: case 0x2b: case 0x2c: 
 		case 0x2d: case 0x2e: case 0x2f:
 		case 0x4c: case 0x4e: case 0x50:

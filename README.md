@@ -26,9 +26,9 @@ gba support is very early and can only boot test roms such as armwrestler
 
 # todo
 
-fix regressions from gb scheduler, 
-multithread scanline renderer,
-fix save states,
+not really necessary but would be nice for gb
+serial, sgb, dmg cgb color palettes
+
 
 gba bitmap affine transforms,
 gba bitmap alpha blending,
