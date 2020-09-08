@@ -285,13 +285,6 @@ void Memory::init(std::string rom_name, bool with_rom, bool use_bios)
 	load_cart_ram();
 
 
-
-
-
-
-
-
-
     // init our function table
 	init_mem_table();
 
@@ -1334,7 +1327,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 			// serial timeout stub does not emulate proper timings
 			// NOTE see src_serial from old emulator for full impl
-			if(is_set(v,7) && !is_set(io[IO_SC],7))
+			if(is_set(v,7) && !is_set(io[IO_SC],7) && is_set(v,1))
 			{
 				if(cpu.get_cgb() && is_set(v,1))
 				{
@@ -1460,6 +1453,8 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_LCDC: // lcdc
 		{
+			ppu.ppu_write();
+
 			const uint8_t lcdc_old = io[IO_LCDC];
 
 			io[IO_LCDC] = v;
@@ -1476,7 +1471,6 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 				ppu.turn_lcd_on();
 			}
 
-			ppu.ppu_write();
 
 			if(!is_set(v,5) && is_set(lcdc_old,5))
 			{

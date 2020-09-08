@@ -116,7 +116,7 @@ try
 	cpu.save_state(fp);
 	mem.save_state(fp);
 	ppu.save_state(fp);
-	//apu.save_state(fp);
+	apu.save_state(fp);
 	scheduler.save_state(fp);
 
 	fp.close();
@@ -146,7 +146,7 @@ try
 	cpu.load_state(fp);
 	mem.load_state(fp);
 	ppu.load_state(fp);
-	//apu.load_state(fp);
+	apu.load_state(fp);
 	scheduler.load_state(fp);
 
 	fp.close();
