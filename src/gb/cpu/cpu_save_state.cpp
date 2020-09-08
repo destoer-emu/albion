@@ -26,7 +26,7 @@ void Cpu::save_state(std::ofstream &fp)
     file_write_var(fp,is_double);
     file_write_var(fp,pending_cycles);
     file_write_var(fp,serial_cyc);
-    file_write_var(fp,serial_cnt);
+    file_write_var(fp,serial_cnt);	
 }
 
 

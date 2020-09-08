@@ -104,7 +104,7 @@ void GameboyInstance::key_released(int key)
 
 void GameboyInstance::load_state(const std::string &filename)
 {
-    std::string backup = std::filesystem::current_path().string() + path_seperator + "backup.state";
+    std::string backup = std::filesystem::current_path().string() + path_separator + "backup.state";
 
     // save a state just before incase they somehow
     gb.save_state(backup);

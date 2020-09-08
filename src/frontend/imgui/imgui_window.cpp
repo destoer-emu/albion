@@ -362,7 +362,24 @@ void ImguiMainWindow::file_browser()
 
     if(ImGui::Button("load state"))
     {
-        if(selected != -1)
+        if(*input_path != '\0')
+        {
+            stop_instance();
+            std::string loc = file_path + path_separator + std::string(input_path);
+            try
+            {
+                load_state(loc);
+            }
+
+            catch(std::exception &ex)
+            {
+                std::cout << ex.what() << "\n";
+                stop_instance();
+            }
+            start_instance();
+        }
+
+        else if(selected != -1)
         {
             if(std::filesystem::is_regular_file(selected_file))
             {
@@ -391,7 +408,7 @@ void ImguiMainWindow::file_browser()
     if(ImGui::Button("save state") && *input_path != '\0')
     {
         stop_instance();
-        std::string loc = file_path + "/" + std::string(input_path);
+        std::string loc = file_path + path_separator + std::string(input_path);
         try
         {
            save_state(loc);

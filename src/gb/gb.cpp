@@ -102,6 +102,8 @@ void GB::key_released(button b)
 // need to do alot more integrity checking on data in these :)
 void GB::save_state(std::string filename)
 {
+
+	std::cout << "save state: " << filename << "\n";
 try
 {
 	std::ofstream fp(filename,std::ios::binary);
@@ -114,7 +116,7 @@ try
 	cpu.save_state(fp);
 	mem.save_state(fp);
 	ppu.save_state(fp);
-	apu.save_state(fp);
+	//apu.save_state(fp);
 	scheduler.save_state(fp);
 
 	fp.close();
@@ -131,6 +133,8 @@ catch(std::exception &ex)
 
 void GB::load_state(std::string filename)
 {
+	std::cout << "load state: " << filename << "\n";
+
 try
 {	
 	std::ifstream fp(filename,std::ios::binary);
@@ -142,7 +146,7 @@ try
 	cpu.load_state(fp);
 	mem.load_state(fp);
 	ppu.load_state(fp);
-	apu.load_state(fp);
+	//apu.load_state(fp);
 	scheduler.load_state(fp);
 
 	fp.close();
@@ -162,14 +166,11 @@ catch(std::exception &ex)
 
 void GB::key_pressed(button b)
 {
-	auto key = static_cast<int>(b);
-
-
-	// verify joypad intr
+	const auto key = static_cast<int>(b);
 
 	// if setting from 1 to 0 we may have to req 
 	// and interrupt
-	bool previously_unset = is_set(cpu.joypad_state,key);
+	const bool previously_unset = is_set(cpu.joypad_state,key);
 	
 	// remember if a key is pressed its bit is 0 not 1
 	cpu.joypad_state = deset_bit(cpu.joypad_state, key);
@@ -194,8 +195,7 @@ void GB::key_pressed(button b)
 		req_int = true;
 	}
 	
-	// fire an interrupt
-	if(req_int && !previously_unset)
+	if(req_int && previously_unset)
 	{
 		cpu.request_interrupt(4);
 	}
