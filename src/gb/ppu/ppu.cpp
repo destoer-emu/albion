@@ -1,7 +1,6 @@
 #include <gb/gb.h>
 
 
-// prehistorik man is broken because of the scheduler
 
 
 // need to impl lcd enable timing side effects

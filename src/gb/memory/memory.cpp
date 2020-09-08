@@ -1327,7 +1327,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 			// serial timeout stub does not emulate proper timings
 			// NOTE see src_serial from old emulator for full impl
-			if(is_set(v,7) && !is_set(io[IO_SC],7) && is_set(v,1))
+			if(is_set(v,7) && !is_set(io[IO_SC],7) && is_set(v,0))
 			{
 				if(cpu.get_cgb() && is_set(v,1))
 				{
