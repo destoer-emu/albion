@@ -98,7 +98,7 @@ uint8_t Cpu::fetch_opcode() noexcept
 	// at midpoint of instr fetch interrupts are checked
 	// and if so the opcode is thrown away and interrupt dispatch started
 	cycle_tick_t(2);
-	bool fired = ((mem.io[IO_IF] & mem.io[IO_IE] & 0x1f) && interrupt_enable);
+	const bool fired = ((mem.io[IO_IF] & mem.io[IO_IE] & 0x1f) && interrupt_enable);
 	cycle_tick_t(2);
 
 	if(fired)

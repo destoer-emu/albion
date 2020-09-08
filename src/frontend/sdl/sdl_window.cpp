@@ -29,7 +29,6 @@ SDLMainWindow::SDLMainWindow(std::string filename)
 			{
 				std::cout << "unrecognised rom type" 
 					<< filename << "\n";
-				return;
 			}
 		}
 	}
@@ -224,8 +223,15 @@ void SDLMainWindow::gba_main(std::string filename)
 
 SDLMainWindow::~SDLMainWindow()
 {
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
+	if(renderer != NULL)
+	{
+    	SDL_DestroyRenderer(renderer);
+	}
+
+	if(window != NULL)
+	{
+    	SDL_DestroyWindow(window);
+	}
     SDL_QuitSubSystem(SDL_INIT_EVERYTHING);  
 }
 #endif

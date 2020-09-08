@@ -1460,8 +1460,6 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_LCDC: // lcdc
 		{
-			ppu.ppu_write();
-
 			const uint8_t lcdc_old = io[IO_LCDC];
 
 			io[IO_LCDC] = v;
@@ -1478,6 +1476,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 				ppu.turn_lcd_on();
 			}
 
+			ppu.ppu_write();
 
 			if(!is_set(v,5) && is_set(lcdc_old,5))
 			{

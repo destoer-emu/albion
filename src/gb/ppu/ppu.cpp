@@ -40,6 +40,8 @@ void Ppu::init() noexcept
     new_vblank = false;
 	early_line_zero = false;
 
+	emulate_pixel_fifo = false;
+
 	reset_fetcher();
 
     // cgb pal
@@ -288,7 +290,6 @@ void Ppu::turn_lcd_off() noexcept
 
 	// this just gets shut off dont tick it
 	scheduler.remove(gameboy_event::ppu,false);
-	emulate_pixel_fifo = false;
 	early_line_zero = false;
 
 	window_y_triggered = false;
@@ -316,6 +317,8 @@ void Ppu::turn_lcd_on() noexcept
 	//printf("lyc bit %x\n",is_set(mem.io[IO_STAT],2));
 	//printf("stat on: %x\n",mem.io[IO_STAT]);
 
+	emulate_pixel_fifo = false;
+
 	// oam fails to lock takes one less m cycle
 	glitched_oam_mode = true;
 
@@ -324,7 +327,11 @@ void Ppu::turn_lcd_on() noexcept
 
 void Ppu::window_disable() noexcept
 {
-
+	// window turned off midline need to disable it
+	if(window_x_triggered && mode == ppu_mode::pixel_transfer)
+	{
+		reset_fetcher();
+	}
 }
 
 void Ppu::switch_hblank() noexcept
@@ -464,7 +471,6 @@ void Ppu::update_graphics(uint32_t cycles) noexcept
 				// switch to pixel transfer
 				mode = ppu_mode::pixel_transfer;
 				
-				emulate_pixel_fifo = false;
 				pixel_transfer_end = calc_pixel_transfer_end();
 /*
 				// if using fifo allways for testing
@@ -521,31 +527,19 @@ void Ppu::ppu_write() noexcept
 	// and smash any cycles off
 	if(mode == ppu_mode::pixel_transfer)
 	{
+		pixel_transfer_end = calc_pixel_transfer_end();
+
 		if(!emulate_pixel_fifo)
 		{
 			reset_fetcher();
 			scx_cnt = mem.io[IO_SCX] & 0x7;
-			emulate_pixel_fifo = true;
 			// until we leave mode 3 remove it
-			//draw_scanline(scanline_counter-OAM_END);
+			// has to be removed before we tell it its in the pixel fifo otherwhise
+			// it might trigger hblank and have its event removed
 			scheduler.remove(gameboy_event::ppu);
-
-			/*
-			// should allways have an event during pixel xfer
-			const auto event = scheduler.get(gameboy_event::ppu).value();
-			const auto cycles = (scheduler.get_timestamp() - event.start) >> cpu.get_double();
-			scheduler.remove(gameboy_event::ppu,false);
-			scanline_counter += cycles;
-			draw_scanline(cycles);
-			*/
+			emulate_pixel_fifo = true;
+			draw_scanline(scanline_counter-OAM_END);
 		}
-		// reinsert with updated end (does not work)
-/*
-		scheduler.remove(gameboy_event::ppu);
-		pixel_transfer_end = calc_pixel_transfer_end();
-		const auto event = scheduler.create_event((pixel_transfer_end-scanline_counter) << cpu.get_double(),gameboy_event::ppu);
-		scheduler.insert(event,false);
-*/
 	}
 }
 
@@ -899,6 +893,8 @@ void Ppu::tile_fetch(Pixel_Obj *buf, bool use_window) noexcept
 
     const bool is_cgb = cpu.get_cgb();
 	const uint8_t lcd_control = mem.io[IO_LCDC];
+
+	use_window = use_window && is_set(mem.io[IO_LCDC],5);
 
 	// in dmg mode bg and window lose priority
 	// if lcdc bit 0 is reset
