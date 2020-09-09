@@ -67,7 +67,7 @@ void Apu::push_samples(int cycles)
     playback.mix_samples(bufferin0,bufferin1,volume);
     bufferin1 = static_cast<float>(dma_b_sample) / 128.0;
     playback.mix_samples(bufferin0,bufferin1,volume);
-    audio_buf[audio_buf_idx] = bufferin0;
+    const float left =  bufferin0;
 
     // right output
     bufferin0 = 0;
@@ -75,16 +75,9 @@ void Apu::push_samples(int cycles)
     playback.mix_samples(bufferin0,bufferin1,volume);
     bufferin1 = static_cast<float>(dma_b_sample) / 128.0;
     playback.mix_samples(bufferin0,bufferin1,volume);
-    audio_buf[audio_buf_idx+1] = bufferin0;
+    const float right =  bufferin0;
 
-    audio_buf_idx += 2;
-
-    // push audio
-	if(audio_buf_idx >= sample_size)
-	{
-		audio_buf_idx = 0;
-		playback.push_samples(audio_buf,sample_size);
-    }
+    playback.push_sample(left,right);
 }
 
 

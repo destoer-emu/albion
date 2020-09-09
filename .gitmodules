@@ -1,0 +1,8 @@
+[submodule "src/common/thirdparty/imgui"]
+	path = src/common/thirdparty/imgui
+	url = https://github.com/ocornut/imgui
+	branch = master
+[submodule "src/common/thirdparty/fmt"]
+	path = src/common/thirdparty/fmt
+	url = https://github.com/fmtlib/fmt
+	branch = master
