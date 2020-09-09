@@ -1,4 +1,5 @@
 #include "controller.h"
+#include <destoer-emu/destoer-emu.h>
 using namespace gameboy;
 
 #ifdef CONTROLLER_SDL
@@ -42,15 +43,19 @@ void GbControllerInput::update(gameboy::GB &gb)
         SDL_CONTROLLER_BUTTON_A,
         SDL_CONTROLLER_BUTTON_X,
         SDL_CONTROLLER_BUTTON_START,
-        SDL_CONTROLLER_BUTTON_BACK
+        SDL_CONTROLLER_BUTTON_BACK,
+        SDL_CONTROLLER_BUTTON_LEFTSHOULDER,
+	    SDL_CONTROLLER_BUTTON_RIGHTSHOULDER 
     };
 
-    static constexpr button gb_key[] = 
+    static constexpr emu_key gb_key[] = 
     {
-        button::a,
-        button::b,
-        button::start,
-        button::select
+        emu_key::a,
+        emu_key::s,
+        emu_key::enter,
+        emu_key::space,
+        emu_key::minus,
+        emu_key::plus
     };
     static_assert(sizeof(controller_buttons) == sizeof(gb_key));
 
@@ -67,12 +72,12 @@ void GbControllerInput::update(gameboy::GB &gb)
         auto b = SDL_GameControllerGetButton(controller,controller_buttons[i]);
         if(b && !buttons_prev[i])
         {
-            gb.key_pressed(gb_key[i]);
+            gb.key_input(static_cast<int>(gb_key[i]),true);
         }
 
         else if(!b && buttons_prev[i])
         {
-            gb.key_released(gb_key[i]);
+            gb.key_input(static_cast<int>(gb_key[i]),false);
         }
         buttons_prev[i] = b;
     }

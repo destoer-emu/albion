@@ -96,6 +96,8 @@ public:
     void raw_write(uint16_t addr, uint8_t v) noexcept;
     uint8_t raw_read(uint16_t addr) const noexcept;
 
+    void frame_end();
+
     // save file helpers
     void save_cart_ram();
     void load_cart_ram();
@@ -226,6 +228,9 @@ private:
     std::vector<uint8_t> rom; // variable
     std::vector<std::vector<uint8_t>> cart_ram_banks;
 
+    bool cart_ram_dirty = false;
+    int frame_count = 0;
+    static constexpr int FRAME_SAVE_LIMIT = 3600;
 
     // oam dma
 	bool oam_dma_active = false; // indicate a dma is active and to lock memory

@@ -787,7 +787,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 
 		case IO_SC:
 		{
-			return io[IO_SC] | cpu.get_cgb()? 0x7d : 0x7e;
+			return io[IO_SC] | (cpu.get_cgb()? 0x7d : 0x7e);
 		}
 
         case IO_LY:
@@ -2208,12 +2208,25 @@ void Memory::write_hram(uint16_t addr,uint8_t v) noexcept
     }
 }
 
+void Memory::frame_end()
+{
+	if(cart_ram_dirty)
+	{
+		if(++frame_count >= FRAME_SAVE_LIMIT)
+		{
+			save_cart_ram();
+			frame_count = 0;
+			cart_ram_dirty = false;
+		}
+	}
+}
 
 void Memory::write_cart_ram(uint16_t addr, uint8_t v) noexcept
 {
     if(enable_ram && cart_ram_bank != CART_RAM_BANK_INVALID)
     {
         cart_ram_banks[cart_ram_bank][addr & 0x1fff] = v;
+		cart_ram_dirty = true;
     }
 }
 
@@ -2223,6 +2236,7 @@ void Memory::write_cart_ram_mbc2(uint16_t addr, uint8_t v) noexcept
     if(enable_ram) // fixed for 512by4 bits
     {
         cart_ram_banks[0][addr & 0x1ff] = ((v & 0xf) | 0xf0);
+		cart_ram_dirty = true;
     }
 }
 

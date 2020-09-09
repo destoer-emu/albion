@@ -209,6 +209,7 @@ void GB::run()
 	{
         cpu.step();
 	}
+	mem.frame_end();
 }
 
 }

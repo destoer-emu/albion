@@ -528,6 +528,8 @@ void Ppu::ppu_write() noexcept
 	{
 		pixel_transfer_end = calc_pixel_transfer_end();
 
+		//printf("%x:mid scaline!\n",cpu.get_pc()); exit(1);
+		
 		if(!emulate_pixel_fifo)
 		{
 			reset_fetcher();
