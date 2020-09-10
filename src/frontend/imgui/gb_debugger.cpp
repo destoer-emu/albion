@@ -1,6 +1,5 @@
 #include "imgui_window.h"
 #include <gb/gb.h>
-#include <frontend/gb/controller.h>
 using namespace gameboy;
 
 
@@ -106,58 +105,32 @@ void gameboy_handle_input(GB &gb)
     {
         gb.apu.playback.stop();
         gb.throttle_emu = false;
+        glfwSwapInterval(0); // Enable vsync
     }
 
     else if(ImGui::IsKeyDown(GLFW_KEY_KP_SUBTRACT))
     {
         gb.apu.playback.start();
-        gb.throttle_emu = true;						
+        gb.throttle_emu = true;	
+        glfwSwapInterval(1); // Enable vsync					
     }
 }
 
 // we will switch them in and out but for now its faster to just copy it
-void ImguiMainWindow::gameboy_emu_instance()
+void ImguiMainWindow::gameboy_run_frame()
 {
-	constexpr uint32_t fps = 60; 
-	constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
-	uint64_t next_time = current_time() + screen_ticks_per_frame;
-
-    emu_running = true;
-    gb.quit = false;
-
     try
     {
-        GbControllerInput controller;
-	    controller.init();
-        while(!gb.quit)
+        controller.update(gb);
+
+        gameboy_handle_input(gb);
+        
+        gb.run();
+
+        if(gb.ppu.new_vblank)
         {
-            controller.update(gb);
-
-            gameboy_handle_input(gb);
-            
-            gb.run();
-
             // swap the buffer so the frontend can render it
             screen.swap_buffer(gb.ppu.screen);
-            
-            if(gb_display_viewer.enabled)
-            {
-                gb_display_viewer.update(gb);
-            }
-
-            // throttle the emulation
-            if(gb.throttle_emu)
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(time_left(next_time)));
-            }
-
-            else
-            {
-                //std::this_thread::sleep_for(std::chrono::milliseconds(time_left(next_time) / 8));
-            }
-
-            next_time = current_time() + screen_ticks_per_frame;
-
         }
     }
 
@@ -167,37 +140,20 @@ void ImguiMainWindow::gameboy_emu_instance()
         emu_running = false;
         return;
     }
-    emu_running = false;
 }
 
 
 void ImguiMainWindow::gameboy_stop_instance()
 {
-    if(emu_thread.joinable())
-    {
-        gb.quit = true;
-        // save the breakpoint state so we can restore it later
-        bool break_enabled = gb.debug.breakpoints_enabled;
-        gb.debug.disable_everything();
-        emu_thread.join(); // end the thread
-        gb.quit = false;
-        gb.mem.save_cart_ram();
-        gb.debug.breakpoints_enabled = break_enabled;
-    }
+    gb.quit = true;
+    gb.mem.save_cart_ram();
+    emu_running = false;
 }
 
-void ImguiMainWindow::gameboy_start_instance(bool step)
+void ImguiMainWindow::gameboy_start_instance()
 {
-    gb.debug.step_instr = step;
-    if(!emu_thread.joinable())
-    {
-        emu_thread = std::thread(&ImguiMainWindow::gameboy_emu_instance,this);    
-    }
-
-    else
-    {
-        gb.debug.wake_up();
-    }
+    emu_running = true;
+    gb.debug.wake_up();
 }
 
 void ImguiMainWindow::gameboy_new_instance(std::string filename, bool use_bios)
@@ -294,7 +250,9 @@ void ImguiMainWindow::gameboy_draw_disassembly_child()
 
     if(ImGui::Button("Step"))
     {
-        start_instance(true);
+        gb.debug.wake_up();
+        gb.cpu.step();
+        gb.debug.halt();
     }
 
 
@@ -302,7 +260,14 @@ void ImguiMainWindow::gameboy_draw_disassembly_child()
 
     if(ImGui::Button("Continue"))
     {
-        start_instance();
+        // perform a step with breakpoints off so we can
+        // bypass the current instr
+        const auto old = gb.debug.breakpoints_enabled;
+        gb.debug.breakpoints_enabled = false;
+        gb.cpu.step();
+        gb.debug.breakpoints_enabled  = old;
+
+        gb.debug.wake_up();
     }
 
 

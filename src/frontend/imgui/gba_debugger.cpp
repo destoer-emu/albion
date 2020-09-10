@@ -1,4 +1,5 @@
 #include "imgui_window.h"
+#include <destoer-emu/destoer-emu.h>
 
 using namespace gameboyadvance;
 
@@ -30,6 +31,19 @@ void gba_handle_input(GBA &gba)
             gba.button_event(gba_key[i],false);  
         }
     }
+
+    if(ImGui::IsKeyDown(GLFW_KEY_KP_SUBTRACT))
+    {
+        gba.key_input(static_cast<int>(emu_key::minus),true);
+        glfwSwapInterval(1); // Enable vsync
+    }
+
+    else if(ImGui::IsKeyDown(GLFW_KEY_KP_ADD))
+    {
+        gba.key_input(static_cast<int>(emu_key::plus),true);
+        glfwSwapInterval(0); // Disable vsync
+    }
+
 }
 
 GBADisplayViewer::GBADisplayViewer()
@@ -67,55 +81,32 @@ void GBADisplayViewer::draw_palette()
 }
 
 
-void ImguiMainWindow::gba_emu_instance()
+void ImguiMainWindow::gba_run_frame()
 {
-	constexpr uint32_t fps = 60; 
-	constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
-	uint64_t next_time = current_time() + screen_ticks_per_frame;
-
-    emu_running = true;
-    gba.quit = false;
     try
     {
-        while(!gba.quit)
+        //auto start = std::chrono::system_clock::now();
+
+        gba_handle_input(gba);
+        
+        
+        gba.run();
+
+        if(gba.disp.new_vblank)
         {
-            //auto start = std::chrono::system_clock::now();
-
-            gba_handle_input(gba);
-            
-            
-            gba.run();
-
             // swap the buffer so the frontend can render it
             screen.swap_buffer(gba.disp.screen);
-
-
-            if(gba_display_viewer.enabled)
-            {
-                gba_display_viewer.update(gba);
-            }
-
-            /*
-            // throttle the emulation
-            if(gba.throttle_emu)
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(time_left(next_time)));
-            }
-
-            else
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(time_left(next_time) / 8));
-            }
-            */
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(time_left(next_time)));
-            next_time = current_time() + screen_ticks_per_frame;
-
-            //auto end = std::chrono::system_clock::now();
-            //printf("fps: %d\n",1000 / std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() );
-
         }
+
+        if(gba_display_viewer.enabled)
+        {
+            gba_display_viewer.update(gba);
+        }
+
+        //auto end = std::chrono::system_clock::now();
+        //printf("fps: %d\n",1000 / std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() );
     }
+    
 
     catch(std::exception &ex)
     {
@@ -124,7 +115,6 @@ void ImguiMainWindow::gba_emu_instance()
         emu_running = false;
         return;
     }    
-    emu_running = false;
 }
 
 
@@ -283,13 +273,22 @@ void ImguiMainWindow::gba_draw_disassembly_child()
 
 	if (ImGui::Button("Step"))
 	{
-        start_instance(true);
+        gba.debug.wake_up();
+        gba.cpu.step();
+        gba.debug.halt();
 	}
 	ImGui::SameLine();
 
 	if (ImGui::Button("Continue"))
 	{
-        start_instance();
+        // perform a step with breakpoints off so we can
+        // bypass the current instr
+        const auto old = gba.debug.breakpoints_enabled;
+        gba.debug.breakpoints_enabled = false;
+        gba.cpu.step();
+        gba.debug.breakpoints_enabled  = old;
+
+        gba.debug.wake_up();
 	}
 
     ImGui::SameLine();
@@ -616,30 +615,15 @@ void ImguiMainWindow::gba_draw_memory()
 
 void ImguiMainWindow::gba_stop_instance()
 {
-    if(emu_thread.joinable())
-    {
-        gba.quit = true;
-        // save the breakpoint enable state so we can restore it later
-        bool break_enabled = gba.debug.breakpoints_enabled;
-        gba.debug.disable_everything();
-        emu_thread.join(); // end the thread
-        gba.debug.breakpoints_enabled = break_enabled;
-        //gba.mem.save_cart_ram(); <-- ignore saving for now
-    }
+    gba.quit = true;
+    emu_running = false;
+    //gba.mem.save_cart_ram(); <-- ignore saving for now
 }
 
-void ImguiMainWindow::gba_start_instance(bool step)
+void ImguiMainWindow::gba_start_instance()
 {
-    gba.debug.step_instr = step;
-    if(!emu_thread.joinable())
-    {
-        emu_thread = std::thread(&ImguiMainWindow::gba_emu_instance,this);
-    }
-
-    else
-    {
-        gba.debug.wake_up();
-    }
+    emu_running = true;
+    gba.debug.wake_up();
 }
 
 void ImguiMainWindow::gba_new_instance(std::string filename)

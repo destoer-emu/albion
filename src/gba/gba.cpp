@@ -37,13 +37,20 @@ void GBA::reset(std::string filename)
 // run a frame
 void GBA::run()
 {
-
+	disp.new_vblank = false;	
+#ifdef DEBUG
+	// break out early if we have hit a debug event
+	while(!disp.new_vblank && !debug.is_halted()) 
+    {
+        cpu.step();
+	}
+#else 
 	while(!disp.new_vblank) // exec until a vblank hits
     {
         cpu.step();
 	}
+#endif
 
-    disp.new_vblank = false;	
 }
 
 
@@ -62,8 +69,21 @@ void GBA::key_input(int key, bool pressed)
 		case emu_key::s: button_event(button::b,pressed); break;
         case emu_key::d: button_event(button::l,pressed); break;
         case emu_key::f: button_event(button::r,pressed); break;
+		case emu_key::plus:
+		{
+			apu.playback.stop();
+			throttle_emu = false;
+			break;
+		}
+
+		case emu_key::minus:
+		{
+			apu.playback.start();
+			throttle_emu = true;						
+			break;
+		}
 		default: break;
-	}	
+	}
 }
 
 // we will decide if we are going to switch our underlying memory

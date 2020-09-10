@@ -20,13 +20,14 @@ void Cpu::check_rst_loop(uint16_t addr, uint8_t op)
 void Cpu::exec_instr_debug()
 {
 	uint8_t x = mem.read_mem(pc);
-	if(debug.step_instr || debug.breakpoint_hit(pc,x,break_type::execute))
+	if(debug.breakpoint_hit(pc,x,break_type::execute))
 	{
 		// halt until told otherwhise :)
 		write_log(debug,"[DEBUG] execute breakpoint hit ({:x}:{:x})",pc,x);
 		debug.halt();
+		return;
 	}
-	exec_instr_no_debug();	
+	exec_instr_no_debug();
 }
 #endif
 

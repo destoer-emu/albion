@@ -40,6 +40,8 @@ public:
     Debug debug;
 
    std::atomic_bool quit = false;
+
+   std::atomic_bool throttle_emu = false;
 };
 
 }

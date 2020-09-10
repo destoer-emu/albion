@@ -419,8 +419,8 @@ void Cpu::timer_overflow(int timer_num)
     }
 
 
-   // if the timer num is equal to the dma sound channels dma
-     // request a fifo dma if it doesent have 16 bytes
+    // if the timer num is equal to the dma sound channels dma
+    // request a fifo dma if it doesent have 16 bytes
     // then push a fifo byte to the apu
     if(timer_num == apu.apu_io.sound_cnt.timer_num_a)
     {
@@ -493,12 +493,13 @@ void Cpu::exec_instr_no_debug()
 void Cpu::exec_instr_debug()
 {
     const uint32_t pc = regs[PC];
-    uint32_t v = is_thumb? mem.read_mem<uint16_t>(pc) : mem.read_mem<uint32_t>(pc);
-	if(debug.step_instr || debug.breakpoint_hit(pc,v,break_type::execute))
+    const uint32_t v = is_thumb? mem.read_mem<uint16_t>(pc) : mem.read_mem<uint32_t>(pc);
+	if(debug.breakpoint_hit(pc,v,break_type::execute))
 	{
 		// halt until told otherwhise :)
 		write_log(debug,"[DEBUG] execute breakpoint hit ({:x}:{:x})",pc,v);
 		debug.halt();
+        return;
 	}
     exec_instr_no_debug();
 }
@@ -506,12 +507,12 @@ void Cpu::exec_instr_debug()
 
 void Cpu::step()
 {
+    handle_power_state();
+
     // handle interrupts
     do_interrupts();
 
     exec_instr();
-
-    handle_power_state();
 }
 
 

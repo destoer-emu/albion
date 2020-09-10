@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <destoer-emu/lib.h>
 #include <destoer-emu/emulator.h>
+#include <frontend/gb/controller.h>
 
 
 
@@ -118,11 +119,10 @@ public:
     void mainloop(); 
 private:
 
-    void start_instance(bool step = false);
+    void start_instance();
     void stop_instance();
     void disable_audio();
     void enable_audio();
-    void debug_halt();
     void reset_instance(std::string filename, bool use_bios = false);
     void new_instance(std::string filename, bool use_bios = false);
     void load_state(std::string filename);
@@ -136,10 +136,10 @@ private:
 
     // emulator managment
     void gameboy_stop_instance();
-    void gameboy_start_instance(bool step = false);
+    void gameboy_start_instance();
     void gameboy_new_instance(std::string filename, bool use_bios);
     void gameboy_reset_instance(std::string filename, bool use_bios);
-    void gameboy_emu_instance();
+    void gameboy_run_frame();
 
     // frontend drawing
     void gameboy_draw_screen(); // unused now we just render to back of window
@@ -154,10 +154,10 @@ private:
 
     // gba
     void gba_stop_instance();
-    void gba_start_instance(bool step = false);
+    void gba_start_instance();
     void gba_new_instance(std::string filename);
     void gba_reset_instance(std::string filename);
-    void gba_emu_instance();
+    void gba_run_frame();
 
     // frotend drawing
     //void gba_draw_screen();
@@ -175,7 +175,7 @@ private:
     // underlying emulator instance data
     gameboy::GB gb;
     gameboyadvance::GBA gba;
-
+    GbControllerInput controller;
 
     enum class current_window
     {
@@ -192,8 +192,7 @@ private:
     current_window selected_window = current_window::file;
     
     GLFWwindow* window;
-    std::thread emu_thread;
-    std::atomic_bool emu_running = false;  
+    bool emu_running = false; 
     emu_type running_type = emu_type::none;
 
     Texture screen;

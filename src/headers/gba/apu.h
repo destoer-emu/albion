@@ -21,6 +21,8 @@ public:
     
 
     ApuIo apu_io;
+
+    GbaPlayback playback;
 private:
     void push_samples(int cycles);
 
@@ -38,8 +40,6 @@ private:
 	float audio_buf[sample_size] = {0};
     int audio_buf_idx = 0;
     int down_sample_cnt = 380;
-
-    GbaPlayback playback;
 };
 
 }

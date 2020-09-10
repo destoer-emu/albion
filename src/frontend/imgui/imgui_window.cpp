@@ -148,19 +148,19 @@ ImguiMainWindow::~ImguiMainWindow()
 }
 
 // assume its allways running a gb instance for now
-void ImguiMainWindow::start_instance(bool step)
+void ImguiMainWindow::start_instance()
 {
     switch(running_type)
     {
         case emu_type::gameboy:
         {
-            gameboy_start_instance(step);
+            gameboy_start_instance();
             break;
         }
 
         case emu_type::gba:
         {
-            gba_start_instance(step);
+            gba_start_instance();
             break;
         }
 
@@ -222,28 +222,6 @@ void ImguiMainWindow::reset_instance(std::string filename, bool use_bios)
     }
 }
 
-void ImguiMainWindow::debug_halt()
-{
-    switch(running_type)
-    {
-        case emu_type::gameboy:
-        {       
-            gb.debug.step_instr = true;
-            break;
-        }
-
-        case emu_type::gba:
-        {
-            gba.debug.step_instr = true;
-            break;
-        }
-
-        case emu_type::none:
-        {
-            break;
-        }
-    }    
-}
 
 void ImguiMainWindow::new_instance(std::string filename, bool use_bios)
 {
@@ -669,12 +647,7 @@ void ImguiMainWindow::mainloop()
     
     // and fix gekkio test failures call_iming ret_timing <-- timing issue with vblank and hblank
 
-    /*TODO*/
-    // finish sound impl test each channel against a few games and get it up to par with old version
-    // impl channel 4 fully!
-    // metroid 2 gbc has now broken i think its becuase we added sound!?
-    
-
+    controller.init();
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -693,6 +666,11 @@ void ImguiMainWindow::mainloop()
 
         if(running_type == emu_type::gameboy) 
         {
+            if(emu_running)
+            { 
+                gameboy_run_frame();
+            }
+
             menu_bar(gb.debug);
 
             switch(selected_window)
@@ -745,7 +723,11 @@ void ImguiMainWindow::mainloop()
         }
 
         else if(running_type == emu_type::gba)
-        { 
+        {
+            if(emu_running)
+            { 
+                gba_run_frame();
+            }
             menu_bar(gba.debug);
 
             switch(selected_window)

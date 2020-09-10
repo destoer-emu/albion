@@ -205,10 +205,18 @@ void GB::key_pressed(button b)
 void GB::run()
 {
     ppu.new_vblank = false;
-    while(!ppu.new_vblank)
-	{
+#ifdef DEBUG
+	// break out early if we have hit a debug event
+	while(!ppu.new_vblank && !debug.is_halted()) 
+    {
         cpu.step();
 	}
+#else 
+	while(!ppu.new_vblank) // exec until a vblank hits
+    {
+        cpu.step();
+	}
+#endif
 	mem.frame_end();
 }
 

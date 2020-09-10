@@ -5,29 +5,19 @@
 // wake the instance up
 void Debug::wake_up()
 {
-    std::scoped_lock<std::mutex> guard(halt_mutex);
     halted = false;
 }
 
 // halt the instance so the debugger is free to poke at it
 void Debug::halt()
 {
-    {
-        std::scoped_lock<std::mutex> guard(halt_mutex);
-        halted = true;
-    }
-    while(halted)
-    {
-        // repeatdadly sleep
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
+    halted = true;
 }
 
 //disable any form of breakpoint
 void Debug::disable_everything()
 {
     wake_up();
-    step_instr = false;
     breakpoints_enabled = false;
 }
 

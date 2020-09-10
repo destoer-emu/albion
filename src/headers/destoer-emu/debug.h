@@ -56,15 +56,17 @@ public:
     void wake_up();
     void halt();
 
+    bool is_halted() const noexcept 
+    {
+        return halted;
+    } 
+
     void disable_everything();
 
 
     bool breakpoint_hit(uint32_t addr, uint32_t value, break_type type);
 
     void set_breakpoint(uint32_t addr,bool r, bool w, bool x, bool value_enabled=false, uint32_t value=0xdeadbeef);
-
-    // step an instruction
-    bool step_instr = false;
 
 
     // map to hold breakpoints (lookup by addr)
@@ -77,8 +79,7 @@ private:
     std::ofstream log_file;
     bool log_full = false;
     // is debugged instance halted
-    bool halted = false;
-    std::mutex halt_mutex;    
+    bool halted = false;    
 };
 
 

@@ -209,9 +209,10 @@ void GbControllerInput::update(gameboy::GB &gb)
 
 GbControllerInput::~GbControllerInput()
 {
-    if(controller_connected)
+    if(controller_connected && controller != NULL)
     {
         SDL_GameControllerClose(controller);
+        controller = NULL;
     }
 }
 
