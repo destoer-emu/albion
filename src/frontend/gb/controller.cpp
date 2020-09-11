@@ -211,7 +211,8 @@ GbControllerInput::~GbControllerInput()
 {
     if(controller_connected && controller != NULL)
     {
-        SDL_GameControllerClose(controller);
+        // this is apparently buggy...
+        //SDL_GameControllerClose(controller);
         controller = NULL;
     }
 }

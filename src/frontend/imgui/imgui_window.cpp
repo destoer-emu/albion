@@ -645,8 +645,7 @@ void ImguiMainWindow::mainloop()
     screen.init_texture(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);
     gb_display_viewer.init();
     
-    // and fix gekkio test failures call_iming ret_timing <-- timing issue with vblank and hblank
-
+    
     controller.init();
 
     // Main loop

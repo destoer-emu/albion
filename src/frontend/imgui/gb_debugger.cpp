@@ -1,5 +1,6 @@
 #include "imgui_window.h"
 #include <gb/gb.h>
+#include <destoer-emu/destoer-emu.h>
 using namespace gameboy;
 
 
@@ -103,16 +104,12 @@ void gameboy_handle_input(GB &gb)
 
     if(ImGui::IsKeyDown(GLFW_KEY_KP_ADD))
     {
-        gb.apu.playback.stop();
-        gb.throttle_emu = false;
-        glfwSwapInterval(0); // Enable vsync
+        gb.key_input(static_cast<int>(emu_key::plus),true);
     }
 
     else if(ImGui::IsKeyDown(GLFW_KEY_KP_SUBTRACT))
     {
-        gb.apu.playback.start();
-        gb.throttle_emu = true;	
-        glfwSwapInterval(1); // Enable vsync					
+        gb.key_input(static_cast<int>(emu_key::minus),true);
     }
 }
 

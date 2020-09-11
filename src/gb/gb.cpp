@@ -55,6 +55,26 @@ void GB::key_input(int key, bool pressed)
 			case emu_key::left: key_pressed(button::left); break;
 			case emu_key::up: key_pressed(button::up); break;
 			case emu_key::down: key_pressed(button::down); break;
+			case emu_key::plus:
+			{
+				apu.playback.stop();
+				throttle_emu = false;
+				#ifdef FRONTEND_IMGUI
+					glfwSwapInterval(0); // Disable vsync
+				#endif
+				break;
+			}
+
+			case emu_key::minus:
+			{
+				apu.playback.start();
+				throttle_emu = true;
+				#ifdef FRONTEND_IMGUI
+					glfwSwapInterval(1); // Enable vsync
+				#endif						
+				break;
+			}
+
 			default: break;
 		}
 	}
@@ -71,21 +91,6 @@ void GB::key_input(int key, bool pressed)
 			case emu_key::left: key_released(button::left); break;
 			case emu_key::up: key_released(button::up); break;
 			case emu_key::down: key_released(button::down); break;
-
-			case emu_key::plus:
-			{
-				apu.playback.stop();
-				throttle_emu = false;
-				break;
-			}
-
-			case emu_key::minus:
-			{
-				apu.playback.start();
-				throttle_emu = true;						
-				break;
-			}
-
 			default: break;
 		}
 	}
