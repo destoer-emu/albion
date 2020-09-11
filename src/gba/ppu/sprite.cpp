@@ -222,20 +222,21 @@ void Display::render_sprites(int mode)
                 x2 = x_size - x2 - 1;
             }
 
-            // base tile we index into for our current sprite tile
-            uint32_t tile_base;
+
+            uint32_t tile_offset;
 
             // 1d object mapping
             if(disp_io.disp_cnt.obj_vram_mapping)
             {
-                tile_base = tile_num + ((y2 / 8) * (x_sprite_size / 8)) + (x2 / 8);
+               tile_offset =  ((y2 / 8) * (x_sprite_size / 8)) + (x2 / 8);
             }
 
             // 2d object mapping
             // in 4bpp 1024 tiles split into 32 by 32
+            // or 16 by 32 in 8bpp mode
             else
             {
-                tile_base = tile_num + ((y2 / 8) * 32) + (x2 / 8);
+                tile_offset = ((y2 / 8) * (32 >> color)) + (x2 / 8);
             }
 
             const auto &disp_cnt = disp_io.disp_cnt;
@@ -245,13 +246,13 @@ void Display::render_sprites(int mode)
             {
 
                 // base + tile_base * tile_size
-                const uint32_t addr = 0x10000 + (tile_base * 8 * 4);
+                const uint32_t addr = 0x10000 + ((tile_offset + tile_num) * 8 * 4);
 
                 const uint32_t data_offset = ((x2 % 8) / 2) + ((y2 % 8) * 4);
                 const auto tile_data = mem.vram[addr+data_offset];
 
                 // lower x cord stored in lower nibble
-                const uint32_t idx = (x2 & 1)? (tile_data >> 4) & 0xf : tile_data & 0xf;
+                const uint32_t idx = ((x2 & 1)? (tile_data >> 4) : tile_data) & 0xf;
 
                 // object window obj not displayed any non zero pixels are 
                 // the object window
@@ -264,22 +265,28 @@ void Display::render_sprites(int mode)
                     }
                 }    
 
-                else if(idx != 0)
+                else
                 {
-                    sprite_line[x_offset].col_num = idx;
-                    sprite_line[x_offset].pal_num = pal;
+                    if(idx != 0)
+                    {
+                        sprite_line[x_offset].col_num = idx;
+                        sprite_line[x_offset].pal_num = pal;
+                    }
+                    // hardware bug priority is updated even if transparent
                     sprite_line[x_offset].bg = priority;
                 }
+
             }
 
 
-            // 256 col sprites bugged on pokemon emerald title screen
-            // dont know why...
             else
             {
 
                 // base + tile_base * tile_size
-                const uint32_t addr = 0x10000 + (tile_base * 8 * 8);
+                // tile size is still 32 bytes for the tile num in 256 for some reason (thanks fleroviux)
+                // even though the bg uses the logical 64...
+                // the actual offset into it because of the cords is still 64
+                const uint32_t addr = 0x10000 + (tile_num * 8 * 4) + (tile_offset * 8 * 8);
 
                 const uint32_t data_offset = (x2 % 8) + ((y2 % 8) * 8);
                 const auto tile_data = mem.vram[addr+data_offset];
@@ -295,12 +302,19 @@ void Display::render_sprites(int mode)
                     }
                 }    
 
-                else if(tile_data != 0)
+                else
                 {
-                    sprite_line[x_offset].col_num = tile_data;
-                    sprite_line[x_offset].pal_num = 0;
+                    if(tile_data != 0)
+                    {
+                        sprite_line[x_offset].col_num = tile_data;
+                        sprite_line[x_offset].pal_num = 0;
+                    }
+
+                    // hardware bug priority is updated even if transparent
                     sprite_line[x_offset].bg = priority;
                 }
+
+
             }
 
             if(obj_mode == 1)

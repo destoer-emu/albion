@@ -809,13 +809,17 @@ void Display::render()
         }
 
 
-/*      // needs checking
+        // needs checking
         case 0x2: // bg mode 2
         {
             //render_bg(2,4);
+            for(unsigned int bg = 2; bg < 4; bg++)
+            {
+                render_affine(bg);
+            }
             break;
         }
-*/
+
 
         case 0x3: // bg mode 3 
         { 

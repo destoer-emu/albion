@@ -225,13 +225,16 @@ private:
     {
         {1,1,1}, // bios rom
         {1,1,1}, // wram 32k
-        {1,1,1}, // io
-        {1,1,1}, // oam
         {3,3,6}, // wram 256k
+        {1,1,1}, // io
         {1,1,2}, // pallete ram
         {1,1,2}, // vram
+        {1,1,1}, // oam
         {5,5,8}, // gamepak rom
         {5,5,8}, // gamepak flash
+        // cheat and make them fast as we dont have prefetch nseq
+        //{1,1,1}, // gamepak rom
+        //{1,1,1}, // gamepak flash
         {5,5,5} // sram
     };
 

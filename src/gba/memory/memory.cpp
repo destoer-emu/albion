@@ -71,6 +71,7 @@ void Mem::init(std::string filename)
 
     // read and copy in the bios rom
     read_file("GBA.BIOS",bios_rom);
+    //read_file("gba_bios.bin",bios_rom);
 
     if(bios_rom.size() != 0x4000)
     {
@@ -81,10 +82,13 @@ void Mem::init(std::string filename)
 
 
     // if we are not using the bios boot we need to set postflg
-    mem_io.postflg = 1;
+    //mem_io.postflg = 1;
 
 }
 
+// hack for soundbias to boot bios...
+// fix when we properly impl the reg
+uint16_t soundbias = 0;
 
 void Mem::write_io_regs(uint32_t addr,uint8_t v)
 {
@@ -358,6 +362,9 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_SOUNDCNT_X+2: break; // unused
         case IO_SOUNDCNT_X+3: break; // unused
 
+        case IO_SOUNDBIAS: soundbias = (soundbias & 0xff00) | v; break;
+        case IO_SOUNDBIAS+1: soundbias = (soundbias & 0x00ff) | (v << 8); break;
+
         // fifo a
         case IO_FIFO_A: apu.apu_io.fifo_a.write(static_cast<int8_t>(v)); break;
         case IO_FIFO_A+1: apu.apu_io.fifo_a.write(static_cast<int8_t>(v)); break;
@@ -500,6 +507,9 @@ uint8_t Mem::read_io_regs(uint32_t addr)
         case IO_TM3CNT_H: return cpu.cpu_io.timers[3].read_control(); 
         case IO_TM3CNT_H+1: return 0; // upper byte not used
 
+
+        case IO_SOUNDBIAS: return soundbias;
+        case IO_SOUNDBIAS+1: return soundbias >> 8;
 
         case IO_IME: return cpu.cpu_io.ime;
         case IO_IME+1: case IO_IME+2: case IO_IME+3: return 0; // stub

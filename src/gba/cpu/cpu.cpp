@@ -31,7 +31,7 @@ void Cpu::init()
 
     // setup main cpu state
     is_thumb = false;  // cpu in arm mode
-
+/*
     regs[PC] = 0x08000000; // cartrige reset vector
     regs[LR] = 0x08000000;
     cpsr = 0x1f;
@@ -39,7 +39,7 @@ void Cpu::init()
     hi_banked[static_cast<int>(cpu_mode::supervisor)][0] = 0x03007FE0;
     hi_banked[static_cast<int>(cpu_mode::irq)][0] = 0x03007FA0;
     //arm_fill_pipeline(); // fill the intitial cpu pipeline
-
+*/
     //regs[PC] = 0;
     arm_mode = cpu_mode::system;
     switch_mode(cpu_mode::system);
