@@ -160,8 +160,27 @@ void Dma::write_control(int reg_num,int idx, uint8_t v)
                     {
                         // ???
                         case 0: throw std::runtime_error("special dma for dma0"); break;
-                        case 1: r.start_time = dma_type::sound; break;
-                        case 2: r.start_time = dma_type::sound; break;
+                        case 1:
+                        case 2: 
+                        {
+                            // need to verifiy hardware actually cares about the dst
+                            if(r.dst == 0x040000A0) // fifo a
+                            {
+                                r.start_time = dma_type::fifo_a;
+                            }
+
+                            else if(r.dst == 0x040000A4)
+                            {
+                                r.start_time = dma_type::fifo_b;
+                            }
+
+                            else
+                            {
+                                r.start_time = dma_type::invalid;
+                            }
+                            break;
+
+                        }
                         case 3: r.start_time = dma_type::video_capture; break;
                     }
                     break;
@@ -270,13 +289,10 @@ void Dma::do_dma(int reg_num, dma_type req_type)
     {
         // sound dma transfer 4 arm words
         // triggered by timer overflow
-        // do we actually have to check the dst is the sound dma regs
-        // or can software misuse it?
-        // or is it determined by soundcnt_h?
-        // implement soundcnt_h and the dma fires and we will find out :P
-        case dma_type::sound:
+        case dma_type::fifo_b:
+        case dma_type::fifo_a:
         {
-            //printf("fifo dma %x from %08x to %08x\n",reg_num,r.src_shadow,r.dst_shadow);
+            printf("fifo dma %x from %08x to %08x\n",reg_num,r.src_shadow,r.dst_shadow);
 
 
             // need to rework our memory model to handle

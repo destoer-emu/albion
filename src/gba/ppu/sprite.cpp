@@ -6,7 +6,7 @@ namespace gameboyadvance
 void Display::render_sprites(int mode)
 {
 
-    const TileData lose_bg(0,0,0);
+    const TileData lose_bg(0,0,5);
     // make all of the line lose
     // until something is rendred over it
     std::fill(sprite_line.begin(),sprite_line.end(),lose_bg);
@@ -19,9 +19,13 @@ void Display::render_sprites(int mode)
     }
 
 
+    std::fill(oam_priority.begin(),oam_priority.end(),128+1);
+
     const bool is_bitmap = mode >= 3;
 
-    for(int i = 127; i >= 0; i--)
+    // have to traverse it in forward order
+    // even though reverse is easier to handle most cases
+    for(int i = 0; i < 128; i++)
     {
         int obj_idx = i * 8;
         
@@ -267,13 +271,18 @@ void Display::render_sprites(int mode)
 
                 else
                 {
-                    if(idx != 0)
+                    if(i < oam_priority[x_offset])
                     {
-                        sprite_line[x_offset].col_num = idx;
-                        sprite_line[x_offset].pal_num = pal;
+                        if(idx != 0)
+                        {
+                            sprite_line[x_offset].col_num = idx;
+                            sprite_line[x_offset].pal_num = pal;
+                            oam_priority[x_offset] = i;
+                        }
+
+                         // hardware bug priority is updated even if transparent
+                        sprite_line[x_offset].bg = priority;
                     }
-                    // hardware bug priority is updated even if transparent
-                    sprite_line[x_offset].bg = priority;
                 }
 
             }
@@ -304,14 +313,18 @@ void Display::render_sprites(int mode)
 
                 else
                 {
-                    if(tile_data != 0)
+                    if(i < oam_priority[x_offset])
                     {
-                        sprite_line[x_offset].col_num = tile_data;
-                        sprite_line[x_offset].pal_num = 0;
-                    }
+                        if(tile_data != 0)
+                        {
+                            sprite_line[x_offset].col_num = tile_data;
+                            sprite_line[x_offset].pal_num = 0;
+                            oam_priority[x_offset] = i;
+                        }
 
-                    // hardware bug priority is updated even if transparent
-                    sprite_line[x_offset].bg = priority;
+                                                // hardware bug priority is updated even if transparent
+                        sprite_line[x_offset].bg = priority;
+                    }
                 }
 
 

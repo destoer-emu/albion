@@ -10,8 +10,10 @@ enum class dma_type
     immediate,
     vblank,
     hblank,
-    sound,
-    video_capture
+    fifo_a,
+    fifo_b,
+    video_capture,
+    invalid
 };
 
 

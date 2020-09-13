@@ -24,6 +24,7 @@ Display::Display(GBA &gba) : mem(gba.mem), cpu(gba.cpu)
     bg_line.resize(SCREEN_WIDTH);
     sprite_semi_transparent.resize(SCREEN_WIDTH);
     window.resize(SCREEN_WIDTH);
+    oam_priority.resize(SCREEN_WIDTH);
 }
 
 void Display::init()

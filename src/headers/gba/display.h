@@ -89,6 +89,7 @@ private:
     std::vector<TileData> sprite_line;
     std::vector<bool> sprite_semi_transparent;
     std::vector<window_source> window;
+    std::vector<int> oam_priority;
 };
 
 // this needs color correction at some point

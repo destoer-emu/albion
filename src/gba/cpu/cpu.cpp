@@ -419,14 +419,21 @@ void Cpu::timer_overflow(int timer_num)
     }
 
 
+    // do we need to fire it specifically to the dma is actually pointing
+    // at what fifo reg?
+    // need to test what happens on hardware if dmas fire when they dont point to valid regs
+    
+
     // if the timer num is equal to the dma sound channels dma
     // request a fifo dma if it doesent have 16 bytes
     // then push a fifo byte to the apu
     if(timer_num == apu.apu_io.sound_cnt.timer_num_a)
     {
+        mem.dma.fifo_a = true;
+
         if(apu.apu_io.fifo_a.len <= 16)
         {
-            mem.dma.handle_dma(dma_type::sound);
+            mem.dma.handle_dma(dma_type::fifo_a);
         }
 
         const auto x = apu.apu_io.fifo_a.read();
@@ -436,10 +443,11 @@ void Cpu::timer_overflow(int timer_num)
 
     if(timer_num == apu.apu_io.sound_cnt.timer_num_b)
     {
+        mem.dma.fifo_a = false;
 
         if(apu.apu_io.fifo_b.len <= 16)
         {
-            mem.dma.handle_dma(dma_type::sound);
+            mem.dma.handle_dma(dma_type::fifo_b);
         }
 
         const auto x = apu.apu_io.fifo_b.read();
