@@ -86,10 +86,10 @@ void ImguiMainWindow::gba_run_frame()
     try
     {
         //auto start = std::chrono::system_clock::now();
+        gba_controller.update(gba);
 
-        gba_handle_input(gba);
-        
-        
+        //gba_handle_input(gba);
+
         gba.run();
 
         if(gba.disp.new_vblank)

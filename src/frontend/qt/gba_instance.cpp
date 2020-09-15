@@ -1,4 +1,5 @@
 #include "gba_instance.h"
+#include <frontend/gba/controller.h>
 
 using namespace gameboyadvance;
 
@@ -29,9 +30,13 @@ void GbaInstance::run()
             throw std::runtime_error("[gba-run] Warning framebuffer is invalid (we likely have a bug somewhere)\n");
         }
 
+        GbaControllerInput controller;
+	    controller.init();
 
         while(!gba.quit)
         {
+            controller.update(gba);
+
             gba.run();
 
 

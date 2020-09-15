@@ -1,10 +1,11 @@
 #include "controller.h"
 #include <destoer-emu/destoer-emu.h>
-using namespace gameboy;
+using namespace gameboyadvance;
 
 #ifdef CONTROLLER_SDL
 
-void GbControllerInput::init()
+// todo rewrite input system for when we do n64
+void GbaControllerInput::init()
 {
     // pick first valid controller
 	for(int i = 0; i < SDL_NumJoysticks(); i++)
@@ -27,7 +28,7 @@ void GbControllerInput::init()
 	}  
 }
 
-void GbControllerInput::update(gameboy::GB &gb)
+void GbaControllerInput::update(gameboyadvance::GBA &gba)
 {
     // no controller we dont care
     if(!controller_connected)
@@ -48,7 +49,7 @@ void GbControllerInput::update(gameboy::GB &gb)
 	    SDL_CONTROLLER_BUTTON_RIGHTSHOULDER 
     };
 
-    static constexpr emu_key gb_key[] = 
+    static constexpr emu_key gba_key[] = 
     {
         emu_key::a,
         emu_key::s,
@@ -57,7 +58,7 @@ void GbControllerInput::update(gameboy::GB &gb)
         emu_key::minus,
         emu_key::plus
     };
-    static_assert(sizeof(controller_buttons) == sizeof(gb_key));
+    static_assert(sizeof(controller_buttons) == sizeof(gba_key));
 
 
     static constexpr int CONTROLLER_BUTTONS_SIZE = sizeof(controller_buttons) / sizeof(controller_buttons[0]);
@@ -72,12 +73,12 @@ void GbControllerInput::update(gameboy::GB &gb)
         auto b = SDL_GameControllerGetButton(controller,controller_buttons[i]);
         if(b && !buttons_prev[i])
         {
-            gb.key_input(static_cast<int>(gb_key[i]),true);
+            gba.key_input(static_cast<int>(gba_key[i]),true);
         }
 
         else if(!b && buttons_prev[i])
         {
-            gb.key_input(static_cast<int>(gb_key[i]),false);
+            gba.key_input(static_cast<int>(gba_key[i]),false);
         }
         buttons_prev[i] = b;
     }
@@ -92,37 +93,48 @@ void GbControllerInput::update(gameboy::GB &gb)
     constexpr int16_t threshold = std::numeric_limits<int16_t>::max() / 2;
 
 
+    // if something is greater than threshold and not pushed before
+    // key press or if it was and now isnt release the key
+    // do for all 4 keys
 
     // in x axis deadzone deset both
     if(x == threshold)
     {
-        gb.key_input(static_cast<int>(emu_key::down),false);
-        gb.key_input(static_cast<int>(emu_key::up),false);
+        gba.button_event(button::down,false);
+        gba.button_event(button::up,false);
     }
 
     // in y axis deadzone deset both
     if(y == threshold)
     {
-        gb.key_input(static_cast<int>(emu_key::left),false);
-        gb.key_input(static_cast<int>(emu_key::right),false);
+        gba.button_event(button::left,false);
+        gba.button_event(button::right,false);
     }
 
 
     // right
-    gb.key_input(static_cast<int>(emu_key::right),x > threshold);
+    gba.button_event(button::right,x > threshold);
 
     // left
-    gb.key_input(static_cast<int>(emu_key::left),x < -threshold);
+    gba.button_event(button::left,x < -threshold);
 
     // up
-    gb.key_input(static_cast<int>(emu_key::up),y < -threshold);    
+    gba.button_event(button::up,y < -threshold);    
 
     // down
-    gb.key_input(static_cast<int>(emu_key::down),y > threshold);    
+    gba.button_event(button::down,y > threshold);    
+
+
+    // handle analog triggers
+    auto trig_l = SDL_GameControllerGetAxis(controller,SDL_CONTROLLER_AXIS_TRIGGERLEFT);
+    auto trig_r = SDL_GameControllerGetAxis(controller,SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
+
+    gba.button_event(button::l,trig_l > threshold);
+    gba.button_event(button::r,trig_r > threshold);
 
 }
 
-GbControllerInput::~GbControllerInput()
+GbaControllerInput::~GbaControllerInput()
 {
     if(controller_connected && controller != NULL)
     {

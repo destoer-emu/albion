@@ -1,6 +1,7 @@
 #ifdef FRONTEND_SDL
 #include <frontend/sdl/sdl_window.h>
 #include <frontend/gb/controller.h>
+#include <frontend/gba/controller.h>
 #include <destoer-emu/emulator.h>
 
 
@@ -211,9 +212,16 @@ void SDLMainWindow::gba_main(std::string filename)
     gba.reset(filename);
     init_sdl(gameboyadvance::SCREEN_WIDTH,gameboyadvance::SCREEN_HEIGHT);
 
+	/* setup our controller */
+	GbaControllerInput controller;
+	controller.init();
+
 	for(;;)
 	{
 		gba_handle_input();
+
+		controller.update(gba);
+
 		gba.run();
 		gba_render();
 

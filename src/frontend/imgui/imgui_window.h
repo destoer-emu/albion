@@ -14,6 +14,7 @@
 #include <destoer-emu/lib.h>
 #include <destoer-emu/emulator.h>
 #include <frontend/gb/controller.h>
+#include <frontend/gba/controller.h>
 
 
 
@@ -175,7 +176,8 @@ private:
     // underlying emulator instance data
     gameboy::GB gb;
     gameboyadvance::GBA gba;
-    GbControllerInput controller;
+    GbControllerInput gb_controller;
+    GbaControllerInput gba_controller;
 
     enum class current_window
     {

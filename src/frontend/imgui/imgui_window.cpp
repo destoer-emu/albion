@@ -646,7 +646,8 @@ void ImguiMainWindow::mainloop()
     gb_display_viewer.init();
     
     
-    controller.init();
+    gb_controller.init();
+    gba_controller.init();
 
     // Main loop
     while (!glfwWindowShouldClose(window))

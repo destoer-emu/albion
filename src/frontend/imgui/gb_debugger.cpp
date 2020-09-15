@@ -118,7 +118,7 @@ void ImguiMainWindow::gameboy_run_frame()
 {
     try
     {
-        controller.update(gb);
+        gb_controller.update(gb);
 
         gameboy_handle_input(gb);
         
