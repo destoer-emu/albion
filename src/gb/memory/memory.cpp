@@ -20,15 +20,7 @@ void Memory::save_cart_ram()
 		return;
 	}
 
-	std::string save_name = filename;
-
-	size_t ext_idx = filename.find_last_of("."); 
-	if(ext_idx != std::string::npos)
-	{
-		save_name = filename.substr(0, ext_idx); 	
-	}
-
-	save_name += ".sav";
+	const auto save_name = get_save_file_name(filename);
 
     auto fp = std::fstream(save_name, std::ios::out | std::ios::binary);
 	for(auto &x : cart_ram_banks)
@@ -46,15 +38,7 @@ void Memory::load_cart_ram()
 		return;
 	}
 
-	std::string save_name = filename;
-
-	size_t ext_idx = filename.find_last_of("."); 
-	if(ext_idx != std::string::npos)
-	{
-		save_name = filename.substr(0, ext_idx); 	
-	}
-
-	save_name += ".sav";
+	const auto save_name = get_save_file_name(filename);
 
     auto fp = std::fstream(save_name, std::ios::in | std::ios::binary);
 	for(auto &x : cart_ram_banks)

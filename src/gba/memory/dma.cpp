@@ -292,7 +292,7 @@ void Dma::do_dma(int reg_num, dma_type req_type)
         case dma_type::fifo_b:
         case dma_type::fifo_a:
         {
-            printf("fifo dma %x from %08x to %08x\n",reg_num,r.src_shadow,r.dst_shadow);
+            //printf("fifo dma %x from %08x to %08x\n",reg_num,r.src_shadow,r.dst_shadow);
 
 
             // need to rework our memory model to handle

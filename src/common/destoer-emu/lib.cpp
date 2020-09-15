@@ -21,7 +21,19 @@ void read_file(const std::string &filename, std::vector<uint8_t> &buf)
     buf.resize(size);
 
     fp.read((char*)buf.data(),size);
+}
 
+void write_file(const std::string &filename, std::vector<uint8_t> &buf)
+{
+    std::ofstream fp(filename,std::ios::binary);
+
+    if(!fp)
+    {
+        throw std::runtime_error(fmt::format("failed to open file: {}", filename));
+    }
+
+
+    fp.write((char*)buf.data(),buf.size());
 }
 
 

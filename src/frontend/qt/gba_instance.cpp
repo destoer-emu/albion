@@ -100,7 +100,7 @@ void GbaInstance::save_state(const std::string &filename)
 
 void GbaInstance::save_backup_ram()
 {
-
+    gba.mem.save_cart_ram();
 }
 
 void GbaInstance::reset(const std::string &filename)

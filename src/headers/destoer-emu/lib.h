@@ -83,6 +83,22 @@ inline bool is_valid_hex_string(char *input_str) noexcept
 
 #define UNUSED(X) ((void)X)
 void read_file(const std::string &filename, std::vector<uint8_t> &buf);
+void write_file(const std::string &filename,std::vector<uint8_t> &buf);
+
+inline std::string get_save_file_name(const std::string &filename)
+{
+	std::string save_name = filename;
+
+	size_t ext_idx = filename.find_last_of("."); 
+	if(ext_idx != std::string::npos)
+	{
+		save_name = filename.substr(0, ext_idx); 	
+	}
+
+	save_name += ".sav";
+
+	return save_name;
+}
 
 
 constexpr char path_separator = std::filesystem::path::preferred_separator;
@@ -200,6 +216,49 @@ inline void file_read_vec(std::ifstream &fp,std::vector<T> &buf)
 	}		
 	fp.read(reinterpret_cast<char*>(buf.data()),sizeof(T)*buf.size());
 }
+
+
+
+
+
+template<typename access_type>
+void handle_write(std::vector<uint8_t> &buf,uint32_t addr,access_type v)
+{
+	#ifdef BOUNDS_CHECK // bounds check the memory access (we are very screwed if this happens)
+		if(buf.size() < addr + sizeof(access_type))
+		{
+			auto err = fmt::format("out of range handle write at: {:08x}:{:08x}\n",addr,buf.data());
+			throw std::runtime_error(err);
+		}
+	#endif
+
+
+
+	//(*(access_type*)(buf.data()+addr)) = v;
+	memcpy(buf.data()+addr,&v,sizeof(access_type));
+}
+
+
+// need checks for endianess here for completeness
+template<typename access_type>
+access_type handle_read(std::vector<uint8_t> &buf,uint32_t addr)
+{
+
+	#ifdef BOUNDS_CHECK // bounds check the memory access (we are very screwed if this happens)
+		if(buf.size() < addr + sizeof(access_type))
+		{
+			auto err = fmt::format("out of range handle read at: {:08x}:{:08x}\n",addr,buf.data());
+			throw std::runtime_error(err);
+		}
+	#endif
+
+
+	//return(*(access_type*)(buf.data()+addr));
+	access_type v;
+	memcpy(&v,buf.data()+addr,sizeof(access_type));  
+	return v;
+}
+
 
 // if we are compiling under msvc we cant user the overflow det builtins
 // we can probably do a better impl than this...

@@ -617,7 +617,7 @@ void ImguiMainWindow::gba_stop_instance()
 {
     gba.quit = true;
     emu_running = false;
-    //gba.mem.save_cart_ram(); <-- ignore saving for now
+    gba.mem.save_cart_ram();
 }
 
 void ImguiMainWindow::gba_start_instance()

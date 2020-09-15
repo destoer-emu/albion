@@ -30,9 +30,9 @@ void Display::render_sprites(int mode)
         int obj_idx = i * 8;
         
 
-        const auto attr0 = mem.handle_read<uint16_t>(mem.oam,obj_idx);
-        const auto attr1 = mem.handle_read<uint16_t>(mem.oam,obj_idx+2);
-        const auto attr2 = mem.handle_read<uint16_t>(mem.oam,obj_idx+4);
+        const auto attr0 = handle_read<uint16_t>(mem.oam,obj_idx);
+        const auto attr1 = handle_read<uint16_t>(mem.oam,obj_idx+2);
+        const auto attr2 = handle_read<uint16_t>(mem.oam,obj_idx+4);
 
         const bool affine = is_set(attr0,8);
 
@@ -199,10 +199,10 @@ void Display::render_sprites(int mode)
                 const auto base = aff_param*0x20;
 
                 // 8.8 fixed point
-                const int16_t pa = mem.handle_read<uint16_t>(mem.oam,base+0x6);
-                const int16_t pb = mem.handle_read<uint16_t>(mem.oam,base+0xe);
-                const int16_t pc = mem.handle_read<uint16_t>(mem.oam,base+0x16);
-                const int16_t pd = mem.handle_read<uint16_t>(mem.oam,base+0x1e);
+                const int16_t pa = handle_read<uint16_t>(mem.oam,base+0x6);
+                const int16_t pb = handle_read<uint16_t>(mem.oam,base+0xe);
+                const int16_t pc = handle_read<uint16_t>(mem.oam,base+0x16);
+                const int16_t pd = handle_read<uint16_t>(mem.oam,base+0x1e);
 
 
                 

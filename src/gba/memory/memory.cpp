@@ -4,10 +4,6 @@ namespace gameboyadvance
 {
 
 // template instantsation for our memory reads
-template uint8_t Mem::handle_read<uint8_t>(std::vector<uint8_t> &buf, uint32_t addr);
-template uint16_t Mem::handle_read<uint16_t>(std::vector<uint8_t> &buf, uint32_t addr);
-template uint32_t Mem::handle_read<uint32_t>(std::vector<uint8_t> &buf, uint32_t addr);
-
 template uint8_t Mem::read_mem<uint8_t>(uint32_t addr);
 template uint16_t Mem::read_mem<uint16_t>(uint32_t addr);
 template uint32_t Mem::read_mem<uint32_t>(uint32_t addr);
@@ -17,11 +13,6 @@ template uint16_t Mem::read_memt<uint16_t>(uint32_t addr);
 template uint32_t Mem::read_memt<uint32_t>(uint32_t addr);
 
 
-
-
-template void Mem::handle_write<uint8_t>(std::vector<uint8_t> &buf, uint32_t addr, uint8_t v);
-template void Mem::handle_write<uint16_t>(std::vector<uint8_t> &buf, uint32_t addr, uint16_t v);
-template void Mem::handle_write<uint32_t>(std::vector<uint8_t> &buf, uint32_t addr, uint32_t v);
 
 template void Mem::write_mem<uint8_t>(uint32_t addr, uint8_t v);
 template void Mem::write_mem<uint16_t>(uint32_t addr, uint16_t v);
@@ -42,7 +33,7 @@ Mem::Mem(GBA &gba) : dma{gba}, debug(gba.debug), cpu(gba.cpu),
     pal_ram.resize(0x400);
     vram.resize(0x18000);
     oam.resize(0x400); 
-    sram.resize(0xffff);
+    sram.resize(0x8000);
     std::fill(board_wram.begin(),board_wram.end(),0);
     std::fill(chip_wram.begin(),chip_wram.end(),0);
     std::fill(pal_ram.begin(),pal_ram.end(),0);
@@ -53,6 +44,8 @@ Mem::Mem(GBA &gba) : dma{gba}, debug(gba.debug), cpu(gba.cpu),
 
 void Mem::init(std::string filename)
 {
+    this->filename = filename;
+
     // read out rom
     read_file(filename,rom);
 
@@ -67,6 +60,76 @@ void Mem::init(std::string filename)
 
     
     // read out rom info here...
+
+    // ok determine what kind of save type we are using :)
+    // https://dillonbeliveau.com/2020/06/05/GBA-FLASH.html
+    // cheers dillon :)
+
+    // ok so we need to search the rom to see if there is a
+    // string in there that can tell us the save type
+    bool found = false;
+
+    for(size_t i = 0; i < CART_TYPE_SIZE; i++)
+    {
+        const auto &s = cart_magic[i];
+
+        // so now we need to do a byte search on the rom
+        // and find the save type 
+        if(std::search(rom.begin(),rom.end(),s.begin(),s.end()) != rom.end())
+        {
+            std::cout << "found save type: " << s << "\n";
+
+            cart_type = save_region[i];
+            save_size = save_sizes[i];
+
+            for(int i = 0; i < 3; i++)
+            {
+                wait_states[static_cast<size_t>(memory_region::cart_backup)][i] = cart_wait_states[static_cast<size_t>(cart_type)][i];
+            }
+            found = true;
+            break;
+        }
+    }
+
+    if(!found)
+    {
+        puts("cart type not detected defaulting to flash!");
+        cart_type = save_type::flash;
+        save_size = 0x20000;
+    }
+
+    
+    switch(cart_type)
+    {
+        case save_type::flash:
+        {
+            flash.init(save_size,filename);
+            break;
+        }
+
+        case save_type::sram:
+        {
+            std::string save_name = filename;
+
+            size_t ext_idx = filename.find_last_of("."); 
+            if(ext_idx != std::string::npos)
+            {
+                save_name = filename.substr(0, ext_idx); 	
+            }
+
+            save_name += ".sav";
+
+            read_file(save_name,sram);
+            break;
+        }
+
+        case save_type::eeprom:
+        {
+            puts("eeprom unsupported!");
+            break;
+        }
+    }
+
     std::cout << "rom size: " << rom.size() << "\n";
 
     // read and copy in the bios rom
@@ -84,6 +147,33 @@ void Mem::init(std::string filename)
     // if we are not using the bios boot we need to set postflg
     //mem_io.postflg = 1;
 
+}
+
+
+void Mem::save_cart_ram()
+{
+    switch(cart_type)
+    {
+        case save_type::flash:
+        {
+            flash.save_ram();
+            break;
+        }
+
+        case save_type::sram:
+        {
+            const auto save_name = get_save_file_name(filename);
+
+            write_file(save_name,sram);
+            break;
+        }
+
+        case save_type::eeprom:
+        {
+            puts("eeprom unsupported!");
+            break;
+        }
+    }    
 }
 
 // hack for soundbias to boot bios...
@@ -598,22 +688,28 @@ access_type Mem::read_mem_handler(uint32_t addr)
 
         // flash is also accesed here
         // we should really switch over to fptrs so this is nicer to swap stuff out
-        case memory_region::sram:
+        case memory_region::cart_backup:
         { 
-
-            // flash id stub for pokemon remove later
-            if(addr == 0x0E000000)
+            // this should probably just be a func pointer
+            // but this is fine for now
+            switch(cart_type)
             {
-                return 0xc2;
-            }
+                case save_type::flash:
+                {
+                    return flash.read_flash(addr);
+                }
 
-            else if(addr == 0x0E000001)
-            {
-                return 0x09;
-            }
+                // byte access only check what happens when
+                // a non byte access is attempted...
+                case save_type::sram:
+                {
+                    return sram[addr & 0x7fff];
+                }
 
+                default: break; //puts("invalid save type!"); exit(1);  
+            } 
 
-            return read_sram<access_type>(addr);
+            return 0;
         }
 
         default: return 0; // handle undefined accesses here
@@ -698,9 +794,26 @@ void Mem::write_mem(uint32_t addr,access_type v)
 
         // flash is also accessed here 
         // we will have to set mem_region by hand when it is
-        case memory_region::sram:
+        case memory_region::cart_backup:
         { 
-            write_sram<access_type>(addr,v); 
+            switch(cart_type)
+            {
+                case save_type::flash:
+                {
+                    flash.write_flash(addr,v);
+                    break;
+                }
+
+                // byte access only check what happens when
+                // a non byte access is attempted...
+                case save_type::sram:
+                {
+                    sram[addr & 0x7fff] = v;
+                    break;
+                }
+
+                default: break; //puts("invalid cart type!"); exit(1);
+            }
             break;
         }
 

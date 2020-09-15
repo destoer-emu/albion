@@ -6,6 +6,7 @@
 #include <gba/forward_def.h>
 #include <gba/mem_io.h>
 #include <gba/dma.h>
+#include <gba/flash.h>
 namespace gameboyadvance
 {
 
@@ -17,33 +18,12 @@ public:
     Mem(GBA &gba);
     void init(std::string filename);
 
+    void save_cart_ram();
+
 
     // TODO change memory accessors to
     // func pointer call when running under a debugger
     // will have to specialize the pointer for each type...
-
-
-    //access handler for reads (for non io mapped mem) 
-    // need checks for endianess here for completeness
-    template<typename access_type>
-    access_type handle_read(std::vector<uint8_t> &buf,uint32_t addr)
-    {
-
-        #ifdef BOUNDS_CHECK // bounds check the memory access (we are very screwed if this happens)
-            if(buf.size() < addr + sizeof(access_type))
-            {
-                auto err = fmt::format("out of range handle read at: {:08x}:{:08x}\n",
-                    cpu.get_pc(),addr);
-                throw std::runtime_error(err);
-            }
-        #endif
-
-
-        //return(*(access_type*)(buf.data()+addr));
-        access_type v;
-        memcpy(&v,buf.data()+addr,sizeof(access_type));  
-        return v;
-    }
 
 
     template<typename access_type>
@@ -60,24 +40,6 @@ public:
     // read mem
     //access handler for reads (for non io mapped mem)
     // need checks for endianess here for completeness
-    template<typename access_type>
-    void handle_write(std::vector<uint8_t> &buf,uint32_t addr,access_type v)
-    {
-        #ifdef BOUNDS_CHECK // bounds check the memory access (we are very screwed if this happens)
-            if(buf.size() < addr + sizeof(access_type))
-            {
-                auto err = fmt::format("out of range handle write at: {:08x}\n",cpu.get_pc());
-                throw std::runtime_error(err);
-            }
-        #endif
-
-
-
-        //(*(access_type*)(buf.data()+addr)) = v;
-        memcpy(buf.data()+addr,&v,sizeof(access_type));
-    }
-
-
     template<typename access_type>
     void write_mem(uint32_t addr,access_type v);
 
@@ -191,8 +153,24 @@ private:
     enum class memory_region
     {
         bios = 0,wram_board,wram_chip,
-        io,pal,vram,oam,rom,flash,sram,
+        io,pal,vram,oam,rom,cart_backup,
         undefined
+    };
+
+    enum class save_type
+    {
+        sram,
+        eeprom,
+        flash
+    };
+
+    // pick up here and impl the lookup timings
+    // then go impl the cart detection
+    static constexpr int cart_wait_states[3][3] = 
+    {
+        {5,5,5}, // sram only 8 bit
+        {5,5,8}, // eeprom (dont know)
+        {5,5,8} // flash only 16/32 write all reads
     };
 
     // we can just switch on the top 4 bits of the addr
@@ -213,10 +191,46 @@ private:
         memory_region::rom, // waitstate 1
         memory_region::rom, // waitstate 2
         memory_region::rom, // waitstate 2
-        memory_region::sram, //
+        memory_region::cart_backup, // cart ram
         memory_region::undefined
     };
 
+
+    static constexpr size_t CART_TYPE_SIZE = 5;
+    const std::array<std::string,CART_TYPE_SIZE> cart_magic = 
+    {
+        "EEPROM_", // 512 or 8KB
+        "SRAM_", // 32kb
+        "FLASH_", // 64KB
+        "FLASH512_", // 64KB
+        "FLASH1M_" // 128KB
+    };
+
+    static constexpr save_type save_region[CART_TYPE_SIZE] = 
+    {
+        save_type::eeprom,
+        save_type::sram,
+        save_type::flash,
+        save_type::flash,
+        save_type::flash
+    };
+
+    static constexpr uint32_t save_sizes[CART_TYPE_SIZE] = 
+    {
+        0x2000, // is eeprom size done by heurstic?
+        0x8000,
+        0x10000,
+        0x10000,
+        0x20000
+    };
+
+
+
+    Flash flash;
+
+    save_type cart_type;
+    size_t save_size;
+    std::string filename;
 
     // memory cycle timings
     // some can be set dynamically
@@ -231,11 +245,7 @@ private:
         {1,1,2}, // vram
         {1,1,1}, // oam
         {5,5,8}, // gamepak rom
-        {5,5,8}, // gamepak flash
-        // cheat and make them fast as we dont have prefetch nseq
-        //{1,1,1}, // gamepak rom
-        //{1,1,1}, // gamepak flash
-        {5,5,5} // sram
+        {5,5,8}, // cart backup needs to be setup depending on cart type
     };
 
     memory_region mem_region;
@@ -251,7 +261,7 @@ private:
     std::vector<uint8_t> chip_wram; // 0x8000
 
     // cart save ram
-    std::vector<uint8_t> sram; // 0xffff
+    std::vector<uint8_t> sram; // 0x8000
 
     // external memory
 
@@ -262,10 +272,6 @@ private:
 
 
 // template instantsation for our memory reads
-extern template uint8_t Mem::handle_read<uint8_t>(std::vector<uint8_t> &buf, uint32_t addr);
-extern template uint16_t Mem::handle_read<uint16_t>(std::vector<uint8_t> &buf, uint32_t addr);
-extern template uint32_t Mem::handle_read<uint32_t>(std::vector<uint8_t> &buf, uint32_t addr);
-
 extern template uint8_t Mem::read_mem<uint8_t>(uint32_t addr);
 extern template uint16_t Mem::read_mem<uint16_t>(uint32_t addr);
 extern template uint32_t Mem::read_mem<uint32_t>(uint32_t addr);
@@ -274,13 +280,7 @@ extern template uint8_t Mem::read_memt<uint8_t>(uint32_t addr);
 extern template uint16_t Mem::read_memt<uint16_t>(uint32_t addr);
 extern template uint32_t Mem::read_memt<uint32_t>(uint32_t addr);
 
-
-
-
-extern template void Mem::handle_write<uint8_t>(std::vector<uint8_t> &buf, uint32_t addr, uint8_t v);
-extern template void Mem::handle_write<uint16_t>(std::vector<uint8_t> &buf, uint32_t addr, uint16_t v);
-extern template void Mem::handle_write<uint32_t>(std::vector<uint8_t> &buf, uint32_t addr, uint32_t v);
-
+// and for writes
 extern template void Mem::write_mem<uint8_t>(uint32_t addr, uint8_t v);
 extern template void Mem::write_mem<uint16_t>(uint32_t addr, uint16_t v);
 extern template void Mem::write_mem<uint32_t>(uint32_t addr, uint32_t v);

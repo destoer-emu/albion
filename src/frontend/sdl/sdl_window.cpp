@@ -178,6 +178,7 @@ void SDLMainWindow::gba_handle_input()
 	
 			case SDL_QUIT:
 			{
+				gba.mem.save_cart_ram();
                 puts("quitting...");
                 exit(1);
 			}	

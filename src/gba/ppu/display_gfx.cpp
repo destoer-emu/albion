@@ -5,14 +5,14 @@ namespace gameboyadvance
 // renderer helper functions
 uint16_t Display::read_bg_palette(uint32_t pal_num,uint32_t idx)
 {
-    return mem.handle_read<uint16_t>(mem.pal_ram,(0x20*pal_num)+idx*2);        
+    return handle_read<uint16_t>(mem.pal_ram,(0x20*pal_num)+idx*2);        
 }
 
 
 uint16_t Display::read_obj_palette(uint32_t pal_num,uint32_t idx)
 {
     // 0x200 base for sprites into pal ram
-    return mem.handle_read<uint16_t>(mem.pal_ram,0x200+(0x20*pal_num)+(idx*2));        
+    return handle_read<uint16_t>(mem.pal_ram,0x200+(0x20*pal_num)+(idx*2));        
 }
 
 
@@ -282,7 +282,7 @@ void Display::render_text(int id)
         }
 
         // read out the bg entry and rip all the information we need about the tile
-        const uint16_t bg_map_entry = mem.handle_read<uint16_t>(mem.vram,bg_map_base+bg_map_offset);
+        const uint16_t bg_map_entry = handle_read<uint16_t>(mem.vram,bg_map_base+bg_map_offset);
 
         // todo if we have the same tile ident dont bother refetching it  
 
@@ -326,7 +326,7 @@ void Display::render_palette(uint32_t *palette, size_t size)
 {
     for(size_t i = 0; i < size; i++)
     {
-        palette[i] = convert_color(mem.handle_read<uint16_t>(mem.pal_ram,i*2));
+        palette[i] = convert_color(handle_read<uint16_t>(mem.pal_ram,i*2));
     }   
 }
 
@@ -827,7 +827,7 @@ void Display::render()
             // what is the enable for this?
             for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
             {
-                uint32_t c = convert_color(mem.handle_read<uint16_t>(mem.vram,(ly*SCREEN_WIDTH*2)+x*2));
+                uint32_t c = convert_color(handle_read<uint16_t>(mem.vram,(ly*SCREEN_WIDTH*2)+x*2));
                 screen[(ly*SCREEN_WIDTH)+x] = c;
             }
             break;
@@ -840,7 +840,7 @@ void Display::render()
             for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
             {
                 uint8_t idx = mem.vram[(ly*SCREEN_WIDTH)+x];
-                uint16_t color = mem.handle_read<uint16_t>(mem.pal_ram,(idx*2));
+                uint16_t color = handle_read<uint16_t>(mem.pal_ram,(idx*2));
                 uint32_t c = convert_color(color);
                 screen[(ly*SCREEN_WIDTH)+x] = c;
             }
@@ -852,7 +852,7 @@ void Display::render()
         {
             for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
             {
-                uint32_t c = convert_color(mem.handle_read<uint16_t>(mem.vram,(ly*SCREEN_WIDTH*2)+x*2));
+                uint32_t c = convert_color(handle_read<uint16_t>(mem.vram,(ly*SCREEN_WIDTH*2)+x*2));
                 screen[ly][x] = c;
             }
             break;            

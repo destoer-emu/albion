@@ -354,6 +354,10 @@ void Cpu::init_arm_opcode_table()
 
 void Cpu::cycle_tick(int cycles)
 {
+    // force hacky timing
+    // until we do a proper instr and memory timing
+    // rewrite
+    cycles = 1; 
     disp.tick(cycles);
     apu.tick(cycles);
     tick_timers(cycles);
@@ -429,8 +433,6 @@ void Cpu::timer_overflow(int timer_num)
     // then push a fifo byte to the apu
     if(timer_num == apu.apu_io.sound_cnt.timer_num_a)
     {
-        mem.dma.fifo_a = true;
-
         if(apu.apu_io.fifo_a.len <= 16)
         {
             mem.dma.handle_dma(dma_type::fifo_a);
@@ -443,8 +445,6 @@ void Cpu::timer_overflow(int timer_num)
 
     if(timer_num == apu.apu_io.sound_cnt.timer_num_b)
     {
-        mem.dma.fifo_a = false;
-
         if(apu.apu_io.fifo_b.len <= 16)
         {
             mem.dma.handle_dma(dma_type::fifo_b);
