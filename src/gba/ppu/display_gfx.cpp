@@ -516,7 +516,8 @@ void Display::merge_layers()
             // and dump whichever in the correct slot
             // after that we can just check at the end hey is the 1st one still bd
             // if so then we have to do a extra check on the sprite being enabled
-            // because it means there we no enabled bgs
+            // because it means there we no enabled bgs and we need to do this for the 2nd 
+            // aswell incase there is a sprite below the 1st bg but enabled over everything else
 
             const auto &s = sprite_line[x];
             for(int i = lim-1; i >= 0; i--)
@@ -578,6 +579,16 @@ void Display::merge_layers()
                 {
                     color1 = read_obj_palette(s.pal_num,s.col_num);
                     source1 = pixel_source::obj;
+                } 
+            }
+
+            else if(source2 == pixel_source::bd)
+            {
+                // bd has no priority
+                if(s.col_num != 0 && sprite_window_enabled(x))
+                {
+                    color2 = read_obj_palette(s.pal_num,s.col_num);
+                    source2 = pixel_source::obj;
                 } 
             }
 
