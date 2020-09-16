@@ -92,34 +92,86 @@ void GbControllerInput::update(gameboy::GB &gb)
     constexpr int16_t threshold = std::numeric_limits<int16_t>::max() / 2;
 
 
-
-    // in x axis deadzone deset both
-    if(x == threshold)
+    static constexpr int LEFT = 0;
+    static constexpr int RIGHT = 1;
+    static constexpr int UP = 2;
+    static constexpr int DOWN = 3;
+    static bool prev_dpad[4] = 
     {
-        gb.key_input(static_cast<int>(emu_key::down),false);
-        gb.key_input(static_cast<int>(emu_key::up),false);
-    }
+        false, // left
+        false, // right
+        false, // up
+        false // down
+    };
+
 
     // in y axis deadzone deset both
     if(y == threshold)
     {
-        gb.key_input(static_cast<int>(emu_key::left),false);
-        gb.key_input(static_cast<int>(emu_key::right),false);
+        if(prev_dpad[DOWN])
+        {
+            gb.key_input(static_cast<int>(emu_key::down),false);
+        }
+
+        if(prev_dpad[UP])
+        {
+            gb.key_input(static_cast<int>(emu_key::up),false);
+        }
+        prev_dpad[DOWN] = false;
+        prev_dpad[UP] = false;
     }
+
+    // in x axis deadzone deset both
+    if(x == threshold)
+    {
+        if(prev_dpad[LEFT])
+        {
+            gb.key_input(static_cast<int>(emu_key::left),false);
+        }
+
+        if(prev_dpad[RIGHT])
+        {
+            gb.key_input(static_cast<int>(emu_key::right),false);
+        }
+        prev_dpad[LEFT] = false;
+        prev_dpad[RIGHT] = false;
+    }
+
+    const bool r = x > threshold;
+    const bool l = x < -threshold;
+    const bool u = y < -threshold;
+    const bool d = y > threshold;
+
 
 
     // right
-    gb.key_input(static_cast<int>(emu_key::right),x > threshold);
+    if(r != prev_dpad[RIGHT])
+    {
+        gb.key_input(static_cast<int>(emu_key::right),r);
+        prev_dpad[RIGHT] = r;
+    }
 
     // left
-    gb.key_input(static_cast<int>(emu_key::left),x < -threshold);
+    if(l != prev_dpad[LEFT])
+    {
+        gb.key_input(static_cast<int>(emu_key::left),l);
+        prev_dpad[LEFT] = l;
+    }
 
     // up
-    gb.key_input(static_cast<int>(emu_key::up),y < -threshold);    
+    if(u != prev_dpad[UP])
+    {
+        gb.key_input(static_cast<int>(emu_key::up),u);
+        prev_dpad[UP] = u;    
+    }
 
     // down
-    gb.key_input(static_cast<int>(emu_key::down),y > threshold);    
-
+    if(d != prev_dpad[DOWN])
+    {
+        gb.key_input(static_cast<int>(emu_key::down),d);
+        prev_dpad[DOWN] = d;
+    }
+    
 }
 
 GbControllerInput::~GbControllerInput()

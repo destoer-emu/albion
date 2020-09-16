@@ -50,7 +50,10 @@ void GBA::run()
         cpu.step();
 	}
 #endif
-
+	if(disp.new_vblank)
+	{
+		mem.frame_end();
+	}
 }
 
 

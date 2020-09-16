@@ -97,40 +97,107 @@ void GbaControllerInput::update(gameboyadvance::GBA &gba)
     // key press or if it was and now isnt release the key
     // do for all 4 keys
 
-    // in x axis deadzone deset both
-    if(x == threshold)
+
+    static constexpr int LEFT = 0;
+    static constexpr int RIGHT = 1;
+    static constexpr int UP = 2;
+    static constexpr int DOWN = 3;
+    static bool prev_dpad[4] = 
     {
-        gba.button_event(button::down,false);
-        gba.button_event(button::up,false);
-    }
+        false, // left
+        false, // right
+        false, // up
+        false // down
+    };
 
     // in y axis deadzone deset both
     if(y == threshold)
     {
-        gba.button_event(button::left,false);
-        gba.button_event(button::right,false);
+        if(prev_dpad[DOWN])
+        {
+            gba.button_event(button::down,false);
+        }
+
+        if(prev_dpad[UP])
+        {
+            gba.button_event(button::up,false);
+        }
+        prev_dpad[LEFT] = false;
+        prev_dpad[RIGHT] = false;
+    }
+
+    // in x axis deadzone deset both
+    if(x == threshold)
+    {
+        if(prev_dpad[LEFT])
+        {
+            gba.button_event(button::left,false);
+        }
+
+        if(prev_dpad[RIGHT])
+        {
+            gba.button_event(button::right,false);
+        }
+        prev_dpad[LEFT] = false;
+        prev_dpad[RIGHT] = false;
     }
 
 
+    const bool r = x > threshold;
+    const bool l = x < -threshold;
+    const bool u = y < -threshold;
+    const bool d = y > threshold;
+
+
     // right
-    gba.button_event(button::right,x > threshold);
+    if(prev_dpad[RIGHT] != r)
+    {
+        gba.button_event(button::right,r);
+        prev_dpad[RIGHT] = r;
+    }
 
     // left
-    gba.button_event(button::left,x < -threshold);
+    if(prev_dpad[LEFT] != l)
+    {
+        gba.button_event(button::left,l);
+        prev_dpad[LEFT] = l;
+    }
 
     // up
-    gba.button_event(button::up,y < -threshold);    
+    if(prev_dpad[UP] != u)
+    {
+        gba.button_event(button::up,u);
+        prev_dpad[UP] = u;    
+    }
 
     // down
-    gba.button_event(button::down,y > threshold);    
-
+    if(prev_dpad[DOWN] != d)
+    {
+        gba.button_event(button::down,d);
+        prev_dpad[DOWN] = d;    
+    }
 
     // handle analog triggers
-    auto trig_l = SDL_GameControllerGetAxis(controller,SDL_CONTROLLER_AXIS_TRIGGERLEFT);
-    auto trig_r = SDL_GameControllerGetAxis(controller,SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
+    const auto trig_l = SDL_GameControllerGetAxis(controller,SDL_CONTROLLER_AXIS_TRIGGERLEFT);
+    const auto trig_r = SDL_GameControllerGetAxis(controller,SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
 
-    gba.button_event(button::l,trig_l > threshold);
-    gba.button_event(button::r,trig_r > threshold);
+    static bool trig_l_prev = false;
+    static bool trig_r_prev = false;
+
+    const bool trig_l_cur = trig_l > threshold;
+    const bool trig_r_cur = trig_r > threshold;
+
+    if(trig_l_prev != trig_l_cur)
+    {
+        gba.button_event(button::l,trig_l_cur);
+        trig_l_prev = trig_l_cur;
+    }
+
+    if(trig_r_prev != trig_r_cur)
+    {
+        gba.button_event(button::r,trig_r_cur);
+        trig_r_prev = trig_r_cur;
+    }
 
 }
 

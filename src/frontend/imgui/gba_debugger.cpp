@@ -3,6 +3,12 @@
 
 using namespace gameboyadvance;
 
+
+// TODO
+// refactor this so we just have one version of this
+// shared across all frontends
+// with a is_key_pressed() function defined in key.h
+// to keep down on code duplication
 void gba_handle_input(GBA &gba)
 {
     static constexpr int scancodes[] = {GLFW_KEY_A,GLFW_KEY_S,GLFW_KEY_SPACE,GLFW_KEY_ENTER,
@@ -24,15 +30,16 @@ void gba_handle_input(GBA &gba)
 
     for(int i = 0; i < len; i++)
     {
-        if(ImGui::IsKeyDown(scancodes[i] && !pressed[i]))
-        {
+        bool down = ImGui::IsKeyDown(scancodes[i]);
 
+        if(down && !pressed[i])
+        {
             gba.button_event(gba_key[i],true);
             pressed[i] = true;
         }
 
         // aint pressed
-        else if(pressed[i])
+        else if(pressed[i] && !down)
         {
             gba.button_event(gba_key[i],false);
             pressed[i] = false;  

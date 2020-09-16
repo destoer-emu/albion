@@ -132,6 +132,9 @@ void Mem::init(std::string filename)
 
     std::cout << "rom size: " << rom.size() << "\n";
 
+    cart_ram_dirty = false;
+    frame_count = 0;
+
     // read and copy in the bios rom
     read_file("GBA.BIOS",bios_rom);
     //read_file("gba_bios.bin",bios_rom);
@@ -146,7 +149,6 @@ void Mem::init(std::string filename)
 
     // if we are not using the bios boot we need to set postflg
     //mem_io.postflg = 1;
-
 }
 
 
@@ -174,6 +176,20 @@ void Mem::save_cart_ram()
             break;
         }
     }    
+}
+
+
+void Mem::frame_end()
+{
+	if(cart_ram_dirty)
+	{
+		if(++frame_count >= FRAME_SAVE_LIMIT)
+		{
+			save_cart_ram();
+			frame_count = 0;
+			cart_ram_dirty = false;
+		}
+	}
 }
 
 // hack for soundbias to boot bios...
@@ -814,6 +830,7 @@ void Mem::write_mem(uint32_t addr,access_type v)
 
                 default: break; //puts("invalid cart type!"); exit(1);
             }
+            cart_ram_dirty = true;
             break;
         }
 

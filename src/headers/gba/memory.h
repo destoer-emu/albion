@@ -48,7 +48,8 @@ public:
 
     void check_joypad_intr();
 
-    
+    void frame_end();
+
     // probablly a better way do this than to just give free reign 
     // over the array (i.e for the video stuff give display class ownership)
 
@@ -231,6 +232,11 @@ private:
     save_type cart_type;
     size_t save_size;
     std::string filename;
+
+
+    bool cart_ram_dirty = false;
+    int frame_count = 0;
+    static constexpr int FRAME_SAVE_LIMIT = 3600;
 
     // memory cycle timings
     // some can be set dynamically

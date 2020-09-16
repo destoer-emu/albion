@@ -2,6 +2,10 @@
 
 namespace gameboyadvance
 {
+// TODO
+// fix gfx glitches in fire emblem after title screen
+// metroid screen tears (allthough i think this a timing issue)
+
 // renderer helper functions
 uint16_t Display::read_bg_palette(uint32_t pal_num,uint32_t idx)
 {
@@ -587,7 +591,8 @@ void Display::merge_layers()
             }
 
 
-            // handle sfx
+            // TODO look at metroid save for edge case with alpha blending
+            // handle sfx 
 
             // if semi transparent object is 1st layer
             // then we need to override the mode to alpha blending
