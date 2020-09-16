@@ -17,25 +17,31 @@ void gba_handle_input(GBA &gba)
     // figure out why this assert fails it shouldunt do!
     static_assert(len == (sizeof(gba_key) / sizeof(gba_key[0])));
 
+
+    // cache last state so we can filter by state change
+    static bool pressed[len] = {false};
+
+
     for(int i = 0; i < len; i++)
     {
-        if(ImGui::IsKeyDown(scancodes[i]))
+        if(ImGui::IsKeyDown(scancodes[i] && !pressed[i]))
         {
 
             gba.button_event(gba_key[i],true);
+            pressed[i] = true;
         }
 
         // aint pressed
-        else
+        else if(pressed[i])
         {
-            gba.button_event(gba_key[i],false);  
+            gba.button_event(gba_key[i],false);
+            pressed[i] = false;  
         }
     }
 
     if(ImGui::IsKeyDown(GLFW_KEY_KP_SUBTRACT))
     {
         gba.key_input(static_cast<int>(emu_key::minus),true);
-        glfwSwapInterval(1); // Enable vsync
     }
 
     else if(ImGui::IsKeyDown(GLFW_KEY_KP_ADD))
@@ -88,7 +94,7 @@ void ImguiMainWindow::gba_run_frame()
         //auto start = std::chrono::system_clock::now();
         gba_controller.update(gba);
 
-        //gba_handle_input(gba);
+        gba_handle_input(gba);
 
         gba.run();
 

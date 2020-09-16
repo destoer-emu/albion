@@ -42,10 +42,7 @@ Flash::Flash()
     bank = 0;
     ram.resize(0x10000);
     command_state = flash_command_state::ready;
-    write_byte = false;
-    erase_command = false;
     chip_identify = false;
-    bank_switch = false;
     filename = "";
 }
 
@@ -56,10 +53,9 @@ void Flash::init(size_t size, const std::string &rom_name)
     this->filename = rom_name;
     
     command_state = flash_command_state::ready;
-    write_byte = false;
-    erase_command = false;
+    operation = flash_operation::none;
     chip_identify = false;
-    bank_switch = false;
+    bank = 0;
 
     // check if there is an existing save for us to load
 	if(filename == "")
@@ -87,7 +83,7 @@ void Flash::write_flash(uint32_t addr, uint8_t v)
 {
     addr &= 0xffff;
 
-    if(addr == 0x5555)
+    if(addr == 0x5555 && !(command_state == flash_command_state::ready && v != 0xaa) && command_state != flash_command_state::command_one)
     {
         /*
         // not part of any command (not for sayno)
@@ -129,13 +125,14 @@ void Flash::write_flash(uint32_t addr, uint8_t v)
 
                     case 0xb0: // bank switch
                     {
-                        bank_switch = true;
+                        operation = flash_operation::bank;
+                        command_state = flash_command_state::ready;
                         break;
                     }
 
                     case 0x80: // wait for erase comamnd
                     {
-                        erase_command = true;
+                        operation = flash_operation::erase;
                         command_state = flash_command_state::ready;
                         break;
                     }
@@ -143,12 +140,12 @@ void Flash::write_flash(uint32_t addr, uint8_t v)
 
                     case 0x10: // erase entire chip
                     {
-                        for(int i = 0; i < 0x10000; i++)
+                        if(operation == flash_operation::erase)
                         {
-                            ram[(bank * 0x10000)+i] = 0xff;
+                            std::fill(ram.begin(),ram.end(),0xff);
+                            operation = flash_operation::none;
+                            command_state = flash_command_state::ready;
                         }
-                        erase_command = false;
-                        command_state = flash_command_state::ready;
                         break;
                     }
 
@@ -161,14 +158,14 @@ void Flash::write_flash(uint32_t addr, uint8_t v)
                         {
                             ram[(bank * 0x10000)+base+i] = 0xff;
                         }
-                        erase_command = false;
+                        operation = flash_operation::none;
                         command_state = flash_command_state::ready;
                         break;
                     }
 
                     case 0xa0: // enable write
                     {
-                        write_byte = true;
+                        operation = flash_operation::write;
                         command_state = flash_command_state::ready;
                         break;
                     }
@@ -183,9 +180,10 @@ void Flash::write_flash(uint32_t addr, uint8_t v)
                 break;
             }
 
-            // ignore the write? or reset the state?
+            
             default:
             {
+                do_flash_operation(addr,v);
                 break;
             }
         }
@@ -197,44 +195,73 @@ void Flash::write_flash(uint32_t addr, uint8_t v)
         {
             command_state = flash_command_state::command_two;
         }
+
+        else
+        {
+            do_flash_operation(addr,v);
+        }
     }
 
     else
     {
-        // can these be triggered in tandem or
-        // is this state shared?
-
-        if(bank_switch && addr == 0)
-        {
-            bank = v & 1;
-            // 64kb cant switch bank duh
-            if(ram.size() < 0x20000)
-            {
-                bank = 0;
-            }
-            bank_switch = false;
-        }
-
-        if(write_byte)
-        {
-            printf("write: %08x:%08x\n",addr,v);
-            ram[(bank * 0x10000) + addr] = v;
-            write_byte = false;
-        }
-
-        if(erase_command && v == 0x30 && command_state == flash_command_state::command_two)
-        {
-            const auto base = addr & 0xf000;
-
-            // erase 4k sector
-            for(int i = 0; i < 0x1000; i++)
-            {
-                ram[(bank * 0x10000)+base+i] = 0xff;
-            }
-            erase_command = false;
-            command_state = flash_command_state::ready;
-        }
+        do_flash_operation(addr,v);
     }
+}
+
+void Flash::do_flash_operation(uint32_t addr, uint8_t v)
+{
+    // can these be triggered in tandem or
+    // is this state shared?
+
+    switch(operation)
+    {
+        case flash_operation::bank:
+        {
+            if(addr == 0)
+            {  
+                bank = v & 1;
+                // 64kb cant switch bank duh
+                if(ram.size() < 0x20000)
+                {
+                    bank = 0;
+                }
+                operation = flash_operation::none;
+            }
+            break;
+        }
+
+        case flash_operation::write:
+        {
+            printf("write: %08x:%08x:%08x\n",bank,addr,v);
+            ram[(bank * 0x10000) + addr] = v;
+            operation = flash_operation::none;
+            break;
+        }
+
+        case flash_operation::erase: 
+        {
+            if(v == 0x30 && command_state == flash_command_state::command_two)
+            {
+                const auto base = addr & 0xf000;
+
+                // erase 4k sector
+                for(int i = 0; i < 0x1000; i++)
+                {
+                    ram[(bank * 0x10000)+base+i] = 0xff;
+                }
+                operation = flash_operation::none;
+                command_state = flash_command_state::ready;
+            }
+            break;
+        }
+        
+        // do nothing
+        case flash_operation::none:
+        {
+            break;
+        }
+
+    }    
 }
 
 // investigate what happens when we don non 8 bit accesses on flash

@@ -19,23 +19,33 @@ public:
 
     void save_ram();
 private:
-    enum flash_command_state
+
+    void do_flash_operation(uint32_t addr, uint8_t v);
+
+    enum class flash_command_state
     {
         ready,
         command_one,
-        command_two,
+        command_two
+    };
+
+    enum class flash_operation
+    {
+        erase,
+        write,
+        bank,
+        none
     };
 
     bool chip_identify;
-    bool erase_command;
-    bool write_byte;
-    bool bank_switch;
+
 
     int bank;
     
     std::string filename;
 
     flash_command_state command_state;
+    flash_operation operation;
 
     std::vector<uint8_t> ram;
 };

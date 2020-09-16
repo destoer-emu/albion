@@ -21,7 +21,8 @@ gameboy is mostly finished with most features supported and only accuracy fixes 
 mem-timing, instr-timing, halt_bug and cpu_instrs are passing from blarggs tests
 and the current test passes of gekkios test suite can be seen in TEST_RESULT
 
-gba support is very early and can only boot test roms such as armwrestler
+gba support is very early and can run a few games but is not well optimised
+and not very accurate
 
 
 # todo
@@ -32,16 +33,15 @@ serial, sgb, dmg cgb color palettes
 
 gba bitmap affine transforms,
 gba bitmap alpha blending,
-256 color sprite fix,
 mosaic,
 open bus,
 cpu pipeline,
 bus limitations,
+instr timing rewrite
 memory timing (seq, nonseq),
 gamepak prefetch,
 waitcnt,
 gb psg port to gba,
-save support,
 gba vram viewer
 
 # thanks
