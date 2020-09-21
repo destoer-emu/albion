@@ -2,7 +2,7 @@
 #include <frontend/sdl/sdl_window.h>
 #include <frontend/gb/controller.h>
 #include <frontend/gba/controller.h>
-#include <destoer-emu/emulator.h>
+#include <destoer-emu/destoer-emu.h>
 
 
 SDLMainWindow::SDLMainWindow(std::string filename)
@@ -44,13 +44,16 @@ SDLMainWindow::SDLMainWindow(std::string filename)
 
 void SDLMainWindow::gameboy_main(std::string filename)
 {
-	constexpr uint32_t fps = 60; 
-	constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
-	uint64_t next_time = current_time() + screen_ticks_per_frame;
+	SDL_GL_SetSwapInterval(1);
+
+	//constexpr uint32_t fps = 60; 
+	//constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
+	//uint64_t next_time = current_time() + screen_ticks_per_frame;
     gb.reset(filename);
     init_sdl(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);
 
 
+	FpsCounter fps_counter;
 
 
 	/* setup our controller */
@@ -59,6 +62,8 @@ void SDLMainWindow::gameboy_main(std::string filename)
 
     for(;;)
     {
+		fps_counter.reading_start();
+
         gameboy_handle_input();
 
 		controller.update(gb);
@@ -70,14 +75,21 @@ void SDLMainWindow::gameboy_main(std::string filename)
 		// throttle the emulation
 		if(gb.throttle_emu)
 		{
-        	SDL_Delay(time_left(next_time));
+        	//SDL_Delay(time_left(next_time));
+			SDL_GL_SetSwapInterval(1);
 		}
 
 		else
 		{
-			SDL_Delay(time_left(next_time) / 8);
+			//SDL_Delay(time_left(next_time) / 8);
+			SDL_GL_SetSwapInterval(0);
 		}
-		next_time = current_time() + screen_ticks_per_frame;
+
+		fps_counter.reading_end();
+
+		SDL_SetWindowTitle(window,fmt::format("destoer-emu: {}",fps_counter.get_fps()).c_str());
+
+		//next_time = current_time() + screen_ticks_per_frame;
     }	
 }
 
@@ -206,11 +218,15 @@ void SDLMainWindow::gba_handle_input()
 
 void SDLMainWindow::gba_main(std::string filename)
 {
-	constexpr uint32_t fps = 60; 
-	constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
-	uint64_t next_time = current_time() + screen_ticks_per_frame;
+	SDL_GL_SetSwapInterval(1);
+
+	//constexpr uint32_t fps = 60; 
+	//constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
+	//uint64_t next_time = current_time() + screen_ticks_per_frame;
     gba.reset(filename);
     init_sdl(gameboyadvance::SCREEN_WIDTH,gameboyadvance::SCREEN_HEIGHT);
+
+	FpsCounter fps_counter;
 
 	/* setup our controller */
 	GbaControllerInput controller;
@@ -218,6 +234,8 @@ void SDLMainWindow::gba_main(std::string filename)
 
 	for(;;)
 	{
+		fps_counter.reading_start();
+
 		gba_handle_input();
 
 		controller.update(gba);
@@ -225,8 +243,24 @@ void SDLMainWindow::gba_main(std::string filename)
 		gba.run();
 		gba_render();
 
-		SDL_Delay(time_left(next_time));
-		next_time = current_time() + screen_ticks_per_frame;
+		// throttle the emulation
+		if(gba.throttle_emu)
+		{
+        	//SDL_Delay(time_left(next_time));
+			SDL_GL_SetSwapInterval(1);
+		}
+
+		else
+		{
+			//SDL_Delay(time_left(next_time) / 8);
+			SDL_GL_SetSwapInterval(0);
+		}
+
+		fps_counter.reading_end();
+
+		SDL_SetWindowTitle(window,fmt::format("destoer-emu: {}",fps_counter.get_fps()).c_str());
+
+		//next_time = current_time() + screen_ticks_per_frame;
 	}
 }
 

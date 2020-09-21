@@ -5,8 +5,7 @@
 #include <destoer-emu/lib.h>
 #include <destoer-emu/min_heap.h>
 #include <destoer-emu/scheduler.h>
+#include <destoer-emu/fps.h>
 
 // todo 
-// make breakpoint checks faster (try a non debug and debug function pointer)
 // debugger rewrite into cli
-// fps counter

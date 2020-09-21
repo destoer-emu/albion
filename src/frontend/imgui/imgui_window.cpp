@@ -1,5 +1,6 @@
 #ifdef FRONTEND_IMGUI
 #include "imgui_window.h"
+#include <destoer-emu/destoer-emu.h>
 
 
 void Texture::update_texture()
@@ -646,12 +647,16 @@ void ImguiMainWindow::mainloop()
     gb_display_viewer.init();
     
     
+    FpsCounter fps;
+
     gb_controller.init();
     gba_controller.init();
 
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
+        fps.reading_start();
+
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
         // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
@@ -831,6 +836,10 @@ void ImguiMainWindow::mainloop()
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
+
+        fps.reading_end();
+
+        glfwSetWindowTitle(window,fmt::format("destoer-emu: {}",fps.get_fps()).c_str());
     }
     stop_instance();
 }
