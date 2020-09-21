@@ -93,8 +93,8 @@ std::vector<uint32_t> Ppu::render_bg(bool higher) noexcept
 				{
 
 					// rest same as tiles
-					int color_num = val_bit(data2,color_bit) << 1;
-					color_num |= val_bit(data1,color_bit);
+					int color_num = is_set(data2,color_bit) << 1;
+					color_num |= is_set(data1,color_bit);
 
 					if(!is_cgb)
 					{
@@ -197,8 +197,8 @@ std::vector<uint32_t> Ppu::render_tiles() noexcept
 					{
 
 						// rest same as tiles
-						int color_num = val_bit(data2,x) << 1;
-						color_num |= val_bit(data1,x);
+						int color_num = is_set(data2,x) << 1;
+						color_num |= is_set(data1,x);
 
 
 						const uint32_t full_color = get_dmg_color(color_num,pixel_source::tile);

@@ -1026,8 +1026,8 @@ void Ppu::tile_fetch(Pixel_Obj *buf, bool use_window) noexcept
 	{
 		// combine data 2 and data 1 to get the color id for the pixel
 		// in the tile
-		int colour_num = val_bit(data2,color_bit) << 1;
-		colour_num |= val_bit(data1,color_bit);
+		int colour_num = is_set(data2,color_bit) << 1;
+		colour_num |= is_set(data1,color_bit);
 			
 			
 		// save our info to the fetcher
@@ -1280,8 +1280,8 @@ void Ppu::sprite_fetch(Pixel_Obj *buf,bool use_fifo) noexcept
 			{
 
 				// rest same as tiles
-				const int colour_num = (val_bit(data2,colour_bit) << 1) 
-					| val_bit(data1,colour_bit);
+				const int colour_num = (is_set(data2,colour_bit) << 1) 
+					| is_set(data1,colour_bit);
 
 				// where we actually want to dump the pixel into the fifo
 				const size_t x_pix = pixel_start - sprite_pixel;
@@ -1339,8 +1339,8 @@ void Ppu::sprite_fetch(Pixel_Obj *buf,bool use_fifo) noexcept
 			for(int sprite_pixel = pixel_start; sprite_pixel >= 0; sprite_pixel--,colour_bit += shift)
 			{
 				// rest same as tiles
-				const int colour_num = (val_bit(data2,colour_bit) << 1) 
-					| val_bit(data1,colour_bit);
+				const int colour_num = (is_set(data2,colour_bit) << 1) 
+					| is_set(data1,colour_bit);
 
 
 				// where we actually want to dump the pixel into the fifo

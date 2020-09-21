@@ -42,6 +42,7 @@ public:
     template<typename... Args>
     void write_logger(std::string x,Args... args)
     {
+
         if(log_enabled)
         {
             auto str = fmt::format(x,args...);

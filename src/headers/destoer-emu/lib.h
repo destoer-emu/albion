@@ -122,11 +122,6 @@ inline uint64_t deset_bit(uint64_t v,int bit)
     return v & ~(1 << bit);
 }
 
-inline uint8_t val_bit(uint8_t data, int position) noexcept
-{
-	const uint8_t mask = 1 << position;
-	return ( data & mask ) ? 1 : 0;
-}
 
 // std::rotr and std::rotl in c++20 probs should be used
 // for now https://stackoverflow.com/questions/776508/best-practices-for-circular-shift-rotate-operations-in-c

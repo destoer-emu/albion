@@ -69,12 +69,6 @@ public:
     bool is_active(event_type t) const;
 	void insert(EventNode<event_type> event);
 
-    // iterators
-    EventNode<event_type> *begin();
-    EventNode<event_type> *end();
-    const EventNode<event_type> *begin() const;
-    const EventNode<event_type> *end() const;
-
 private:
     void heapify(size_t idx);
     void verify();
@@ -86,7 +80,8 @@ private:
 
 	void swap(size_t idx1, size_t idx2);
 
-    std::array<EventNode<event_type>,SIZE> heap;
+    std::array<EventNode<event_type>*,SIZE> heap;
+    std::array<EventNode<event_type>,SIZE> buf;
     // stores pos of each event so it can be deleted fast
     std::array<size_t,SIZE> type_idx;
     
@@ -98,6 +93,10 @@ private:
 template<size_t SIZE,typename event_type>
 MinHeap<SIZE,event_type>::MinHeap()
 {
+    for(size_t i = 0; i < SIZE; i++)
+    {
+        heap[i] = &buf[i];
+    }
     assert(capacity != 0);
     clear();
 }
@@ -113,7 +112,7 @@ void MinHeap<SIZE,event_type>::clear()
 template<size_t SIZE,typename event_type>
 EventNode<event_type> MinHeap<SIZE,event_type>::peek() const
 {
-    return heap[0];
+    return *heap[0];
 }
 
 
@@ -161,8 +160,8 @@ void MinHeap<SIZE,event_type>::swap(size_t idx1,size_t idx2)
 	std::swap(heap[idx1],heap[idx2]);
 
     // update event pos
-    const auto type1 = heap[idx1].type;
-    const auto type2 = heap[idx2].type;
+    const auto type1 = heap[idx1]->type;
+    const auto type2 = heap[idx2]->type;
 
     
     type_idx[static_cast<size_t>(type1)] = idx1;
@@ -183,13 +182,13 @@ void MinHeap<SIZE,event_type>::insert(EventNode<event_type> event)
 
 	// insert at end
 	size_t idx = len;
-	heap[len++] = event;
+	*heap[len++] = event;
 
     // update idx here incase it is first insertion
     type_idx[static_cast<size_t>(event.type)] = idx;
 
 	// while parent is greater swap
-	while(idx != 0 && heap[parent(idx)] > heap[idx])
+	while(idx != 0 && *heap[parent(idx)] > *heap[idx])
 	{
 		const auto parent_idx = parent(idx);
 		swap(idx,parent_idx);
@@ -208,13 +207,13 @@ void MinHeap<SIZE,event_type>::verify()
         const auto r = right(i);
         const auto l = left(i);
 
-        if(l < len && heap[i] > heap[l])
+        if(l < len && *heap[i] > *heap[l])
         {
             printf("min heap violated\n");
             exit(1);
         }
 
-        if(r < len && heap[i] > heap[r])
+        if(r < len && *heap[i] > *heap[r])
         {
             printf("min heap violated\n");
             exit(1);
@@ -228,9 +227,9 @@ void MinHeap<SIZE,event_type>::heapify(size_t idx)
 {
 
 	// while we are smaller than parent swap
-	if(idx != 0 && heap[idx] < heap[parent(idx)])
+	if(idx != 0 && *heap[idx] < *heap[parent(idx)])
 	{
-        while(idx != 0 && heap[idx] < heap[parent(idx)])
+        while(idx != 0 && *heap[idx] < *heap[parent(idx)])
         {
             const auto parent_idx = parent(idx);
 		    swap(idx,parent_idx);
@@ -247,12 +246,12 @@ void MinHeap<SIZE,event_type>::heapify(size_t idx)
             const auto l = left(idx);
             const auto r = right(idx);
             // swap idx with smallest if its not allready
-            if(l < len && heap[l] < heap[min])
+            if(l < len && *heap[l] < *heap[min])
             {
                 min = l;
             }
             
-            if(r < len &&  heap[r] < heap[min])
+            if(r < len &&  *heap[r] < *heap[min])
             {
                 min = r;
             }
@@ -293,7 +292,7 @@ std::optional<EventNode<event_type>> MinHeap<SIZE,event_type>::get(event_type t)
     const auto idx = static_cast<size_t>(t);
     if(type_idx[idx] != IDX_INVALID)
     {
-        return heap[idx];
+        return *heap[idx];
     }
 
     return std::nullopt;
@@ -311,7 +310,7 @@ EventNode<event_type> MinHeap<SIZE,event_type>::remove(size_t idx)
         exit(1);
     }
 
-	const auto v = heap[idx];
+	const auto v = *heap[idx];
 	len--;
 	// swap end with deleted
 	swap(len,idx);
@@ -329,37 +328,27 @@ EventNode<event_type> MinHeap<SIZE,event_type>::remove(size_t idx)
 }
 
 
-// iterators
-template<size_t SIZE,typename event_type>
-EventNode<event_type> *MinHeap<SIZE,event_type>::begin()
-{
-    return &heap[0];
-}
-
-template<size_t SIZE,typename event_type>
-EventNode<event_type> *MinHeap<SIZE,event_type>::end()
-{
-    return &heap[len];
-}
-
-template<size_t SIZE,typename event_type>
-const EventNode<event_type> *MinHeap<SIZE,event_type>::begin() const
-{
-    return &heap[0];
-}
-
-template<size_t SIZE,typename event_type>
-const EventNode<event_type> *MinHeap<SIZE,event_type>::end() const
-{
-    return &heap[len];
-}
-
-
 template<size_t SIZE,typename event_type>
 void MinHeap<SIZE,event_type>::save_state(std::ofstream &fp)
 {
     file_write_arr(fp,type_idx.data(),sizeof(type_idx[0]) * type_idx.size());
-    file_write_arr(fp,heap.data(),sizeof(heap[0]) * heap.size());
+
+
+    file_write_arr(fp,buf.data(),sizeof(buf[0]) * buf.size());
+
+    // ok as our heap now has pointers we will write out indexes and re populate the pointers
+    // instead 
+    const auto start = reinterpret_cast<size_t>(&buf[0]);
+    std::array<size_t,SIZE> idx_list;
+
+    for(size_t i = 0; i < SIZE; i++)
+    {
+        const auto ptr = reinterpret_cast<size_t>(heap[i]);
+        idx_list[i] = ((ptr - start) / sizeof(EventNode<event_type>));
+    }
+
+    file_write_arr(fp,idx_list.data(),sizeof(idx_list[0]) * idx_list.size());
+
     file_write_var(fp,len);
 }
 
@@ -367,7 +356,29 @@ template<size_t SIZE,typename event_type>
 void MinHeap<SIZE,event_type>::load_state(std::ifstream &fp)
 {
     file_read_arr(fp,type_idx.data(),sizeof(type_idx[0]) * type_idx.size());
-    file_read_arr(fp,heap.data(),sizeof(heap[0]) * heap.size());
+  
+
+    
+    file_read_arr(fp,buf.data(),sizeof(buf[0]) * buf.size());
+
+    // read idx back in so we can reconstruct our ptrs
+    std::array<size_t,SIZE> idx_list;
+    file_read_arr(fp,idx_list.data(),sizeof(idx_list[0]) * idx_list.size());
+
+    // verify idx bounds 
+    for(const auto &x: idx_list)
+    {
+        if(x >= SIZE)
+        {
+            throw std::runtime_error("minheap invalid heap idx");
+        }
+    }
+
+    for(size_t i = 0; i < SIZE; i++)
+    {
+        heap[i] = &buf[idx_list[i]];
+    }
+
     file_read_var(fp,len);
 
 
@@ -386,10 +397,9 @@ void MinHeap<SIZE,event_type>::load_state(std::ifstream &fp)
 
     for(auto &x: heap)
     {
-        if(static_cast<size_t>(x.type) >= capacity)
+        if(static_cast<size_t>(x->type) >= capacity)
         {
             throw std::runtime_error("minheap invalid event type");
         }
     }
-
 }

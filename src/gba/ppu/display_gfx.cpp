@@ -424,6 +424,7 @@ void Display::merge_layers()
 
     // now to merge sprite and bg
     // this needs to be split off into its own function
+    // TODO handle bitmap bg enable
     if(is_bitmap)
     {
         // check directly against the screen
