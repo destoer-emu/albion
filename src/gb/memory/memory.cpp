@@ -659,7 +659,7 @@ void Memory::write_memt(uint16_t addr, uint8_t v) noexcept
 {
 	cpu.tick_pending_cycles();
     write_mem(addr,v);
-	cpu.cycle_tick(1); // tick for the memory access    
+	cpu.cycle_tick(1); // tick for the memory access
 }
 
 
@@ -1058,7 +1058,21 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
     }
 }
 
-uint8_t Memory::read_iot(uint16_t addr) noexcept
+#ifdef DEBUG
+uint8_t Memory::read_iot_debug(uint16_t addr) noexcept
+{
+	const uint8_t value = read_iot_no_debug(addr);
+	if(debug.breakpoint_hit(addr,value,break_type::read))
+	{
+		// halt until told otherwhise :)
+		write_log(debug,"[DEBUG] read breakpoint hit ({:x}:{:x})",addr,value);
+		debug.halt();
+	}
+	return value;	
+}
+#endif
+
+uint8_t Memory::read_iot_no_debug(uint16_t addr) noexcept
 {
 	cpu.tick_pending_cycles();
     uint8_t v = read_io(addr);
@@ -2142,7 +2156,22 @@ void Memory::do_hdma() noexcept
 	}	
 }
 
-void Memory::write_iot(uint16_t addr,uint8_t v) noexcept
+
+#ifdef DEBUG
+void Memory::write_iot_debug(uint16_t addr, uint8_t v) noexcept
+{
+	if(debug.breakpoint_hit(addr,v,break_type::write))
+	{
+		// halt until told otherwhise :)
+		write_log(debug,"[DEBUG] write breakpoint hit ({:x}:{:})",addr,v);
+		debug.halt();
+	}
+
+	write_iot_no_debug(addr,v);	
+}
+#endif
+
+void Memory::write_iot_no_debug(uint16_t addr,uint8_t v) noexcept
 {
 	cpu.tick_pending_cycles();
     write_io(addr,v);

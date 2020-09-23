@@ -257,9 +257,8 @@ void Cpu::tima_inc() noexcept
 		// zero until reloaded 4 cycles later
 		mem.io[IO_TIMA] = 0; 
 
-
 		const auto reload_event = scheduler.create_event(4,gameboy_event::timer_reload);
-		scheduler.insert(reload_event,false);	
+		scheduler.insert(reload_event,false);		
 	}
 			
 	else

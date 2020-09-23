@@ -29,24 +29,32 @@ public:
 
     using WRITE_MEM_FPTR = void (Memory::*)(uint16_t addr,uint8_t data) noexcept;
     using READ_MEM_FPTR = uint8_t (Memory::*)(uint16_t addr) const noexcept;
-
+    using READ_MEM_MUT_FPTR = uint8_t (Memory::*)(uint16_t addr) noexcept;
 #ifdef DEBUG
 
     WRITE_MEM_FPTR write_mem_fptr;
     READ_MEM_FPTR read_mem_fptr;
+
+    WRITE_MEM_FPTR write_iot_fptr;
+    READ_MEM_MUT_FPTR read_iot_fptr;
+
 
     void change_breakpoint_enable(bool enabled) noexcept
     {
         if(enabled)
         {
             write_mem_fptr = &Memory::write_mem_debug;
-            read_mem_fptr = &Memory::read_mem_debug;            
+            read_mem_fptr = &Memory::read_mem_debug;
+            write_iot_fptr = &Memory::write_iot_debug;
+            read_iot_fptr = &Memory::read_iot_debug;               
         }
 
         else
         {
             write_mem_fptr = &Memory::write_mem_no_debug;
             read_mem_fptr = &Memory::read_mem_no_debug;
+            write_iot_fptr = &Memory::write_iot_no_debug;
+            read_iot_fptr = &Memory::read_iot_no_debug;
         }
     }
 
@@ -61,6 +69,18 @@ public:
     {
         std::invoke(write_mem_fptr,this,addr,v);
     }
+
+    uint8_t read_iot(uint16_t addr) noexcept
+    {
+        return std::invoke(read_iot_fptr,this,addr);
+    }
+
+    void write_iot(uint16_t addr,uint8_t v) noexcept
+    {
+       std::invoke(write_iot_fptr,this,addr,v);
+    }
+
+
 #else
     // public access functions
     inline uint8_t read_mem(uint16_t addr) const noexcept
@@ -72,19 +92,30 @@ public:
     {
         write_mem_no_debug(addr,v);
     }
+
+    uint8_t read_iot(uint16_t addr) noexcept
+    {
+        return read_iot_no_debug(addr);
+    }
+
+    void write_iot(uint16_t addr,uint8_t v) noexcept
+    {
+        write_iot_no_debug(addr,v);
+    }
+
 #endif
 
     uint16_t read_word(uint16_t addr) noexcept;
     void write_word(uint16_t addr, uint16_t v) noexcept;
-    uint8_t read_iot(uint16_t) noexcept;
+    uint8_t read_iot_no_debug(uint16_t addr) noexcept;
 
     // memory accesses (timed)
     uint8_t read_memt(uint16_t addr) noexcept;
     void write_memt(uint16_t addr, uint8_t v) noexcept;
     uint16_t read_wordt(uint16_t addr) noexcept;
     void write_wordt(uint16_t addr, uint16_t v) noexcept;
-    void write_iot(uint16_t addr,uint8_t v) noexcept;
     void write_io(uint16_t addr,uint8_t v) noexcept;
+    void write_iot_no_debug(uint16_t addr,uint8_t v) noexcept;
 
     // public underlying memory for direct access
     // required for handling io and vram
@@ -135,6 +166,8 @@ private:
 #ifdef DEBUG
     uint8_t read_mem_debug(uint16_t addr) const noexcept;
     void write_mem_debug(uint16_t addr, uint8_t v) noexcept;
+    uint8_t read_iot_debug(uint16_t addr) noexcept;
+    void write_iot_debug(uint16_t addr, uint8_t v) noexcept;
 #endif
 
     uint8_t read_mem_no_debug(uint16_t addr) const noexcept;

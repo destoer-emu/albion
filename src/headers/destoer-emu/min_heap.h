@@ -156,16 +156,16 @@ bool MinHeap<SIZE,event_type>::is_active(event_type t) const
 template<size_t SIZE,typename event_type>
 void MinHeap<SIZE,event_type>::swap(size_t idx1,size_t idx2)
 {
-
-	std::swap(heap[idx1],heap[idx2]);
-
     // update event pos
     const auto type1 = heap[idx1]->type;
     const auto type2 = heap[idx2]->type;
 
     
-    type_idx[static_cast<size_t>(type1)] = idx1;
-    type_idx[static_cast<size_t>(type2)] = idx2;
+    type_idx[static_cast<size_t>(type2)] = idx1;
+    type_idx[static_cast<size_t>(type1)] = idx2;
+
+
+	std::swap(heap[idx1],heap[idx2]);
 }
 
 template<size_t SIZE,typename event_type>

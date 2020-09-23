@@ -1,37 +1,4 @@
 #include <gba/flash.h>
-/*
-class Flash
-{
-    Flash();
-    void init(size_t size, const std::string &filename);
-
-    void write_mem(uint32_t addr, uint8_t v);
-    uint8_t read_mem(uint32_t addr) const;
-
-    void save_ram();
-private:
-    enum flash_command_state
-    {
-        ready,
-        command_one,
-        command_two,
-        chip_identify,
-        erase_command,
-        erase_chip,
-        erase_4k,
-        write_byte,
-        set_bank
-    };
-
-
-
-    int bank;
-
-    flash_command_state command_state;
-
-    std::vector<uint8_t> ram;
-};
-*/
 
 namespace gameboyadvance
 {
@@ -71,7 +38,7 @@ void Flash::init(size_t size, const std::string &rom_name)
         return;
     }
 
-    // toto check for non matching file sizes
+    // todo check for non matching file sizes
 
     fp.read(reinterpret_cast<char*>(ram.data()), ram.size());
 	
@@ -232,7 +199,7 @@ void Flash::do_flash_operation(uint32_t addr, uint8_t v)
 
         case flash_operation::write:
         {
-            printf("write: %08x:%08x:%08x\n",bank,addr,v);
+            //printf("write: %08x:%08x:%08x\n",bank,addr,v);
             ram[(bank * 0x10000) + addr] = v;
             operation = flash_operation::none;
             break;

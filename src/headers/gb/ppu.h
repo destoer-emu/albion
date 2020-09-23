@@ -106,7 +106,7 @@ private:
     enum class pixel_source
     {
         tile = 0,
-        tile_cgbd = 3, // priority over everything when set in tile attr
+        tile_cgbd = -1, // priority over everything when set in tile attr
         sprite_zero = 1,
         sprite_one = 2
     };
@@ -183,8 +183,8 @@ private:
     void tick_fetcher() noexcept;
     void render_scanline() noexcept;
     void tile_fetch(Pixel_Obj *buf, bool use_window) noexcept;
-    uint32_t get_cgb_color(int color_num, int cgb_pal, pixel_source source) noexcept;
-    uint32_t get_dmg_color(int color_num, pixel_source source) noexcept;
+    uint32_t get_cgb_color(int color_num, int cgb_pal, pixel_source source) const noexcept;
+    uint32_t get_dmg_color(int color_num, pixel_source source) const noexcept;
     void read_sprites() noexcept;
     void sprite_fetch(Pixel_Obj *buf,bool use_fifo=true) noexcept;
     void switch_hblank() noexcept;

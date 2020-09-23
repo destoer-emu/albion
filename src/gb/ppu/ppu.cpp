@@ -563,41 +563,36 @@ uint32_t Ppu::calc_pixel_transfer_end() noexcept
 	return cycles;
 }
 
-uint32_t Ppu::get_dmg_color(int color_num, pixel_source source) noexcept
+uint32_t Ppu::get_dmg_color(int color_num, pixel_source source) const noexcept
 {
-	auto source_idx = static_cast<int>(source);
+	const auto source_idx = static_cast<int>(source);
 
-
-	int color_address = + source_idx + 0xff47;	
+	const int color_address = + source_idx + 0xff47;	
 	const uint8_t palette = mem.io[color_address & 0xff];
 	const int color_idx = (palette >> (color_num * 2)) & 3; 
 	
-	return (0xff << 24) | dmg_pal[source_idx][color_idx];
+	return 0xff000000 | dmg_pal[source_idx][color_idx];
 }
 
-uint32_t Ppu::get_cgb_color(int color_num, int cgb_pal, pixel_source source) noexcept
+uint32_t Ppu::get_cgb_color(int color_num, int cgb_pal, pixel_source source) const noexcept
 {
 
 	// each  rgb value takes two bytes in the pallete for cgb
 	const int offset = (cgb_pal*8) + (color_num * 2); 
 
-	int col;
-	if(source == pixel_source::tile ||
-		source == pixel_source::tile_cgbd)
+	uint16_t col;
+	if(source <= pixel_source::tile)	
 	{
-		col = bg_pal[offset];
-		col |= bg_pal[offset + 1] << 8;
+		memcpy(&col,&bg_pal[offset],sizeof(col));
 	}
 	
 	
 	else // is a sprite
 	{
-		col = sp_pal[offset];
-		col |= sp_pal[offset + 1] << 8;			
+		memcpy(&col,&sp_pal[offset],sizeof(col));		
 	}
-	
 
-	// gameboy stores palletes in bgr format?
+	// gameboy stores palletes in  format?
 	int blue = col & 0x1f;
 	int green = (col >> 5) & 0x1f;
 	int red = (col >> 10) & 0x1f;
@@ -608,9 +603,7 @@ uint32_t Ppu::get_cgb_color(int color_num, int cgb_pal, pixel_source source) noe
 	green = (green << 3) | (green >> 2);
 
 
-	uint32_t full_color = blue;
-	full_color |= green << 8;
-	full_color |= red << 16;
+	const uint32_t full_color = blue | (green << 8) | (red << 16);
 
 	return full_color | 0xff000000;
 }
@@ -1356,7 +1349,7 @@ void Ppu::sprite_fetch(Pixel_Obj *buf,bool use_fifo) noexcept
 				sp.sprite_idx = cur_sprite;
 				sp.cgb_pal = attributes & 0x7;
 
-				bool is_tile = (pixel_ref.source == pixel_source::tile || pixel_ref.source == pixel_source::tile_cgbd);
+				bool is_tile = (pixel_ref.source <= pixel_source::tile);
 
 				// if a tile is there check which has priority
 				if(is_tile)

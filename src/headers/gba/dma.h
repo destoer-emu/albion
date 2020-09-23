@@ -31,6 +31,7 @@ struct DmaReg
     uint32_t src_shadow;
     uint32_t dst_shadow;
     uint16_t word_count_shadow;
+    uint32_t word_offset;
 
 
     int dst_cnt; // 0 = inc, 1 = dec, 3 = inc/reload
@@ -42,6 +43,8 @@ struct DmaReg
     dma_type start_time;
     bool irq; // irq at end of word count
     bool enable;
+
+    bool interrupted;
 };
 
 
@@ -79,7 +82,7 @@ private:
         {+ARM_WORD_SIZE,-ARM_WORD_SIZE,0,+ARM_WORD_SIZE} // word
     };
 
-    bool dma_in_progress;
+    int active_dma;
 
     std::array<DmaReg,4> dma_regs;
     std::vector<dma_type> req_list;

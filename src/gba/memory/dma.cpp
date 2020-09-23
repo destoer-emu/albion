@@ -16,6 +16,7 @@ void Dma::init()
     }
 
     req_list.clear();
+    active_dma = -1;
 }
 
 
@@ -34,6 +35,7 @@ void DmaReg::init()
     src_shadow = 0;
     dst_shadow = 0;
     word_count_shadow = 0;
+    word_offset = 0;
 
     dst_cnt = 0;
     src_cnt = 0;
@@ -44,6 +46,7 @@ void DmaReg::init()
     transfer_type = 0;
     irq = false;
     enable = false;
+    interrupted = false;
 }
 
 // theres def a faster way to handle this masking but we wont worry about it for now
@@ -204,6 +207,14 @@ void Dma::write_control(int reg_num,int idx, uint8_t v)
                     handle_dma(dma_type::immediate);
                 }
             }
+
+            // if its been turned off in the middle
+            // of the xfer we need to break out early
+            if(reg_num == active_dma && !r.enable)
+            {
+                r.interrupted = true;
+            }
+
             break;
         }
     }
@@ -214,10 +225,32 @@ void Dma::handle_dma(dma_type req_type)
 {
     // a active dma will ofhold all others until it is done
     // even if it has a lower priority
-    if(dma_in_progress)
+    if(active_dma != -1)
     {
+        // this needs to be made faster
+        // we need a quick way to lookup
+        // all of a given req type
+        // and find the one with the higest priority
+
+
+        // check if a dma needs to overtake another
+        for(int i = 0; i < 4; i++)
+        { 
+            const auto &r = dma_regs[i];
+
+
+            if(r.enable && r.start_time == req_type)
+            {
+                // this is at a higher priority
+                if(active_dma > i)
+                {
+                    dma_regs[active_dma].interrupted = true;
+                }
+            }
+        }
+    
+
         // push this to a list of types that need to get checked
-        // there are likely faster ways to do this
         req_list.push_back(req_type);
         return;
     }
@@ -246,9 +279,9 @@ void Dma::check_dma(dma_type req_type)
 
         if(r.enable && r.start_time == req_type)
         {
-            dma_in_progress = true;
+            active_dma = i;
             do_dma(i,req_type); 
-            dma_in_progress = false;
+            active_dma = -1;
         }   
     }    
 }
@@ -272,17 +305,23 @@ void Dma::do_dma(int reg_num, dma_type req_type)
         exit(1);
     }
 
-
-    // dmas complete instantly for now but this will probably require changing later :D
-
-    // reload word count
-    r.word_count_shadow = (r.word_count == 0 )? max_count[reg_num] : r.word_count;
-
-    // if in dst_cnt is in mode 3
-    // reload the dst
-    if(r.dst_cnt == 3)
+    // only wanna do this on first entry
+    if(!r.interrupted)
     {
-        r.dst_shadow = r.dst;
+        // reload word count
+        r.word_count_shadow = (r.word_count == 0 )? max_count[reg_num] : r.word_count;
+
+        // if in dst_cnt is in mode 3
+        // reload the dst
+        if(r.dst_cnt == 3)
+        {
+            r.dst_shadow = r.dst;
+        }
+    }
+
+    else
+    {
+        r.interrupted = false;
     }
 
     switch(req_type)
@@ -298,7 +337,7 @@ void Dma::do_dma(int reg_num, dma_type req_type)
             // need to rework our memory model to handle
             // the n & s cycles implictly at some point
             // dma takes 2N + 2(n-1)s +xI
-            for(int i = 0; i < 4; i++)
+            for(size_t i = r.word_offset; i < 4; i++)
             {
                 const auto v = mem.read_memt<uint32_t>(r.src_shadow);
                 mem.write_memt<uint32_t>(r.dst_shadow,v);
@@ -308,6 +347,14 @@ void Dma::do_dma(int reg_num, dma_type req_type)
                 {
                     // allways in word mode here
                     r.src_shadow += addr_increment_table[r.is_word][r.src_cnt];
+                }
+
+
+                if(r.interrupted)
+                {
+                    r.word_offset = i;
+                    req_list.push_back(req_type);
+                    return;
                 }
 
                 // dst is not incremented when doing fifo dma
@@ -324,21 +371,33 @@ void Dma::do_dma(int reg_num, dma_type req_type)
 
             if(r.is_word)
             {
-                for(size_t i = 0; i < r.word_count_shadow; i++)
+                for(size_t i = r.word_offset; i < r.word_count_shadow; i++)
                 {
                     const uint32_t v = mem.read_memt<uint32_t>(r.src_shadow);
                     mem.write_memt<uint32_t>(r.dst_shadow,v);
-                    handle_increment(reg_num);      
+                    handle_increment(reg_num);
+                    if(r.interrupted)
+                    {
+                        r.word_offset = i;
+                        req_list.push_back(req_type);
+                        return;
+                    }      
                 }
             }
 
             else
             {
-                for(size_t i = 0; i < r.word_count_shadow; i++)
+                for(size_t i = r.word_offset; i < r.word_count_shadow; i++)
                 {
                     const uint16_t v = mem.read_memt<uint16_t>(r.src_shadow);
                     mem.write_memt<uint16_t>(r.dst_shadow,v);
                     handle_increment(reg_num);
+                    if(r.interrupted)
+                    {
+                        r.word_offset = i;
+                        req_list.push_back(req_type);
+                        return;
+                    }
                 }
             }
             break;
@@ -359,6 +418,7 @@ void Dma::do_dma(int reg_num, dma_type req_type)
         r.enable = false;
     }
 
+    r.word_offset = 0;
 }
 
 
