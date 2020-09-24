@@ -253,28 +253,3 @@ access_type handle_read(std::vector<uint8_t> &buf,uint32_t addr)
 	memcpy(&v,buf.data()+addr,sizeof(access_type));  
 	return v;
 }
-
-
-// if we are compiling under msvc we cant user the overflow det builtins
-// we can probably do a better impl than this...
-#ifdef _MSC_VER
-template <typename T,typename U, typename X>
-inline bool did_overflow(T v1, U v2, X ans) noexcept
-{
-    return  is_set((v1 ^ ans) & (v2 ^ ans),(sizeof(T)*8)-1); 
-}
-
-template <typename T,typename U, typename X>
-inline bool __builtin_add_overflow(T v1,U v2,X *ans) noexcept
-{
-	*ans = v1 + v2;
-	return did_overflow(v1, v2, *ans);
-}
-
-template <typename T,typename U, typename X>
-inline bool __builtin_sub_overflow(T v1,U v2,X *ans) noexcept
-{
-	*ans = v1 - v2;
-	return did_overflow(v1,~v2, *ans);
-}
-#endif

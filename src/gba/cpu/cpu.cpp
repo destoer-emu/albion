@@ -906,114 +906,157 @@ bool Cpu::cond_met(int opcode)
 
 
 /*
-// tests for overflow this happens
-// when the sign bit changes when it shouldunt
-
-// causes second test to not show when calc is done
-// 2nd operand must be inverted for sub :P
-bool did_overflow(uint32_t v1, uint32_t v2, uint32_t ans)
-{
-    return  is_set((v1 ^ ans) & (v2 ^ ans),31); 
-}
-^ old code now replaced with compilier builtins
-thanks yaed :P
+thanks yaed for suggesting use of compilier builtins
 */
+
+
+// this checks if the msb (sign) changes to something it shouldunt
+// during arithmetic
+template <typename T,typename U, typename X>
+inline bool did_overflow(T v1, U v2, X ans) noexcept
+{
+    return  is_set((v1 ^ ans) & (v2 ^ ans),(sizeof(T)*8)-1); 
+}
+
+template <typename T>
+inline bool sub_overflow(T v1,T v2) noexcept
+{
+    if constexpr(std::is_signed<T>())
+    {
+#ifdef _MSC_VER
+        const T ans = v1 - v2;
+        // negate 2nd operand so we can pretend
+        // this is like an additon
+	    return did_overflow(v1,~v2, ans);
+#else
+        return __builtin_sub_overflow_p(v1,v2,v1);
+#endif
+    }
+
+    else
+    {
+        // on arm the the carry flag is set if there is no borrow
+        // this is different to x86 so we cant use builtins here
+        return v1 >= v2;
+    }
+}
+
+
+template <typename T>
+inline bool add_overflow(T v1,T v2) noexcept
+{
+#ifdef _MSC_VER
+	const T ans = v1 + v2;
+    if constexpr(std::is_signed<T>())
+    {
+	    return did_overflow(v1, v2, ans);
+    }
+
+    else
+    {
+        return ans < v1;
+    }
+#else
+    return __builtin_add_overflow_p(v1,v2,v1);
+#endif
+}
+
 
 uint32_t Cpu::add(uint32_t v1, uint32_t v2, bool s)
 {
-    int32_t ans;
+    const uint32_t ans = v1 + v2;
     if(s)
     {
-        // how to set this shit?
-        // happens when a change of sign occurs (so bit 31)
-        /// changes to somethign it shouldunt
-        bool set_v = __builtin_add_overflow((int32_t)v1,(int32_t)v2,&ans);
-        cpsr = ((uint32_t)ans < v1)? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT); 
+
+        const bool set_v = add_overflow((int32_t)v1,(int32_t)v2);
+        const bool set_c = add_overflow(v1,v2); 
+
+        cpsr = set_c? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT); 
         cpsr = set_v? set_bit(cpsr,V_BIT) : deset_bit(cpsr,V_BIT); 
 
         set_nz_flag(ans);
     }
 
-    else
-    {
-        ans = v1 + v2;
-    }
-
-    return (uint32_t)ans;
+    return ans;
 }
 
 
-// needs double checking!
 uint32_t Cpu::adc(uint32_t v1, uint32_t v2, bool s)
 {
 
-    uint32_t v3 = is_set(cpsr,C_BIT);
+    const uint32_t v3 = is_set(cpsr,C_BIT);
 
-    int32_t ans;
+    const uint32_t ans = v1 + v2 + v3;
+
     if(s)
     {
-        bool set_v = __builtin_add_overflow((int32_t)v1,(int32_t)v2,&ans);
-        set_v ^= __builtin_add_overflow((int32_t)ans,(int32_t)v3,&ans);
-        cpsr = (uint32_t)ans < (v1+v3)? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT); 
+
+        // ^ as if both operations generate an inproper result we will get an expected sign
+        const int32_t ans_signed = v1 + v2;
+        const bool set_v = add_overflow((int32_t)v1,(int32_t)v2) ^ add_overflow(ans_signed,(int32_t)v3);
+
+        // if either operation overflows we need to set the carry
+        const uint32_t ans_unsigned = v1 + v2;
+        const bool set_c = add_overflow(v1,v2) || add_overflow(ans_unsigned,v3);
+
+        cpsr = set_c? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT); 
         cpsr = set_v? set_bit(cpsr,V_BIT) : deset_bit(cpsr,V_BIT); 
 
         set_nz_flag(ans);
     }
 
-    else
-    {
-        ans = v1 + v2 + v3;
-    }
-
-    return (uint32_t)ans;
+    return ans;
 }
 
 
 uint32_t Cpu::sub(uint32_t v1, uint32_t v2, bool s)
 {
-    int32_t ans;
+    
+    const uint32_t ans = v1 - v2;
+
     if(s)
     {
-        bool set_v = __builtin_sub_overflow((int32_t)v1,(int32_t)v2,&ans);
-        cpsr = (v1 >= v2)? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
+        const bool set_v = sub_overflow((int32_t)v1,(int32_t)v2);
+        const bool set_c = sub_overflow(v1,v2);
+
+        cpsr = set_c? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
         cpsr = set_v? set_bit(cpsr,V_BIT) : deset_bit(cpsr,V_BIT);
 
 
         set_nz_flag(ans);
     }
 
-    else
-    {
-        ans = v1 - v2;
-    }
-    return (uint32_t)ans;
+
+    return ans;
 }
 
-// nneds double checking
 uint32_t Cpu::sbc(uint32_t v1, uint32_t v2, bool s)
 {
     // subtract one from ans if carry is not set
-    uint32_t v3 = is_set(cpsr,C_BIT)? 0 : 1;
+    const uint32_t v3 = !is_set(cpsr,C_BIT);
 
-    int32_t ans;
+    const uint32_t ans = v1 - v2 - v3;
     if(s)
     {
-        bool set_v = __builtin_sub_overflow((int32_t)v1,(int32_t)v2,&ans);
-        set_v ^= __builtin_sub_overflow((int32_t)ans,(int32_t)v3,&ans);
-        cpsr = (v1 >= v2 && v1-v2 >= v3)? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
+        // ^ as if both operations generate an inproper result we will get an expected sign
+        const int32_t ans_signed = v1 - v2;
+        const bool set_v = sub_overflow((int32_t)v1,(int32_t)v2) ^ sub_overflow(ans_signed,(int32_t)v3);
+
+        // if both operations overflow we need to set the carry
+        const uint32_t ans_unsigned = v1 - v2;
+        const bool set_c = sub_overflow(v1,v2) && sub_overflow(ans_unsigned,v3);
+
+
+        cpsr = set_c? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
         cpsr = set_v? set_bit(cpsr,V_BIT) : deset_bit(cpsr,V_BIT);
 
 
         set_nz_flag(ans);
     }
 
-    else
-    {
-        ans = v1 - v2 - v3;
-    }
-
-    return (uint32_t)ans;
+    return ans;
 }
+
 
 uint32_t Cpu::logical_and(uint32_t v1, uint32_t v2, bool s)
 {
