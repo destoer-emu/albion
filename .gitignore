@@ -4,6 +4,8 @@ RelWithDebInfo/
 .vscode/
 mooneye-gb_hwtests/
 CMakeFiles/
+backups/
+roms/
 x64/
 destoer-emu_autogen/
 destoer-emu.dir/
@@ -20,6 +22,7 @@ Makefile
 GBA.BIOS
 gbc_bios.bin
 dmg_bios.bin
+gba_bios.bin
 emu.log
 converted.gb
 ALL_BUILD.vcxproj.user
