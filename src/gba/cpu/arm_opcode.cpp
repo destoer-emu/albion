@@ -22,7 +22,7 @@ uint32_t Cpu::fetch_arm_opcode()
     // ignore the pipeline for now
     regs[PC] &= ~3; // algin
 
-    uint32_t opcode = mem.read_memt<uint32_t>(regs[PC]);
+    const auto opcode = mem.read_memt<uint32_t>(regs[PC]);
     regs[PC] += ARM_WORD_SIZE;
     return opcode;
 }
@@ -69,7 +69,7 @@ void Cpu::arm_swi(uint32_t opcode)
     int idx = static_cast<int>(cpu_mode::supervisor);
 
     // spsr for supervisor = cpsr
-    status_banked[idx] = cpsr;
+    status_banked[idx] = get_cpsr();
 
     // lr in supervisor mode set to return addr
     hi_banked[static_cast<int>(idx)][1] = regs[PC];
@@ -143,13 +143,13 @@ void Cpu::arm_mull(uint32_t opcode)
     regs[rdlo] = result & 0xffffffff;
 
 
-    // c & v destroyed?
+    // c destroyed
     if(s)
     {
         set_nz_flag_long(result);
 
         // c destroyed
-        cpsr = deset_bit(cpsr,C_BIT);
+        flag_c = false;
     }
 }
 
@@ -178,7 +178,7 @@ void Cpu::arm_mul(uint32_t opcode)
         set_nz_flag(regs[rd]);
 
         // c destroyed
-        cpsr = deset_bit(cpsr,C_BIT);
+       flag_c = false;
     }
 
     cycle_tick(1);
@@ -442,7 +442,8 @@ void Cpu::arm_psr(uint32_t opcode)
         // and then the value ored
         if(!spsr) // cpsr
         {
-            set_cpsr((cpsr & ~mask) | v);
+            const auto psr = get_cpsr();
+            set_cpsr((psr & ~mask) | v);
         }
 
         else // spsr
@@ -475,13 +476,13 @@ void Cpu::arm_psr(uint32_t opcode)
 
             else // user and system read cpsr where spsr would normally be read
             {
-                regs[rd] = cpsr;
+                regs[rd] = get_cpsr();
             }
         }
 
         else
         {
-            regs[rd] = cpsr;
+            regs[rd] = get_cpsr();
         }
 
     }
@@ -545,7 +546,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
     // default to preserve the carry
     // incase of a zero shift
-    bool shift_carry = is_set(cpsr,C_BIT);
+    bool shift_carry = flag_c;
 
 
     uint32_t op2;
@@ -638,7 +639,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
     }
     
     // switch on the opcode to decide what to do
-    int op = (opcode >> 21) & 0xf;
+    const int op = (opcode >> 21) & 0xf;
     switch(op)
     {
         case 0x0: //and
@@ -646,7 +647,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
             regs[rd] = logical_and(op1,op2,update_flags);
             if(update_flags)
             {
-                cpsr = shift_carry? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
+                flag_c = shift_carry;
             }
             break;
         }
@@ -656,7 +657,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
             regs[rd] = logical_eor(op1,op2,update_flags);
             if(update_flags)
             {
-                cpsr = shift_carry? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
+                flag_c = shift_carry;
             }
             break;            
         }
@@ -703,7 +704,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
             logical_and(op1,op2,update_flags);
             if(update_flags)
             {
-                cpsr = shift_carry? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
+                flag_c = shift_carry;
             }             
             break;
         }
@@ -714,7 +715,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
             logical_eor(op1,op2,update_flags);
             if(update_flags)
             {
-                cpsr = shift_carry? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
+                flag_c = shift_carry;
             }            
             break;
         }
@@ -736,7 +737,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
             regs[rd] = logical_or(op1,op2,update_flags);
             if(update_flags)
             {
-                cpsr = shift_carry? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
+                flag_c = shift_carry;
             }            
             break;
         }
@@ -749,7 +750,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
             {
                 set_nz_flag(regs[rd]);
                 // carry is that of the shift oper
-                cpsr = shift_carry? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);                 
+                flag_c = shift_carry;                 
             }
             break;
         }
@@ -760,7 +761,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
             regs[rd] = bic(op1,op2,update_flags);
             if(update_flags)
             {
-                cpsr = shift_carry? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
+                flag_c = shift_carry;
             }            
             break;
         }
@@ -773,7 +774,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
             {
                 set_nz_flag(regs[rd]);
                 // carry is that of the shift oper
-                cpsr = shift_carry? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);                 
+                flag_c = shift_carry;                 
             }
             break;
         }
@@ -980,18 +981,18 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 
     if(is_set(opcode,25))
     {
-        auto type = static_cast<shift_type>((opcode >> 5 ) & 0x3);
+        const auto type = static_cast<shift_type>((opcode >> 5 ) & 0x3);
 
 
         // immediate is allways register rm
-        int rm = opcode & 0xf;
+        const int rm = opcode & 0xf;
         uint32_t imm = regs[rm];
 
 
         // register specified shift ammounts are not allowed
-        int shift_ammount = (opcode >> 7) & 0x1f;
+        const int shift_ammount = (opcode >> 7) & 0x1f;
         
-        bool carry = is_set(cpsr,C_BIT);
+        bool carry = flag_c;
         offset = barrel_shift(type,imm,shift_ammount,carry,true);
     }
 

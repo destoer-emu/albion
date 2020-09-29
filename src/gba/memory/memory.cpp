@@ -148,7 +148,7 @@ void Mem::init(std::string filename)
 
 
     // if we are not using the bios boot we need to set postflg
-    //mem_io.postflg = 1;
+    mem_io.postflg = 1;
 }
 
 

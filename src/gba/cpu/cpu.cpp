@@ -31,7 +31,7 @@ void Cpu::init()
 
     // setup main cpu state
     is_thumb = false;  // cpu in arm mode
-/*
+
     regs[PC] = 0x08000000; // cartrige reset vector
     regs[LR] = 0x08000000;
     cpsr = 0x1f;
@@ -39,11 +39,18 @@ void Cpu::init()
     hi_banked[static_cast<int>(cpu_mode::supervisor)][0] = 0x03007FE0;
     hi_banked[static_cast<int>(cpu_mode::irq)][0] = 0x03007FA0;
     //arm_fill_pipeline(); // fill the intitial cpu pipeline
-*/
+
     //regs[PC] = 0;
     arm_mode = cpu_mode::system;
     switch_mode(cpu_mode::system);
-    
+
+    // flags
+    // combined into cpsr when it is read
+    flag_z = false;
+    flag_n = false;
+    flag_c = false;
+    flag_n = false;
+
 
     cyc_cnt = 0;
     cpu_io.init();
@@ -622,14 +629,14 @@ void Cpu::print_regs()
     }
 
 
-    printf("\ncpsr: %08x\n",cpsr);
+    printf("\ncpsr: %08x\n",get_cpsr());
 
     puts("FLAGS");
 
-    printf("Z: %s\n",is_set(cpsr,Z_BIT)? "true" : "false");
-    printf("C: %s\n",is_set(cpsr,C_BIT)? "true" : "false");
-    printf("N: %s\n",is_set(cpsr,N_BIT)? "true" : "false");
-    printf("V: %s\n",is_set(cpsr,V_BIT)? "true" : "false");
+    printf("Z: %s\n",flag_z? "true" : "false");
+    printf("C: %s\n",flag_c? "true" : "false");
+    printf("N: %s\n",flag_n? "true" : "false");
+    printf("V: %s\n",flag_v? "true" : "false");
 
 }
 
@@ -637,13 +644,13 @@ void Cpu::print_regs()
 // set zero flag based on arg
 void Cpu::set_zero_flag(uint32_t v)
 {
-    cpsr = v == 0? set_bit(cpsr,Z_BIT) : deset_bit(cpsr,Z_BIT); 
+   flag_z =  v == 0;
 }
 
 
 void Cpu::set_negative_flag(uint32_t v)
 {
-    cpsr = is_set(v,31)? set_bit(cpsr,N_BIT) : deset_bit(cpsr,N_BIT);
+    flag_n = is_set(v,31);
 }
 
 
@@ -661,13 +668,13 @@ void Cpu::set_nz_flag(uint32_t v)
 // set zero flag based on arg
 void Cpu::set_zero_flag_long(uint64_t v)
 {
-    cpsr = v == 0? set_bit(cpsr,Z_BIT) : deset_bit(cpsr,Z_BIT); 
+    flag_z = v == 0;
 }
 
 
 void Cpu::set_negative_flag_long(uint64_t v)
 {
-    cpsr = is_set(v,63)? set_bit(cpsr,N_BIT) : deset_bit(cpsr,N_BIT);   
+    flag_n = is_set(v,63);  
 }
 
 
@@ -759,6 +766,11 @@ void Cpu::load_registers(cpu_mode mode)
 void Cpu::set_cpsr(uint32_t v)
 {
     cpsr = v;
+
+    flag_z = is_set(v,Z_BIT);
+    flag_c = is_set(v,C_BIT);
+    flag_n = is_set(v,N_BIT);
+    flag_v = is_set(v,V_BIT);
 
     // confirm this?
     is_thumb = is_set(cpsr,5);
@@ -854,46 +866,46 @@ bool Cpu::cond_met(int opcode)
     switch(static_cast<arm_cond>(opcode & 0xf))
     {
         // z set
-        case arm_cond::eq: return is_set(cpsr,Z_BIT);
+        case arm_cond::eq: return flag_z;
         
         // z clear
-        case arm_cond::ne: return !is_set(cpsr,Z_BIT);
+        case arm_cond::ne: return !flag_z;
 
         // c set
-        case arm_cond::cs: return is_set(cpsr,C_BIT);
+        case arm_cond::cs: return flag_c;
 
         // c clear
-        case arm_cond::cc: return !is_set(cpsr,C_BIT);
+        case arm_cond::cc: return !flag_c;
 
         // n set
-        case arm_cond::mi: return is_set(cpsr,N_BIT);
+        case arm_cond::mi: return flag_n;
 
         // n clear
-        case arm_cond::pl: return !is_set(cpsr,N_BIT);
+        case arm_cond::pl: return !flag_n;
 
         // v set
-        case arm_cond::vs: return is_set(cpsr,V_BIT); 
+        case arm_cond::vs: return flag_v; 
 
         // v clear
-        case arm_cond::vc: return !is_set(cpsr,V_BIT);
+        case arm_cond::vc: return !flag_v;
 
         // c set and z clear
-        case arm_cond::hi: return is_set(cpsr, C_BIT) && !is_set(cpsr,Z_BIT);
+        case arm_cond::hi: return flag_c && !flag_z;
 
         // c clear or z set
-        case arm_cond::ls: return !is_set(cpsr,C_BIT) || is_set(cpsr,Z_BIT);
+        case arm_cond::ls: return !flag_c || flag_z;
 
         // n equals v
-        case arm_cond::ge: return is_set(cpsr,N_BIT) == is_set(cpsr,V_BIT);
+        case arm_cond::ge: return flag_n == flag_v;
 
         // n not equal to v
-        case arm_cond::lt: return is_set(cpsr,N_BIT) != is_set(cpsr,V_BIT); 
+        case arm_cond::lt: return flag_n != flag_v; 
 
         // z clear and N equals v
-        case arm_cond::gt: return !is_set(cpsr,Z_BIT) && is_set(cpsr,N_BIT) == is_set(cpsr,V_BIT);
+        case arm_cond::gt: return !flag_z && flag_n == flag_v;
 
         // z set or n not equal to v
-        case arm_cond::le: return is_set(cpsr,Z_BIT) || is_set(cpsr,N_BIT) != is_set(cpsr,V_BIT);
+        case arm_cond::le: return flag_z || flag_n != flag_v;
 
         // allways
         case arm_cond::al: return true;
@@ -968,11 +980,8 @@ uint32_t Cpu::add(uint32_t v1, uint32_t v2, bool s)
     if(s)
     {
 
-        const bool set_v = add_overflow((int32_t)v1,(int32_t)v2);
-        const bool set_c = add_overflow(v1,v2); 
-
-        cpsr = set_c? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT); 
-        cpsr = set_v? set_bit(cpsr,V_BIT) : deset_bit(cpsr,V_BIT); 
+        flag_v = add_overflow((int32_t)v1,(int32_t)v2);
+        flag_c = add_overflow(v1,v2); 
 
         set_nz_flag(ans);
     }
@@ -984,7 +993,7 @@ uint32_t Cpu::add(uint32_t v1, uint32_t v2, bool s)
 uint32_t Cpu::adc(uint32_t v1, uint32_t v2, bool s)
 {
 
-    const uint32_t v3 = is_set(cpsr,C_BIT);
+    const uint32_t v3 = flag_c;
 
     const uint32_t ans = v1 + v2 + v3;
 
@@ -993,14 +1002,11 @@ uint32_t Cpu::adc(uint32_t v1, uint32_t v2, bool s)
 
         // ^ as if both operations generate an inproper result we will get an expected sign
         const int32_t ans_signed = v1 + v2;
-        const bool set_v = add_overflow((int32_t)v1,(int32_t)v2) ^ add_overflow(ans_signed,(int32_t)v3);
+        flag_v = add_overflow((int32_t)v1,(int32_t)v2) ^ add_overflow(ans_signed,(int32_t)v3);
 
         // if either operation overflows we need to set the carry
         const uint32_t ans_unsigned = v1 + v2;
-        const bool set_c = add_overflow(v1,v2) || add_overflow(ans_unsigned,v3);
-
-        cpsr = set_c? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT); 
-        cpsr = set_v? set_bit(cpsr,V_BIT) : deset_bit(cpsr,V_BIT); 
+        flag_c = add_overflow(v1,v2) || add_overflow(ans_unsigned,v3);
 
         set_nz_flag(ans);
     }
@@ -1016,12 +1022,8 @@ uint32_t Cpu::sub(uint32_t v1, uint32_t v2, bool s)
 
     if(s)
     {
-        const bool set_v = sub_overflow((int32_t)v1,(int32_t)v2);
-        const bool set_c = sub_overflow(v1,v2);
-
-        cpsr = set_c? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
-        cpsr = set_v? set_bit(cpsr,V_BIT) : deset_bit(cpsr,V_BIT);
-
+        flag_v = sub_overflow((int32_t)v1,(int32_t)v2);
+        flag_c = sub_overflow(v1,v2);
 
         set_nz_flag(ans);
     }
@@ -1033,23 +1035,18 @@ uint32_t Cpu::sub(uint32_t v1, uint32_t v2, bool s)
 uint32_t Cpu::sbc(uint32_t v1, uint32_t v2, bool s)
 {
     // subtract one from ans if carry is not set
-    const uint32_t v3 = !is_set(cpsr,C_BIT);
+    const uint32_t v3 = !flag_c;
 
     const uint32_t ans = v1 - v2 - v3;
     if(s)
     {
         // ^ as if both operations generate an inproper result we will get an expected sign
         const int32_t ans_signed = v1 - v2;
-        const bool set_v = sub_overflow((int32_t)v1,(int32_t)v2) ^ sub_overflow(ans_signed,(int32_t)v3);
+        flag_v = sub_overflow((int32_t)v1,(int32_t)v2) ^ sub_overflow(ans_signed,(int32_t)v3);
 
         // if both operations overflow we need to set the carry
         const uint32_t ans_unsigned = v1 - v2;
-        const bool set_c = sub_overflow(v1,v2) && sub_overflow(ans_unsigned,v3);
-
-
-        cpsr = set_c? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
-        cpsr = set_v? set_bit(cpsr,V_BIT) : deset_bit(cpsr,V_BIT);
-
+        flag_c = sub_overflow(v1,v2) && sub_overflow(ans_unsigned,v3);
 
         set_nz_flag(ans);
     }
@@ -1132,7 +1129,7 @@ void Cpu::service_interrupt()
     int idx = static_cast<int>(cpu_mode::irq);
 
     // spsr for irq = cpsr
-    status_banked[idx] = cpsr;
+    status_banked[idx] = get_cpsr();
 
     // lr is next instr + 4 for an irq 
     hi_banked[idx][1] = regs[PC] + 4;

@@ -27,7 +27,11 @@ public:
     uint32_t get_status_regs(int idx) const {return status_banked[idx]; }
     uint32_t get_fiq_regs(int idx) const {return fiq_banked[idx]; }
     uint32_t get_high_regs(int idx, int idx2) const {return hi_banked[idx][idx2]; }
-    uint32_t get_cpsr() const {return cpsr;} 
+    uint32_t get_cpsr() const 
+    {
+        return (cpsr & ~0xf0000000) | (flag_z << Z_BIT) | 
+        (flag_c << C_BIT) | (flag_n << N_BIT) | (flag_v << V_BIT);
+    } 
 
 
     cpu_mode get_mode() const { return arm_mode; }
@@ -42,7 +46,7 @@ public:
 
     // print all registers for debugging
     // if we go with a graphical debugger
-    // we need to make ones for each array
+    // we need to make ones for each arrayc
     // and return a std::string
     void print_regs();
     
@@ -202,6 +206,14 @@ private:
     // registers in the current mode
     // swapped out with backups when a mode switch occurs
     uint32_t regs[16] = {0};
+
+    // flags
+    // combined into cpsr when it is read
+    bool flag_z;
+    bool flag_n;
+    bool flag_c;
+    bool flag_v;
+
 
 
     // backup stores

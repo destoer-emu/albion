@@ -90,7 +90,7 @@ void Cpu::thumb_swi(uint16_t opcode)
     int idx = static_cast<int>(cpu_mode::supervisor);
 
     // spsr for supervisor = cpsr
-    status_banked[idx] = cpsr;
+    status_banked[idx] = get_cpsr();
 
     // lr in supervisor mode set to return addr
     hi_banked[static_cast<int>(idx)][1] = regs[PC];
@@ -444,30 +444,24 @@ void Cpu::thumb_alu(uint16_t opcode)
 
         case 0x2: // lsl
         {
-            bool c = is_set(cpsr,C_BIT);
-            regs[rd] = lsl(regs[rd],regs[rs]&0xff,c);
+            regs[rd] = lsl(regs[rd],regs[rs]&0xff,flag_c);
             set_nz_flag(regs[rd]);
-            cpsr = c? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
             cycle_tick(2); // 1s + 1i
             break;
         }
 
         case 0x3: // lsr 
         {
-            bool c = is_set(cpsr,C_BIT);
-            regs[rd] = lsr(regs[rd],regs[rs]&0xff,c,false);
+            regs[rd] = lsr(regs[rd],regs[rs]&0xff,flag_c,false);
             set_nz_flag(regs[rd]);
-            cpsr = c? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
             cycle_tick(2); // 1s + 1i
             break;            
         }
 
         case 0x4: // asr
         {
-            bool c = is_set(cpsr,C_BIT);
-            regs[rd] = asr(regs[rd],regs[rs]&0xff,c,false);
-            set_nz_flag(regs[rd]);
-            cpsr = c? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);   
+            regs[rd] = asr(regs[rd],regs[rs]&0xff,flag_c,false);
+            set_nz_flag(regs[rd]); 
             cycle_tick(2); // 1s + 1i
             break;         
         }
@@ -489,10 +483,8 @@ void Cpu::thumb_alu(uint16_t opcode)
         
         case 0x7: // ror
         {
-            bool c = is_set(cpsr,C_BIT);
-            regs[rd] = ror(regs[rd],regs[rs]&0xff,c,false);
+            regs[rd] = ror(regs[rd],regs[rs]&0xff,flag_c,false);
             set_nz_flag(regs[rd]);
-            cpsr = c? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT);
             cycle_tick(2); // 1s + 1i
             break;
         }
@@ -536,7 +528,7 @@ void Cpu::thumb_alu(uint16_t opcode)
         {
             regs[rd] *= regs[rs];
             set_nz_flag(regs[rd]);
-            cpsr = deset_bit(cpsr,C_BIT);
+            flag_c = false;
             cycle_tick(1); // needs timing fix
             break;
         }
@@ -750,15 +742,9 @@ void Cpu::thumb_mov_reg_shift(uint16_t opcode)
 
     auto type = static_cast<shift_type>((opcode >> 11) & 0x3);
 
-    bool did_carry = is_set(cpsr,C_BIT);
-
-    regs[rd] = barrel_shift(type,regs[rs],n,did_carry,true);
+    regs[rd] = barrel_shift(type,regs[rs],n,flag_c,true);
 
     set_nz_flag(regs[rd]);
-
-
-    cpsr = did_carry? set_bit(cpsr,C_BIT) : deset_bit(cpsr,C_BIT); 
-
 
     // 1 s cycle
     cycle_tick(1);
