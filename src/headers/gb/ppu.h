@@ -143,7 +143,7 @@ private:
 
 
         static constexpr size_t size = 16;
-        Pixel_Obj fifo[size];
+        Pixel_Obj fifo[size] = {};
 
         // implemented as a circular buffer
         size_t read_idx = 0;
@@ -216,6 +216,12 @@ private:
     Pixel_Fetcher fetcher;
     Pixel_Fifo bg_fifo;
     Pixel_Fifo obj_fifo;
+
+	// enough to allow two tiles either side
+	// plus the odd window and scx cords
+	// 160 + 8 + 8 + 8 + 8
+	Pixel_Obj scanline_fifo[194];
+
 	Obj objects[10]; // sprites for the current scanline
 	unsigned int no_sprites = 0; // how many sprites
     unsigned int cur_sprite = 0; // current sprite

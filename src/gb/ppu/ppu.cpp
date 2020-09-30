@@ -621,11 +621,6 @@ void Ppu::render_scanline() noexcept
 	const bool obj_enabled = is_set(mem.io[IO_LCDC],1);
 	
 
-	// enough to allow two tiles either side
-	// plus the odd window and scx cords
-	// 160 + 8 + 8 + 8 + 8
-	Pixel_Obj scanline_fifo[194];
-
 	// is the window drawn on this line?
 	const bool window_rendered = mem.io[IO_WX] <= 166 && 
 		window_y_triggered && is_set(mem.io[IO_LCDC],5);

@@ -28,6 +28,10 @@ public:
     void insert_new_timer_event() noexcept;
     int get_next_timer_event() const noexcept;
 
+    void update_intr_req() noexcept;
+    void update_intr_fire() noexcept;
+
+
     // timer
     void update_timers(uint32_t cycles) noexcept;
 
@@ -134,6 +138,8 @@ private:
     // interrupts
     instr_state instr_side_effect = instr_state::normal;
     bool interrupt_enable = false;
+    bool interrupt_req = false;
+    bool interrupt_fire = false;
     bool halt_bug = false;
 
     uint32_t pending_cycles = 0;
@@ -180,7 +186,6 @@ private:
     
 
     void exec_cb(uint8_t cbop);
-    void handle_instr_effects();
     void handle_halt();
 
     void switch_double_speed() noexcept;

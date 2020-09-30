@@ -1446,10 +1446,18 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
             cpu.insert_new_timer_event();
 			break;
 		}
-			
+
+		case IO_IE:
+		{
+			io[IO_IE] = v;
+			cpu.update_intr_req();
+			break;
+		}
+
 		case IO_IF:
 		{
 			io[IO_IF] = v | (128 + 64 + 32); // top 3 bits allways on
+			cpu.update_intr_req();
 			break;
 		}
 

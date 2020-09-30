@@ -26,7 +26,9 @@ void Cpu::save_state(std::ofstream &fp)
     file_write_var(fp,is_double);
     file_write_var(fp,pending_cycles);
     file_write_var(fp,serial_cyc);
-    file_write_var(fp,serial_cnt);	
+    file_write_var(fp,serial_cnt);
+    file_write_var(fp,interrupt_req);
+    file_write_var(fp,interrupt_fire);
 }
 
 
@@ -57,7 +59,9 @@ void Cpu::load_state(std::ifstream &fp)
     file_read_var(fp,is_double);
     file_read_var(fp,pending_cycles);
     file_read_var(fp,serial_cyc);
-    file_read_var(fp,serial_cnt);	
+    file_read_var(fp,serial_cnt);
+    file_read_var(fp,interrupt_req);
+    file_read_var(fp,interrupt_fire);	
 }
 
 }

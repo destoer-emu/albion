@@ -19,7 +19,7 @@ void Cpu::check_rst_loop(uint16_t addr, uint8_t op)
 #ifdef DEBUG
 void Cpu::exec_instr_debug()
 {
-	uint8_t x = mem.read_mem(pc);
+	const auto x = mem.read_mem(pc);
 	if(debug.breakpoint_hit(pc,x,break_type::execute))
 	{
 		// halt until told otherwhise :)
@@ -35,15 +35,7 @@ void Cpu::exec_instr_debug()
 // https://gb-archive.github.io/salvage/decoding_gbz80_opcodes/Decoding%20Gamboy%20Z80%20Opcodes.html
 void Cpu::exec_instr_no_debug()
 {
-    const uint8_t opcode = fetch_opcode();
-
-	// pc fails to increment if halt bug happens
-	if(halt_bug)
-	{
-		halt_bug = false;
-		pc--;
-	}
-
+    const auto opcode = fetch_opcode();
 
     switch(opcode)
     {
@@ -639,8 +631,7 @@ void Cpu::exec_instr_no_debug()
 			break;
 		
 		case 0x76: // halt 
-			// caller will handle
-			instr_side_effect = instr_state::halt;
+			handle_halt();
 			break;
 		
 		case 0x77: // ld (hl), a 
@@ -1102,6 +1093,7 @@ void Cpu::exec_instr_no_debug()
 			pc = read_stackwt();	
 			cycle_delay(4);// internal
 			interrupt_enable = true; // re-enable interrupts
+			update_intr_fire();
 			break;
 		
 		case 0xda: // jp c, u16
@@ -1193,9 +1185,13 @@ void Cpu::exec_instr_no_debug()
 			break;
 		
 		case 0xf3: // disable interrupt
-			// needs to be executed after the next instr
-			// main routine will handle
-			instr_side_effect = instr_state::di;
+
+			// di should disable immediately unlike ei!
+			// if we havent just exected a ei then we are done and can reset the state
+			// else we need to mark it so ei wont reneable it by mistake
+			instr_side_effect = instr_side_effect == instr_state::ei? instr_state::di : instr_state::normal;
+			interrupt_enable = false; 
+			update_intr_fire();
 			break;
 		
 		case 0xf5: // push af
@@ -1230,8 +1226,26 @@ void Cpu::exec_instr_no_debug()
 			break;
 		
 		case 0xfb: 
-			// caller will check opcode and handle it
-			instr_side_effect = instr_state::ei;
+
+			// if we execute two ie in a row we dont need to bother
+			// as we are allready enabled
+			if(instr_side_effect != instr_state::ei)
+			{
+				// caller will check opcode and handle it
+				instr_side_effect = instr_state::ei;
+
+				exec_instr(); 
+			}
+
+			// if last instr was a di we should not enable
+			if(instr_side_effect != instr_state::di)
+			{
+				interrupt_enable = true;
+			}
+
+			instr_side_effect = instr_state::normal;
+
+			update_intr_fire();
 			break;
 		
 		case 0xFE: // cp a, nn (do a sub and discard result)

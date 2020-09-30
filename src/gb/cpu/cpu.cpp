@@ -67,7 +67,9 @@ void Cpu::init(bool use_bios)
     // interrupts
 	instr_side_effect = instr_state::normal;
     interrupt_enable = false;
-    halt_bug = false;
+	interrupt_fire = false;
+	interrupt_req = false;
+	halt_bug = false;
 
 	serial_cyc = 0;
 	serial_cnt = 0;
@@ -79,15 +81,21 @@ void Cpu::init(bool use_bios)
 
 void Cpu::step()
 {
-	// now we need to test if an ei or di instruction
-	// has just occured if it has step a cpu instr and then 
-	// perform the requested operation and set the ime flag	
-	handle_instr_effects();
-
 	// interrupts checked before the opcode fetch
     exec_instr();
 }
 
+void Cpu::update_intr_req() noexcept
+{
+	interrupt_req = mem.io[IO_IF] & mem.io[IO_IE] & 0x1f;
+	update_intr_fire();
+}
+
+
+void Cpu::update_intr_fire() noexcept
+{
+	interrupt_fire = interrupt_req && interrupt_enable;
+}
 
 uint8_t Cpu::fetch_opcode() noexcept
 {
@@ -98,7 +106,7 @@ uint8_t Cpu::fetch_opcode() noexcept
 	// at midpoint of instr fetch interrupts are checked
 	// and if so the opcode is thrown away and interrupt dispatch started
 	cycle_tick_t(2);
-	const bool fired = ((mem.io[IO_IF] & mem.io[IO_IE] & 0x1f) && interrupt_enable);
+	const bool fired = interrupt_fire;
 	cycle_tick_t(2);
 
 	if(fired)
@@ -106,12 +114,18 @@ uint8_t Cpu::fetch_opcode() noexcept
 		do_interrupts();
 
 		// have to re fetch the opcode this costs a cycle
-		return mem.read_memt(pc++);
+		const auto v = mem.read_memt(pc);
+
+		// if halt bug occurs pc fails to increment for one instr
+		pc = pc + (1 - halt_bug);
+		halt_bug = false; 
+		return v;
 	}
 
 	else // return the opcode we have just fetched
 	{
-		pc++;
+		pc = pc + (1 - halt_bug);
+		halt_bug = false; 
 		return opcode;
 	}
 	
@@ -438,13 +452,11 @@ void Cpu::handle_halt()
 	tick_pending_cycles(); 
 
 	instr_side_effect = instr_state::normal;
-	uint8_t req = mem.io[IO_IF]; // requested ints 
-	uint8_t enabled = mem.io[IO_IE]; // enabled interrutps
-	
+
 	// halt bug
 	// halt state not entered and the pc fails to increment for
 	// one instruction read 			
-	if( (interrupt_enable == false) &&  (req & enabled & 0x1f) != 0)
+	if( !interrupt_enable &&  interrupt_req)
 	{
 		halt_bug = true;
 		return;
@@ -453,7 +465,7 @@ void Cpu::handle_halt()
 
 	// sanity check to check if this thing will actually fire
 	// needs to be improved to check for specific intrs being unable to fire...
-	if(enabled == 0)
+	if( mem.io[IO_IE] == 0)
 	{
 		write_log(debug,"[ERROR] halt infinite loop");
 		throw std::runtime_error("halt infinite loop");
@@ -463,13 +475,12 @@ void Cpu::handle_halt()
 	// else just service events
 
 	// still need to check that intr are not firing during this
-	while(ppu.using_fifo() && (req & enabled & 0x1f) == 0)
+	while(ppu.using_fifo() &&  !interrupt_req)
 	{
 		cycle_tick(1);
-		req = mem.io[IO_IF];
 	}
 
-	while((req & enabled & 0x1f) == 0)
+	while(!interrupt_req)
 	{
 		// if there are no events 
 		// we are stuck
@@ -479,65 +490,15 @@ void Cpu::handle_halt()
 		}
 
 		scheduler.skip_to_event();
-		req = mem.io[IO_IF];
 	}
 
 /*
 	// old impl
-	while((req & enabled & 0x1f) == 0)
+	while(!interrupt_req)
 	{
 		cycle_tick(1);
-		req = mem.io[IO_IF];
 	}
 */
-}
-
-// handle the side affects of instructions
-void Cpu::handle_instr_effects()
-{
-	switch(instr_side_effect)
-	{
-		// no instr side effects
-		case instr_state::normal:
-		{
-			break;
-		}
-
-		case instr_state::ei: // ei
-		{
-			instr_side_effect = instr_state::normal;
-			exec_instr(); 
-			// we have done an instruction now set ime
-			// needs to be just after the instruction service
-			// but before we service interrupts
-			
-			if(instr_side_effect != instr_state::di) // if we have just executed di do not renable interrupts
-			{	
-				interrupt_enable = true;
-			}
-					
-			if(instr_side_effect == instr_state::halt)
-			{
-				handle_halt();
-			}
-			break;
-		}
-				
-		case instr_state::di:  // di
-		{
-			instr_side_effect = instr_state::normal;
-			interrupt_enable = false; // di should disable immediately unlike ei!
-			break;
-		}
-			
-		// this will make the cpu stop executing instr
-		// until an interrupt occurs and wakes it up 			
-		case instr_state::halt: // halt occured in prev instruction
-		{		
-			handle_halt();
-			break;
-		}
-	}
 }
 
 
@@ -550,6 +511,7 @@ void Cpu::request_interrupt(int interrupt) noexcept
 	// set the interrupt flag to signal
 	// an interrupt request
 	mem.io[IO_IF] = set_bit( mem.io[IO_IF],interrupt);
+	update_intr_req();
 }
 
 
@@ -558,6 +520,8 @@ void Cpu::do_interrupts() noexcept
 
 	// interrupt has fired disable ime
 	interrupt_enable = false;
+	// ime is off we cant have a fire
+	interrupt_fire = false;
 
 	// sp deced in 3rd cycle not sure what happens in 2nd
 	cycle_tick(2);
@@ -586,6 +550,7 @@ void Cpu::do_interrupts() noexcept
 		if(is_set(req,i) && is_set(enabled,i))
 		{
 			mem.io[IO_IF] = deset_bit(mem.io[IO_IF],i); // mark interrupt as serviced
+			update_intr_req();
 			pc = 0x40 + (i * 8); // set pc to interrupt vector
 			return;
 		}
