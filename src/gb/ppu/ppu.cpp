@@ -223,7 +223,27 @@ ppu_mode Ppu::get_mode() const noexcept
 
 void Ppu::write_stat() noexcept
 {
-	stat_update();
+	// stat write glitch
+	// behaves as if 0xff for 1 cycle on dmg?
+	if(cpu.get_cgb())
+	{
+		const auto backup = mem.io[IO_STAT];
+		mem.io[IO_STAT] = 0xff & ~7;
+		stat_update();
+		mem.io[IO_STAT] = backup;
+	}
+
+	else
+	{
+		stat_update();
+	}
+}
+
+
+uint8_t Ppu::read_stat() const noexcept
+{
+	// if in glitched oam mode is read as hblank
+	return glitched_oam_mode? mem.io[IO_STAT] & ~3 : mem.io[IO_STAT];
 }
 
 // mode change, write, or line change
@@ -283,9 +303,12 @@ void Ppu::stat_update() noexcept
 void Ppu::turn_lcd_off() noexcept
 {
 	// i think the behavior is this but im honestly not sure
+	// read hblank during lcd off
 	mode = ppu_mode::hblank;
-	mem.io[IO_STAT] = (mem.io[IO_STAT] & ~3) | static_cast<uint8_t>(mode);
-	signal = false;
+	mem.io[IO_STAT] = (mem.io[IO_STAT] & ~3);
+
+	// what should happen to the interrupt signal when the lcd goes off?
+
 
 	// this just gets shut off dont tick it
 	scheduler.remove(gameboy_event::ppu,false);

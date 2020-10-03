@@ -64,6 +64,8 @@ public:
         return early_line_zero? 0 : current_line;
     }
 
+    uint8_t read_stat() const noexcept;
+
 
     void write_stat() noexcept;
 

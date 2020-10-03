@@ -774,6 +774,11 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 			return io[IO_SC] | (cpu.get_cgb()? 0x7d : 0x7e);
 		}
 
+		case IO_STAT:
+		{
+			return ppu.read_stat();
+		}
+
         case IO_LY:
         {
             return ppu.get_current_line();
@@ -1502,7 +1507,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			io[IO_STAT] &= 7;
 				
 			// set the w bits with the value
-			io[IO_STAT] |= v & ~7;
+			io[IO_STAT] = io[IO_STAT] |  (v & ~7);
 			
 			// set unused bit
 			io[IO_STAT] |= 0x80;
