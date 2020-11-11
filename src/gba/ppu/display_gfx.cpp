@@ -5,6 +5,9 @@ namespace gameboyadvance
 // TODO
 // fix gfx glitches in fire emblem after title screen
 // metroid screen tears (allthough i think this a timing issue)
+// try and fix battle start bug in emerald
+
+// todo cache these from the color lut on pal write to directly return a uint32_t
 
 // renderer helper functions
 uint16_t Display::read_bg_palette(uint32_t pal_num,uint32_t idx)
@@ -464,6 +467,7 @@ void Display::merge_layers()
         // and find the first non transparent pixel
         // also we should ideally cache this bg_priority array on bg_cnt writes
 
+        // ideally we would ignore comparsion for the entire line if the bg is not enabled
         struct BgPriority
         {
             int bg;
@@ -521,6 +525,8 @@ void Display::merge_layers()
             // aswell incase there is a sprite below the 1st bg but enabled over everything else
 
             const auto &s = sprite_line[x];
+            const auto sprite_color = read_obj_palette(s.pal_num,s.col_num);
+            const bool sprite_enable = sprite_window_enabled(x);
             for(int i = lim-1; i >= 0; i--)
             {
                 const auto bg = bg_priority[i].bg;
@@ -531,24 +537,26 @@ void Display::merge_layers()
                 {
                     const auto bg_priority = disp_io.bg_cnt[bg].priority;
 
-                    // lower priority is higher sprite wins even if its equal
-                    const bool obj_win = s.col_num != 0 && sprite_window_enabled(x) && s.bg <= bg_priority;
+                    // lower priority is higher, sprite wins even if its equal
+                    const bool obj_win = s.col_num != 0 && sprite_enable && s.bg <= bg_priority;
 
                     // first time
                     if(source1 == pixel_source::bd)
                     {
+                        const auto bg_color = read_bg_palette(b.pal_num,b.col_num);
+
                         if(obj_win)
                         {
-                            color1 = read_obj_palette(s.pal_num,s.col_num);
+                            color1 = sprite_color;
                             source1 = pixel_source::obj;
-                            color2 = read_bg_palette(b.pal_num,b.col_num);
+                            color2 = bg_color;
                             source2 = static_cast<pixel_source>(bg);
                             break;
                         }
 
                         else
                         {
-                            color1 = read_bg_palette(b.pal_num,b.col_num);
+                            color1 = bg_color;
                             source1 = static_cast<pixel_source>(bg);                        
                         }
                     }
@@ -558,7 +566,7 @@ void Display::merge_layers()
                     {
                         if(obj_win)
                         {
-                            color2 = read_obj_palette(s.pal_num,s.col_num);
+                            color2 = sprite_color;
                             source2 = pixel_source::obj;
                         }
 
@@ -576,9 +584,9 @@ void Display::merge_layers()
             if(source1 == pixel_source::bd)
             {
                 // bd has no priority
-                if(s.col_num != 0 && sprite_window_enabled(x))
+                if(s.col_num != 0 && sprite_enable)
                 {
-                    color1 = read_obj_palette(s.pal_num,s.col_num);
+                    color1 = sprite_color;
                     source1 = pixel_source::obj;
                 } 
             }
@@ -586,9 +594,9 @@ void Display::merge_layers()
             else if(source2 == pixel_source::bd)
             {
                 // bd has no priority
-                if(s.col_num != 0 && sprite_window_enabled(x))
+                if(s.col_num != 0 && sprite_enable)
                 {
-                    color2 = read_obj_palette(s.pal_num,s.col_num);
+                    color2 = sprite_color;
                     source2 = pixel_source::obj;
                 } 
             }
@@ -882,6 +890,8 @@ void Display::render()
         }
     }
 
+    // ideally we would try to cull draws
+    // that are not enabled in the window
     cache_window();
 
     render_sprites(render_mode);

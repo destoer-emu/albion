@@ -70,7 +70,8 @@ GLuint Texture::get_texture() const
     return texture;
 }
 
-
+// contructor and destructor code taken from imgui
+// https://github.com/ocornut/imgui/blob/master/examples/example_glfw_opengl3/main.cpp
 
 // init imgui
 ImguiMainWindow::ImguiMainWindow()

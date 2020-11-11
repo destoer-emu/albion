@@ -124,6 +124,11 @@ void ImguiMainWindow::gameboy_run_frame()
         
         gb.run();
 
+        if(gb_display_viewer.enabled)
+        {
+            gb_display_viewer.update(gb);
+        }
+
         if(gb.ppu.new_vblank)
         {
             // swap the buffer so the frontend can render it

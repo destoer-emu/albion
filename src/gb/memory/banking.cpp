@@ -46,7 +46,7 @@ void Memory::change_lo_rom_bank_mbc1(uint16_t address, uint8_t v) noexcept
 	// bank greater than the current number of rom banks wraps back round
 	if(cart_rom_bank >= rom_info.no_rom_banks) 
     {
-		cart_rom_bank %= rom_info.no_rom_banks;
+		cart_rom_bank &= rom_info.no_rom_banks - 1;
 	}
 }
 
@@ -105,7 +105,7 @@ void Memory::change_hi_rom_bank_mbc1() noexcept
 	// bank greater than the current number of rom banks wraps back round
 	if(cart_rom_bank >= rom_info.no_rom_banks) 
 	{
-		cart_rom_bank %= rom_info.no_rom_banks;
+		cart_rom_bank &= rom_info.no_rom_banks - 1;
 	}
 }
 
@@ -127,7 +127,7 @@ void Memory::ram_bank_change_mbc1() noexcept
 	// bank greater than the current number of ram banks wraps back round
 	else if(cart_ram_bank >= rom_info.no_ram_banks) 
     {
-		cart_ram_bank %= rom_info.no_ram_banks;
+		cart_ram_bank &= rom_info.no_ram_banks - 1;
 	}
 }
 
@@ -156,7 +156,7 @@ void Memory::lower_bank_write_mbc2(uint16_t address, uint8_t v) noexcept
 		cart_rom_bank = ((v & 0xf) == 0)? 1 : v & 0xf;
 		if(cart_rom_bank >= rom_info.no_rom_banks)
 		{
-			cart_rom_bank %= rom_info.no_rom_banks;
+			cart_rom_bank &= rom_info.no_rom_banks - 1;
 		}	
 	}
 }
@@ -174,7 +174,7 @@ void Memory::change_rom_bank_mbc3(uint16_t address,uint8_t v) noexcept
 	
 	if(cart_rom_bank >= rom_info.no_rom_banks)
 	{
-		cart_rom_bank %= rom_info.no_rom_banks;
+		cart_rom_bank &= rom_info.no_rom_banks - 1;
 	}
 
 	if(cart_rom_bank == 0)
@@ -205,7 +205,7 @@ void Memory::mbc3_ram_bank_change(uint16_t address,uint8_t v) noexcept
 	
 	else if(cart_ram_bank <= 3 && cart_ram_bank >= rom_info.no_ram_banks)
 	{
-		cart_ram_bank %= rom_info.no_ram_banks;
+		cart_ram_bank &= rom_info.no_ram_banks -1;
 	}
 }	
 
@@ -220,7 +220,7 @@ void Memory::change_lo_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept
 			
 	if(cart_rom_bank >= rom_info.no_rom_banks)
 	{
-		cart_rom_bank %= rom_info.no_rom_banks;
+		cart_rom_bank &= rom_info.no_rom_banks - 1;
 	}			
 	// bank zero actually acceses bank 0
 }
@@ -233,7 +233,7 @@ void Memory::change_hi_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept
 	cart_rom_bank = (cart_rom_bank & 0xff) |  (data & 1) << 8;
 	if(cart_rom_bank >= rom_info.no_rom_banks)
 	{
-		cart_rom_bank %= rom_info.no_rom_banks;
+		cart_rom_bank &= rom_info.no_rom_banks - 1;
 	}
 }
 
@@ -251,7 +251,7 @@ void Memory::mbc5_ram_bank_change(uint16_t address,uint8_t data) noexcept
 
 	else if(cart_ram_bank >= rom_info.no_ram_banks)
 	{
-		cart_ram_bank %= rom_info.no_ram_banks;	
+		cart_ram_bank &= rom_info.no_ram_banks - 1;	
 	}	
 }
 

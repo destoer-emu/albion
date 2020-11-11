@@ -242,8 +242,7 @@ void Ppu::write_stat() noexcept
 
 uint8_t Ppu::read_stat() const noexcept
 {
-	// if in glitched oam mode is read as hblank
-	return glitched_oam_mode? mem.io[IO_STAT] & ~3 : mem.io[IO_STAT];
+	return mem.io[IO_STAT] | static_cast<int>(mode);
 }
 
 // mode change, write, or line change
@@ -258,7 +257,6 @@ void Ppu::stat_update() noexcept
 
 	// read stat and mask the mode
 	uint8_t status = mem.io[IO_STAT];
-	status &= ~0x3;
 
 	// save our current signal state
 	const bool signal_old = signal;
@@ -274,17 +272,25 @@ void Ppu::stat_update() noexcept
 	const bool lyc_signal = is_set(status,6) && lyc_hit;
 
 
-	// check nterrupts
-	// stat irq interrupt reqed when we go from no stat conditions met
-	// to any stat condition met
-	switch(mode)
+	// not really sure what stat intrs should do after a lcd on
+	if(!glitched_oam_mode)
 	{
-		case ppu_mode::hblank: signal = is_set(status,3) || lyc_signal; break;
-		case ppu_mode::vblank: signal = is_set(status,4) || lyc_signal; break;
-		case ppu_mode::oam_search: signal = is_set(status,5) || lyc_signal; break;
-		case ppu_mode::pixel_transfer: signal = lyc_signal; break;
+		// check nterrupts
+		// stat irq interrupt reqed when we go from no stat conditions met
+		// to any stat condition met
+		switch(mode)
+		{
+			case ppu_mode::hblank: signal = is_set(status,3) || lyc_signal; break;
+			case ppu_mode::vblank: signal = is_set(status,4) || lyc_signal; break;
+			case ppu_mode::oam_search: signal = is_set(status,5) || lyc_signal; break;
+			case ppu_mode::pixel_transfer: signal = lyc_signal; break;
+		}
 	}
-	
+
+	else
+	{
+		signal = lyc_signal;
+	}
 
 	// if we have changed from 0 to 1 for signal(signal edge)
 	// request a stat interrupt
@@ -294,7 +300,7 @@ void Ppu::stat_update() noexcept
 	}
 	
 
-	mem.io[IO_STAT] = status | 128 | static_cast<uint8_t>(mode);
+	mem.io[IO_STAT] = status | 128;
 }
 
 
@@ -305,7 +311,6 @@ void Ppu::turn_lcd_off() noexcept
 	// i think the behavior is this but im honestly not sure
 	// read hblank during lcd off
 	mode = ppu_mode::hblank;
-	mem.io[IO_STAT] = (mem.io[IO_STAT] & ~3);
 
 	// what should happen to the interrupt signal when the lcd goes off?
 

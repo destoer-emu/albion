@@ -117,7 +117,7 @@ inline uint64_t set_bit(uint64_t v,int bit) noexcept
 }
 
 
-inline uint64_t deset_bit(uint64_t v,int bit)
+inline uint64_t deset_bit(uint64_t v,int bit) noexcept
 {
     return v & ~(1 << bit);
 }

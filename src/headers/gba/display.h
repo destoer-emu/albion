@@ -29,6 +29,12 @@ public:
 
     void render_palette(uint32_t *palette, size_t size);
 
+    
+    uint32_t convert_color(uint16_t color)
+    {
+        return col_lut[deset_bit(color,15)];
+    }
+
     std::vector<uint32_t> screen;
     bool new_vblank = false;
     DispIo disp_io;
@@ -90,18 +96,28 @@ private:
     std::vector<bool> sprite_semi_transparent;
     std::vector<window_source> window;
     std::vector<int> oam_priority;
+
+
+    using ColorLut = std::array<uint32_t,32768>;
+    constexpr ColorLut pop_color_lut()
+    {
+        ColorLut lut{};
+
+        for(uint16_t c = 0; c < lut.size(); c++)
+        {
+
+            const uint32_t R = c & 0x1f;
+            const uint32_t G = (c >> 5) & 0x1f;
+            const uint32_t B = (c >> 10) & 0x1f;
+
+            // default to standard colors until we add proper correction
+            lut[c] =  B << 19 |  G << 11 | R << 3 | 0xFF000000;
+        }
+
+        return lut;
+    }
+
+    const ColorLut col_lut = pop_color_lut();
 };
-
-// this needs color correction at some point
-inline uint32_t convert_color(uint16_t color)
-{
-    int r = color & 0x1f;
-    int g = (color >> 5) & 0x1f;
-    int b = (color >> 10) & 0x1f;
-
-
-
-    return b << 19 |  g << 11 | r << 3 | 0xFF000000;
-}
 
 }
