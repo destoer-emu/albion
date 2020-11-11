@@ -476,7 +476,6 @@ std::string Disass::disass_thumb_alu(uint16_t opcode)
 }
 
 // the final addr calc on this is incorrect!
-// ^ <--- start here
 std::string Disass::disass_thumb_long_bl(uint16_t opcode)
 {
 

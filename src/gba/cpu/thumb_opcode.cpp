@@ -9,13 +9,32 @@
 namespace gameboyadvance
 {
 
+
+void Cpu::thumb_fill_pipeline() // need to verify this...
+{
+    pipeline[0] = mem.read_memt<uint16_t>(regs[PC]);
+    regs[PC] += ARM_HALF_SIZE;
+    pipeline[1] = mem.read_memt<uint16_t>(regs[PC]);
+    regs[PC] += ARM_HALF_SIZE;
+}
+
+
 uint16_t Cpu::fetch_thumb_opcode()
 {
     // ignore the pipeline for now
     regs[PC] &= ~1;
+/*
     uint16_t opcode = mem.read_memt<uint16_t>(regs[PC]);
     regs[PC] += ARM_HALF_SIZE;
     return opcode;
+*/
+
+    const uint16_t opcode = pipeline[0];
+    pipeline[0] = pipeline[1];
+    pipeline[1] = mem.read_memt<uint16_t>(regs[PC]);
+    regs[PC] += ARM_HALF_SIZE;
+    return opcode;
+
 }
 
 void Cpu::exec_thumb()
@@ -27,8 +46,11 @@ void Cpu::exec_thumb()
 
 void Cpu::execute_thumb_opcode(uint16_t instr)
 {
+    //puts("THUMB EXEC!");
+    //exit(1);
+
     // get the bits that determine the kind of instr it is
-    uint8_t op = (instr >> 8) & 0xff;
+    const uint8_t op = (instr >> 8) & 0xff;
 
     // call the function from our opcode table
     std::invoke(thumb_opcode_table[op],this,instr);    
@@ -39,7 +61,7 @@ void Cpu::execute_thumb_opcode(uint16_t instr)
 void Cpu::thumb_unknown(uint16_t opcode)
 {
     uint8_t op = get_thumb_opcode_bits(opcode);
-    auto err = fmt::format("[cpu-thumb {:08x}] unknown opcode {:04x}:{:x}\n",regs[PC],opcode,op);
+    auto err = fmt::format("[cpu-thumb {:08x}] unknown opcode {:04x}:{:x}\n{}\n",regs[PC],opcode,op,disass.disass_thumb(regs[PC]-6));
     throw std::runtime_error(err);
 }
 
@@ -83,6 +105,9 @@ void Cpu::thumb_sp_add(uint16_t opcode)
 // ^ not sure im reading from the right place for the vector table
 void Cpu::thumb_swi(uint16_t opcode)
 {
+    puts("thumb swi!");
+    exit(1);
+
     // nn is ignored by hardware
     UNUSED(opcode);
     write_log(debug,"[cpu-thumb: {:08x}] swi {:x}",regs[PC],opcode & 0xff);
@@ -105,7 +130,7 @@ void Cpu::thumb_swi(uint16_t opcode)
     cpsr = set_bit(cpsr,7); //set the irq bit to mask interrupts
 
     // branch to interrupt vector
-    regs[PC] = 0x8;
+    write_pc(0x8);
     cycle_tick(3); // 2s + 1n;
 }
 
@@ -226,7 +251,7 @@ void Cpu::thumb_load_store_reg(uint16_t opcode)
 void Cpu::thumb_branch(uint16_t opcode)
 {
     auto offset = sign_extend<int32_t>(opcode & 0x7ff,11) * 2;
-    regs[PC] += offset+ARM_HALF_SIZE;
+    write_pc(regs[PC]+offset/*+ARM_HALF_SIZE*/);
 
     cycle_tick(3); // 2s +1n 
 }
@@ -282,7 +307,7 @@ void Cpu::thumb_push_pop(uint16_t opcode)
         // nS +1N +1I (pop) | (n+1)S +2N +1I(pop pc)
         if(lr)
         {
-            regs[PC] = mem.read_memt<uint32_t>(regs[SP]) & ~1;
+            write_pc(mem.read_memt<uint32_t>(regs[SP]) & ~1);
             regs[SP] += ARM_WORD_SIZE;
             cycle_tick((n+1) + 3);
         }
@@ -381,6 +406,12 @@ void Cpu::thumb_hi_reg_ops(uint16_t opcode)
         case 0b00: // add
         {
             regs[rd] = add(rd_val,rs_val,false);
+
+            if(rd == PC)
+            {
+                write_pc(regs[rd]);
+            }
+
             break;  
         }
 
@@ -394,6 +425,10 @@ void Cpu::thumb_hi_reg_ops(uint16_t opcode)
         case 0b10: // mov
         {
             regs[rd] = rs_val;
+            if(rd == PC)
+            {
+                write_pc(regs[rd]);
+            }            
             break;
         }
 
@@ -407,7 +442,7 @@ void Cpu::thumb_hi_reg_ops(uint16_t opcode)
             cpsr = is_thumb? set_bit(cpsr,5) : deset_bit(cpsr,5);
 
             // branch
-            regs[PC] = is_thumb? rs_val & ~1 : rs_val & ~3;
+            write_pc(is_thumb? rs_val & ~1 : rs_val & ~3);
             cycles = 3; // 2s +1n for bx            
             break;
         }
@@ -572,7 +607,7 @@ void Cpu::thumb_multiple_load_store(uint16_t opcode)
         // ldmia
         if(load)
         {
-            regs[PC] = mem.read_memt<uint32_t>(regs[rb]);
+            write_pc(mem.read_memt<uint32_t>(regs[rb]));
         }
 
         //stmia
@@ -725,7 +760,7 @@ void Cpu::thumb_long_bl(uint16_t opcode)
         // tmp = next instr addr
         uint32_t tmp = regs[PC];
         // pc = lr + offsetlow << 1
-        regs[PC] = (regs[LR] + (offset << 1)) & ~1;
+        write_pc((regs[LR] + (offset << 1)) & ~1);
         // lr = tmp | 1
         regs[LR] = tmp | 1;
         cycle_tick(3); //2S+1N cycle
@@ -798,7 +833,7 @@ void Cpu::thumb_cond_branch(uint16_t opcode)
     // if branch taken 2s +1n cycles
     if(cond_met(cond))
     {
-        regs[PC] = addr & ~1;
+        write_pc(addr & ~1);
         cycle_tick(3);
     }
 

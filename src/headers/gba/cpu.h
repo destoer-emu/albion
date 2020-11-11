@@ -115,6 +115,8 @@ private:
     uint16_t fetch_thumb_opcode();
 
     void arm_fill_pipeline();
+    void thumb_fill_pipeline(); 
+    void write_pc(uint32_t v);
 
     bool cond_met(int opcode);
 
