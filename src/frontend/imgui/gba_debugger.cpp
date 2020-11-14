@@ -251,7 +251,7 @@ void ImguiMainWindow::gba_draw_screen()
 }
 */
 
-
+// TODO we are getting the wrong pc now because of the pipline :P
 void ImguiMainWindow::gba_draw_disassembly_child() 
 {
 	static constexpr uint32_t MAX_ADDR = 0x0E010000;

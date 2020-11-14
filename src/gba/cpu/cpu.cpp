@@ -81,7 +81,7 @@ void Cpu::init_thumb_opcode_table()
         // THUMB.2: add/subtract
         else if(((i >> 3) & 0b11111) == 0b00011)
         {
-            //thumb_opcode_table[i] = &Cpu::thumb_add_sub;
+            thumb_opcode_table[i] = &Cpu::thumb_add_sub;
         }
 
 
@@ -89,7 +89,7 @@ void Cpu::init_thumb_opcode_table()
         // THUMB.3: move/compare/add/subtract immediate
         else if(((i >> 5) & 0b111) == 0b001)
         {
-            //thumb_opcode_table[i] = &Cpu::thumb_mcas_imm;
+            thumb_opcode_table[i] = &Cpu::thumb_mcas_imm;
         }
 
 
@@ -102,13 +102,13 @@ void Cpu::init_thumb_opcode_table()
         // THUMB.5: Hi register operations/branch exchange
         else if(((i >> 2) & 0b111111) == 0b010001)
         {
-            //thumb_opcode_table[i] = &Cpu::thumb_hi_reg_ops;
+           thumb_opcode_table[i] = &Cpu::thumb_hi_reg_ops;
         }
 
         // THUMB.6: load PC-relative
         else if(((i >> 3) & 0b11111) ==  0b01001)
         {
-            //thumb_opcode_table[i] = &Cpu::thumb_ldr_pc;
+            thumb_opcode_table[i] = &Cpu::thumb_ldr_pc;
         }
 
 
@@ -121,13 +121,13 @@ void Cpu::init_thumb_opcode_table()
         // THUMB.8: load/store sign-extended byte/halfword
         else if(((i >> 4) & 0b1111) == 0b0101 && is_set(i,1))
         {
-            //thumb_opcode_table[i] = &Cpu::thumb_load_store_sbh;
+            thumb_opcode_table[i] = &Cpu::thumb_load_store_sbh;
         }
 
         // THUMB.9: load/store with immediate offset
         else if(((i>>5) & 0b111) == 0b011)
         {
-            //thumb_opcode_table[i] = &Cpu::thumb_ldst_imm;
+            thumb_opcode_table[i] = &Cpu::thumb_ldst_imm;
         }
 
 
@@ -135,7 +135,7 @@ void Cpu::init_thumb_opcode_table()
         //THUMB.10: load/store halfword
         else if(((i >> 4) & 0b1111) == 0b1000)
         {
-            //thumb_opcode_table[i] = &Cpu::thumb_load_store_half;
+            thumb_opcode_table[i] = &Cpu::thumb_load_store_half;
         }
 
         // THUMB.11: load/store SP-relative
@@ -164,19 +164,19 @@ void Cpu::init_thumb_opcode_table()
         else if(((i >> 4) & 0b1111) == 0b1011 
             && ((i >> 1) & 0b11) == 0b10)
         {
-            //thumb_opcode_table[i] = &Cpu::thumb_push_pop;
+            thumb_opcode_table[i] = &Cpu::thumb_push_pop;
         }
 
         //  THUMB.15: multiple load/store
         else if(((i >> 4) & 0b1111) == 0b1100)
         {
-            //thumb_opcode_table[i] = &Cpu::thumb_multiple_load_store;
+            thumb_opcode_table[i] = &Cpu::thumb_multiple_load_store;
         }
 
         // THUMB.16: conditional branch
         else if(((i >> 4)  & 0b1111) == 0b1101 && (i & 0xf) != 0xf)
         {
-            //thumb_opcode_table[i] = &Cpu::thumb_cond_branch;
+            thumb_opcode_table[i] = &Cpu::thumb_cond_branch;
         }
 
         // THUMB.17: software interrupt and breakpoint
@@ -189,13 +189,13 @@ void Cpu::init_thumb_opcode_table()
         // THUMB.18: unconditional branch
         else if(((i >> 3) & 0b11111) == 0b11100)
         {
-            //thumb_opcode_table[i] = &Cpu::thumb_branch;
+            thumb_opcode_table[i] = &Cpu::thumb_branch;
         }
  
         // THUMB.19: long branch with link
         else if(((i >> 4) & 0b1111) == 0b1111)
         {
-            //thumb_opcode_table[i] = &Cpu::thumb_long_bl;
+            thumb_opcode_table[i] = &Cpu::thumb_long_bl;
         }
 
         else 
@@ -233,7 +233,7 @@ void Cpu::init_arm_opcode_table()
                     //TST,TEQ,CMP,CMN with a S of zero                    
                     if(op >= 0x8 && op <= 0xb && !is_set(i,4))
                     {
-                        arm_opcode_table[i] = &Cpu::arm_psr;
+                        //arm_opcode_table[i] = &Cpu::arm_psr;
                     }
 
                     //  ARM.5: Data Processing 00 at bit 27
@@ -251,7 +251,7 @@ void Cpu::init_arm_opcode_table()
                     // bx
                     if(i == 0b000100100001) 
                     {
-                        arm_opcode_table[i] = &Cpu::arm_branch_and_exchange;
+                       arm_opcode_table[i] = &Cpu::arm_branch_and_exchange;
                     }
 
                     // this section of the decoding needs improving....
@@ -280,7 +280,7 @@ void Cpu::init_arm_opcode_table()
                         //else if()
                         else 
                         {
-                            //arm_opcode_table[i] = &Cpu::arm_hds_data_transfer;
+                            arm_opcode_table[i] = &Cpu::arm_hds_data_transfer;
                         }
                     }
 
@@ -338,7 +338,7 @@ void Cpu::init_arm_opcode_table()
                 // ARM.11: Block Data Transfer (LDM,STM)
                 else if(!is_set(i,9))
                 {
-                    //arm_opcode_table[i] = &Cpu::arm_block_data_transfer;
+                    arm_opcode_table[i] = &Cpu::arm_block_data_transfer;
                 }
                 
                 break;
@@ -377,6 +377,13 @@ void Cpu::cycle_tick(int cycles)
     disp.tick(cycles);
     apu.tick(cycles);
     tick_timers(cycles);
+}
+
+
+// prefetch buffer stuff should happen in here
+void Cpu::internal_cycle()
+{
+    cycle_tick(1);
 }
 
 void Cpu::tick_timers(int cycles)

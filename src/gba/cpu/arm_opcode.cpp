@@ -11,10 +11,9 @@ void Cpu::arm_fill_pipeline() // need to verify this...
     pipeline[0] = mem.read_memt<uint32_t>(regs[PC]);
     regs[PC] += ARM_WORD_SIZE;
     pipeline[1] = mem.read_memt<uint32_t>(regs[PC]);
-    regs[PC] += ARM_WORD_SIZE;
 }
 
-void Cpu::write_pc(uint32_t v)
+void Cpu::write_pc_arm(uint32_t v)
 {
     regs[PC] = v;
     arm_fill_pipeline(); // fill the intitial cpu pipeline
@@ -23,33 +22,28 @@ void Cpu::write_pc(uint32_t v)
 
 uint32_t Cpu::fetch_arm_opcode()
 {
-
     // ignore the pipeline for now
     regs[PC] &= ~3; // algin
-/*
-    const auto opcode = mem.read_memt<uint32_t>(regs[PC]);
-    regs[PC] += ARM_WORD_SIZE;
-    return opcode;
-*/
+
     const uint32_t opcode = pipeline[0];
     pipeline[0] = pipeline[1];
+    regs[PC] += ARM_WORD_SIZE; 
     pipeline[1] = mem.read_memt<uint32_t>(regs[PC]);
-    regs[PC] += ARM_WORD_SIZE;
     return opcode;
 }
 
 void Cpu::execute_arm_opcode(uint32_t instr)
 {
     // get the bits that determine the kind of instr it is
-    uint32_t op = get_arm_opcode_bits(instr);
+    const auto op = get_arm_opcode_bits(instr);
 
     // call the function from our opcode table
-    std::invoke(arm_opcode_table[op],this,instr);    
+    std::invoke(arm_opcode_table[op],this,instr);   
 }
 
 void Cpu::exec_arm()
 {
-    uint32_t instr = fetch_arm_opcode();
+    const auto instr = fetch_arm_opcode();
 
     // if the condition is not met just
     // advance past the instr
@@ -66,36 +60,15 @@ void Cpu::exec_arm()
 
 void Cpu::arm_unknown(uint32_t opcode)
 {
-    uint32_t op = ((opcode >> 4) & 0xf) | ((opcode >> 16) & 0xff0);
-    auto err = fmt::format("[cpu-arm {:08x}] unknown opcode {:08x}:{:08x}\n{}\n",regs[PC],opcode,op,disass.disass_arm(regs[PC]-12));
+    const auto op = ((opcode >> 4) & 0xf) | ((opcode >> 16) & 0xff0);
+    const auto err = fmt::format("[cpu-arm {:08x}] unknown opcode {:08x}:{:08x}\n{}\n",regs[PC],opcode,op,disass.disass_arm(get_pc()));
     throw std::runtime_error(err);
 }
 
 
 void Cpu::arm_swi(uint32_t opcode)
 {
-    puts("swi!");
-    exit(1);
-
-    // nn is ignored by hardware
     UNUSED(opcode);
-
-    int idx = static_cast<int>(cpu_mode::supervisor);
-
-    // spsr for supervisor = cpsr
-    status_banked[idx] = get_cpsr();
-
-    // lr in supervisor mode set to return addr
-    hi_banked[static_cast<int>(idx)][1] = regs[PC];
-
-    // supervisor mode switch
-    switch_mode(cpu_mode::supervisor);
-
-    cpsr = set_bit(cpsr,7); //set the irq bit to mask interrupts
-
-    // branch to interrupt vector
-    write_pc(0x8);
-    cycle_tick(3); // 2s + 1n;
 }
 
 // mul timings need to be worked on
@@ -103,153 +76,39 @@ void Cpu::arm_swi(uint32_t opcode)
 void Cpu::arm_mull(uint32_t opcode)
 {
     UNUSED(opcode);
-    int rm = opcode & 0xf;
-    int rs = (opcode >> 8) & 0xf;
-    int rdhi = (opcode >> 16) & 0xf;
-    int rdlo = (opcode >> 12) & 0xf;
-    bool s = is_set(opcode,20);
-    bool a = is_set(opcode,21);
-    bool u = !is_set(opcode,22);
-    
-
-    uint64_t result;
-
-    if(u) // unsigned
-    {
-        uint64_t ans;
-        if(a)
-        {
-            uint64_t oper = ((uint64_t)regs[rdhi] << 32) | (uint64_t)regs[rdlo];
-            ans = (uint64_t)regs[rs] * (uint64_t)regs[rm] + oper;
-            cycle_tick(2); // 1s + 1i
-        }
-
-        else
-        {
-            ans = (uint64_t)regs[rs] * (uint64_t)regs[rm];
-            cycle_tick(1); // 1s
-        }
-        result = ans;       
-    }
-
-    else // signed
-    {
-        int64_t ans;
-        int64_t v1 = sign_extend<int64_t>(regs[rs],32);
-        int64_t v2 = sign_extend<int64_t>(regs[rm],32);
-        if(a)
-        {
-            int64_t oper = ((int64_t)regs[rdhi] << 32) | (int64_t)regs[rdlo];
-            ans =  v1 * v2 + oper;
-            cycle_tick(2); // 1s + 1i
-        }
-
-        else
-        {
-            ans = v1 * v2;
-            cycle_tick(1); // 1s
-        }
-        result = (uint64_t)ans;
-    }
-
-    // write the ans
-    regs[rdhi] = (result >> 32) & 0xffffffff;
-    regs[rdlo] = result & 0xffffffff;
-
-
-    // c destroyed
-    if(s)
-    {
-        set_nz_flag_long(result);
-
-        // c destroyed
-        flag_c = false;
-    }
 }
 
 // neeeds a more accurate timings fix
 void Cpu::arm_mul(uint32_t opcode)
 {
-    int rn = (opcode >> 12) & 0xf;
-    int rd = (opcode >> 16) & 0xf;
-    int rs = (opcode >> 8) & 0xf;
-    int rm = opcode & 0xf;
-    bool s = is_set(opcode,20);
-    bool a = is_set(opcode,21);
-
-    if(a) // mla
-    {
-        regs[rd] = regs[rm] * regs[rs] + regs[rn];
-    }   
-
-    else // mul
-    {
-        regs[rd] = regs[rm] * regs[rs];
-    }
-
-    if(s)
-    {
-        set_nz_flag(regs[rd]);
-
-        // c destroyed
-       flag_c = false;
-    }
-
-    cycle_tick(1);
+    UNUSED(opcode);
 }
 
 void Cpu::arm_swap(uint32_t opcode)
 {
-    int rm = opcode & 0xf;
-    int rd = (opcode >> 12) & 0xf;
-    int rn = (opcode >> 16) & 0xf;
-
-    bool is_byte = is_set(opcode,22);
-
-    // swp works propely even if rm and rn are the same
-    uint32_t tmp; 
-
-    // rd = [rn], [rn] = rm
-    if(is_byte)
-    {
-        tmp = mem.read_memt<uint8_t>(regs[rn]);
-        mem.write_memt<uint8_t>(regs[rn],regs[rm]);
-    }
-
-    else
-    {
-        tmp = mem.read_memt<uint32_t>(regs[rn]);
-        regs[rd] = rotr(regs[rd],(regs[rn]&3)*8);
-        mem.write_memt<uint32_t>(regs[rn],regs[rm]);
-    }
-
-
-    regs[rd] = tmp;
-
-    // 1s +2n +1i
-    cycle_tick(4);
-
+    UNUSED(opcode); 
 }
 
 // <--- double check this code as its the most likely error source
+// need timings double checked on this
 void Cpu::arm_block_data_transfer(uint32_t opcode)
 {
     bool p = is_set(opcode,24);
-    bool u = is_set(opcode,23);
-    bool s = is_set(opcode,22); // psr or force user mode
+    const bool u = is_set(opcode,23);
+    const bool s = is_set(opcode,22); // psr or force user mode
     bool w = is_set(opcode,21);
-    bool l = is_set(opcode,20);
-    int rn = (opcode >> 16) & 0xf;
-    int rlist = opcode & 0xffff;
+    const bool l = is_set(opcode,20);
+    const auto rn = (opcode >> 16) & 0xf;
+    const auto rlist = opcode & 0xffff;
 
 
 
     uint32_t addr = regs[rn];
     uint32_t old_base = regs[rn];
-    int n = 0;
+
 
    
-    int first = 0;
+    unsigned int first = 0;
     // do in reverse order so we can pull
     // the first item without doing something jank
     for(int i = 15; i >= 0; i--)
@@ -257,29 +116,19 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
         if(is_set(rlist,i))
         {
             first = i;
-            n++;
+            addr -= ARM_WORD_SIZE;
         }
     }
 
-    bool has_pc = is_set(rlist,PC);
+    const bool has_pc = is_set(rlist,PC);
 
     // allways adding on address so if  we are in "down mode"
     // we need to precalc the buttom1
     if(!u) 
     {
-        addr -= n * ARM_WORD_SIZE;
         if(w)
         {
-            if(rn == PC)
-            {
-                write_pc(addr);
-            }
-
-            else
-            {    
-                regs[rn] = addr;
-            }
-
+            regs[rn] = addr;
             w = false;
         }
         // invert the pre/post
@@ -305,7 +154,7 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
 
 
 
-    for(int i = first; i < 16; i++)
+    for(unsigned int i = first; i < 16; i++)
     {
         if(!is_set(rlist,i))
         {
@@ -329,12 +178,13 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
 
             if(i == PC)
             {
-                write_pc(mem.read_memt<uint32_t>(addr));
-                // pc in list and s bit set cpsr = spsr
-                if(s) 
+                if(s) // if pc is in list and s bit set  cpsr = spsr
                 {
-                    int idx = static_cast<int>(arm_mode);
-                    if(arm_mode < cpu_mode::user)  // not in user or system mode
+                    const auto idx = static_cast<int>(arm_mode);
+                    // not in user or system mode
+                    // actually what happens if we attempt this?
+                    // just cpsr=cpsr and it does nothing?
+                    if(arm_mode < cpu_mode::user)  
                     {
                         set_cpsr(status_banked[idx]);
                     }
@@ -343,11 +193,22 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
                     {
                         auto err = fmt::format("[block data: {:08x}] illegal status bank {:x}\n",regs[PC],idx);
                         throw std::runtime_error(err);
-                    }                    
+                    }
                 }
+
+                // TODO what happens if thumb bit changed here
+                
+                if(is_thumb)
+                {
+                    write_pc_thumb(regs[PC]);
+                }
+
+                else
+                {
+                    write_pc_arm(regs[PC]);
+                }
+
             }
-
-
         }
 
         else // store
@@ -371,41 +232,22 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
         }
     }
 
-    //writeback higher address if it went up
-    if(w)
-    {
-        if(rn == PC)
-        {
-            write_pc(addr);
-        }
-
-        else
-        {
-            regs[rn] = addr;
-        }
-    }
-
-
     if(l)
     {
-        if(rn != PC)
-        {
-            // ns+1n+1i
-            cycle_tick(n+2);
-        }
-
-        else
-        {
-            // (n+1)S +2n + 1i
-            cycle_tick(n+4);
-        }
-
+        // internal cycle for last reg writeback
+        internal_cycle();
     }
 
-    else
+    //writeback higher address if it went up
+    // does this have a timing implication!?
+    if(w)
     {
-        //n-1S +2n
-        cycle_tick(n+1);
+        regs[rn] = addr;
+
+        if(rn == PC)
+        {
+            write_pc_arm(regs[rn]);
+        }
     }
 
 
@@ -421,25 +263,21 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
 
 void Cpu::arm_branch(uint32_t opcode)
 {
-    // account for prefetch operation
-    uint32_t pc = regs[PC] + ARM_WORD_SIZE;
+    //1st cycle calc branch addr (this is overlayed with the initial pipeline)
+    // fetch which we have allready done before we have even entered this func
+    const auto offset = sign_extend<int32_t>(opcode & 0xffffff,24) << 2;
 
-    // 24 bit offset is sign extended to 32 bit
-    // and shifted left by two
-    int32_t offset = sign_extend<int32_t>(opcode & 0xffffff,24) << 2;
-
-
-    // if the link bit is set this acts as a call instr
-    if(is_set(opcode,24))
+    // 2nd & 3rd are tken up by a pipeline refill from branch target
+    // here if the link bet is set pc is also saved into lr
+    if(!is_set(opcode,24))
     {
-        // bits 0:1  are allways cleared
-        regs[LR] = (regs[PC] & ~3);
-        write_log(debug,"[cpu-arm {:08x}] call {:08x}",regs[PC],pc+offset);
+        // save addr of next instr
+        regs[LR] = (regs[PC]-ARM_WORD_SIZE) & ~3; // bottom bits deset
     }
 
-
-    write_pc(pc + offset);
-    cycle_tick(3); //2s + 1n cycles
+    // should switch to sequential access here
+    // writing to the pc will trigger the pipeline refill
+    write_pc_arm(regs[PC] + offset);
 }
 
 // psr transfer
@@ -447,146 +285,20 @@ void Cpu::arm_branch(uint32_t opcode)
 // (pipeline)
 void Cpu::arm_psr(uint32_t opcode)
 {
-    bool is_msr = is_set(opcode,21); // 21 set msr else mrs
-    bool spsr = is_set(opcode,22); // to cpsr or spsr?
-
-    bool is_imm = is_set(opcode,25);
-
-
-
-    // msr
-    if(is_msr)
-    {
-        // msr mask
-        uint32_t mask = 0;
-
-        if(is_set(opcode,19)) mask |= 0xff000000;
-        if(is_set(opcode,18)) mask |= 0x00ff0000;
-        if(is_set(opcode,17)) mask |= 0x0000ff00;
-        if(is_set(opcode,16)) mask |= 0x000000ff;
-
-
-        if(arm_mode == cpu_mode::user) // only flags can be changed in user mode
-        {
-            mask = 0xf0000000;
-        }
-
-
-        // either rotr imm or reg rm
-        uint32_t v = is_imm? get_arm_operand2_imm(opcode) : regs[opcode & 0xf];
-
-        // only write specifed bits
-        v &= mask;
-        
-        // all bits in mask should be deset
-        // and then the value ored
-        if(!spsr) // cpsr
-        {
-            const auto psr = get_cpsr();
-            set_cpsr((psr & ~mask) | v);
-        }
-
-        else // spsr
-        {
-            int idx = static_cast<int>(arm_mode);
-            if(arm_mode < cpu_mode::user)
-            {
-                status_banked[idx] = (status_banked[idx] & ~mask) | v;
-            }
-
-            else // writes ignored (see starbreezes test)
-            {
-
-            }
-        }
-    }
-
-    // mrs
-    else
-    {
-        int rd = (opcode >> 12) & 0xf;
-
-        if(spsr)
-        {
-            int idx = static_cast<int>(arm_mode);
-            if(arm_mode < cpu_mode::user)
-            {
-                regs[rd] = status_banked[idx];
-            }
-
-            else // user and system read cpsr where spsr would normally be read
-            {
-                regs[rd] = get_cpsr();
-            }
-        }
-
-        else
-        {
-            regs[rd] = get_cpsr();
-        }
-
-
-        // this is stupid but some software somewhere will try it
-        if(rd == PC)
-        {
-            write_pc(regs[rd]);
-        }
-
-    }
-
-    cycle_tick(1); // one s cycle
+    UNUSED(opcode);
 }
 
-// generalize this so we can include other opcodes
-
-
-/*flag handling
-z and n are easy
-how we handle V and C i dont know
-what has higher precedence the shifter carry
-or that of the operation eg add
-and how we will 
-a) detect the carry
-b) set them appropiately...
-
-// logical ones C is the carry out of the shifter
-// if shift is zero (it is preserved)
-
-// arithmetic its the carry out of the alu
-// and V is somehow set?
-
-
-// so for logical ones we need the shifter to return
-// the carray out and use that to set C
-// unless its zero then its preserved
-
-// for arithmetic we need to set C in a sub function
-// based on the carry
-
-// and V  needs to be set but im not sure how
-
-
-
-
-*/
-
+// look what the internal cycles are here
 void Cpu::arm_data_processing(uint32_t opcode)
 {
-
-    int cycles = 1; // 1 cycle for normal data processing
-
-    int rd = (opcode >> 12) & 0xf;
+    // 1st cycle is handled due to pipeline
 
 
-    int rn = (opcode >> 16) & 0xf;
+    // just slowly impl each opcode here
+    // dont do the entire switch at once
+    const auto rd = (opcode >> 12) & 0xf;
+    const auto rn = (opcode >> 16) & 0xf;
 
-    uint32_t op1 = regs[rn];
-
-    if(rn == PC)
-    {
-        // pc += 8 if used as operand
-        //op1 += 4;
-    }
 
     // if s bit is set update flags
     bool update_flags = is_set(opcode,20);
@@ -595,39 +307,30 @@ void Cpu::arm_data_processing(uint32_t opcode)
     // incase of a zero shift
     bool shift_carry = flag_c;
 
-
+    uint32_t op1 = regs[PC];
     uint32_t op2;
 
     // ror shifted immediate in increments of two
     if(is_set(opcode,25)) 
     {
         // how to calc the carry?
-        const int imm = opcode & 0xff;
-        const int shift = ((opcode >> 8) & 0xf)*2;
+        const auto imm = opcode & 0xff;
+        const auto shift = ((opcode >> 8) & 0xf)*2;
 
-        if(shift != 0)
-        {
-            shift_carry = is_set(imm,shift-1);
-        }
-        // is this immediate?
+        shift_carry = shift != 0 && is_set(imm,shift-1);
+        
         op2 = rotr(imm,shift);
     }
 
     else // shifted register 
     {
-        auto type = static_cast<shift_type>((opcode >> 5 ) & 0x3);
+        const auto type = static_cast<shift_type>((opcode >> 5 ) & 0x3);
 
 
 
         // immediate is allways register rm
-        int rm = opcode & 0xf;
+        const auto rm = opcode & 0xf;
         uint32_t imm = regs[rm];
-
-        if(rm == PC)
-        {
-            // pc + 8 if used as operand
-            //imm += 4; 
-        }
 
 
         uint32_t shift_ammount = 0;
@@ -635,19 +338,21 @@ void Cpu::arm_data_processing(uint32_t opcode)
         if(is_set(opcode,4))
         {
             // bottom byte of rs (no r15)
-            int rs = (opcode >> 8) & 0xf;
+            const auto rs = (opcode >> 8) & 0xf;
 
             shift_ammount = regs[rs] & 0xff; 
 
             // if a reg shift ammount is used its +12
+            // this is because of the pipeline can we actually observe
+            // the difference in when the fetch happens in any meaningful way?
             if(rm == PC)
             {
-                //imm += 4; 
+                imm += 4; 
             }
 
             if(rn == PC)
             {
-               //op1 += 4;
+                op1 += 4;
             }
         }
 
@@ -658,14 +363,6 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
 
         op2 = barrel_shift(type,imm,shift_ammount,shift_carry,!is_set(opcode,4));
-    }
-
-
-
-    if(rd == PC) // pc writen two extra cycle
-    {
-        // 1s + 1n if r15 loaded
-        //cycles += 2;
     }
 
 
@@ -685,22 +382,23 @@ void Cpu::arm_data_processing(uint32_t opcode)
         update_flags = false;
     }
     
+
+    const bool rd_pc = rd == PC;
+
     // switch on the opcode to decide what to do
-    const int op = (opcode >> 21) & 0xf;
-    switch(op)
+    switch((opcode >> 21) & 0xf)
     {
         case 0x0: //and
         {
             regs[rd] = logical_and(op1,op2,update_flags);
-
-            if(rd == PC)
-            {
-                write_pc(regs[rd]);
-            }
-
             if(update_flags)
             {
                 flag_c = shift_carry;
+            }
+
+            if(rd_pc)
+            {
+                write_pc_arm(regs[rd]);
             }
             break;
         }
@@ -708,15 +406,14 @@ void Cpu::arm_data_processing(uint32_t opcode)
         case 0x1: // eor
         {
             regs[rd] = logical_eor(op1,op2,update_flags);
-
-            if(rd == PC)
-            {
-                write_pc(regs[rd]);
-            }
-
             if(update_flags)
             {
                 flag_c = shift_carry;
+            }
+
+            if(rd_pc)
+            {
+                write_pc_arm(regs[rd]);
             }
             break;            
         }
@@ -725,13 +422,10 @@ void Cpu::arm_data_processing(uint32_t opcode)
         {
             regs[rd] = sub(op1,op2,update_flags);
 
-            if(rd == PC)
+            if(rd_pc)
             {
-                write_pc(regs[rd]);
+                write_pc_arm(regs[rd]);
             }
-
-
-
             break;
         }
 
@@ -739,13 +433,10 @@ void Cpu::arm_data_processing(uint32_t opcode)
         {
             regs[rd] = sub(op2,op1,update_flags);
 
-            if(rd == PC)
+            if(rd_pc)
             {
-                write_pc(regs[rd]);
+                write_pc_arm(regs[rd]);
             }
-
-
-
             break;
         }
 
@@ -753,13 +444,10 @@ void Cpu::arm_data_processing(uint32_t opcode)
         {
             regs[rd] = add(op1,op2,update_flags);
 
-            if(rd == PC)
+            if(rd_pc)
             {
-                write_pc(regs[rd]);
+                write_pc_arm(regs[rd]);
             }
-
-
-
             break;
         }
 
@@ -768,12 +456,10 @@ void Cpu::arm_data_processing(uint32_t opcode)
         {
             regs[rd] = adc(op1,op2,update_flags);
 
-            if(rd == PC)
+            if(rd_pc)
             {
-                write_pc(regs[rd]);
+                write_pc_arm(regs[rd]);
             }
-
-
             break;           
         }
 
@@ -781,12 +467,10 @@ void Cpu::arm_data_processing(uint32_t opcode)
         {
             regs[rd] = sbc(op1,op2,update_flags);
 
-            if(rd == PC)
+            if(rd_pc)
             {
-                write_pc(regs[rd]);
+                write_pc_arm(regs[rd]);
             }
-
-
             break;
         }
 
@@ -794,12 +478,10 @@ void Cpu::arm_data_processing(uint32_t opcode)
         {
             regs[rd] = sbc(op2,op1,update_flags);
 
-            if(rd == PC)
+            if(rd_pc)
             {
-                write_pc(regs[rd]);
+                write_pc_arm(regs[rd]);
             }
-
-
             break;
         }
 
@@ -839,36 +521,32 @@ void Cpu::arm_data_processing(uint32_t opcode)
         case 0xc: //orr
         {
             regs[rd] = logical_or(op1,op2,update_flags);
-
-            if(rd == PC)
-            {
-                write_pc(regs[rd]);
-            }
-
-
             if(update_flags)
             {
                 flag_c = shift_carry;
-            }            
+            }
+
+            if(rd_pc)
+            {
+                write_pc_arm(regs[rd]);
+            }                       
             break;
         }
 
         case 0xd: // mov
         {
             regs[rd] = op2;
-
-            if(rd == PC)
-            {
-                write_pc(regs[rd]);
-            }
-
-
             // V preserved
             if(update_flags) // if the set cond bit is on
             {
                 set_nz_flag(regs[rd]);
                 // carry is that of the shift oper
                 flag_c = shift_carry;                 
+            }
+
+            if(rd_pc)
+            {
+                write_pc_arm(regs[rd]);
             }
             break;
         }
@@ -877,30 +555,21 @@ void Cpu::arm_data_processing(uint32_t opcode)
         case 0xe: // bic
         {
             regs[rd] = bic(op1,op2,update_flags);
-
-            if(rd == PC)
-            {
-                write_pc(regs[rd]);
-            }
-
-
             if(update_flags)
             {
                 flag_c = shift_carry;
-            }            
+            }
+
+            if(rd_pc)
+            {
+                write_pc_arm(regs[rd]);
+            }
             break;
         }
 
         case 0xf: // mvn
         {
             regs[rd] = ~op2;
-
-            if(rd == PC)
-            {
-                write_pc(regs[rd]);
-            }
-
-
             // V preserved
             if(update_flags) // if the set cond bit is on
             {
@@ -908,26 +577,22 @@ void Cpu::arm_data_processing(uint32_t opcode)
                 // carry is that of the shift oper
                 flag_c = shift_carry;                 
             }
-            break;
-        }
 
-        default:
-        {
-            printf("cpu unknown data processing instruction %x!\n",op);
-            arm_unknown(opcode);
+            if(rd_pc)
+            {
+                write_pc_arm(regs[rd]);
+            }
             break;
         }
     }
-
-
-    cycle_tick(cycles);
 }
 
 
 // bx 
 void Cpu::arm_branch_and_exchange(uint32_t opcode)
 {
-    int rn = opcode & 0xf;
+    // 1st cycle is address calc overlayed with pipeline fetch
+    const auto rn = opcode & 0xf;
 
     // if bit 0 of rn is a 1
     // subsequent instrs decoded as thumb
@@ -938,16 +603,13 @@ void Cpu::arm_branch_and_exchange(uint32_t opcode)
     // branch
     if(is_thumb)
     {
-        write_pc(regs[rn] & ~1);
+        write_pc_thumb(regs[rn] & ~1);
     }
 
     else
     {
-        write_pc(regs[rn] & ~3);
+        write_pc_arm(regs[rn] & ~3);
     }
-
-    // 2s + 1n
-    cycle_tick(3);
 }
 
 
@@ -955,31 +617,24 @@ void Cpu::arm_branch_and_exchange(uint32_t opcode)
 // <-- handle instr timings
 void Cpu::arm_hds_data_transfer(uint32_t opcode)
 {
-    bool p = is_set(opcode,24);
-    bool u = is_set(opcode,23);
-    bool i = is_set(opcode,22);
-    bool l = is_set(opcode,20);
-    int rn = (opcode >> 16) & 0xf;
-    int rd = (opcode >> 12) & 0xf;
-    int op = (opcode >> 5) & 0x3;
-    bool w = is_set(opcode,21);
+    const bool p = is_set(opcode,24);
+    const bool u = is_set(opcode,23);
+    const bool i = is_set(opcode,22);
+    const bool l = is_set(opcode,20);
+    const auto rn = (opcode >> 16) & 0xf;
+    const auto rd = (opcode >> 12) & 0xf;
+    const auto op = (opcode >> 5) & 0x3;
+    const bool w = is_set(opcode,21);
 
 
 
-    uint32_t addr = regs[rn];
-/*
-    // pc + 8
-    if(rn == PC) 
-    { 
-        addr += 4;
-    }
-*/
+    auto addr = regs[rn];
 
     uint32_t offset;
 
     if(!i) // just this?
     {
-        int rm = opcode & 0xf;
+        const auto rm = opcode & 0xf;
         offset = regs[rm];
     }
 
@@ -997,22 +652,12 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
         addr += u? offset : -offset;
     }
 
-    int cycles = 0;
-
-    uint32_t value = regs[rd];
-    if(rd == PC)
-    {
-        // pc + 12
-        //value += 8; unsure
-        cycles += 2; // extra 1s + 1n for pc
-    }
-
 
     // now we choose between load and store
     // and just switch on the opcode
     if(l) // load
     {
-        uint32_t v = 0;
+        const bool is_pc = rd == PC;
 
         switch(op)
         {
@@ -1024,40 +669,53 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
             case 1: // ldrh
             {
-                v = mem.read_memt<uint16_t>(addr);
-                cycle_tick(cycles+3); // 1s + 1n + 1i
+                regs[rd] = mem.read_memt<uint16_t>(addr);
+                internal_cycle(); // internal cycle for writeback
+                if(is_pc)
+                {
+                    write_pc_arm(regs[rd]);
+                }
                 break;
             }
 
             case 2: // ldrsb
             {
-                v = sign_extend<uint32_t>(mem.read_memt<uint8_t>(addr),8);
-                cycle_tick(cycles+3); // 1s + 1n + 1i
+                regs[rd] = sign_extend<uint32_t>(mem.read_memt<uint8_t>(addr),8);
+                internal_cycle(); // internal cycle for writeback
+                if(is_pc)
+                {
+                    write_pc_arm(regs[rd]);
+                }
                 break;
             }
 
             case 3: // ldrsh
             {
-                v = sign_extend<uint32_t>(mem.read_memt<uint16_t>(addr),16);
-                cycle_tick(cycles+3); // 1s + 1n + 1i
+                regs[rd] = sign_extend<uint32_t>(mem.read_memt<uint16_t>(addr),16);
+                internal_cycle(); // internal cycle for writeback
+                if(is_pc)
+                {
+                    write_pc_arm(regs[rd]);
+                }
                 break;
             }
-        }
-
-        if(rd == PC)
-        {
-            write_pc(v);
         }
     }
 
     else // store
     {
+        uint32_t value = regs[rd];
+        if(rd == PC)
+        {
+            // pc + 12
+            value += 4;
+        }
+
         switch(op)
         {
             case 1: // strh
             {
                 mem.write_memt<uint16_t>(addr,value);
-                cycle_tick(2); // 2n cycles
                 break;
             }
             
@@ -1078,11 +736,21 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
         if(!p) // post allways do a writeback
         {
             regs[rn] += u? offset : -offset;
+
+            if(rn == PC)
+            {
+                write_pc_arm(regs[rn]);
+            }
         }
 
         else if(w) // writeback
         {
             regs[rn] = addr;
+
+            if(rn == PC)
+            {
+                write_pc_arm(regs[rn]);
+            }
         }
     }
 }
@@ -1091,30 +759,22 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 void Cpu::arm_single_data_transfer(uint32_t opcode)
 {
 
-    int cycles = 0;
+    // 1st cycle is address calc (overlayed with pipeline)
 
-    bool load = is_set(opcode,20);
-    bool w = is_set(opcode,21); // write back
-    bool p = is_set(opcode,24); // pre index
+    const bool load = is_set(opcode,20);
+    const bool w = is_set(opcode,21); // write back
+    const bool p = is_set(opcode,24); // pre index
 
-    auto cur_mode = arm_mode;
-    bool mode_change = !p && w; // T
+    const auto cur_mode = arm_mode;
+    const bool mode_change = !p && w; // T
     if(mode_change)  // T force user mode
     {
         switch_mode(cpu_mode::user);
     }
 
 
-    int rd = (opcode >> 12) & 0xf;
-    int rn = (opcode >> 16) & 0xf;
-
-    uint32_t addr = regs[rn];
-
-    // due to prefetch pc is += 8; at this stage
-    if(rn == PC) 
-    { 
-        addr += 4;
-    }
+    const auto rd = (opcode >> 12) & 0xf;
+    const auto rn = (opcode >> 16) & 0xf;
 
     uint32_t offset;
 
@@ -1125,7 +785,7 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 
         // immediate is allways register rm
         const int rm = opcode & 0xf;
-        uint32_t imm = regs[rm];
+        const auto imm = regs[rm];
 
 
         // register specified shift ammounts are not allowed
@@ -1143,11 +803,14 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 
 
     //byte / word bit
-    bool is_byte = is_set(opcode,22);
+    const bool is_byte = is_set(opcode,22);
 
     // up or down bit decides wether we add
     // or subtract the offest
-    bool u = is_set(opcode,23);
+    const bool u = is_set(opcode,23);
+
+
+    auto addr = regs[rn];
 
     // up / down bit decides wether to add or subtract
     // the offset
@@ -1171,12 +834,13 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
             regs[rd] = mem.read_memt<uint32_t>(addr);
             regs[rd] = rotr(regs[rd],(addr&3)*8);
         }
-        cycles = 3; // 1s + 1n + 1i
+       
+        // data written back to reg 
+        internal_cycle();
 
         if(rd == PC)
         {
-            write_pc(regs[PC]);
-            //cycles += 2; // 1s + 1n if pc loaded
+            write_pc_arm(regs[rd]);
         }
     }
 
@@ -1188,7 +852,7 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
         // (pc+12)
         if(rd == PC)
         {
-            //v += 8;
+            v += 4;
         }
 
 		if(is_byte)
@@ -1196,13 +860,10 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 			mem.write_memt<uint8_t>(addr,v);
 		}
 		
-		
 		else
 		{
 			mem.write_memt<uint32_t>(addr,v);
 		}
-        cycles = 2; // 2 N cycles for a store 
-
     }
 
 
@@ -1215,11 +876,21 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
         if(!p) // post allways do a writeback
         {
             regs[rn] += u? offset : -offset;
+
+            if(rn == PC)
+            {
+                write_pc_arm(regs[rn]);
+            }
         }
 
         else if(w) // writeback
         {
             regs[rn] = addr;
+
+            if(rn == PC)
+            {
+                write_pc_arm(regs[rn]);
+            }
         }
     }
 
@@ -1228,9 +899,6 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
     {
         switch_mode(cur_mode);
     }
-
-
-    cycle_tick(cycles);
 }
 
 }

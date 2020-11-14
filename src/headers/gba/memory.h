@@ -250,7 +250,10 @@ private:
         {1,1,2}, // pallete ram
         {1,1,2}, // vram
         {1,1,1}, // oam
-        {5,5,8}, // gamepak rom
+        //{5,5,8}, // gamepak rom
+        // pretend its faster than it really is
+        // until we have prefetch
+        {1,1,1}, 
         {5,5,8}, // cart backup needs to be setup depending on cart type
     };
 

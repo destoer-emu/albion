@@ -20,7 +20,10 @@ public:
     void step();
     void cycle_tick(int cylces); // advance the system state
 
-    uint32_t get_pc() const {return regs[PC];}
+    uint32_t get_pc() const 
+    {
+        return is_thumb? regs[PC] - 4 : regs[PC] - 8;
+    }
     void set_pc(uint32_t pc) {regs[PC] = pc;}
     uint32_t get_user_regs(int idx) const {return user_regs[idx];}
     uint32_t get_current_regs(int idx) const {return regs[idx]; }
@@ -116,7 +119,11 @@ private:
 
     void arm_fill_pipeline();
     void thumb_fill_pipeline(); 
-    void write_pc(uint32_t v);
+    void write_pc_arm(uint32_t v);
+    void write_pc_thumb(uint32_t v);
+
+
+    void internal_cycle();
 
     bool cond_met(int opcode);
 
