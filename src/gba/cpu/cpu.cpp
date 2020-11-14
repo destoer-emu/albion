@@ -300,7 +300,7 @@ void Cpu::init_arm_opcode_table()
                         // arm data processing register
                         else
                         {
-                            //arm_opcode_table[i] = &Cpu::arm_data_processing;
+                            arm_opcode_table[i] = &Cpu::arm_data_processing;
                         } 
                     }                   
                 }
@@ -523,8 +523,8 @@ void Cpu::exec_instr_no_debug()
 #ifdef DEBUG
 void Cpu::exec_instr_debug()
 {
-    const uint32_t pc = regs[PC];
-    const uint32_t v = is_thumb? mem.read_mem<uint16_t>(pc) : mem.read_mem<uint32_t>(pc);
+    const uint32_t pc = get_pc();
+    const uint32_t v = pipeline[0];
 	if(debug.breakpoint_hit(pc,v,break_type::execute))
 	{
 		// halt until told otherwhise :)

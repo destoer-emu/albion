@@ -364,7 +364,7 @@ void ImguiMainWindow::gba_draw_disassembly_child()
         for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
         {
 			// color instr at current pc blue
-            bool is_pc = target == gba.cpu.get_pc();
+            const bool is_pc = target == gba.cpu.get_pc() + (is_thumb? 2 : 4);
             if(is_pc)
             {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f,0.0f,1.0f,1.0f));

@@ -20,7 +20,6 @@ void Cpu::thumb_fill_pipeline() // need to verify this...
 
 uint16_t Cpu::fetch_thumb_opcode()
 {
-    // ignore the pipeline for now
     regs[PC] &= ~1;
 
     const uint16_t opcode = pipeline[0];

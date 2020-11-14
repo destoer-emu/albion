@@ -22,7 +22,6 @@ void Cpu::write_pc_arm(uint32_t v)
 
 uint32_t Cpu::fetch_arm_opcode()
 {
-    // ignore the pipeline for now
     regs[PC] &= ~3; // algin
 
     const uint32_t opcode = pipeline[0];
@@ -109,8 +108,10 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
 
    
     unsigned int first = 0;
+
     // do in reverse order so we can pull
     // the first item without doing something jank
+    // TODO improve this with clz & popcnt builtin
     for(int i = 15; i >= 0; i--)
     {
         if(is_set(rlist,i))
@@ -129,6 +130,13 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
         if(w)
         {
             regs[rn] = addr;
+
+            if(rn == PC)
+            {
+                write_pc_arm(regs[PC]);
+            }
+
+
             w = false;
         }
         // invert the pre/post
@@ -307,7 +315,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
     // incase of a zero shift
     bool shift_carry = flag_c;
 
-    uint32_t op1 = regs[PC];
+    uint32_t op1 = regs[rn];
     uint32_t op2;
 
     // ror shifted immediate in increments of two
