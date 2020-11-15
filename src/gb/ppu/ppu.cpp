@@ -1118,6 +1118,7 @@ void Ppu::read_sprites() noexcept
 
 	// in dmg we need to update the priority by here instead as it
 	// is now in correct order 
+	// todo respect opri
 	if(!cpu.get_cgb())
 	{
 		for(size_t i = 0; i < no_sprites; i++)

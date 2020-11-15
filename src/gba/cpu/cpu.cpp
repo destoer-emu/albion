@@ -115,7 +115,7 @@ void Cpu::init_thumb_opcode_table()
         // THUMB.7: load/store with register offset
         else if(((i >> 4) & 0b1111) == 0b0101 && !is_set(i,1))
         {
-           //thumb_opcode_table[i] = &Cpu::thumb_load_store_reg;
+           thumb_opcode_table[i] = &Cpu::thumb_load_store_reg;
         }
 
         // THUMB.8: load/store sign-extended byte/halfword
@@ -141,13 +141,13 @@ void Cpu::init_thumb_opcode_table()
         // THUMB.11: load/store SP-relative
         else if(((i >> 4) & 0b1111) == 0b1001)
         {
-            //thumb_opcode_table[i] = &Cpu::thumb_load_store_sp;
+            thumb_opcode_table[i] = &Cpu::thumb_load_store_sp;
         }
 
         // THUMB.12: get relative address
         else if(((i >> 4) & 0b1111) == 0b1010)
         {
-            //thumb_opcode_table[i] = &Cpu::thumb_get_rel_addr;
+            thumb_opcode_table[i] = &Cpu::thumb_get_rel_addr;
         }
         
 
@@ -155,7 +155,7 @@ void Cpu::init_thumb_opcode_table()
         // THUMB.13: add offset to stack pointer
         else if(i == 0b10110000)
         {
-            //thumb_opcode_table[i] = &Cpu::thumb_sp_add;
+            thumb_opcode_table[i] = &Cpu::thumb_sp_add;
         }
 
 
@@ -233,7 +233,7 @@ void Cpu::init_arm_opcode_table()
                     //TST,TEQ,CMP,CMN with a S of zero                    
                     if(op >= 0x8 && op <= 0xb && !is_set(i,4))
                     {
-                        //arm_opcode_table[i] = &Cpu::arm_psr;
+                        arm_opcode_table[i] = &Cpu::arm_psr;
                     }
 
                     //  ARM.5: Data Processing 00 at bit 27
@@ -260,20 +260,20 @@ void Cpu::init_arm_opcode_table()
                         // ARM.7: Multiply and Multiply-Accumulate (MUL,MLA)
                         if(((i >> 6) & 0b111) == 0b000 && (i & 0xf) == 0b1001)
                         {
-                            //arm_opcode_table[i] = &Cpu::arm_mul;
+                            arm_opcode_table[i] = &Cpu::arm_mul;
                         }
 
                         // ARM.7: Multiply and Multiply-Accumulate (MUL,MLA) (long)
                         else if(((i >> 7) & 0b11) == 0b01 && (i & 0xf) == 0b1001)
                         {
-                            //arm_opcode_table[i] = &Cpu::arm_mull;                            
+                            arm_opcode_table[i] = &Cpu::arm_mull;                            
                         }
                         
 
                         // Single Data Swap (SWP)  
                         else if(is_set(i,8) && (i & 0xf) == 0b1001) // bit 24 set
                         {
-                           // arm_opcode_table[i] = &Cpu::arm_swap;
+                           arm_opcode_table[i] = &Cpu::arm_swap;
                         }
 
                         // ARM.10: Halfword, Doubleword, and Signed Data Transfer
@@ -523,7 +523,7 @@ void Cpu::exec_instr_no_debug()
 #ifdef DEBUG
 void Cpu::exec_instr_debug()
 {
-    const uint32_t pc = get_pc();
+    const uint32_t pc = regs[PC] - (is_thumb? ARM_HALF_SIZE : ARM_WORD_SIZE);
     const uint32_t v = pipeline[0];
 	if(debug.breakpoint_hit(pc,v,break_type::execute))
 	{
@@ -1112,6 +1112,47 @@ uint32_t Cpu::logical_eor(uint32_t v1, uint32_t v2, bool s)
     }
     return ans;
 }
+
+
+/*
+https://developer.arm.com/documentation/ddi0210/c/Instruction-Cycle-Timings/Instruction-speed-summary?lang=en
+m is:
+
+    1 if bits [31:8] of the multiplier operand are all zero or one, else
+
+    2 if bits [31:16] of the multiplier operand are all zero or one, else
+
+    3 if bits [31:24] of the multiplier operand are all zero or all one, else
+
+    4. 
+*/
+// all cycles from this are internal
+void Cpu::do_mul_cycles(uint32_t mul_operand)
+{
+    auto cycles = 4;
+
+    if((mul_operand & 0xffffff00) == 0 || (mul_operand & 0xffffff00) == 0xffffff00)
+    {
+        cycles = 1;
+    } 
+
+    else if((mul_operand & 0xffff0000) == 0 || (mul_operand & 0xffff0000) == 0xffff0000)
+    {
+        cycles = 2;
+    } 
+
+    else if((mul_operand & 0xff000000) == 0 || (mul_operand & 0xff000000) == 0xff000000)
+    {  
+        cycles = 3;
+    } 
+
+
+    for(int i = 0; i < cycles; i++)
+    {
+        internal_cycle();
+    }
+}
+
 
 
 

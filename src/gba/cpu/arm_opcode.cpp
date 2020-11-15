@@ -67,25 +67,148 @@ void Cpu::arm_unknown(uint32_t opcode)
 
 void Cpu::arm_swi(uint32_t opcode)
 {
-    UNUSED(opcode);
+    arm_unknown(opcode);
 }
 
 // mul timings need to be worked on
-
+// double check where internal cycles go here
 void Cpu::arm_mull(uint32_t opcode)
 {
-    UNUSED(opcode);
+    const auto rm = opcode & 0xf;
+    const auto rs = (opcode >> 8) & 0xf;
+    const auto rdhi = (opcode >> 16) & 0xf;
+    const auto rdlo = (opcode >> 12) & 0xf;
+    const bool s = is_set(opcode,20);
+    const bool a = is_set(opcode,21);
+    const bool u = !is_set(opcode,22);
+    
+
+    uint64_t result;
+
+    if(u) // unsigned
+    {
+        uint64_t ans;
+        if(a)
+        {
+            uint64_t oper = ((uint64_t)regs[rdhi] << 32) | (uint64_t)regs[rdlo];
+            ans = (uint64_t)regs[rs] * (uint64_t)regs[rm] + oper;
+            do_mul_cycles(regs[rm]);
+            internal_cycle();
+        }
+
+        else
+        {
+            ans = (uint64_t)regs[rs] * (uint64_t)regs[rm];
+            do_mul_cycles(regs[rm]);
+        }
+        result = ans;       
+    }
+
+    else // signed
+    {
+        int64_t ans;
+        int64_t v1 = sign_extend<int64_t>(regs[rs],32);
+        int64_t v2 = sign_extend<int64_t>(regs[rm],32);
+        if(a)
+        {
+            int64_t oper = ((int64_t)regs[rdhi] << 32) | (int64_t)regs[rdlo];
+            ans =  v1 * v2 + oper;
+            do_mul_cycles(regs[rm]);
+            internal_cycle();
+        }
+
+        else
+        {
+            ans = v1 * v2;
+            do_mul_cycles(regs[rm]);
+        }
+        result = (uint64_t)ans;
+    }
+
+    // write the ans
+    regs[rdhi] = (result >> 32) & 0xffffffff;
+    regs[rdlo] = result & 0xffffffff;
+    internal_cycle();
+
+
+    // c destroyed
+    if(s)
+    {
+        set_nz_flag_long(result);
+
+        // c destroyed
+        flag_c = false;
+    }
 }
 
 // neeeds a more accurate timings fix
 void Cpu::arm_mul(uint32_t opcode)
 {
-    UNUSED(opcode);
+    // first is s cycle from pipeline rest is internal
+    // dependant on the input
+    const auto rn = (opcode >> 12) & 0xf;
+    const auto rd = (opcode >> 16) & 0xf;
+    const auto rs = (opcode >> 8) & 0xf;
+    const auto rm = opcode & 0xf;
+    const bool s = is_set(opcode,20);
+    const bool a = is_set(opcode,21);
+
+    if(a) // mla
+    {
+        regs[rd] = regs[rm] * regs[rs] + regs[rn];
+        do_mul_cycles(regs[rs]);
+        internal_cycle(); // extra internal cycle for accumulate
+    }   
+
+    else // mul
+    {
+        regs[rd] = regs[rm] * regs[rs];
+        do_mul_cycles(regs[rs]);
+    }
+
+    if(s)
+    {
+        set_nz_flag(regs[rd]);
+
+        // c destroyed
+       flag_c = false;
+    }
+
+    if(rd == PC)
+    {
+        write_pc_arm(regs[rd]);
+    }
 }
 
 void Cpu::arm_swap(uint32_t opcode)
 {
-    UNUSED(opcode); 
+    const auto rm = opcode & 0xf;
+    const auto rd = (opcode >> 12) & 0xf;
+    const auto rn = (opcode >> 16) & 0xf;
+
+    const bool is_byte = is_set(opcode,22);
+
+    // swp works propely even if rm and rn are the same
+    uint32_t tmp; 
+
+    // rd = [rn], [rn] = rm
+    if(is_byte)
+    {
+        tmp = mem.read_memt<uint8_t>(regs[rn]);
+        mem.write_memt<uint8_t>(regs[rn],regs[rm]);
+    }
+
+    else
+    {
+        tmp = mem.read_memt<uint32_t>(regs[rn]);
+        regs[rd] = rotr(regs[rd],(regs[rn]&3)*8);
+        mem.write_memt<uint32_t>(regs[rn],regs[rm]);
+    }
+
+
+    regs[rd] = tmp;
+    internal_cycle(); // internal for writeback
+
 }
 
 // <--- double check this code as its the most likely error source
@@ -117,7 +240,10 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
         if(is_set(rlist,i))
         {
             first = i;
-            addr -= ARM_WORD_SIZE;
+            if(!u)
+            {
+                addr -= ARM_WORD_SIZE;
+            }
         }
     }
 
@@ -276,8 +402,8 @@ void Cpu::arm_branch(uint32_t opcode)
     const auto offset = sign_extend<int32_t>(opcode & 0xffffff,24) << 2;
 
     // 2nd & 3rd are tken up by a pipeline refill from branch target
-    // here if the link bet is set pc is also saved into lr
-    if(!is_set(opcode,24))
+    // here if the link bit is set pc is also saved into lr
+    if(is_set(opcode,24))
     {
         // save addr of next instr
         regs[LR] = (regs[PC]-ARM_WORD_SIZE) & ~3; // bottom bits deset
@@ -290,10 +416,100 @@ void Cpu::arm_branch(uint32_t opcode)
 
 // psr transfer
 // TODO handle effects of directly writing the thumb bit 
-// (pipeline)
+// double checking timings
 void Cpu::arm_psr(uint32_t opcode)
 {
-    UNUSED(opcode);
+    const bool is_msr = is_set(opcode,21); // 21 set msr else mrs
+    const bool spsr = is_set(opcode,22); // to cpsr or spsr?
+    const bool is_imm = is_set(opcode,25);
+
+    // msr
+    if(is_msr)
+    {
+        // msr mask
+        uint32_t mask = 0;
+
+        if(is_set(opcode,19)) mask |= 0xff000000;
+        if(is_set(opcode,18)) mask |= 0x00ff0000;
+        if(is_set(opcode,17)) mask |= 0x0000ff00;
+        if(is_set(opcode,16)) mask |= 0x000000ff;
+
+
+        if(arm_mode == cpu_mode::user) // only flags can be changed in user mode
+        {
+            mask = 0xf0000000;
+        }
+
+
+        // either rotr imm or reg rm
+        auto v = is_imm? get_arm_operand2_imm(opcode) : regs[opcode & 0xf];
+
+        // only write specifed bits
+        v &= mask;
+        
+        // all bits in mask should be deset
+        // and then the value ored
+        if(!spsr) // cpsr
+        {
+            const auto psr = get_cpsr();
+            set_cpsr((psr & ~mask) | v);
+        }
+
+        else // spsr
+        {
+            if(arm_mode < cpu_mode::user)
+            {
+                const auto idx = static_cast<int>(arm_mode);
+                status_banked[idx] = (status_banked[idx] & ~mask) | v;
+            }
+
+            else // writes ignored (see starbreezes test)
+            {
+
+            }
+        }
+    }
+
+    // mrs
+    else
+    {
+        const auto rd = (opcode >> 12) & 0xf;
+
+        if(spsr)
+        {
+            
+            if(arm_mode < cpu_mode::user)
+            {
+                const auto idx = static_cast<int>(arm_mode);
+                regs[rd] = status_banked[idx];
+            }
+
+            // user and system read cpsr where spsr would normally be read (see starbreezes test)
+            else 
+            {
+                regs[rd] = get_cpsr();
+            }
+        }
+
+        else
+        {
+            regs[rd] = get_cpsr();
+        }
+
+
+        if(rd == PC)
+        {
+            if(is_thumb)
+            {
+                write_pc_thumb(regs[PC]);
+            }
+
+            else
+            {
+                write_pc_arm(regs[PC]);
+            }
+        }
+    }
 }
 
 // look what the internal cycles are here

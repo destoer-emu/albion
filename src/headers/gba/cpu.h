@@ -175,7 +175,7 @@ private:
     uint32_t logical_and(uint32_t v1, uint32_t v2, bool s);
     uint32_t logical_or(uint32_t v1, uint32_t v2, bool s);
     uint32_t logical_eor(uint32_t v1, uint32_t v2, bool s);
-
+    void do_mul_cycles(uint32_t mul_operand);
 
     // interrupts
     //void request_interrupt(Interrupt interrupt);

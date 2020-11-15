@@ -64,23 +64,54 @@ void Cpu::thumb_unknown(uint16_t opcode)
 
 void Cpu::thumb_load_store_sp(uint16_t opcode)
 {
-    UNUSED(opcode); 
+    const uint32_t nn = (opcode & 0xff) * 4;
+    const auto rd = (opcode >> 8) & 0x7;
+    const bool l = is_set(opcode,11);
+
+    const auto addr = regs[SP] + nn;
+
+    if(l)
+    {
+        regs[rd] = mem.read_memt<uint32_t>(addr);
+        regs[rd] = rotr(regs[rd],(addr&3)*8);
+        internal_cycle(); // internal for writeback       
+    }
+
+    else
+    {
+        mem.write_memt<uint32_t>(addr,regs[rd]);
+    } 
 }
 
 
 void Cpu::thumb_sp_add(uint16_t opcode)
 {
-    UNUSED(opcode); 
+    const bool u = !is_set(opcode,7);
+    const uint32_t nn = (opcode & 127) * 4;
+
+    regs[SP] += u? nn : -nn; 
 }
 
 void Cpu::thumb_swi(uint16_t opcode)
 {
-    UNUSED(opcode); 
+    thumb_unknown(opcode); 
 }
 
 void Cpu::thumb_get_rel_addr(uint16_t opcode)
 {
-    UNUSED(opcode); 
+    const uint32_t offset = (opcode & 0xff) * 4;
+    const auto rd = (opcode >> 8) & 0x7;
+    const bool pc = !is_set(opcode,11);
+
+    if(pc)
+    {
+        regs[rd] = (regs[PC] & ~2) + offset;
+    }
+
+    else
+    {
+        regs[rd] = regs[SP] + offset;
+    }
 }
 
 void Cpu::thumb_load_store_sbh(uint16_t opcode)
@@ -135,7 +166,42 @@ void Cpu::thumb_load_store_sbh(uint16_t opcode)
 
 void Cpu::thumb_load_store_reg(uint16_t opcode)
 {
-    UNUSED(opcode); 
+    const auto op = (opcode >> 10) & 0x3;
+    const auto ro = (opcode >> 6) & 0x7;
+    const auto rb = (opcode >> 3) & 0x7;
+    const auto rd = opcode & 0x7;
+
+    const auto addr = regs[rb] + regs[ro];
+
+    switch(op)
+    {
+        case 0: // str
+        {
+            mem.write_memt<uint32_t>(addr,regs[rd]);
+            break;
+        }
+
+        case 1: //strb
+        {
+            mem.write_memt<uint8_t>(addr,regs[rd]);
+            break;
+        }
+
+        case 2: // ldr
+        {
+            regs[rd] = mem.read_memt<uint32_t>(addr);
+            regs[rd] = rotr(regs[rd],(addr&3)*8);
+            internal_cycle(); // for reg writeback
+            break;
+        }
+
+        case 3: // ldrb
+        {
+            regs[rd] = mem.read_memt<uint8_t>(addr);
+            internal_cycle(); // for reg writeback
+            break;
+        }
+    }
 }
 
 
