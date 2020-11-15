@@ -519,6 +519,8 @@ void Cpu::exec_instr_no_debug()
         exec_arm();
     }
 
+    //log_regs();
+
     disp.tick(1);
     apu.tick(1);
     tick_timers(1);
@@ -1205,4 +1207,18 @@ void Cpu::service_interrupt()
 
     write_pc_arm(0x18); // irq handler    
 }
+
+void Cpu::write_pc(uint32_t v)
+{
+    if(is_thumb)
+    {
+        write_pc_thumb(v);
+    }
+
+    else
+    {
+        write_pc_arm(v);
+    } 
+}
+
 }

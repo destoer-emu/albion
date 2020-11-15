@@ -94,6 +94,8 @@ void Cpu::thumb_sp_add(uint16_t opcode)
 
 void Cpu::thumb_swi(uint16_t opcode)
 {
+    //printf("swi %08x: %08x\n",get_pc(),opcode);
+
     // nn is ignored by hardware
     UNUSED(opcode);
     write_log(debug,"[cpu-thumb: {:08x}] swi {:x}",regs[PC],opcode & 0xff);
@@ -497,9 +499,7 @@ void Cpu::thumb_alu(uint16_t opcode)
             regs[rd] *= regs[rs];
             set_nz_flag(regs[rd]);
             flag_c = false;
-
-            // TODO: multiply needs timing fix depends on input (all internal cycles!)
-            internal_cycle();
+            do_mul_cycles(regs[rs]);
             break;
         }
 

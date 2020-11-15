@@ -17,6 +17,7 @@ class Cpu
 public:
     Cpu(GBA &gba);
     void init();
+    void log_regs();
     void step();
     void cycle_tick(int cylces); // advance the system state
 
@@ -121,6 +122,7 @@ private:
     void thumb_fill_pipeline(); 
     void write_pc_arm(uint32_t v);
     void write_pc_thumb(uint32_t v);
+    void write_pc(uint32_t v);
 
 
     void internal_cycle();

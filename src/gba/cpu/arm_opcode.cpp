@@ -65,8 +65,21 @@ void Cpu::arm_unknown(uint32_t opcode)
 }
 
 
+void Cpu::log_regs()
+{
+    for(int i = 0; i < 15; i++)
+    {
+        printf("%08x ",regs[i]);
+    }
+
+    printf("%08x \n",get_pc() + (is_thumb? 2 : 4));
+}
+
+
 void Cpu::arm_swi(uint32_t opcode)
 {
+    //printf("swi %08x: %08x\n",get_pc(),opcode);
+
     // nn is ignored by hardware
     UNUSED(opcode);
 
@@ -192,11 +205,6 @@ void Cpu::arm_mul(uint32_t opcode)
         // c destroyed
        flag_c = false;
     }
-
-    if(rd == PC)
-    {
-        write_pc_arm(regs[rd]);
-    }
 }
 
 void Cpu::arm_swap(uint32_t opcode)
@@ -227,7 +235,6 @@ void Cpu::arm_swap(uint32_t opcode)
 
     regs[rd] = tmp;
     internal_cycle(); // internal for writeback
-
 }
 
 // <--- double check this code as its the most likely error source
@@ -329,38 +336,24 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
             }
             regs[i] = mem.read_memt<uint32_t>(addr);
 
-            if(i == PC)
+            // if pc is in list and s bit set  cpsr = spsr
+            if(i == PC && s)
             {
-                if(s) // if pc is in list and s bit set  cpsr = spsr
+                const auto idx = static_cast<int>(arm_mode);
+                // not in user or system mode
+                // actually what happens if we attempt this?
+                // just cpsr=cpsr and it does nothing?
+                if(arm_mode < cpu_mode::user)  
                 {
-                    const auto idx = static_cast<int>(arm_mode);
-                    // not in user or system mode
-                    // actually what happens if we attempt this?
-                    // just cpsr=cpsr and it does nothing?
-                    if(arm_mode < cpu_mode::user)  
-                    {
-                        set_cpsr(status_banked[idx]);
-                    }
-
-                    else
-                    {
-                        auto err = fmt::format("[block data: {:08x}] illegal status bank {:x}\n",regs[PC],idx);
-                        throw std::runtime_error(err);
-                    }
-                }
-
-                // TODO what happens if thumb bit changed here
-                
-                if(is_thumb)
-                {
-                    write_pc_thumb(regs[PC]);
+                    set_cpsr(status_banked[idx]);
                 }
 
                 else
                 {
-                    write_pc_arm(regs[PC]);
+                    auto err = fmt::format("[block data: {:08x}] illegal status bank {:x}\n",regs[PC],idx);
+                    throw std::runtime_error(err);
                 }
-
+                // TODO what happens if thumb bit changed here
             }
         }
 
@@ -641,7 +634,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
             if(rd_pc)
             {
-                write_pc_arm(regs[rd]);
+                write_pc(regs[rd]);
             }
             break;
         }
@@ -656,7 +649,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
             if(rd_pc)
             {
-                write_pc_arm(regs[rd]);
+                write_pc(regs[rd]);
             }
             break;            
         }
@@ -667,7 +660,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
             if(rd_pc)
             {
-                write_pc_arm(regs[rd]);
+                write_pc(regs[rd]);
             }
             break;
         }
@@ -678,7 +671,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
             if(rd_pc)
             {
-                write_pc_arm(regs[rd]);
+                write_pc(regs[rd]);
             }
             break;
         }
@@ -689,7 +682,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
             if(rd_pc)
             {
-                write_pc_arm(regs[rd]);
+                write_pc(regs[rd]);
             }
             break;
         }
@@ -701,7 +694,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
             if(rd_pc)
             {
-                write_pc_arm(regs[rd]);
+                write_pc(regs[rd]);
             }
             break;           
         }
@@ -712,7 +705,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
             if(rd_pc)
             {
-                write_pc_arm(regs[rd]);
+                write_pc(regs[rd]);
             }
             break;
         }
@@ -723,7 +716,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
             if(rd_pc)
             {
-                write_pc_arm(regs[rd]);
+                write_pc(regs[rd]);
             }
             break;
         }
@@ -771,7 +764,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
             if(rd_pc)
             {
-                write_pc_arm(regs[rd]);
+                write_pc(regs[rd]);
             }                       
             break;
         }
@@ -789,7 +782,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
             if(rd_pc)
             {
-                write_pc_arm(regs[rd]);
+                write_pc(regs[rd]);
             }
             break;
         }
@@ -805,7 +798,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
             if(rd_pc)
             {
-                write_pc_arm(regs[rd]);
+                write_pc(regs[rd]);
             }
             break;
         }
@@ -823,7 +816,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
             if(rd_pc)
             {
-                write_pc_arm(regs[rd]);
+                write_pc(regs[rd]);
             }
             break;
         }
