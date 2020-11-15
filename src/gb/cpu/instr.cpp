@@ -266,7 +266,7 @@ uint8_t Cpu::instr_sla(uint8_t reg) noexcept
 	half = false;
 	negative = false;
 
-	bool cond = is_set(reg,7); // cache if 7 bit is set
+	const bool cond = is_set(reg,7); // cache if 7 bit is set
 
 	reg <<= 1;
 	
@@ -406,7 +406,7 @@ void Cpu::instr_jr_cond(bool cond, bool flag) noexcept
 
 void Cpu::instr_jp_cond(bool cond, bool flag) noexcept
 {
-	uint16_t v =  mem.read_wordt(pc);
+	const auto v =  mem.read_wordt(pc);
 	pc += 2;
 	if(cond == flag)
 	{
@@ -417,7 +417,7 @@ void Cpu::instr_jp_cond(bool cond, bool flag) noexcept
 
 void Cpu::call_cond(bool cond, bool flag) noexcept
 {
-	const uint16_t v = mem.read_wordt(pc);
+	const auto v = mem.read_wordt(pc);
 	pc += 2;
 	if(flag == cond)
 	{

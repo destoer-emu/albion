@@ -38,7 +38,7 @@ void Cpu::init()
     regs[SP] = 0x03007f00;
     hi_banked[static_cast<int>(cpu_mode::supervisor)][0] = 0x03007FE0;
     hi_banked[static_cast<int>(cpu_mode::irq)][0] = 0x03007FA0;
-    //arm_fill_pipeline(); // fill the intitial cpu pipeline
+    arm_fill_pipeline(); // fill the intitial cpu pipeline
 
     //regs[PC] = 0;
     arm_mode = cpu_mode::system;
@@ -69,6 +69,7 @@ void Cpu::init_thumb_opcode_table()
 
     for(int i = 0; i < 256; i++)
     {
+        thumb_opcode_table[i] = &Cpu::thumb_unknown;
 
         // THUMB.1: move shifted register
         // top 3 bits unset
@@ -101,7 +102,7 @@ void Cpu::init_thumb_opcode_table()
         // THUMB.5: Hi register operations/branch exchange
         else if(((i >> 2) & 0b111111) == 0b010001)
         {
-            thumb_opcode_table[i] = &Cpu::thumb_hi_reg_ops;
+           thumb_opcode_table[i] = &Cpu::thumb_hi_reg_ops;
         }
 
         // THUMB.6: load PC-relative
@@ -211,8 +212,10 @@ void Cpu::init_arm_opcode_table()
 
     for(int i = 0; i < 4096; i++)
     {
+        arm_opcode_table[i] = &Cpu::arm_unknown;
         switch(i >> 10) // bits 27 and 26 of opcode
         {
+        
             case 0b00:
             {
 
@@ -248,7 +251,7 @@ void Cpu::init_arm_opcode_table()
                     // bx
                     if(i == 0b000100100001) 
                     {
-                        arm_opcode_table[i] = &Cpu::arm_branch_and_exchange;
+                       arm_opcode_table[i] = &Cpu::arm_branch_and_exchange;
                     }
 
                     // this section of the decoding needs improving....
@@ -270,7 +273,7 @@ void Cpu::init_arm_opcode_table()
                         // Single Data Swap (SWP)  
                         else if(is_set(i,8) && (i & 0xf) == 0b1001) // bit 24 set
                         {
-                            arm_opcode_table[i] = &Cpu::arm_swap;
+                           arm_opcode_table[i] = &Cpu::arm_swap;
                         }
 
                         // ARM.10: Halfword, Doubleword, and Signed Data Transfer
@@ -303,7 +306,9 @@ void Cpu::init_arm_opcode_table()
                 }
                 break;
             }
+        
 
+        
             case 0b01:
             {
                 //ARM.9: Single Data Transfer
@@ -318,7 +323,7 @@ void Cpu::init_arm_opcode_table()
                 }
                 break;
             }
-
+        
             case 0b10:
             {
 
@@ -328,16 +333,19 @@ void Cpu::init_arm_opcode_table()
                     arm_opcode_table[i] = &Cpu::arm_branch;
                 }
 
-
+                
                 // 100
                 // ARM.11: Block Data Transfer (LDM,STM)
                 else if(!is_set(i,9))
                 {
                     arm_opcode_table[i] = &Cpu::arm_block_data_transfer;
                 }
+                
                 break;
             }
+            
 
+            
             case 0b11:
             {
 
@@ -354,6 +362,7 @@ void Cpu::init_arm_opcode_table()
                 }
                 break;
             }
+            
         } 
     }
 
@@ -361,13 +370,20 @@ void Cpu::init_arm_opcode_table()
 
 void Cpu::cycle_tick(int cycles)
 {
-    // force hacky timing
-    // until we do a proper instr and memory timing
-    // rewrite
-    cycles = 1; 
+    // hack the timings until we know whats up
+    UNUSED(cycles);
+/*
     disp.tick(cycles);
     apu.tick(cycles);
     tick_timers(cycles);
+*/
+}
+
+
+// prefetch buffer stuff should happen in here
+void Cpu::internal_cycle()
+{
+    cycle_tick(1);
 }
 
 void Cpu::tick_timers(int cycles)
@@ -502,13 +518,19 @@ void Cpu::exec_instr_no_debug()
     {
         exec_arm();
     }
+
+    //log_regs();
+
+    disp.tick(1);
+    apu.tick(1);
+    tick_timers(1);
 }
 
 #ifdef DEBUG
 void Cpu::exec_instr_debug()
 {
-    const uint32_t pc = regs[PC];
-    const uint32_t v = is_thumb? mem.read_mem<uint16_t>(pc) : mem.read_mem<uint32_t>(pc);
+    const uint32_t pc = regs[PC] - (is_thumb? ARM_HALF_SIZE : ARM_WORD_SIZE);
+    const uint32_t v = pipeline[0];
 	if(debug.breakpoint_hit(pc,v,break_type::execute))
 	{
 		// halt until told otherwhise :)
@@ -522,12 +544,9 @@ void Cpu::exec_instr_debug()
 
 void Cpu::step()
 {
-    handle_power_state();
-
-    // handle interrupts
-    do_interrupts();
-
     exec_instr();
+    handle_power_state();
+    do_interrupts();
 }
 
 
@@ -1098,6 +1117,47 @@ uint32_t Cpu::logical_eor(uint32_t v1, uint32_t v2, bool s)
 }
 
 
+/*
+https://developer.arm.com/documentation/ddi0210/c/Instruction-Cycle-Timings/Instruction-speed-summary?lang=en
+m is:
+
+    1 if bits [31:8] of the multiplier operand are all zero or one, else
+
+    2 if bits [31:16] of the multiplier operand are all zero or one, else
+
+    3 if bits [31:24] of the multiplier operand are all zero or all one, else
+
+    4. 
+*/
+// all cycles from this are internal
+void Cpu::do_mul_cycles(uint32_t mul_operand)
+{
+    auto cycles = 4;
+
+    if((mul_operand & 0xffffff00) == 0 || (mul_operand & 0xffffff00) == 0xffffff00)
+    {
+        cycles = 1;
+    } 
+
+    else if((mul_operand & 0xffff0000) == 0 || (mul_operand & 0xffff0000) == 0xffff0000)
+    {
+        cycles = 2;
+    } 
+
+    else if((mul_operand & 0xff000000) == 0 || (mul_operand & 0xff000000) == 0xff000000)
+    {  
+        cycles = 3;
+    } 
+
+
+    for(int i = 0; i < cycles; i++)
+    {
+        internal_cycle();
+    }
+}
+
+
+
 
 // write the interrupt req bit
 void Cpu::request_interrupt(interrupt i)
@@ -1124,15 +1184,13 @@ void Cpu::do_interrupts()
 // or does the handler check if?
 void Cpu::service_interrupt()
 {
-
-
-    int idx = static_cast<int>(cpu_mode::irq);
+    const auto idx = static_cast<int>(cpu_mode::irq);
 
     // spsr for irq = cpsr
     status_banked[idx] = get_cpsr();
 
     // lr is next instr + 4 for an irq 
-    hi_banked[idx][1] = regs[PC] + 4;
+    hi_banked[idx][1] = regs[PC] + (is_thumb? ARM_HALF_SIZE : 0);
 
     // irq mode switch
     switch_mode(cpu_mode::irq);
@@ -1145,6 +1203,22 @@ void Cpu::service_interrupt()
 
     write_log(debug,"[irq {:08x}] interrupt flag: {:02x} ",regs[PC],cpu_io.interrupt_flag);
 
-    regs[PC] = 0x18; // irq handler    
+    internal_cycle();
+
+    write_pc_arm(0x18); // irq handler    
 }
+
+void Cpu::write_pc(uint32_t v)
+{
+    if(is_thumb)
+    {
+        write_pc_thumb(v);
+    }
+
+    else
+    {
+        write_pc_arm(v);
+    } 
+}
+
 }

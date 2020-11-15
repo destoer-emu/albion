@@ -292,6 +292,7 @@ void BldCnt::init()
         first_target_enable[i] = false;
         second_target_enable[i] = false;
     }
+    special_effect = 0;
 }
 
 void BldCnt::write(int idx, uint8_t v)

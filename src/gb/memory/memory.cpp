@@ -878,8 +878,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		case 0x2a: case 0x2b: case 0x2c: 
 		case 0x2d: case 0x2e: case 0x2f:
 		case 0x4c: case 0x4e: case 0x50:
-		case 0x51: case 0x52: case 0x53:
-		case 0x54: case 0x57: case 0x58:
+		case 0x57: case 0x58:
 		case 0x59: case 0x5a: case 0x5b:
 		case 0x5c: case 0x5d: case 0x5e:
 		case 0x5f: case 0x60: case 0x61:
@@ -891,6 +890,18 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		case 0x7d: case 0x7e: case 0x7f:
 		{
 			return 0xff;
+		}
+
+
+		case IO_HDMA1: case IO_HDMA2: case IO_HDMA3:
+		case IO_HDMA4:
+		{
+			if(!cpu.get_cgb())
+			{
+				return 0xff;
+			}
+
+			return io[addr & 0xff];
 		}
 
 		// wave table
@@ -961,7 +972,6 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 			}
 			return 0xff;
 		}		
-
 		
 		case IO_HDMA5: // verify
 		{
@@ -991,11 +1001,11 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 			return 0xff;
 		}
 
-		case 0x6c: // unknown
+		case IO_OPRI: // unknown
 		{
 			if(cpu.get_cgb())
 			{
-				return io[0x6c];
+				return io[IO_OPRI] | 0xfe;
 			}
 			return 0xff;
 		}
@@ -1640,6 +1650,17 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			}
 			break;
 		}
+
+		// change wether sprites sorted by oam order or x cord
+		case IO_OPRI: 
+		{
+			if(cpu.get_cgb())
+			{
+				io[IO_OPRI] = v & 1;
+			}
+			break;
+		}
+
 
 		case IO_BGPI:
 		{

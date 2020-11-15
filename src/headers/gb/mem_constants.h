@@ -73,6 +73,8 @@ constexpr int IO_PCM12 = 0x76;
 constexpr int IO_PCM34 = 0x77;
 
 
+constexpr int IO_OPRI = 0x6c;
+
 constexpr int IO_RP = 0x56;
 
 }

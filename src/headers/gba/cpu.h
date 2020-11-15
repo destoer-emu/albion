@@ -17,10 +17,14 @@ class Cpu
 public:
     Cpu(GBA &gba);
     void init();
+    void log_regs();
     void step();
     void cycle_tick(int cylces); // advance the system state
 
-    uint32_t get_pc() const {return regs[PC];}
+    uint32_t get_pc() const 
+    {
+        return is_thumb? regs[PC] - 4 : regs[PC] - 8;
+    }
     void set_pc(uint32_t pc) {regs[PC] = pc;}
     uint32_t get_user_regs(int idx) const {return user_regs[idx];}
     uint32_t get_current_regs(int idx) const {return regs[idx]; }
@@ -115,6 +119,13 @@ private:
     uint16_t fetch_thumb_opcode();
 
     void arm_fill_pipeline();
+    void thumb_fill_pipeline(); 
+    void write_pc_arm(uint32_t v);
+    void write_pc_thumb(uint32_t v);
+    void write_pc(uint32_t v);
+
+
+    void internal_cycle();
 
     bool cond_met(int opcode);
 
@@ -166,7 +177,7 @@ private:
     uint32_t logical_and(uint32_t v1, uint32_t v2, bool s);
     uint32_t logical_or(uint32_t v1, uint32_t v2, bool s);
     uint32_t logical_eor(uint32_t v1, uint32_t v2, bool s);
-
+    void do_mul_cycles(uint32_t mul_operand);
 
     // interrupts
     //void request_interrupt(Interrupt interrupt);
