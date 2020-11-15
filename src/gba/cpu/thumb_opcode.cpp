@@ -38,7 +38,7 @@ void Cpu::write_pc_thumb(uint32_t v)
 
 void Cpu::exec_thumb()
 {
-    uint16_t op = fetch_thumb_opcode();
+    const auto op = fetch_thumb_opcode();
 
     execute_thumb_opcode(op);
 }
@@ -94,7 +94,30 @@ void Cpu::thumb_sp_add(uint16_t opcode)
 
 void Cpu::thumb_swi(uint16_t opcode)
 {
-    thumb_unknown(opcode); 
+    // nn is ignored by hardware
+    UNUSED(opcode);
+    write_log(debug,"[cpu-thumb: {:08x}] swi {:x}",regs[PC],opcode & 0xff);
+
+    const auto idx = static_cast<int>(cpu_mode::supervisor);
+
+    // spsr for supervisor = cpsr
+    status_banked[idx] = get_cpsr();
+
+    // lr in supervisor mode set to return addr
+    hi_banked[static_cast<int>(idx)][1] = regs[PC] - ARM_HALF_SIZE;
+
+    // supervisor mode switch
+    switch_mode(cpu_mode::supervisor);
+
+    // switch to arm mode
+    is_thumb = false; // switch to arm mode
+    cpsr = deset_bit(cpsr,5); // toggle thumb in cpsr
+    cpsr = set_bit(cpsr,7); //set the irq bit to mask interrupts
+
+    internal_cycle();
+
+    // branch to interrupt vector
+    write_pc_arm(0x8);
 }
 
 void Cpu::thumb_get_rel_addr(uint16_t opcode)

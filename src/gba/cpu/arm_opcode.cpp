@@ -67,7 +67,26 @@ void Cpu::arm_unknown(uint32_t opcode)
 
 void Cpu::arm_swi(uint32_t opcode)
 {
-    arm_unknown(opcode);
+    // nn is ignored by hardware
+    UNUSED(opcode);
+
+    const auto idx = static_cast<int>(cpu_mode::supervisor);
+
+    // spsr for supervisor = cpsr
+    status_banked[idx] = get_cpsr();
+
+    // lr in supervisor mode set to return addr
+    hi_banked[static_cast<int>(idx)][1] = regs[PC] - ARM_WORD_SIZE;
+
+    // supervisor mode switch
+    switch_mode(cpu_mode::supervisor);
+
+    cpsr = set_bit(cpsr,7); //set the irq bit to mask interrupts
+
+    internal_cycle();
+
+    // branch to interrupt vector
+    write_pc_arm(0x8);
 }
 
 // mul timings need to be worked on

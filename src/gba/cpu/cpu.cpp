@@ -182,7 +182,7 @@ void Cpu::init_thumb_opcode_table()
         // THUMB.17: software interrupt and breakpoint
         else if(i == 0b11011111)
         {
-            //thumb_opcode_table[i] = &Cpu::thumb_swi;
+            thumb_opcode_table[i] = &Cpu::thumb_swi;
         }
 
 
@@ -319,7 +319,7 @@ void Cpu::init_arm_opcode_table()
 
                 else 
                 {
-                    //arm_opcode_table[i] = &Cpu::arm_unknown;
+                    arm_opcode_table[i] = &Cpu::arm_unknown;
                 }
                 break;
             }
@@ -352,7 +352,7 @@ void Cpu::init_arm_opcode_table()
                 // 1111 SWI
                 if(((i >> 8) & 0b1111) == 0b1111)
                 {
-                    //arm_opcode_table[i] = &Cpu::arm_swi;
+                    arm_opcode_table[i] = &Cpu::arm_swi;
                 }
 
                 // rest are coprocesor instrucitons and are undefined on the gba
@@ -370,13 +370,13 @@ void Cpu::init_arm_opcode_table()
 
 void Cpu::cycle_tick(int cycles)
 {
-    // force hacky timing
-    // until we do a proper instr and memory timing
-    // rewrite
-    cycles = 1; 
+    // hack the timings until we know whats up
+    UNUSED(cycles);
+/*
     disp.tick(cycles);
     apu.tick(cycles);
     tick_timers(cycles);
+*/
 }
 
 
@@ -518,6 +518,10 @@ void Cpu::exec_instr_no_debug()
     {
         exec_arm();
     }
+
+    disp.tick(1);
+    apu.tick(1);
+    tick_timers(1);
 }
 
 #ifdef DEBUG
@@ -538,12 +542,9 @@ void Cpu::exec_instr_debug()
 
 void Cpu::step()
 {
-    handle_power_state();
-
-    // handle interrupts
-    do_interrupts();
-
     exec_instr();
+    handle_power_state();
+    do_interrupts();
 }
 
 
@@ -1181,16 +1182,13 @@ void Cpu::do_interrupts()
 // or does the handler check if?
 void Cpu::service_interrupt()
 {
-    puts("irq!");
-    exit(1);
-
-    int idx = static_cast<int>(cpu_mode::irq);
+    const auto idx = static_cast<int>(cpu_mode::irq);
 
     // spsr for irq = cpsr
     status_banked[idx] = get_cpsr();
 
     // lr is next instr + 4 for an irq 
-    hi_banked[idx][1] = regs[PC] + 4;
+    hi_banked[idx][1] = regs[PC] + (is_thumb? ARM_HALF_SIZE : 0);
 
     // irq mode switch
     switch_mode(cpu_mode::irq);
@@ -1203,6 +1201,8 @@ void Cpu::service_interrupt()
 
     write_log(debug,"[irq {:08x}] interrupt flag: {:02x} ",regs[PC],cpu_io.interrupt_flag);
 
-    regs[PC] = 0x18; // irq handler    
+    internal_cycle();
+
+    write_pc_arm(0x18); // irq handler    
 }
 }
