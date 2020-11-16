@@ -748,16 +748,17 @@ access_type Mem::read_mem(uint32_t addr)
     addr &= ~(sizeof(access_type)-1);
 
 #ifdef DEBUG
-    uint32_t value = read_mem_handler<access_type>(addr);
-    if(debug.breakpoint_hit(addr,value,break_type::read))
+    const auto v = read_mem_handler<access_type>(addr);
+    if(debug.breakpoint_hit(addr,v,break_type::read))
     {
-        write_log(debug,"write breakpoint hit at {:08x}:{:08x}:{:08x}",addr,value,cpu.get_pc());
+        write_log(debug,"write breakpoint hit at {:08x}:{:08x}:{:08x}",addr,v,cpu.get_pc());
         debug.halt();
-    }    
-#endif
-
-    access_type v = read_mem_handler<access_type>(addr);
+    }
     return v;
+#else    
+    const auto v = read_mem_handler<access_type>(addr);
+    return v;    
+#endif
 }
 
 

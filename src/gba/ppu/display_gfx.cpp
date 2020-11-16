@@ -308,7 +308,7 @@ void Display::render_text(int id)
         // just copy our old chunk here as its the same
         else
         {
-            memmove(&bg_lines[id][x], &bg_lines[id][x-8],sizeof(TileData) * 8);
+            memcpy(&bg_lines[id][x], &bg_lines[id][x-8],sizeof(TileData) * 8);
         }
     }   
  
