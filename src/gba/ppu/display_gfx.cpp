@@ -477,13 +477,22 @@ void Display::merge_layers()
         // max of four but we may end up using less
         BgPriority bg_priority[4];
 
-        const unsigned int lim = end-start;
+        unsigned int lim = end-start;
+
+        unsigned int new_lim = 0;
 
         for(unsigned int i = 0; i < lim; i++)
         {
-            bg_priority[i].bg = i+start;
-            bg_priority[i].priority = disp_io.bg_cnt[i+start].priority;
+            const auto bg = i+start;
+            // dont bother with inactive bgs
+            if(disp_cnt.bg_enable[bg]) 
+            {
+                bg_priority[new_lim].bg = bg;
+                bg_priority[new_lim].priority = disp_io.bg_cnt[bg].priority;
+                new_lim++;
+            }
         }
+        lim = new_lim;
 
         // reverse sort so highest priority is at the end of the array
         std::sort(&bg_priority[0],&bg_priority[lim],
@@ -533,7 +542,7 @@ void Display::merge_layers()
                 const auto &b = bg_lines[bg][x];
 
                 // valid bg pixel now check if there is a sprite at it with <= priority
-                if(disp_cnt.bg_enable[bg] && bg_window_enabled(bg,x) && b.col_num != 0)
+                if(bg_window_enabled(bg,x) && b.col_num != 0)
                 {
                     const auto bg_priority = disp_io.bg_cnt[bg].priority;
 

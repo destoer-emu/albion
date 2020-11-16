@@ -257,7 +257,7 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
 
    
     unsigned int first = 0;
-
+#ifdef _MSC_VER
     // do in reverse order so we can pull
     // the first item without doing something jank
     // TODO improve this with clz & popcnt builtin
@@ -272,6 +272,13 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
             }
         }
     }
+#else
+    if(!u)
+    {
+        addr -= __builtin_popcount(rlist) * ARM_WORD_SIZE;
+    }
+    first = __builtin_ctz(rlist);
+#endif 
 
     const bool has_pc = is_set(rlist,PC);
 

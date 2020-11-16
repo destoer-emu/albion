@@ -370,13 +370,13 @@ void Cpu::init_arm_opcode_table()
 
 void Cpu::cycle_tick(int cycles)
 {
-    // hack the timings until we know whats up
-    UNUSED(cycles);
-/*
+    // hack until we fix timings
+    cycles = 1;
+
     disp.tick(cycles);
     apu.tick(cycles);
     tick_timers(cycles);
-*/
+
 }
 
 
@@ -386,6 +386,8 @@ void Cpu::internal_cycle()
     cycle_tick(1);
 }
 
+// should have a list of active timers that aernt count up
+// so we aernt needlesly checking them, allthough this is kind of defetaed by a scheduler
 void Cpu::tick_timers(int cycles)
 {
     // for each timer
@@ -518,12 +520,6 @@ void Cpu::exec_instr_no_debug()
     {
         exec_arm();
     }
-
-    //log_regs();
-
-    disp.tick(1);
-    apu.tick(1);
-    tick_timers(1);
 }
 
 #ifdef DEBUG
