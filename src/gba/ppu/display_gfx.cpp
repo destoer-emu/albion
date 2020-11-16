@@ -212,6 +212,8 @@ void Display::render_text(int id)
         return;
     }
 
+    uint32_t old_entry = 0xffffffff;
+
     const auto &cnt = disp_io.bg_cnt[id];
     const uint32_t bg_tile_data_base = cnt.char_base_block * 0x4000;
     uint32_t bg_map_base =  cnt.screen_base_block * 0x800;
@@ -239,11 +241,7 @@ void Display::render_text(int id)
     // 32 by 32 map so it wraps around again at 32 
     bg_map_base += (map_y % 0x20) * 64; // (2 * 32);
             
-
-    TileData tile_data[8];
-
-    uint32_t x_drawn = 0; // how many pixels did we draw this time?
-    for(uint32_t x = 0; x < SCREEN_WIDTH; x += x_drawn)
+    for(uint32_t x = 0; x < SCREEN_WIDTH+16; x += 8)
     {
         // 8 for each map but each map takes 2 bytes
         // its 32 by 32 so we want it to wrap back around
@@ -289,9 +287,7 @@ void Display::render_text(int id)
         }
 
         // read out the bg entry and rip all the information we need about the tile
-        const uint16_t bg_map_entry = handle_read<uint16_t>(mem.vram,bg_map_base+bg_map_offset);
-
-        // todo if we have the same tile ident dont bother refetching it  
+        const uint32_t bg_map_entry = handle_read<uint16_t>(mem.vram,bg_map_base+bg_map_offset);
 
         const bool x_flip = is_set(bg_map_entry,10);
         const bool y_flip = is_set(bg_map_entry,11);
@@ -299,31 +295,23 @@ void Display::render_text(int id)
         const uint32_t tile_num = bg_map_entry & 0x3ff; 
         const uint32_t pal_num = (bg_map_entry >> 12) & 0xf;
 
-        read_tile(tile_data,id,col_256,bg_tile_data_base,pal_num,tile_num,line,x_flip,y_flip);
-        
 
-
-
-                
-        // finally smash it to the screen probably a nicer way to do the last part :)
-        // so we dont have to recopy it but ah well we can fix this later :D
-        // probably best is to do what we do on the gb and just render an extra tile either side
-        // and scroll it in when we actually push it to the screen 
-        uint32_t tile_offset = x_pos % 8;
-
-        TileData *buf = &tile_data[tile_offset];
-        int pixels_to_draw = 8 - tile_offset;
-
-        for(int i = 0; i < pixels_to_draw; i++)
+        if(bg_map_entry != old_entry)
         {
-            if(x + i >= SCREEN_WIDTH)
-            { 
-                break;
-            }
-            bg_lines[id][x+i] = buf[i];
+            // render a full tile but then just lie and say we rendered less
+            TileData *tile_data = &bg_lines[id][x];
+            read_tile(tile_data,id,col_256,bg_tile_data_base,pal_num,tile_num,line,x_flip,y_flip);
+            old_entry = bg_map_entry;
         }
-        x_drawn = pixels_to_draw;   
-    }    
+
+
+        // just copy our old chunk here as its the same
+        else
+        {
+            memmove(&bg_lines[id][x], &bg_lines[id][x-8],sizeof(TileData) * 8);
+        }
+    }   
+ 
 }
 
 
@@ -539,7 +527,11 @@ void Display::merge_layers()
             for(int i = lim-1; i >= 0; i--)
             {
                 const auto bg = bg_priority[i].bg;
-                const auto &b = bg_lines[bg][x];
+                // here we are finding out how far we are offset into the intial tile
+                // as we render each tile fully in render text then just cut into it here
+                const auto scx = disp_io.bg_offset_x[bg].offset & 7;
+                const auto &b = bg_lines[bg][x+scx];
+
 
                 // valid bg pixel now check if there is a sprite at it with <= priority
                 if(bg_window_enabled(bg,x) && b.col_num != 0)
