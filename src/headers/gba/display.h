@@ -85,6 +85,9 @@ private:
     unsigned int cyc_cnt = 0; // current number of elapsed cycles
     unsigned int ly = 0; // current number of cycles
     
+    bool window_0_y_triggered = false;
+    bool window_1_y_triggered = false;
+
     Mem &mem;
     Cpu &cpu;
 

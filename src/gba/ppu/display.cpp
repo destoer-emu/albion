@@ -37,6 +37,9 @@ void Display::init()
     mode = display_mode::visible;
     new_vblank = false;
     disp_io.init();
+
+    window_0_y_triggered = false;
+    window_1_y_triggered = false;
 }
 
 // not asserted on irq enable changes
@@ -65,6 +68,30 @@ void Display::update_vcount_compare()
 void Display::advance_line()
 {
     ly++;
+
+    // see window_midframe.gba
+    // when is this checked? in hblank or line start?
+    if(ly == disp_io.win0v.y1)
+    {
+        window_0_y_triggered = true;
+    }
+
+    if(ly == disp_io.win0v.y2)
+    {
+        window_0_y_triggered = false;
+    }
+
+
+    if(ly == disp_io.win1v.y1)
+    {
+        window_1_y_triggered = true;
+    }
+
+
+    if(ly == disp_io.win1v.y2)
+    {
+        window_1_y_triggered = false;
+    }
 
 
     // if there is a video capture dma turn it off

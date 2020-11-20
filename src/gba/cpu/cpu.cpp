@@ -370,13 +370,15 @@ void Cpu::init_arm_opcode_table()
 
 void Cpu::cycle_tick(int cycles)
 {
+
+    //UNUSED(cycles);
+
     // hack until we fix timings
-    cycles = 1;
+    //cycles = 1;
 
     disp.tick(cycles);
     apu.tick(cycles);
     tick_timers(cycles);
-
 }
 
 
@@ -388,6 +390,7 @@ void Cpu::internal_cycle()
 
 // should have a list of active timers that aernt count up
 // so we aernt needlesly checking them, allthough this is kind of defetaed by a scheduler
+// we should also cache the limit and scale on the reg write!
 void Cpu::tick_timers(int cycles)
 {
     // for each timer
@@ -581,6 +584,7 @@ void Cpu::handle_power_state()
         // i think this halts actions until buttons are pressed?
         case HaltCnt::power_state::stop:
         {
+            cpu_io.halt_cnt.state = HaltCnt::power_state::normal;
             break;
         }
     }

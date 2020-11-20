@@ -373,7 +373,7 @@ void Dma::do_dma(int reg_num, dma_type req_type)
             {
                 for(size_t i = r.word_offset; i < r.word_count_shadow; i++)
                 {
-                    const uint32_t v = mem.read_memt<uint32_t>(r.src_shadow);
+                    const auto v = mem.read_memt<uint32_t>(r.src_shadow);
                     mem.write_memt<uint32_t>(r.dst_shadow,v);
                     handle_increment(reg_num);
                     if(r.interrupted)
@@ -389,7 +389,7 @@ void Dma::do_dma(int reg_num, dma_type req_type)
             {
                 for(size_t i = r.word_offset; i < r.word_count_shadow; i++)
                 {
-                    const uint16_t v = mem.read_memt<uint16_t>(r.src_shadow);
+                    const auto v = mem.read_memt<uint16_t>(r.src_shadow);
                     mem.write_memt<uint16_t>(r.dst_shadow,v);
                     handle_increment(reg_num);
                     if(r.interrupted)

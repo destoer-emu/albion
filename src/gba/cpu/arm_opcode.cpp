@@ -122,7 +122,7 @@ void Cpu::arm_mull(uint32_t opcode)
         uint64_t ans;
         if(a)
         {
-            uint64_t oper = ((uint64_t)regs[rdhi] << 32) | (uint64_t)regs[rdlo];
+            const uint64_t oper = ((uint64_t)regs[rdhi] << 32) | (uint64_t)regs[rdlo];
             ans = (uint64_t)regs[rs] * (uint64_t)regs[rm] + oper;
             do_mul_cycles(regs[rm]);
             internal_cycle();
@@ -139,8 +139,8 @@ void Cpu::arm_mull(uint32_t opcode)
     else // signed
     {
         int64_t ans;
-        int64_t v1 = sign_extend<int64_t>(regs[rs],32);
-        int64_t v2 = sign_extend<int64_t>(regs[rm],32);
+        const auto v1 = sign_extend<int64_t>(regs[rs],32);
+        const auto v2 = sign_extend<int64_t>(regs[rm],32);
         if(a)
         {
             int64_t oper = ((int64_t)regs[rdhi] << 32) | (int64_t)regs[rdlo];

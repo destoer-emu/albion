@@ -714,8 +714,11 @@ void Display::cache_window()
     if(!disp_cnt.window0_enable && !disp_cnt.window1_enable)
     {
         std::fill(window.begin(),window.end(),window_source::out);
+        return;
     }
 
+    const bool trigger_0 = disp_cnt.window0_enable && window_0_y_triggered;
+    const bool trigger_1 = disp_cnt.window1_enable && window_1_y_triggered;
 
     for(size_t x = 0; x < SCREEN_WIDTH; x++)
     {
@@ -726,28 +729,22 @@ void Display::cache_window()
         // first check win0
         // if not enabled check win 1
 
-        if(disp_cnt.window0_enable)
+        if(trigger_0)
         {
             if(window_in_range(x,disp_io.win0h.x1,disp_io.win0h.x2))
             {
-                if(window_in_range(ly,disp_io.win0v.y1,disp_io.win0v.y2))
-                {
-                    window[x] = window_source::zero;
-                    continue;
-                }
+                window[x] = window_source::zero;
+                continue;  
             }
         }
 
         
-        if(disp_cnt.window1_enable)
+        if(trigger_1)
         {
             if(window_in_range(x,disp_io.win1h.x1,disp_io.win1h.x2))
-            {
-                if(window_in_range(ly,disp_io.win1v.y1,disp_io.win1v.y2))
-                {
-                    window[x] = window_source::one;
-                    continue;
-                }
+            {     
+                window[x] = window_source::one;
+                continue;
             }
         }
 
@@ -806,6 +803,10 @@ void Display::render()
     const auto disp_cnt = disp_io.disp_cnt;
     const auto render_mode = disp_cnt.bg_mode; 
 
+    // ideally we would try to cull draws
+    // that are not enabled in the window
+    cache_window();
+    
     switch(render_mode)
     {
 
@@ -849,12 +850,20 @@ void Display::render()
 
         case 0x3: // bg mode 3 
         { 
+            // bg 2 enable for this
+            if(!disp_cnt.bg_enable[2])
+            {
+                break;
+            }
+            
 
-            // what is the enable for this?
             for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
             {
-                uint32_t c = convert_color(handle_read<uint16_t>(mem.vram,(ly*SCREEN_WIDTH*2)+x*2));
-                screen[(ly*SCREEN_WIDTH)+x] = c;
+                if(bg_window_enabled(2,x))
+                {
+                    const uint32_t c = convert_color(handle_read<uint16_t>(mem.vram,(ly*SCREEN_WIDTH*2)+x*2));
+                    screen[(ly*SCREEN_WIDTH)+x] = c;
+                }
             }
             break;
         }
@@ -862,13 +871,21 @@ void Display::render()
 
         case 0x4: // mode 4 (does not handle scrolling)
         {
-            // what is the enable for this
+            // bg 2 enable for this
+            if(!disp_cnt.bg_enable[2])
+            {
+                break;
+            }
+            
             for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
             {
-                uint8_t idx = mem.vram[(ly*SCREEN_WIDTH)+x];
-                uint16_t color = handle_read<uint16_t>(mem.pal_ram,(idx*2));
-                uint32_t c = convert_color(color);
-                screen[(ly*SCREEN_WIDTH)+x] = c;
+                if(bg_window_enabled(2,x))
+                {
+                    const uint8_t idx = mem.vram[(ly*SCREEN_WIDTH)+x];
+                    const uint16_t color = handle_read<uint16_t>(mem.pal_ram,(idx*2));
+                    const uint32_t c = convert_color(color);
+                    screen[(ly*SCREEN_WIDTH)+x] = c;
+                }
             }
             break;
         }
@@ -890,11 +907,6 @@ void Display::render()
             throw std::runtime_error(err);
         }
     }
-
-    // ideally we would try to cull draws
-    // that are not enabled in the window
-    cache_window();
-
     render_sprites(render_mode);
 
     merge_layers();
