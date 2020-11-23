@@ -532,8 +532,7 @@ void Cpu::do_interrupts() noexcept
 	// 5th cycle in middle of stack push ie and if are checked to  get the 
 	// fired interrupt
 	cycle_tick_t(2);
-	uint8_t req = mem.io[IO_IF];
-	uint8_t enabled = mem.io[IO_IE];
+	const auto flags = mem.io[IO_IF] & mem.io[IO_IE];
 	cycle_tick_t(2);
 
 	write_stack(pc & 0xff);
@@ -544,10 +543,11 @@ void Cpu::do_interrupts() noexcept
 	// priority for servicing starts at interrupt 0
 	// figure out what interrupt has fired
 	// if any at this point
+#ifdef _MSC_VER
 	for(int i = 0; i < 5; i++)
 	{
 		// if requested & is enabled
-		if(is_set(req,i) && is_set(enabled,i))
+		if(is_set(flags,i))
 		{
 			mem.io[IO_IF] = deset_bit(mem.io[IO_IF],i); // mark interrupt as serviced
 			update_intr_req();
@@ -555,6 +555,16 @@ void Cpu::do_interrupts() noexcept
 			return;
 		}
 	}
+#else
+	if(flags != 0)
+	{
+		const auto bit = __builtin_ctz(flags);
+		mem.io[IO_IF] = deset_bit(mem.io[IO_IF],bit); // mark interrupt as serviced
+		update_intr_req();
+		pc = 0x40 + (bit * 8); // set pc to interrupt vector
+		return;		
+	}
+#endif
 
 	// interrupt did fire but now is no longer requested
 	// pc gets set to zero
