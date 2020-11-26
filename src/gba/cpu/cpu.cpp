@@ -374,7 +374,7 @@ void Cpu::cycle_tick(int cycles)
     //UNUSED(cycles);
 
     // hack until we fix timings
-    //cycles = 1;
+    cycles = 1;
 
     disp.tick(cycles);
     apu.tick(cycles);

@@ -1,4 +1,6 @@
 Release/
+Debug/
+build/
 RelWithDebInfo/
 .vs/
 .vscode/

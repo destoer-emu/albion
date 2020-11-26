@@ -69,6 +69,23 @@ void Display::advance_line()
 {
     ly++;
 
+    // just easier to handle vblank exit by here
+    if(ly == 228)
+    {
+        // exit vblank
+        new_vblank = true;
+        mode = display_mode::visible;
+        ly = 0;
+        update_vcount_compare();
+    }
+
+    // not set on line 227
+    else if(ly == 227)
+    {
+        disp_io.disp_stat.vblank = false;
+    }
+
+
     // see window_midframe.gba
     // when is this checked? in hblank or line start?
     if(ly == disp_io.win0v.y1)
@@ -201,30 +218,11 @@ void Display::tick(int cycles)
 
         case display_mode::vblank:
         {
-
-
             // inc a line
             if(cyc_cnt >= 1232)
             {
                 advance_line();
-                if(ly == 228)
-                {
-                    // exit vblank
-                    new_vblank = true;
-                    mode = display_mode::visible;
-                    ly = 0;
-                    update_vcount_compare();
-                }
-
-                // not set on line 227
-                else if(ly == 227)
-                {
-                    disp_io.disp_stat.vblank = false;
-                }
             }
-
-
-
 
             // hblank is still active even in vblank
             else if(cyc_cnt >= 1006 && !disp_io.disp_stat.hblank) 

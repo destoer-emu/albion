@@ -106,20 +106,24 @@ std::vector<std::string> read_sorted_directory(const std::string &file_path);
 std::vector<std::string> get_dir_tree(const std::string &file_path);
 std::vector<std::string> filter_ext(const std::vector<std::string> &files,const std::string &str);
 
-inline bool is_set(uint64_t reg, int bit) noexcept
+template<typename T>
+inline bool is_set(T reg, int bit) noexcept
 {
 	return ((reg >> bit) & 1);
 }
 
-inline uint64_t set_bit(uint64_t v,int bit) noexcept
+template<typename T>
+inline T set_bit(T v,int bit) noexcept
 {
-    return v | (1 << bit);
+	const T shift = 1;
+    return v | (shift << bit);
 }
 
-
-inline uint64_t deset_bit(uint64_t v,int bit) noexcept
+template<typename T>
+inline T deset_bit(T v,int bit) noexcept
 {
-    return v & ~(1 << bit);
+	const T shift = 1;
+    return v & ~(shift << bit);
 }
 
 

@@ -161,7 +161,7 @@ std::string Disass::disass_arm_get_cond_suffix(int opcode)
 
 std::string Disass::disass_arm_swi(uint32_t opcode)
 {
-    return fmt::format("swi {:08x}",opcode & 0x0fffffff);
+    return fmt::format("swi {:08x}",opcode & 0x0ffffff);
 }
 
 
