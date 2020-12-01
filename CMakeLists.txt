@@ -13,19 +13,28 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 #set(FRONTEND "SDL")
 set(FRONTEND "IMGUI")
 
+# external frontend
+#set(FRONTEND "HEADLESS")
 
-add_definitions(-DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL)
+
 #add_definitions(-DBOUNDS_CHECK)
 if(${FRONTEND} STREQUAL "IMGUI")
+	add_definitions(-DAUDIO_ENABLE -DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL)
 	add_definitions(-DFRONTEND_IMGUI -DIMGUI_IMPL_OPENGL_LOADER_GLEW -DDEBUG)
 endif()
 
 if(${FRONTEND} STREQUAL "SDL")
+	add_definitions(-DAUDIO_ENABLE -DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL)
 	add_definitions(-DFRONTEND_SDL)
 endif()
 
 if(${FRONTEND} STREQUAL "QT") # not supported yet come back to this
+	add_definitions(-DAUDIO_ENABLE -DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL)
 	add_definitions(-DFRONTEND_QT)
+endif()
+
+if(${FRONTEND} STREQUAL "HEADLESS")
+	add_definitions(-DFRONTEND_HEADLESS)
 endif()
 
 

@@ -92,6 +92,48 @@ GbaPlayback::~GbaPlayback()
 
 
 #else
+
+//external handler
+#ifdef AUDIO_ENABLE
 static_assert(false,"no audio frontend defined!");
 #endif
 
+#endif
+
+
+// stub audio playback helpers
+#ifndef AUDIO_ENABLE
+void GbaPlayback::init(int playback_frequency,int sample_size) noexcept
+{
+    UNUSED(playback_frequency); UNUSED(sample_size);
+}
+
+void GbaPlayback::mix_samples(float &f1, float &f2,int volume) noexcept
+{
+    UNUSED(f1); UNUSED(f2); UNUSED(volume);
+}
+
+void GbaPlayback::push_sample(const float &l, const float &r) noexcept
+{
+    UNUSED(l); UNUSED(r);
+}
+
+void GbaPlayback::start() noexcept
+{
+
+}
+void GbaPlayback::stop() noexcept
+{
+
+}
+
+GbaPlayback::~GbaPlayback() 
+{
+
+}
+
+void GbaPlayback::push_samples()
+{
+
+}
+#endif

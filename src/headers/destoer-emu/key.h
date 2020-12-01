@@ -58,3 +58,21 @@ enum class emu_key
     minus = SDLK_KP_MINUS
 };
 #endif
+
+#ifdef FRONTEND_HEADLESS
+enum class emu_key
+{
+    enter,		
+    space,
+    up,
+    down,
+    left,
+    right,
+    a,
+    s,
+    d,
+    f,
+    plus,
+    minus
+};
+#endif

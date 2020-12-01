@@ -1,14 +1,18 @@
 #include <frontend/qt/qt_window.h>
 #include <frontend/sdl/sdl_window.h>
 #include <frontend/imgui/imgui_window.h>
+#include <destoer-emu/lib.h>
 
-
+#ifdef SDL_REQUIRED
 #define SDL_MAIN_HANDLED
 #ifdef _WIN32
 #include <SDL.H>
 #else
 #include <SDL2/SDL.h>
 #endif
+#endif
+
+#ifndef FRONTEND_HEADLESS 
 
 // gameboy test running
 void gb_run_test_helper(const std::vector<std::string> &tests, int seconds)
@@ -89,8 +93,12 @@ void gb_run_tests()
     printf("total time taken %f\n",count);
 }
 
+#endif
+
 int main(int argc, char *argv[])
 {  
+    UNUSED(argc); UNUSED(argv);
+#ifndef FRONTEND_HEADLESS    
     if(argc == 2)
     {
         if(std::string(argv[1]) == "-t")
@@ -108,6 +116,7 @@ int main(int argc, char *argv[])
             return 0;
         }
     }
+#endif
 
 // if sdl is used for anything we need to init it here
 #ifdef SDL_REQUIRED

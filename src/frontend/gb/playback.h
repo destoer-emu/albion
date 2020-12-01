@@ -1,6 +1,7 @@
 #pragma once
 #include <destoer-emu/lib.h>
 
+
 // defines how to push audio samples for the gameboy
 class GbPlayback
 {

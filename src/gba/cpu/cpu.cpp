@@ -374,7 +374,7 @@ void Cpu::cycle_tick(int cycles)
     //UNUSED(cycles);
 
     // hack until we fix timings
-    cycles = 1;
+    //cycles = 1;
 
     disp.tick(cycles);
     apu.tick(cycles);
@@ -877,6 +877,7 @@ cpu_mode Cpu::cpu_mode_from_bits(uint32_t v)
 
 
 // tests if a cond field in an instr has been met
+// change this to a lut later
 bool Cpu::cond_met(int opcode)
 {
 
@@ -1076,7 +1077,7 @@ uint32_t Cpu::sbc(uint32_t v1, uint32_t v2, bool s)
 
 uint32_t Cpu::logical_and(uint32_t v1, uint32_t v2, bool s)
 {
-    uint32_t ans = v1 & v2;
+    const uint32_t ans = v1 & v2;
 
     if(s)
     {
@@ -1088,7 +1089,7 @@ uint32_t Cpu::logical_and(uint32_t v1, uint32_t v2, bool s)
 
 uint32_t Cpu::logical_or(uint32_t v1, uint32_t v2, bool s)
 {
-    uint32_t ans = v1 | v2;
+    const uint32_t ans = v1 | v2;
     if(s)
     {
         set_nz_flag(ans);
@@ -1098,7 +1099,7 @@ uint32_t Cpu::logical_or(uint32_t v1, uint32_t v2, bool s)
 
 uint32_t Cpu::bic(uint32_t v1, uint32_t v2, bool s)
 {
-    uint32_t ans = v1 & ~v2;
+    const uint32_t ans = v1 & ~v2;
     if(s)
     {
         set_nz_flag(ans);
@@ -1108,7 +1109,7 @@ uint32_t Cpu::bic(uint32_t v1, uint32_t v2, bool s)
 
 uint32_t Cpu::logical_eor(uint32_t v1, uint32_t v2, bool s)
 {
-    uint32_t ans = v1 ^ v2;
+    const uint32_t ans = v1 ^ v2;
     if(s)
     {
         set_nz_flag(ans);

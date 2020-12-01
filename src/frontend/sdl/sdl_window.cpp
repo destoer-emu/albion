@@ -9,7 +9,7 @@ SDLMainWindow::SDLMainWindow(std::string filename)
 {
 	try
 	{
-		auto type = get_emulator_type(filename);
+		const auto type = get_emulator_type(filename);
 	
 
 		switch(type)

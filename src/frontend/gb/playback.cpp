@@ -92,6 +92,47 @@ GbPlayback::~GbPlayback()
 
 
 #else
+
+//external handler
+#ifdef AUDIO_ENABLE
 static_assert(false,"no audio frontend defined!");
 #endif
 
+#endif
+
+// stub audio playback helpers
+#ifndef AUDIO_ENABLE
+void GbPlayback::init(int playback_frequency,int sample_size) noexcept
+{
+    UNUSED(playback_frequency); UNUSED(sample_size);
+}
+
+void GbPlayback::mix_samples(float &f1, float &f2,int volume) noexcept
+{
+    UNUSED(f1); UNUSED(f2); UNUSED(volume);
+}
+
+void GbPlayback::push_sample(const float &l, const float &r) noexcept
+{
+    UNUSED(l); UNUSED(r);
+}
+
+void GbPlayback::start() noexcept
+{
+
+}
+void GbPlayback::stop() noexcept
+{
+
+}
+
+GbPlayback::~GbPlayback() 
+{
+
+}
+
+void GbPlayback::push_samples()
+{
+
+}
+#endif
