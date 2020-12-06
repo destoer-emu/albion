@@ -1812,13 +1812,17 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR11:
 		{
-			if(apu.enabled())
+			if(apu.enabled() || !cpu.get_cgb())
 			{
 				// bottom 6 bits are length data 
 				// set the internal counter to 64 - bottom 6 bits of data
 				apu.c1.write_lengthc(v);
-				apu.c1.write_cur_duty(v);
-				io[IO_NR11] = v;
+				// can only be written while on both versions
+				if(apu.enabled())
+				{
+					apu.c1.write_cur_duty(v);
+					io[IO_NR11] = v;
+				}
 			}
 			break;
 		}
@@ -1875,11 +1879,14 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR21:
 		{
-			if(apu.enabled())
+			if(apu.enabled() || !cpu.get_cgb())
 			{
 				apu.c2.write_lengthc(v);
-				apu.c2.write_cur_duty(v);
-				io[IO_NR21] = v;
+				if(apu.enabled())
+				{
+					apu.c2.write_cur_duty(v);
+					io[IO_NR21] = v;
+				}
 			}
 			break;
 		}
@@ -1943,7 +1950,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR31:
 		{
-			if(apu.enabled())
+			if(apu.enabled() || !cpu.get_cgb())
 			{
 				apu.c3.write_lengthc(v);
 				io[IO_NR31] = v;
@@ -1997,7 +2004,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR41:
 		{
-			if(apu.enabled())
+			if(apu.enabled() || !cpu.get_cgb())
 			{
 				apu.c4.write_lengthc(v);
 				io[IO_NR41] = v | 192;

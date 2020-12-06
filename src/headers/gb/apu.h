@@ -253,7 +253,7 @@ public:
 
 	GbPlayback playback;
 private:
-
+	Cpu &cpu;
 	Memory &mem;
 	GameboyScheduler &scheduler;
 

@@ -37,6 +37,8 @@ void Sweep::sweep_write(uint8_t v) noexcept
     sweep_reg = v;
 }
 
+// need to impl this again as most of the documentation is wrong for edge cases...
+// there is not an internal enable flag at all
 void Sweep::sweep_trigger() noexcept
 {
     /*

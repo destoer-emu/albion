@@ -6,7 +6,7 @@ namespace gameboy
 {
 
 Apu::Apu(GB &gb) : c1{gb,0}, c2{gb,1}, c3{gb,2},c4{gb,3}, 
-    mem(gb.mem), scheduler(gb.scheduler)
+    cpu(gb.cpu), mem(gb.mem), scheduler(gb.scheduler)
 {
     // init our audio playback
     playback.init(freq_playback,2048);
@@ -141,7 +141,7 @@ void Apu::enable_sound() noexcept
 
     // reset length coutners when powerd up
     // if on cgb
-    if(mem.rom_cgb_enabled())
+    if(cpu.get_cgb())
     {
         c1.reset_length();
         c2.reset_length();
