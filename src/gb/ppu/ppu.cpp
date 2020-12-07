@@ -225,7 +225,7 @@ void Ppu::write_stat() noexcept
 {
 	// stat write glitch
 	// behaves as if 0xff for 1 cycle on dmg?
-	if(cpu.get_cgb())
+	if(!cpu.get_cgb())
 	{
 		const auto backup = mem.io[IO_STAT];
 		mem.io[IO_STAT] = 0xff & ~7;
@@ -242,7 +242,7 @@ void Ppu::write_stat() noexcept
 
 uint8_t Ppu::read_stat() const noexcept
 {
-	return mem.io[IO_STAT] | static_cast<int>(mode);
+	return (mem.io[IO_STAT] & ~3) | static_cast<int>(get_mode());
 }
 
 // mode change, write, or line change
