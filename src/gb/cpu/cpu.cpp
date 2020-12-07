@@ -176,7 +176,6 @@ void Cpu::cycle_tick_t(uint32_t cycles) noexcept
 
 	tick_serial(cycles);
 */
-
 	scheduler.tick(cycles);
 
 	// if we are using the fifo this needs to be ticked each time

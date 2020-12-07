@@ -91,12 +91,7 @@ int Ppu::get_next_ppu_event() const noexcept
 	{
 		case ppu_mode::oam_search:
 		{
-			if(!glitched_oam_mode)
-			{
-				return OAM_END - scanline_counter;
-			}
-
-			return OAM_END - 4 - scanline_counter;
+			return OAM_END - scanline_counter;
 		}
 
 		case ppu_mode::pixel_transfer:
@@ -213,6 +208,7 @@ uint8_t Ppu::get_bgpd() const noexcept
 
 ppu_mode Ppu::get_mode() const noexcept
 {
+
 	// reads hblank in glitched oam mode
 	if(glitched_oam_mode)
 	{
@@ -348,6 +344,8 @@ void Ppu::turn_lcd_on() noexcept
 
 	// oam fails to lock takes one less m cycle
 	glitched_oam_mode = true;
+	// needs verification
+	scanline_counter = 4;
 
 	insert_new_ppu_event();
 }
@@ -486,7 +484,7 @@ void Ppu::update_graphics(uint32_t cycles) noexcept
 		case ppu_mode::oam_search:
 		{
 			// mode 2 takes four less cycles in glitched oam mode
-			if(scanline_counter >= OAM_END || (glitched_oam_mode && scanline_counter >= OAM_END - 4))
+			if(scanline_counter >= OAM_END)
 			{
 				glitched_oam_mode = false;
 
