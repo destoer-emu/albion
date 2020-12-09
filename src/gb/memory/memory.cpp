@@ -356,6 +356,8 @@ void Memory::init(std::string rom_name, bool with_rom, bool use_bios)
 	dma_dst = 0;
 	hdma_active = false;
 
+	ignore_oam_bug = false;
+
 	test_result = emu_test::running;
 	gekkio_pass_count = 0;
 	gekkio_fail_count = 0;
@@ -408,6 +410,13 @@ void Memory::bios_disable() noexcept
 	memory_table[0x2].read_memf = &Memory::read_bank_zero;
 	memory_table[0x3].read_memf = &Memory::read_bank_zero;
 }
+
+void Memory::raw_write_word(uint16_t addr, uint16_t v) noexcept
+{
+	raw_write(addr,v & 0xff);
+	raw_write(addr+1,(v >> 8) & 0xff);
+}
+
 
 void Memory::raw_write(uint16_t addr, uint8_t v) noexcept
 {
@@ -494,6 +503,10 @@ void Memory::raw_write(uint16_t addr, uint8_t v) noexcept
 	}
 }
 
+uint16_t Memory::raw_read_word(uint16_t addr) const noexcept
+{
+	return raw_read(addr) | raw_read(addr+1) << 8;
+}
 
 uint8_t Memory::raw_read(uint16_t addr) const noexcept
 {
@@ -645,6 +658,16 @@ void Memory::write_word(uint16_t addr, uint16_t v) noexcept
     write_mem(addr,(v&0x00ff));
 }
 
+// maybe should have an eqiv for optimisation purposes where we know it cant trigger
+uint8_t Memory::read_memt_no_oam_bug(uint16_t addr) noexcept
+{
+	cpu.tick_pending_cycles();
+	ignore_oam_bug = true;
+	uint8_t v = read_mem(addr);
+	ignore_oam_bug = false;
+	cpu.cycle_tick(1); // tick for the memory access 
+    return v;
+}
 
 // memory accesses (timed)
 uint8_t Memory::read_memt(uint16_t addr) noexcept
@@ -654,6 +677,16 @@ uint8_t Memory::read_memt(uint16_t addr) noexcept
 	cpu.cycle_tick(1); // tick for the memory access 
     return v;
 }
+
+void Memory::write_memt_no_oam_bug(uint16_t addr, uint8_t v) noexcept
+{
+	cpu.tick_pending_cycles();
+	ignore_oam_bug = true;
+    write_mem(addr,v);
+	ignore_oam_bug = false;
+	cpu.cycle_tick(1); // tick for the memory access	
+}
+
 
 void Memory::write_memt(uint16_t addr, uint8_t v) noexcept
 {
@@ -680,6 +713,16 @@ void Memory::write_wordt(uint16_t addr, uint16_t v) noexcept
 // object attribute map 0xfe00 - 0xfe9f
 uint8_t Memory::read_oam(uint16_t addr) const noexcept
 {
+	if(!ignore_oam_bug)
+	{
+		cpu.oam_bug_read(addr);
+	}
+
+	if(addr >= 0xffa0)
+	{
+		return 0xff;
+	}
+
     // cant access oam during a dma
     if(oam_dma_active)
     {
@@ -913,7 +956,12 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 			// if wave is on write to current byte <-- finish accuracy later
 			if(apu.chan_enabled(2))
 			{
-				return io[0x30 + (apu.c3.get_duty_idx() / 2)];
+				// can only access on dmg when the wave channel is...
+				// todo
+				if(cpu.get_cgb())
+				{
+					return io[0x30 + (apu.c3.get_duty_idx() / 2)];
+				}
 			}
 			
 			// if its off allow "free reign" over it
@@ -1157,7 +1205,7 @@ uint8_t Memory::read_hram(uint16_t addr) const noexcept
     }
 
 	// oam is accesible during mode 0-1
-	else if(addr >= 0xfe00 && addr <= 0xfe9f)
+	else if(addr >= 0xfe00 && addr <= 0xfeff)
 	{
 		return read_oam(addr);
 	}
@@ -1174,6 +1222,15 @@ uint8_t Memory::read_hram(uint16_t addr) const noexcept
 // object attribute map 0xfe00 - 0xfea0
 void Memory::write_oam(uint16_t addr,uint8_t v) noexcept
 {
+	if(!ignore_oam_bug)
+	{
+		cpu.oam_bug_write(addr);
+	}
+
+	if(addr >= 0xffa0)
+	{
+		return;
+	}
 
     if(oam_dma_active)
     {
@@ -1270,14 +1327,14 @@ uint8_t Memory::read_oam_dma(uint16_t addr) const noexcept
 	UNUSED(addr);
 	// cpu gets back what oam is reading
 	// so what we need to do is figure out where the oam dma is
-	const auto dma_event = scheduler.get(gameboy_event::oam_dma_end);
-	if(!dma_event)
+	const auto cycles_opt = scheduler.get_event_ticks(gameboy_event::oam_dma_end);
+	if(!cycles_opt)
 	{
 		printf("dma event not active during read_oam_dma:%x:%x:%x!?\n",oam_dma_active,oam_dma_address,oam_dma_index);
 		exit(1);
 	}
 	// todo for the extra start and stop delay is this still the case?
-	const auto dma_idx = (dma_event.value().start - scheduler.get_timestamp()) / 4;
+	const auto dma_idx = cycles_opt.value() / 4;
 	return raw_read(oam_dma_address + dma_idx); // todo this function may fail under some cases
 }
 
@@ -2110,7 +2167,10 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			// if wave is on write to current byte <-- finish accuracy later
 			if(apu.chan_enabled(2))
 			{
-				io[0x30 + (apu.c3.get_duty_idx() / 2)] = v;
+				if(cpu.get_cgb())
+				{
+					io[0x30 + (apu.c3.get_duty_idx() / 2)] = v;
+				}
 			}
 			
 			else // if its off allow "free reign" over it
@@ -2249,7 +2309,7 @@ void Memory::write_hram(uint16_t addr,uint8_t v) noexcept
     }
 
 	// oam is accesible during mode 0-1
-	else if(addr >= 0xfe00 && addr <= 0xfe9f)
+	else if(addr >= 0xfe00 && addr <= 0xfeff)
 	{
 		write_oam(addr,v);
 		return;

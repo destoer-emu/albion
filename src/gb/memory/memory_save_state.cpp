@@ -46,6 +46,7 @@ void Memory::save_state(std::ofstream &fp)
     file_write_var(fp,oam_dma_index);
     file_write_var(fp,cgb_wram_bank_idx);
     file_write_var(fp,vram_bank);
+    file_write_var(fp,ignore_oam_bug);
 
 	// dont dump the memory table as its unecessary and unsafe
 	// same goes for the rom and info struct
@@ -92,6 +93,7 @@ void Memory::load_state(std::ifstream &fp)
     file_read_var(fp,oam_dma_index);
     file_read_var(fp,cgb_wram_bank_idx);
     file_read_var(fp,vram_bank);
+    file_read_var(fp,ignore_oam_bug);
 
     if(vram_bank > 1)
     {

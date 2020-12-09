@@ -50,6 +50,12 @@ public:
     bool get_cgb() const noexcept {return is_cgb;}
 
 
+    // oam bug
+    void oam_bug_write(uint16_t v);
+    void oam_bug_read(uint16_t v);
+    void oam_bug_read_increment(uint16_t v);
+
+
     uint16_t internal_timer = 0;
     
     uint8_t joypad_state = 0xff;
@@ -223,7 +229,8 @@ private:
     void instr_jp_cond(bool cond, bool flag) noexcept;
     void call_cond(bool cond, bool flag) noexcept;
     void ret_cond(bool cond, bool falg) noexcept;
-
+    uint16_t instr_incw(uint16_t v) noexcept;
+    uint16_t instr_decw(uint16_t v) noexcept;
 
     // stack helpers
     uint8_t read_stackt() noexcept;
@@ -235,5 +242,9 @@ private:
 
     void check_rst_loop(uint16_t addr, uint8_t op);
 
+
+    // oam bug
+    uint32_t get_cur_oam_row() const;
+    bool oam_should_corrupt(uint16_t v) const noexcept;
 };
 }

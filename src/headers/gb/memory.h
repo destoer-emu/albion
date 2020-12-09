@@ -111,7 +111,9 @@ public:
 
     // memory accesses (timed)
     uint8_t read_memt(uint16_t addr) noexcept;
+    uint8_t read_memt_no_oam_bug(uint16_t addr) noexcept;
     void write_memt(uint16_t addr, uint8_t v) noexcept;
+    void write_memt_no_oam_bug(uint16_t addr, uint8_t v) noexcept;
     uint16_t read_wordt(uint16_t addr) noexcept;
     void write_wordt(uint16_t addr, uint16_t v) noexcept;
     void write_io(uint16_t addr,uint8_t v) noexcept;
@@ -125,7 +127,9 @@ public:
 
     // direct write access no side affects
     void raw_write(uint16_t addr, uint8_t v) noexcept;
+    void raw_write_word(uint16_t addr, uint16_t v) noexcept;
     uint8_t raw_read(uint16_t addr) const noexcept;
+    uint16_t raw_read_word(uint16_t addr) const noexcept;
 
     void frame_end();
 
@@ -273,6 +277,9 @@ private:
 
     int cgb_wram_bank_idx = 0;  // default zero
     int vram_bank = 0; // what cgb vram bank are we in?
+
+
+    bool ignore_oam_bug = false;
 
     typedef struct
     {

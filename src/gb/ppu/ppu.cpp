@@ -123,6 +123,7 @@ int Ppu::get_next_ppu_event() const noexcept
 void Ppu::insert_new_ppu_event() noexcept
 {
 	const auto cycles = get_next_ppu_event();
+	//printf("ppu_cyc: %d\n",cycles);
 /*
 	printf("event insertion %d:%d:%d:%d\n",static_cast<int>(mode),scanline_counter,current_line,cycles);
 	if(cycles < 0)

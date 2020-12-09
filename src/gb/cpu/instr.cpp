@@ -438,4 +438,18 @@ void Cpu::ret_cond(bool cond, bool flag) noexcept
 	}	
 }
 
+uint16_t Cpu::instr_incw(uint16_t v) noexcept
+{
+	oam_bug_write(v);
+	cycle_delay(4); // internal
+	return v+1;	
+}
+
+uint16_t Cpu::instr_decw(uint16_t v) noexcept
+{
+	oam_bug_write(v);
+	cycle_delay(4); // internal
+	return v-1;		
+}
+
 }

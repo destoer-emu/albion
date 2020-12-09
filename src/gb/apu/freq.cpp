@@ -40,7 +40,7 @@ void FreqReg::freq_reload_period() noexcept
     period = (2048 - freq)*period_scale;
 
 
-    insert_new_period_event();
+    insert_new_period_event();  
 }
 
 void FreqReg::insert_new_period_event() noexcept

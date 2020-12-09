@@ -85,19 +85,15 @@ private:
     // stores pos of each event so it can be deleted fast
     std::array<size_t,SIZE> type_idx;
     
-    const size_t IDX_INVALID = SIZE+1;
-    const size_t capacity = SIZE;
+    const size_t IDX_INVALID = 0xffffffff;
     size_t len = 0;
 };
 
 template<size_t SIZE,typename event_type>
 MinHeap<SIZE,event_type>::MinHeap()
 {
-    for(size_t i = 0; i < SIZE; i++)
-    {
-        heap[i] = &buf[i];
-    }
-    assert(capacity != 0);
+    assert(SIZE < IDX_INVALID);
+    assert(SIZE != 0);
     clear();
 }
 
@@ -106,7 +102,14 @@ template<size_t SIZE,typename event_type>
 void MinHeap<SIZE,event_type>::clear()
 {
     len = 0;
-    std::fill(type_idx.begin(),type_idx.end(),IDX_INVALID);
+    // fill with obv error value incase we attempt to use something not initialized
+    for(size_t i = 0; i < SIZE; i++)
+    {
+        const auto event = EventNode(0xdeadbeef,0xdeadbeef,static_cast<event_type>(i));
+        buf[i] = event;
+        heap[i] = &buf[i];
+        type_idx[i] = IDX_INVALID;
+    }
 }
 
 template<size_t SIZE,typename event_type>
@@ -156,16 +159,10 @@ bool MinHeap<SIZE,event_type>::is_active(event_type t) const
 template<size_t SIZE,typename event_type>
 void MinHeap<SIZE,event_type>::swap(size_t idx1,size_t idx2)
 {
-    // update event pos
-    const auto type1 = heap[idx1]->type;
-    const auto type2 = heap[idx2]->type;
-
-    
-    type_idx[static_cast<size_t>(type2)] = idx1;
-    type_idx[static_cast<size_t>(type1)] = idx2;
-
-
 	std::swap(heap[idx1],heap[idx2]);
+
+    type_idx[static_cast<size_t>(heap[idx1]->type)] = idx1;
+    type_idx[static_cast<size_t>(heap[idx2]->type)] = idx2;
 }
 
 template<size_t SIZE,typename event_type>
@@ -174,18 +171,20 @@ void MinHeap<SIZE,event_type>::insert(EventNode<event_type> event)
 	// in practice in our emulator events are unique and this shouldunt happen
 	// i.e inserted events will be tagged with a enum and existing ones
     // will be removed by the scheduler before this should happen
-	if(len == capacity)
+	if(len == SIZE)
 	{
-		printf("event heap at capacity %x\n",static_cast<int>(event.type));
+		printf("event heap at SIZE %zx\n",static_cast<size_t>(event.type));
 		exit(1);
 	}
 
-	// insert at end
-	size_t idx = len;
-	*heap[len++] = event;
+    // ok this can only go in a fixed slot
+    const auto event_idx = static_cast<size_t>(event.type);
+    size_t idx = len;
+    buf[event_idx] = event;
+    heap[len++] = &buf[event_idx];
 
     // update idx here incase it is first insertion
-    type_idx[static_cast<size_t>(event.type)] = idx;
+    type_idx[event_idx] = idx;
 
 	// while parent is greater swap
 	while(idx != 0 && *heap[parent(idx)] > *heap[idx])
@@ -195,7 +194,7 @@ void MinHeap<SIZE,event_type>::insert(EventNode<event_type> event)
 		idx = parent_idx;
 	}
 
-    //verify();
+//    verify();
 }
 
 // verify min heap property is not violated used for debugging
@@ -290,9 +289,10 @@ template<size_t SIZE,typename event_type>
 std::optional<EventNode<event_type>> MinHeap<SIZE,event_type>::get(event_type t) const
 {
     const auto idx = static_cast<size_t>(t);
+
     if(type_idx[idx] != IDX_INVALID)
     {
-        return *heap[idx];
+        return buf[idx];
     }
 
     return std::nullopt;
@@ -322,7 +322,7 @@ EventNode<event_type> MinHeap<SIZE,event_type>::remove(size_t idx)
 	// ensure we have a valid heap after the swap
 	heapify(idx);
 
-    //verify();
+//    verify();
 
 	return v;
 }
@@ -382,7 +382,7 @@ void MinHeap<SIZE,event_type>::load_state(std::ifstream &fp)
     file_read_var(fp,len);
 
 
-    if(len > capacity)
+    if(len > SIZE)
     {
         throw std::runtime_error("minheap invalid len");
     }
@@ -397,7 +397,7 @@ void MinHeap<SIZE,event_type>::load_state(std::ifstream &fp)
 
     for(auto &x: heap)
     {
-        if(static_cast<size_t>(x->type) >= capacity)
+        if(static_cast<size_t>(x->type) >= SIZE)
         {
             throw std::runtime_error("minheap invalid event type");
         }

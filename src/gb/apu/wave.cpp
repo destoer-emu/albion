@@ -9,7 +9,7 @@ namespace gameboy
 //09 of blarggs test will be off due to the apu operating
 // 2 cycles at a time
 
-Wave::Wave(GB &gb, int c) : Channel(gb,c), FreqReg(gb,c)
+Wave::Wave(GB &gb, int c) :  Channel(gb,c), FreqReg(gb,c), cpu(gb.cpu), apu(gb.apu)
 {
 
 }
@@ -23,6 +23,28 @@ void Wave::init() noexcept
 
 void Wave::wave_trigger() noexcept
 {
+/*
+	// i think think this is only relevant while its being read...
+
+	// if triggered while on the first four bytes will
+	// get set to what the current 4 byte section...
+	// unless the channel is reading the first 4 in which case
+	// only the first will be overwritten with the current
+	if(!cpu.get_cgb() && apu.chan_enabled(2))
+	{
+		const uint32_t byte = duty_idx / 2;
+
+		if(byte < 4)
+		{
+			mem.io[0x30] = mem.io[0x30 + byte];
+		}
+
+		else
+		{
+			memcpy(&mem.io[0x30],&mem.io[0x30+(byte &~3)],4);
+		}
+	}
+*/
 	reset_duty();
 }
 

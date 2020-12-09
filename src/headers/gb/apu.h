@@ -183,6 +183,8 @@ public:
 	void save_state(std::ofstream &fp);
 	void load_state(std::ifstream &fp);
 private:
+	Cpu &cpu;
+	Apu &apu;
 	int volume = 0;
 	int volume_load = 0;
 };

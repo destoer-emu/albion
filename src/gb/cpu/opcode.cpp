@@ -52,8 +52,7 @@ void Cpu::exec_instr_no_debug()
 			break;
 		
 		case 0x3: // inc bc
-			write_bc(read_bc()+1);
-			cycle_delay(4); // internal
+			write_bc(instr_incw(read_bc()));
 			break;
 		
 		case 0x4: // inc b
@@ -92,11 +91,8 @@ void Cpu::exec_instr_no_debug()
 		
 		
 		case 0xb: // dec bc 
-			write_bc(read_bc()-1);
-			cycle_delay(4); // internal
+			write_bc(instr_decw(read_bc()));
 			break;
-		
-		
 		
 		case 0xc: // inc c
 			instr_inc(c++);
@@ -155,8 +151,7 @@ void Cpu::exec_instr_no_debug()
 			break;
 		
 		case 0x13: // inc de
-			write_de(read_de()+1);
-			cycle_delay(4); // internal
+			write_de(instr_incw(read_de()));
 			break;
 		
 		case 0x14: // inc d
@@ -191,10 +186,9 @@ void Cpu::exec_instr_no_debug()
 		
 
 		case 0x1b: // dec de
-			write_de(read_de()-1);
-			cycle_delay(4); // internal
+			write_de(instr_decw(read_de()));
 			break;
-			
+		
 		case 0x1c: // inc e
 			instr_inc(e++);
 			break;
@@ -222,13 +216,14 @@ void Cpu::exec_instr_no_debug()
 			break;
 		
 		case 0x22: // ldi (hl), a
-			mem.write_memt(read_hl(),a);
-			write_hl(read_hl()+1);
+		{
+			const auto hl = read_hl();
+			mem.write_memt(hl,a);
+			write_hl(hl+1);
 			break;
-		
+		}
 		case 0x23: // inc hl
-			write_hl(read_hl()+1); // increment hl
-			cycle_delay(4); // internal
+			write_hl(instr_incw(read_hl()));
 			break;
 		
 		case 0x24: // inc h
@@ -291,14 +286,15 @@ void Cpu::exec_instr_no_debug()
 		
 		// flags affected by this?
 		case 0x2a: // ldi a, (hl)
-			
-			a = mem.read_memt(read_hl());
-			write_hl(read_hl()+1);
+		{
+			const auto hl = read_hl();
+			oam_bug_read_increment(hl);
+			a = mem.read_memt_no_oam_bug(hl);
+			write_hl(hl+1);
 			break;
-		
+		}
 		case 0x2b: // dec hl
-			write_hl(read_hl()-1);
-			cycle_delay(4); // internal
+			write_hl(instr_decw(read_hl()));
 			break;
 		
 		case 0x2c: // inc l
@@ -330,13 +326,15 @@ void Cpu::exec_instr_no_debug()
 			break;
 		
 		case 0x32: // ldd (hl), a 
-			mem.write_memt(read_hl(),a);
-			write_hl(read_hl()-1);
+		{
+			const auto hl = read_hl();
+			mem.write_memt(hl,a);
+			write_hl(hl-1);
 			break;
-		
+		}
+
 		case 0x33: // inc sp
-			sp += 1;
-			cycle_delay(4); // internal
+			sp = instr_incw(sp);
 			break;
 		
 		case 0x34: // inc (hl)
@@ -376,13 +374,15 @@ void Cpu::exec_instr_no_debug()
 			break;	
 			
 		case 0x3a: // ldd a, (hl)
-			a = mem.read_memt(read_hl());
-			write_hl(read_hl()-1);
+		{
+			const auto hl = read_hl();
+			oam_bug_read_increment(hl);
+			a = mem.read_memt_no_oam_bug(hl);
+			write_hl(hl-1);
 			break;
-		
+		}
 		case 0x3b: // dec sp
-			sp -= 1;
-			cycle_delay(4); // internal
+			sp = instr_decw(sp);
 			break;
 		
 		case 0x3c: // inc a

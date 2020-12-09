@@ -15,13 +15,14 @@ public:
     bool is_active(event_type t) const;
 
     std::optional<EventNode<event_type>> get(event_type t) const;
+    std::optional<size_t> get_event_ticks(event_type t) const;
 
     void insert(const EventNode<event_type> &node, bool tick_old=true);
 
     // remove events of the specifed type
     void remove(event_type type,bool tick_old=true);
 
-    uint32_t get_timestamp() const;
+    uint64_t get_timestamp() const;
 
     size_t size() const
     { 
@@ -109,7 +110,20 @@ std::optional<EventNode<event_type>> Scheduler<SIZE,event_type>::get(event_type 
 }
 
 template<size_t SIZE,typename event_type>
-uint32_t Scheduler<SIZE,event_type>::get_timestamp() const
+std::optional<size_t> Scheduler<SIZE,event_type>::get_event_ticks(event_type t) const
+{
+    const auto event = get(t);
+
+    if(!event)
+    {
+        return std::nullopt;
+    }
+
+    return timestamp - event.value().start;
+}
+
+template<size_t SIZE,typename event_type>
+uint64_t Scheduler<SIZE,event_type>::get_timestamp() const
 {
     return timestamp;
 }

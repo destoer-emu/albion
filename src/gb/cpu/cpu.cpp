@@ -19,7 +19,8 @@ void Cpu::init(bool use_bios)
 
 
 	is_cgb = mem.rom_cgb_enabled();
-
+	//is_cgb = false;
+	
 	// setup regs to skip the bios
 	if(!use_bios)
 	{
@@ -111,6 +112,9 @@ uint8_t Cpu::fetch_opcode() noexcept
 
 	if(fired)
 	{
+		// pc will get decremented triggering oam bug
+		// dont know how this plays with halt bug
+		oam_bug_write(pc);
 		do_interrupts();
 
 		// have to re fetch the opcode this costs a cycle
@@ -450,12 +454,18 @@ void Cpu::handle_halt()
 	// smash off all pending cycles before the halt check
 	tick_pending_cycles(); 
 
+	if(scheduler.size() == 0)
+	{
+		throw std::runtime_error("halt infinite loop");
+	}
+
+
 	instr_side_effect = instr_state::normal;
 
 	// halt bug
 	// halt state not entered and the pc fails to increment for
 	// one instruction read 			
-	if( !interrupt_enable &&  interrupt_req)
+	if( !interrupt_enable && interrupt_req)
 	{
 		halt_bug = true;
 		return;
@@ -490,6 +500,7 @@ void Cpu::handle_halt()
 
 		scheduler.skip_to_event();
 	}
+
 
 /*
 	// old impl
@@ -534,6 +545,7 @@ void Cpu::do_interrupts() noexcept
 	const auto flags = mem.io[IO_IF] & mem.io[IO_IE];
 	cycle_tick_t(2);
 
+	oam_bug_write(pc);
 	write_stack(pc & 0xff);
 
 	// 6th cycle the opcode prefetch will happen
@@ -635,11 +647,14 @@ void Cpu::write_hl(uint16_t v) noexcept
 
 void Cpu::write_stackt(uint8_t v) noexcept
 {
-	mem.write_memt(--sp,v); // write to stack
+	oam_bug_write(sp);
+	// need to ignore oam triggers for this one
+	mem.write_memt_no_oam_bug(--sp,v); // write to stack
 }
 
+
 void Cpu::write_stackwt(uint16_t v) noexcept
-{
+{	
 	write_stackt((v & 0xff00) >> 8);
 	write_stackt((v & 0x00ff));
 }
@@ -658,12 +673,171 @@ void Cpu::write_stackw(uint16_t v) noexcept
 
 uint8_t Cpu::read_stackt() noexcept
 {	
-	return mem.read_memt(sp++);
+	return mem.read_memt_no_oam_bug(sp++);
 }
 
 uint16_t Cpu::read_stackwt() noexcept
 {
-	return read_stackt() | (read_stackt() << 8);
+	oam_bug_read_increment(sp);
+	const auto v1 = read_stackt();
+
+	oam_bug_read(sp);
+	const auto v2 = read_stackt(); 
+
+	return v1 | v2 << 8;
 }
+
+
+// oam bug
+// https://gbdev.io/pandocs/#sprite-ram-bug
+// todo trigger on read and writes along with interrupts
+// this is still buggy for effect tests
+uint32_t Cpu::get_cur_oam_row() const
+{
+	// ok so get the row off the scheduler
+	// oam is 20 by 8 rows
+	// so we basically just need how many m cycles have passed on the ppu
+	// we assume here that  this cant get called when the lcd is off
+	// as the oam bug wont trigger in that mode anyways
+	const auto cycles_opt = scheduler.get_event_ticks(gameboy_event::ppu);
+	if(!cycles_opt || ppu.get_mode() != ppu_mode::oam_search)
+	{
+		printf("ppu event not active during oam_bug!?\n");
+		exit(1);
+	}
+	const auto row = cycles_opt.value() / 4;
+	//printf("%zd\n",row);
+	if(row >= 20)
+	{
+		printf("oam row >= 20!?");
+		exit(1);
+	}
+	return row; 
+}
+
+bool Cpu::oam_should_corrupt(uint16_t v) const noexcept
+{
+	// only affects dmg (i think the tests have to be forced to dmg...)
+	if(is_cgb)
+	{
+		return false;
+	}
+
+	// not in oam search dont care no corruption will happen
+	if(ppu.get_mode() != ppu_mode::oam_search)
+	{
+		return false;
+	}
+
+	// if not in oam range we dont care...
+	// this includes the "unused" range
+	if(!(v >= 0xfe00 && v <= 0xfeff))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+// eqiv to an increment
+void Cpu::oam_bug_write(uint16_t v)
+{
+	tick_pending_cycles();
+	if(!oam_should_corrupt(v))
+	{
+		return;
+	}
+	
+
+	const auto row = get_cur_oam_row();
+	//printf("oam corruption: %d\n",row);
+	// nothing happens on the first row
+	if(row == 0)
+	{
+		return;
+	}
+
+	// first word overwritten with corruption
+	const uint16_t addr = row*8;
+
+	const auto addr_prev = (row-1)*8;
+	const auto a = handle_read<uint16_t>(mem.oam,addr);
+	const auto b = handle_read<uint16_t>(mem.oam,addr_prev);
+	const auto c = handle_read<uint16_t>(mem.oam,addr_prev + 4);
+
+	const uint16_t corruption = ((a ^ c) & (b ^ c)) ^ c;
+
+	handle_write<uint16_t>(mem.oam,addr,corruption);
+
+	// last 3 words overwritten with ones from previous row
+	memcpy(&mem.oam[addr+2],&mem.oam[addr_prev + 2],6);
+}
+
+void Cpu::oam_bug_read(uint16_t v)
+{
+	tick_pending_cycles();
+	if(!oam_should_corrupt(v))
+	{
+		return;
+	}
+
+
+	const auto row = get_cur_oam_row();
+	//printf("oam corruption: %d\n",row);
+	// nothing happens on the first row
+	if(row == 0)
+	{
+		return;
+	}
+
+	// first word overwritten with corruption
+	const uint16_t addr = row*8;
+
+	const auto addr_prev = (row-1)*8;
+	const auto a = handle_read<uint16_t>(mem.oam,addr);
+	const auto b = handle_read<uint16_t>(mem.oam,addr_prev);
+	const auto c = handle_read<uint16_t>(mem.oam,addr_prev + 4);
+
+	const uint16_t corruption = b | (a & c);
+
+	handle_write<uint16_t>(mem.oam,addr,corruption);
+
+	// last 3 words overwritten with ones from previous row
+	memcpy(&mem.oam[addr+2],&mem.oam[addr_prev + 2],6);
+
+}
+
+void Cpu::oam_bug_read_increment(uint16_t v)
+{
+	tick_pending_cycles();
+	if(!oam_should_corrupt(v))
+	{
+		return;
+	}
+
+	const auto row = get_cur_oam_row();
+	//printf("oam corruption: %d\n",row);
+	// nothing happens on the first rows or last
+	if(row < 4 || row == 19)
+	{
+		return;
+	}
+
+	// first word overwritten with corruption
+	const uint16_t addr = row*8;
+
+	const auto addr_prev = (row-1)*8;
+	const auto a = handle_read<uint16_t>(mem.oam,(row-2)*8);
+	const auto b = handle_read<uint16_t>(mem.oam,addr_prev);
+	const auto c = handle_read<uint16_t>(mem.oam,addr);	
+	const auto d = handle_read<uint16_t>(mem.oam,addr_prev+4);
+
+	const uint16_t corruption = (b & (a | c | d)) | (a & c & d);
+	handle_write<uint16_t>(mem.oam,addr_prev,corruption);
+	memcpy(&mem.oam[addr+2],&mem.oam[addr_prev + 2],6);
+	memcpy(&mem.oam[((row-2)*8)+2],&mem.oam[addr_prev + 2],6);
+
+}
+
 
 }
