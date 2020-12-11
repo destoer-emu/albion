@@ -718,7 +718,7 @@ uint8_t Memory::read_oam(uint16_t addr) const noexcept
 		cpu.oam_bug_read(addr);
 	}
 
-	if(addr >= 0xffa0)
+	if(addr >= 0xfea0)
 	{
 		return 0xff;
 	}
@@ -1227,7 +1227,7 @@ void Memory::write_oam(uint16_t addr,uint8_t v) noexcept
 		cpu.oam_bug_write(addr);
 	}
 
-	if(addr >= 0xffa0)
+	if(addr >= 0xfea0)
 	{
 		return;
 	}
