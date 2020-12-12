@@ -67,7 +67,7 @@ constexpr int V_BIT = 28; // overflow
 enum class arm_cond
 {
     eq=0,ne=1,cs=2,cc=3,mi=4,pl=5,vs=6,
-    vc=7,hi=8,ls=9,ge=10,lt=11,gt=12,le=13,al=14
+    vc=7,hi=8,ls=9,ge=10,lt=11,gt=12,le=13,al=14,nv=15
 };
 
 

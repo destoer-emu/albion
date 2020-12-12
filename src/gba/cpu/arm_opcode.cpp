@@ -906,7 +906,8 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
         {
             case 0:
             {
-                printf("hds illegal load op: %08x\n",regs[PC]);
+                auto err = fmt::format("hds illegal load op: {:08x}:{:08x}\n",regs[PC],opcode);
+                throw std::runtime_error(err);
                 break;
             }
 
@@ -964,7 +965,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
             
             default: // doubleword ops not supported on armv4
             {
-                auto err = fmt::format("hds illegal store op: {:08x}\n",regs[PC]);
+                auto err = fmt::format("hds illegal store op: {:08x}:{:08x}\n",regs[PC],opcode);
                 throw std::runtime_error(err);
             }
 

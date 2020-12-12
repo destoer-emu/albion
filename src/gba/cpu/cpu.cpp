@@ -930,6 +930,9 @@ bool Cpu::cond_met(int opcode)
         // allways
         case arm_cond::al: return true;
 
+        // not valid - see cond_invalid.gba
+        case arm_cond::nv: return false;
+
     }
     return true; // shoud not be reached
 }
