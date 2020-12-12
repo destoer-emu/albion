@@ -25,7 +25,6 @@ public:
     {
         return is_thumb? regs[PC] - 4 : regs[PC] - 8;
     }
-    void set_pc(uint32_t pc) {regs[PC] = pc;}
     uint32_t get_user_regs(int idx) const {return user_regs[idx];}
     uint32_t get_current_regs(int idx) const {return regs[idx]; }
     uint32_t get_status_regs(int idx) const {return status_banked[idx]; }

@@ -11,7 +11,7 @@ public:
     Disass(GBA &gba);
 
     uint32_t get_pc() const { return pc; }
-    void set_pc(uint32_t pc) { this->pc = pc;}
+
 
     std::string disass_arm(uint32_t pc);
     std::string disass_thumb(uint32_t pc);

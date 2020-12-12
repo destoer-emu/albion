@@ -20,8 +20,7 @@ public:
     void init();
     void tick(int cycles);
 
-    display_mode get_mode() const { return mode; }
-    void set_mode(display_mode mode) { this->mode = mode; }
+
     void set_cycles(int cycles) { cyc_cnt = cycles; }
     int get_vcount() const { return ly; } 
 
@@ -38,6 +37,7 @@ public:
     std::vector<uint32_t> screen;
     bool new_vblank = false;
     DispIo disp_io;
+    display_mode mode = display_mode::visible;
 private:
 
     struct TileData
@@ -91,8 +91,7 @@ private:
     Mem &mem;
     Cpu &cpu;
 
-    display_mode mode = display_mode::visible;
-
+    
     std::vector<std::vector<TileData>> bg_lines;
     std::vector<TileData> bg_line;
     std::vector<TileData> sprite_line;

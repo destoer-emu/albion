@@ -73,24 +73,24 @@ public:
 
     /* register reads for the debugger */
 
-    uint16_t get_pc() const noexcept { return pc; }
-    uint16_t get_sp() const noexcept { return sp; }
-    uint16_t get_hl() const noexcept { return read_hl(); }
-    uint16_t get_af() const noexcept { return read_af(); }
-    uint16_t get_bc() const noexcept { return read_bc(); }
-    uint16_t get_de() const noexcept { return read_de(); }
-    uint8_t get_h() const noexcept { return h; }
-    uint8_t get_l() const noexcept { return l; }
-    uint8_t get_a() const noexcept { return a; }
-    uint8_t get_f() const noexcept 
+    uint16_t read_pc() const noexcept { return pc; }
+    uint16_t read_sp() const noexcept { return sp; }
+    uint16_t read_af() const noexcept;
+    uint16_t read_de() const noexcept;
+    uint16_t read_bc() const noexcept;
+    uint16_t read_hl() const noexcept;
+    uint8_t read_h() const noexcept { return h; }
+    uint8_t read_l() const noexcept { return l; }
+    uint8_t read_a() const noexcept { return a; }
+    uint8_t read_f() const noexcept 
     { 
         return carry << C | half << H
 		| zero << Z | negative << N; 
     }
-    uint8_t get_b() const noexcept { return b; }
-    uint8_t get_c() const noexcept { return c; }
-    uint8_t get_d() const noexcept { return d; }
-    uint8_t get_e() const noexcept { return e ;}
+    uint8_t read_b() const noexcept { return b; }
+    uint8_t read_c() const noexcept { return c; }
+    uint8_t read_d() const noexcept { return d; }
+    uint8_t read_e() const noexcept { return e ;}
 
     // save states
     void save_state(std::ofstream &fp);
@@ -161,11 +161,6 @@ private:
     void write_bc(uint16_t data) noexcept;
     void write_de(uint16_t data) noexcept;
     void write_hl(uint16_t data) noexcept;
-
-    uint16_t read_af() const noexcept;
-    uint16_t read_de() const noexcept;
-    uint16_t read_bc() const noexcept;
-    uint16_t read_hl() const noexcept;
 
 #ifdef DEBUG
     using EXEC_INSTR_FPTR = void (Cpu::*)(void);

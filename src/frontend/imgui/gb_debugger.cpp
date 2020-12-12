@@ -208,12 +208,12 @@ void ImguiMainWindow::gameboy_draw_cpu_info()
 void ImguiMainWindow::gameboy_draw_regs_child()
 {
     // print regs
-    ImGui::Text("pc: %04x",gb.cpu.get_pc());
-    ImGui::Text("af: %04x",gb.cpu.get_af());
-    ImGui::Text("bc: %04x",gb.cpu.get_bc());
-    ImGui::Text("de: %04x",gb.cpu.get_de());
-    ImGui::Text("hl: %04x",gb.cpu.get_hl());
-    ImGui::Text("sp: %04x",gb.cpu.get_sp());          
+    ImGui::Text("pc: %04x",gb.cpu.read_pc());
+    ImGui::Text("af: %04x",gb.cpu.read_af());
+    ImGui::Text("bc: %04x",gb.cpu.read_bc());
+    ImGui::Text("de: %04x",gb.cpu.read_de());
+    ImGui::Text("hl: %04x",gb.cpu.read_hl());
+    ImGui::Text("sp: %04x",gb.cpu.read_sp());          
 }
 
 
@@ -277,7 +277,7 @@ void ImguiMainWindow::gameboy_draw_disassembly_child()
 
     if(ImGui::Button("Goto pc"))
     {
-        addr = gb.cpu.get_pc();
+        addr = gb.cpu.read_pc();
         update = true;
     }
 
@@ -302,7 +302,7 @@ void ImguiMainWindow::gameboy_draw_disassembly_child()
         uint16_t target = clipper.DisplayStart;
         for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
         {
-            bool is_pc = target == gb.cpu.get_pc();
+            bool is_pc = target == gb.cpu.read_pc();
             if(is_pc)
             {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f,0.0f,1.0f,1.0f));

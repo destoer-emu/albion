@@ -54,11 +54,6 @@ public:
 
     void update_graphics(uint32_t cycles) noexcept;
 
-    void set_scanline_counter(int v) noexcept
-    {
-        scanline_counter = v;
-    }
-
     unsigned int get_current_line() const noexcept
     {
         return early_line_zero? 0 : current_line;
