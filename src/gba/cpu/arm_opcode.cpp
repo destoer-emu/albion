@@ -1010,12 +1010,10 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
     const bool w = is_set(opcode,21); // write back
     const bool p = is_set(opcode,24); // pre index
 
-    const auto cur_mode = arm_mode;
-    const bool mode_change = !p && w; // T
-    if(mode_change)  // T force user mode
-    {
-        switch_mode(cpu_mode::user);
-    }
+    // does not do this on gba?
+    // does it do this on something like the ds (look at arm manuals)
+    //const auto cur_mode = arm_mode;
+    //const bool mode_change = !p && w; // T
 
 
     const auto rd = (opcode >> 12) & 0xf;
@@ -1139,11 +1137,6 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
         }
     }
 
-    // we forced it to operate in user so now we need to switch it back
-    if(mode_change)
-    {
-        switch_mode(cur_mode);
-    }
 }
 
 }
