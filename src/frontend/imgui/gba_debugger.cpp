@@ -46,15 +46,15 @@ void gba_handle_input(GBA &gba)
         }
     }
 
-    if(ImGui::IsKeyDown(GLFW_KEY_KP_SUBTRACT))
+    if(ImGui::IsKeyDown(GLFW_KEY_K))
     {
-        gba.key_input(static_cast<int>(emu_key::minus),true);
+        gba.key_input(static_cast<int>(emu_key::k),true);
+        glfwSwapInterval(0); // Disable vsync
     }
 
-    else if(ImGui::IsKeyDown(GLFW_KEY_KP_ADD))
+    else if(ImGui::IsKeyDown(GLFW_KEY_L))
     {
-        gba.key_input(static_cast<int>(emu_key::plus),true);
-        glfwSwapInterval(0); // Disable vsync
+        gba.key_input(static_cast<int>(emu_key::l),true);
     }
 
 }

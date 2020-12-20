@@ -16,8 +16,8 @@ enum class emu_key
     s = GLFW_KEY_S,
     d = GLFW_KEY_D,
     f = GLFW_KEY_F,
-    plus = GLFW_KEY_KP_ADD,
-    minus = GLFW_KEY_KP_SUBTRACT
+    k = GLFW_KEY_K,
+    l = GLFW_KEY_L
 };
 #endif
 
@@ -35,8 +35,8 @@ enum class emu_key
     s = Qt::Key_S,
     d = Qt::Key_D,
     f = Qt::Key_F,
-    plus = Qt::Key_Plus,
-    minus = Qt::Key_Minus
+    k = Qt::Key_K,
+    l = Qt::Key_L
 };
 #endif
 
@@ -54,8 +54,8 @@ enum class emu_key
     s = SDLK_s,
     d = SDLK_d,
     f = SDLK_f,
-    plus = SDLK_KP_PLUS,
-    minus = SDLK_KP_MINUS
+    k = SDLK_k,
+    l = SDLK_l
 };
 #endif
 
@@ -72,7 +72,7 @@ enum class emu_key
     s,
     d,
     f,
-    plus,
-    minus
+    k,
+    l
 };
 #endif

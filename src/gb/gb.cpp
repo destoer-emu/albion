@@ -55,7 +55,7 @@ void GB::key_input(int key, bool pressed)
 			case emu_key::left: key_pressed(button::left); break;
 			case emu_key::up: key_pressed(button::up); break;
 			case emu_key::down: key_pressed(button::down); break;
-			case emu_key::plus:
+			case emu_key::k:
 			{
 				apu.playback.stop();
 				throttle_emu = false;
@@ -65,7 +65,7 @@ void GB::key_input(int key, bool pressed)
 				break;
 			}
 
-			case emu_key::minus:
+			case emu_key::l:
 			{
 				apu.playback.start();
 				throttle_emu = true;

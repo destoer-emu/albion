@@ -355,6 +355,7 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
                     set_cpsr(status_banked[idx]);
                 }
 
+                // likely follows standard behavior for msr
                 else
                 {
                     auto err = fmt::format("[block data: {:08x}] illegal status bank {:x}\n",regs[PC],idx);

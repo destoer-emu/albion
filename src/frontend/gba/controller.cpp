@@ -45,8 +45,8 @@ void GbaControllerInput::update(gameboyadvance::GBA &gba)
         SDL_CONTROLLER_BUTTON_X,
         SDL_CONTROLLER_BUTTON_START,
         SDL_CONTROLLER_BUTTON_BACK,
-        SDL_CONTROLLER_BUTTON_LEFTSHOULDER,
-	    SDL_CONTROLLER_BUTTON_RIGHTSHOULDER 
+        SDL_CONTROLLER_BUTTON_RIGHTSHOULDER,
+        SDL_CONTROLLER_BUTTON_LEFTSHOULDER
     };
 
     static constexpr emu_key gba_key[] = 
@@ -55,8 +55,8 @@ void GbaControllerInput::update(gameboyadvance::GBA &gba)
         emu_key::s,
         emu_key::enter,
         emu_key::space,
-        emu_key::minus,
-        emu_key::plus
+        emu_key::k,
+        emu_key::l
     };
     static_assert(sizeof(controller_buttons) == sizeof(gba_key));
 

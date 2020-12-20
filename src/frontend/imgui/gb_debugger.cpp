@@ -102,14 +102,14 @@ void gameboy_handle_input(GB &gb)
         }
     }
 
-    if(ImGui::IsKeyDown(GLFW_KEY_KP_ADD))
+    if(ImGui::IsKeyDown(GLFW_KEY_K))
     {
-        gb.key_input(static_cast<int>(emu_key::plus),true);
+        gb.key_input(static_cast<int>(emu_key::k),true);
     }
 
-    else if(ImGui::IsKeyDown(GLFW_KEY_KP_SUBTRACT))
+    else if(ImGui::IsKeyDown(GLFW_KEY_L))
     {
-        gb.key_input(static_cast<int>(emu_key::minus),true);
+        gb.key_input(static_cast<int>(emu_key::l),true);
     }
 }
 

@@ -72,7 +72,7 @@ void GBA::key_input(int key, bool pressed)
 		case emu_key::s: button_event(button::b,pressed); break;
         case emu_key::d: button_event(button::l,pressed); break;
         case emu_key::f: button_event(button::r,pressed); break;
-		case emu_key::plus:
+		case emu_key::k:
 		{
 			apu.playback.stop();
 			throttle_emu = false;
@@ -82,7 +82,7 @@ void GBA::key_input(int key, bool pressed)
 			break;
 		}
 
-		case emu_key::minus:
+		case emu_key::l:
 		{
 			apu.playback.start();
 			throttle_emu = true;

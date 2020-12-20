@@ -44,8 +44,8 @@ void GbControllerInput::update(gameboy::GB &gb)
         SDL_CONTROLLER_BUTTON_X,
         SDL_CONTROLLER_BUTTON_START,
         SDL_CONTROLLER_BUTTON_BACK,
-        SDL_CONTROLLER_BUTTON_LEFTSHOULDER,
-	    SDL_CONTROLLER_BUTTON_RIGHTSHOULDER 
+        SDL_CONTROLLER_BUTTON_RIGHTSHOULDER,
+        SDL_CONTROLLER_BUTTON_LEFTSHOULDER
     };
 
     static constexpr emu_key gb_key[] = 
@@ -54,8 +54,8 @@ void GbControllerInput::update(gameboy::GB &gb)
         emu_key::s,
         emu_key::enter,
         emu_key::space,
-        emu_key::minus,
-        emu_key::plus
+        emu_key::k,
+        emu_key::l
     };
     static_assert(sizeof(controller_buttons) == sizeof(gb_key));
 
