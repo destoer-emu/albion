@@ -79,7 +79,7 @@ private:
     Apu &apu;
 
     template<typename access_type>
-    void tick_mem_access();
+    void tick_mem_access(uint32_t addr);
 
 
     // read mem helpers
@@ -149,6 +149,7 @@ private:
     template<typename access_type>
     void write_sram(uint32_t addr,access_type v);
 
+    void update_wait_states();
 
     // last accessed memory region
     enum class memory_region
@@ -241,7 +242,9 @@ private:
     // memory cycle timings
     // some can be set dynamically
     // b w h
-    int wait_states[10][3]  = 
+    int wait_states[10][3];
+
+    static constexpr int wait_states_default[10][3]  = 
     {
         {1,1,1}, // bios rom
         {1,1,1}, // wram 32k
@@ -250,14 +253,15 @@ private:
         {1,1,2}, // pallete ram
         {1,1,2}, // vram
         {1,1,1}, // oam
-        //{5,5,8}, // gamepak rom
+        {5,5,8}, // gamepak rom (in 2nd array)
         // pretend its faster than it really is
         // until we have prefetch
-        {1,1,1}, 
+        //{1,1,1}, 
         {5,5,8}, // cart backup needs to be setup depending on cart type
     };
+    
+    int rom_wait_states[3][2][3];
 
-    memory_region mem_region;
 
     // general memory
     // bios code

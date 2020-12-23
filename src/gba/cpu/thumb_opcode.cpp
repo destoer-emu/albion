@@ -9,30 +9,30 @@
 namespace gameboyadvance
 {
 
-
+// todo remove preftech hacks
 void Cpu::thumb_fill_pipeline() // need to verify this...
 {
-    pipeline[0] = mem.read_memt<uint16_t>(regs[PC]);
+    pipeline[0] = mem.read_mem<uint16_t>(regs[PC]);
+    cycle_tick(1);
     regs[PC] += ARM_HALF_SIZE;
-    pipeline[1] = mem.read_memt<uint16_t>(regs[PC]);
+    pipeline[1] = mem.read_mem<uint16_t>(regs[PC]);
+    cycle_tick(1);
 }
 
 
 uint16_t Cpu::fetch_thumb_opcode()
 {
-    regs[PC] &= ~1;
-
     const uint16_t opcode = pipeline[0];
     pipeline[0] = pipeline[1];
     regs[PC] += ARM_HALF_SIZE;  
-    pipeline[1] = mem.read_memt<uint16_t>(regs[PC]);
+    pipeline[1] = mem.read_mem<uint16_t>(regs[PC]);
+    cycle_tick(1);
     return opcode;
-
 }
 
 void Cpu::write_pc_thumb(uint32_t v)
 {
-    regs[PC] = v;
+    regs[PC] = v & ~1;
     thumb_fill_pipeline(); // fill the intitial cpu pipeline
 }
 
@@ -283,7 +283,7 @@ void Cpu::thumb_push_pop(uint16_t opcode)
         // nS +1N +1I (pop) | (n+1)S +2N +1I(pop pc)
         if(lr)
         {
-            write_pc_thumb(mem.read_memt<uint32_t>(regs[SP]) & ~1);
+            write_pc_thumb(mem.read_memt<uint32_t>(regs[SP]));
             regs[SP] += ARM_WORD_SIZE;
         }
     }
@@ -383,15 +383,7 @@ void Cpu::thumb_hi_reg_ops(uint16_t opcode)
             cpsr = is_thumb? set_bit(cpsr,5) : deset_bit(cpsr,5);
 
             // branch
-            if(is_thumb)
-            {
-                write_pc_thumb(rs_val & ~1);
-            }
-
-            else
-            {
-                write_pc_arm(rs_val & ~3);
-            }    
+            write_pc(rs_val);
             break;
         }
     }
@@ -671,7 +663,7 @@ void Cpu::thumb_long_bl(uint16_t opcode)
         // tmp = next instr addr
         const uint32_t tmp = regs[PC]-ARM_HALF_SIZE;
         // pc = lr + offsetlow << 1
-        write_pc_thumb((regs[LR] + (offset << 1)) & ~1);
+        write_pc_thumb((regs[LR] + (offset << 1)));
         // lr = tmp | 1
         regs[LR] = tmp | 1;
         write_log(debug,"[cpu-thumb {:08x}] call {:08x}",tmp,regs[PC]);
@@ -736,7 +728,7 @@ void Cpu::thumb_cond_branch(uint16_t opcode)
 
     if(cond_met(cond))
     {
-        write_pc_thumb(addr & ~1);  
+        write_pc_thumb(addr);  
     }
 }
 

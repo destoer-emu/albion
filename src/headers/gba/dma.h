@@ -19,7 +19,7 @@ enum class dma_type
 
 struct DmaReg
 {
-    DmaReg();
+    DmaReg(int reg);
     void init();
 
     uint32_t src;
@@ -43,6 +43,12 @@ struct DmaReg
     dma_type start_time;
     bool irq; // irq at end of word count
     bool enable;
+    static constexpr int max_counts[4] = {0x4000,0x4000,0x4000,0x10000};
+    const int max_count;
+
+
+    static constexpr interrupt dma_interrupts[4] = {interrupt::dma0,interrupt::dma1,interrupt::dma2,interrupt::dma3}; 
+    const interrupt dma_interrupt;
 
     bool interrupted;
 };
@@ -74,7 +80,6 @@ private:
     void do_dma(int reg_num,dma_type req_type);
     void check_dma(dma_type req_type);
     void handle_increment(int reg_num);
-    static constexpr int max_count[4] = {0x4000,0x4000,0x4000,0x10000};
 
     static constexpr int32_t addr_increment_table[2][4] = 
     {
@@ -84,7 +89,7 @@ private:
 
     int active_dma;
 
-    std::array<DmaReg,4> dma_regs;
+    std::array<DmaReg,4> dma_regs{0,1,2,3};
     std::vector<dma_type> req_list;
 };
 

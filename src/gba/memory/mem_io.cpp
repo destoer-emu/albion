@@ -120,6 +120,78 @@ uint8_t SioCnt::read(int idx) const
     return 0;
 }
 
+
+
+WaitCnt::WaitCnt()
+{
+    init();
+}
+
+void WaitCnt::init()
+{
+    sram_cnt = 0;
+    wait01 = 0;
+    wait02 = 0;
+    wait11 = 0;
+    wait12 = 0;
+    wait21 = 0;
+    wait22 = 0;
+    term_output = 0;
+    prefetch = false;
+    gamepak_flag = false;
+}
+
+
+void WaitCnt::write(int idx, uint8_t v)
+{
+    switch(idx)
+    {
+        case 0:
+        {
+            sram_cnt = v & 3;
+            wait01 = (v >> 2) & 3;
+            wait02 = is_set(v,4);
+            wait11 = (v >> 5) & 3;
+            wait12 = is_set(v,7);
+            break;
+        }
+
+        case 1:
+        {
+            wait21 = v & 3;
+            wait22 = is_set(v,2);
+            term_output = (v >> 3) & 3;
+            prefetch = is_set(v,6);
+            break;
+        }
+    }
+}
+
+
+uint8_t WaitCnt::read(int idx)
+{
+    switch(idx)
+    {
+        case 0:
+        {
+            return sram_cnt | wait01 << 2 | wait02 << 4
+                | wait11 << 5 | wait12 << 7;
+            break;
+        }
+
+        case 1:
+        {
+            // hardcode gba cart...
+            return wait21 | wait22 << 2 | term_output << 3 
+                | prefetch << 6;
+            break;
+        }
+    }
+    // should not be reached
+    return 0;
+}
+
+
 MemIo::MemIo()
 {
     init();
@@ -131,6 +203,7 @@ void MemIo::init()
     postflg = 0;   
     siocnt.init();
     key_control.init();
+    wait_cnt.init();
 }
 
 }

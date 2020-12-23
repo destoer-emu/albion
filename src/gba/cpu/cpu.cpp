@@ -38,9 +38,10 @@ void Cpu::init()
     regs[SP] = 0x03007f00;
     hi_banked[static_cast<int>(cpu_mode::supervisor)][0] = 0x03007FE0;
     hi_banked[static_cast<int>(cpu_mode::irq)][0] = 0x03007FA0;
-    arm_fill_pipeline(); // fill the intitial cpu pipeline
 
-    //regs[PC] = 0;
+
+//    regs[PC] = 0;
+    arm_fill_pipeline(); // fill the intitial cpu pipeline
     arm_mode = cpu_mode::system;
     switch_mode(cpu_mode::system);
 
@@ -52,7 +53,6 @@ void Cpu::init()
     flag_n = false;
 
 
-    cyc_cnt = 0;
     cpu_io.init();
 }
 
@@ -371,7 +371,7 @@ void Cpu::init_arm_opcode_table()
 void Cpu::cycle_tick(int cycles)
 {
 
-    //UNUSED(cycles);
+    UNUSED(cycles);
 
     // hack until we fix timings
     //cycles = 1;
@@ -379,6 +379,7 @@ void Cpu::cycle_tick(int cycles)
     disp.tick(cycles);
     apu.tick(cycles);
     tick_timers(cycles);
+
 }
 
 

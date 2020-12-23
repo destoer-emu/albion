@@ -21,7 +21,6 @@ public:
     void tick(int cycles);
 
 
-    void set_cycles(int cycles) { cyc_cnt = cycles; }
     int get_vcount() const { return ly; } 
 
     void update_vcount_compare();

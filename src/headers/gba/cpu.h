@@ -39,13 +39,7 @@ public:
 
     cpu_mode get_mode() const { return arm_mode; }
 
-    int get_cycles() const { return cyc_cnt; }
-
     bool is_cpu_thumb() const { return is_thumb; }
-
-
-    void set_timer(int idx, uint32_t v) { timers[idx] = v; }
-    uint16_t get_timer(int idx) const {return timers[idx]; }
 
     // print all registers for debugging
     // if we go with a graphical debugger
@@ -250,9 +244,6 @@ private:
 
     // cpu pipeline
     uint32_t pipeline[2] = {0};
-
-
-    int cyc_cnt;
 };
 
 }

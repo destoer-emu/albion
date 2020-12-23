@@ -6,28 +6,30 @@ namespace gameboyadvance
 {
 
 // if there is a pipeline stall (whenever pc changes besides a fetch)
+// TODO remove prefetch hacks
 void Cpu::arm_fill_pipeline() // need to verify this...
 {
-    pipeline[0] = mem.read_memt<uint32_t>(regs[PC]);
+    pipeline[0] = mem.read_mem<uint32_t>(regs[PC]);
+    cycle_tick(1);
     regs[PC] += ARM_WORD_SIZE;
-    pipeline[1] = mem.read_memt<uint32_t>(regs[PC]);
+    pipeline[1] = mem.read_mem<uint32_t>(regs[PC]);
+    cycle_tick(1);
 }
 
 void Cpu::write_pc_arm(uint32_t v)
 {
-    regs[PC] = v;
+    regs[PC] = v & ~3;
     arm_fill_pipeline(); // fill the intitial cpu pipeline
 }
 
 
 uint32_t Cpu::fetch_arm_opcode()
 {
-    regs[PC] &= ~3; // algin
-
     const uint32_t opcode = pipeline[0];
     pipeline[0] = pipeline[1];
     regs[PC] += ARM_WORD_SIZE; 
-    pipeline[1] = mem.read_memt<uint32_t>(regs[PC]);
+    pipeline[1] = mem.read_mem<uint32_t>(regs[PC]);
+    cycle_tick(1);
     return opcode;
 }
 
@@ -519,15 +521,7 @@ void Cpu::arm_psr(uint32_t opcode)
 
         if(rd == PC)
         {
-            if(is_thumb)
-            {
-                write_pc_thumb(regs[PC]);
-            }
-
-            else
-            {
-                write_pc_arm(regs[PC]);
-            }
+            write_pc(regs[PC]);
         }
     }
 }
@@ -844,16 +838,7 @@ void Cpu::arm_branch_and_exchange(uint32_t opcode)
 
     cpsr = is_thumb? set_bit(cpsr,5) : deset_bit(cpsr,5);
 
-    // branch
-    if(is_thumb)
-    {
-        write_pc_thumb(regs[rn] & ~1);
-    }
-
-    else
-    {
-        write_pc_arm(regs[rn] & ~3);
-    }
+    write_pc(regs[rn]);
 }
 
 

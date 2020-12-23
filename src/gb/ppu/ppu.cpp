@@ -221,19 +221,16 @@ ppu_mode Ppu::get_mode() const noexcept
 void Ppu::write_stat() noexcept
 {
 	// stat write glitch
-	// behaves as if 0xff for 1 cycle on dmg?
+	// behaves as if 0xff for 1 cycle on dmg
 	if(!cpu.get_cgb())
 	{
 		const auto backup = mem.io[IO_STAT];
-		mem.io[IO_STAT] = 0xff & ~7;
+		mem.io[IO_STAT] = 0xff;
 		stat_update();
 		mem.io[IO_STAT] = backup;
 	}
 
-	else
-	{
-		stat_update();
-	}
+	stat_update();
 }
 
 

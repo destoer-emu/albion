@@ -20,8 +20,9 @@ void Dma::init()
 }
 
 
-DmaReg::DmaReg()
+DmaReg::DmaReg(int reg) : max_count(max_counts[reg]), dma_interrupt(dma_interrupts[reg])
 {
+    assert(reg >= 0 && reg <= 3);
     init();
 }
 
@@ -104,7 +105,7 @@ void Dma::write_count(int reg_num,int idx, uint8_t v)
     }
     
     // enforce the word count limit
-    r.word_count &= max_count[reg_num] - 1;    
+    r.word_count &= r.max_count - 1;    
 }
 
 uint8_t Dma::read_control(int reg_num,int idx)
@@ -309,7 +310,7 @@ void Dma::do_dma(int reg_num, dma_type req_type)
     if(!r.interrupted)
     {
         // reload word count
-        r.word_count_shadow = (r.word_count == 0 )? max_count[reg_num] : r.word_count;
+        r.word_count_shadow = (r.word_count == 0 )? r.max_count: r.word_count;
 
         // if in dst_cnt is in mode 3
         // reload the dst
@@ -368,7 +369,7 @@ void Dma::do_dma(int reg_num, dma_type req_type)
 
             //write_log(debug,"dma {:x} from {:08x} to {:08x}\n",reg_num,r.src_shadow,r.dst_shadow);
             //std::cout << fmt::format("dma {:x} from {:08x} to {:08x}\n",reg_num,r.src_shadow,r.dst_shadow);
-
+            // TODO how does internal cycles work for this?
             if(r.is_word)
             {
                 for(size_t i = r.word_offset; i < r.word_count_shadow; i++)
@@ -400,15 +401,15 @@ void Dma::do_dma(int reg_num, dma_type req_type)
                     }
                 }
             }
+            cpu.cycle_tick(2);
             break;
         }
     }
 
     // do irq on finish
-    static constexpr interrupt dma_interrupt[4] = {interrupt::dma0,interrupt::dma1,interrupt::dma2,interrupt::dma3}; 
     if(r.irq) 
     {
-        cpu.request_interrupt(dma_interrupt[reg_num]);
+        cpu.request_interrupt(r.dma_interrupt);
     }
 
 

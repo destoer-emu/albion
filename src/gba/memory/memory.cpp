@@ -145,7 +145,8 @@ void Mem::init(std::string filename)
     }
     mem_io.init();
     dma.init();
-
+    memcpy(wait_states,wait_states_default,sizeof(wait_states));
+    update_wait_states();
 
     // if we are not using the bios boot we need to set postflg
     mem_io.postflg = 1;
@@ -523,12 +524,11 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
 
         case IO_POSTFLG: mem_io.postflg = v; break;
 
-
         case IO_HALTCNT: cpu.cpu_io.halt_cnt.write(v); break;
 
         // gamepak wait timings ignore for now
-        case IO_WAITCNT: break;
-        case IO_WAITCNT+1: break;
+        case IO_WAITCNT: mem_io.wait_cnt.write(0,v); update_wait_states(); break;
+        case IO_WAITCNT+1: mem_io.wait_cnt.write(1,v); update_wait_states(); break;
         case IO_WAITCNT+2: break;
         case IO_WAITCNT+3: break;
 
@@ -627,8 +627,8 @@ uint8_t Mem::read_io_regs(uint32_t addr)
         case IO_IF+1: return (cpu.cpu_io.interrupt_flag >> 8) & 0x3f;         
 
         // gamepak wait timings ignore for now
-        case IO_WAITCNT: return 0;
-        case IO_WAITCNT+1: return 0; 
+        case IO_WAITCNT: return mem_io.wait_cnt.read(0);
+        case IO_WAITCNT+1: return mem_io.wait_cnt.read(1); 
         case IO_WAITCNT+2: return  0; 
         case IO_WAITCNT+3: return 0; 
 
@@ -689,7 +689,7 @@ template<typename access_type>
 access_type Mem::read_mem_handler(uint32_t addr)
 {
 
-    mem_region = memory_region_table[(addr >> 24) & 0xf];
+    const auto mem_region = memory_region_table[(addr >> 24) & 0xf];
 
     switch(mem_region)
     {
@@ -728,7 +728,8 @@ access_type Mem::read_mem_handler(uint32_t addr)
             return 0;
         }
 
-        default: return 0; // handle undefined accesses here
+        default:
+        case memory_region::undefined: return 0; // handle undefined accesses here
     }
 }
 
@@ -767,7 +768,7 @@ template<typename access_type>
 access_type Mem::read_memt(uint32_t addr)
 {
     access_type v = read_mem<access_type>(addr);
-    tick_mem_access<access_type>();
+    tick_mem_access<access_type>(addr);
     return v;
 }
 
@@ -788,6 +789,7 @@ void Mem::write_mem(uint32_t addr,access_type v)
     // handle address alignemt
     addr &= ~(sizeof(access_type)-1);
 
+    const auto mem_region = memory_region_table[(addr >> 24) & 0xf];
 #ifdef DEBUG
     if(debug.breakpoint_hit(addr,v,break_type::write))
     {
@@ -796,7 +798,6 @@ void Mem::write_mem(uint32_t addr,access_type v)
     }   
 #endif
 
-    mem_region = memory_region_table[(addr >> 24) & 0xf];
 
     switch(mem_region)
     {
@@ -835,7 +836,7 @@ void Mem::write_mem(uint32_t addr,access_type v)
             break;
         }
 
-        default: break;
+        case memory_region::undefined: break;
     }
 
 }
@@ -845,19 +846,84 @@ template<typename access_type>
 void Mem::write_memt(uint32_t addr,access_type v)
 {
     write_mem<access_type>(addr,v);
-    tick_mem_access<access_type>();
+    tick_mem_access<access_type>(addr);
 }
 
 
 
-template<typename access_type>
-void Mem::tick_mem_access()
+
+
+// we also need to a test refactor using one lib, constants and compiling in one dir
+// and impl a basic timing test
+// this is completly botched...
+void set_wait(int buf[], int wait)
 {
+    buf[0] =  wait + 1;
+    buf[1] =  wait + 1;
+    buf[2] =  (wait * 2) + 1;
+}
+
+void Mem::update_wait_states()
+{
+    static constexpr int wait_first_table[] = {4,3,2,8};
+    const auto &wait_cnt = mem_io.wait_cnt;
+
+    // TODO: hack for prefetch if prefetch is enabled make access instant
+    if(wait_cnt.prefetch)
+    {
+        memset(&wait_states,1,sizeof(rom_wait_states));
+        return;
+    }
+
+    const auto wait_first0 = wait_first_table[wait_cnt.wait01];
+    const auto wait_second0 = wait_cnt.wait02? 2 : 1;
+    set_wait(&rom_wait_states[0][0][0],wait_first0);
+    set_wait(&rom_wait_states[0][1][0],wait_second0);
+
+    const auto wait_first1 = wait_first_table[wait_cnt.wait11];
+    const auto wait_second1 = wait_cnt.wait12? 4 : 1;
+    set_wait(&rom_wait_states[1][0][0],wait_first1);
+    set_wait(&rom_wait_states[1][1][0],wait_second1);
+
+
+    const auto wait_first2 = wait_first_table[wait_cnt.wait21];
+    const auto wait_second2 = wait_cnt.wait22? 8 : 1;
+    set_wait(&rom_wait_states[2][0][0],wait_first2);
+    set_wait(&rom_wait_states[2][1][0],wait_second2);
+}
+
+
+// this is very hacky to get around our shoddy timings atm
+// Emerald breaks in battle under this though im not sure timings is the reason
+// metroid also showing lines, need to debug the gfx issues on the save files too
+// it might be an issue with the pipeline...
+template<typename access_type>
+void Mem::tick_mem_access(uint32_t addr)
+{
+    UNUSED(addr);
+
     // only allow up to 32bit
     static_assert(sizeof(access_type) <= 4);
 
+    // need to re pull the region incase dma triggered reads
+    const int region =  (addr >> 24) & 0xf; 
+    const auto mem_region = memory_region_table[region];
+    if(mem_region == memory_region::undefined)
+    {
+        return;
+    }
+
+    // need to lookup waitstaes in seperate table for rom
+    if(mem_region == memory_region::rom)
+    {
+        // hardcode to sequential access!
+        //cpu.cycle_tick(rom_wait_states[(region - 8) / 2][1][sizeof(access_type) >> 1]);
+        cpu.cycle_tick(1);
+        return;
+    }
+
     // should unmapped addresses still tick a cycle?
-    if(mem_region != memory_region::undefined)
+    else
     {
         // access type >> 1 to get the value
         // 4 -> 2 (word)
@@ -866,7 +932,9 @@ void Mem::tick_mem_access()
         // our waitstates are busted ive stubbed them for now
         // we need to read up and S and N cycles
         // before we add them
-        cpu.cycle_tick(wait_states[static_cast<int>(mem_region)][sizeof(access_type) >> 1]);
+        // this is enough to tip it over to where many thigns wont work...
+        //cpu.cycle_tick(wait_states[region][sizeof(access_type) >> 1]);
+        cpu.cycle_tick(1);
     }
 }
 

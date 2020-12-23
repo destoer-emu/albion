@@ -36,6 +36,26 @@ struct SioCnt
 };
 
 
+struct WaitCnt
+{
+    WaitCnt();
+    void init();
+
+    void write(int idx, uint8_t v);
+    uint8_t read(int idx);
+
+    int sram_cnt;
+    int wait01;
+    int wait02;
+    int wait11;
+    int wait12;
+    int wait21;
+    int wait22;
+    int term_output;
+    bool prefetch;
+    bool gamepak_flag;
+};
+
 
 struct MemIo
 {
@@ -43,8 +63,11 @@ struct MemIo
     void init();
     uint16_t keyinput;    
     KeyCnt key_control;
+    WaitCnt wait_cnt;
     SioCnt siocnt;
     uint8_t postflg;
 };
+
+
 
 }
