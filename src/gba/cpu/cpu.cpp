@@ -585,6 +585,7 @@ void Cpu::handle_power_state()
         // i think this halts actions until buttons are pressed?
         case HaltCnt::power_state::stop:
         {
+            puts("stop unimplemented!");
             cpu_io.halt_cnt.state = HaltCnt::power_state::normal;
             break;
         }

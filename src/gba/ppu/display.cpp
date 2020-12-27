@@ -93,7 +93,7 @@ void Display::advance_line()
         window_0_y_triggered = true;
     }
 
-    if(ly == disp_io.win0v.y2)
+    else if(ly == disp_io.win0v.y2)
     {
         window_0_y_triggered = false;
     }
@@ -105,7 +105,7 @@ void Display::advance_line()
     }
 
 
-    if(ly == disp_io.win1v.y2)
+    else if(ly == disp_io.win1v.y2)
     {
         window_1_y_triggered = false;
     }
