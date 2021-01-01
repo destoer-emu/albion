@@ -24,6 +24,8 @@ public:
 
     uint64_t get_timestamp() const;
 
+    uint64_t get_next_event_cycles() const;
+
     size_t size() const
     { 
         return event_list.size(); 
@@ -126,6 +128,12 @@ template<size_t SIZE,typename event_type>
 uint64_t Scheduler<SIZE,event_type>::get_timestamp() const
 {
     return timestamp;
+}
+
+template<size_t SIZE,typename event_type>
+uint64_t Scheduler<SIZE,event_type>::get_next_event_cycles() const
+{
+    return event_list.peek().end - timestamp;
 }
 
 template<size_t SIZE,typename event_type>

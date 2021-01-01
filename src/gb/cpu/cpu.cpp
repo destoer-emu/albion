@@ -20,7 +20,7 @@ void Cpu::init(bool use_bios)
 
 	is_cgb = mem.rom_cgb_enabled();
 	//is_cgb = false;
-	
+
 	// setup regs to skip the bios
 	if(!use_bios)
 	{

@@ -595,7 +595,7 @@ uint32_t Ppu::get_dmg_color(int color_num, pixel_source source) const noexcept
 	const uint8_t palette = mem.io[color_address & 0xff];
 	const int color_idx = (palette >> (color_num * 2)) & 3; 
 	
-	return 0xff000000 | dmg_pal[source_idx][color_idx];
+	return dmg_pal[source_idx][color_idx];
 }
 
 uint32_t Ppu::get_cgb_color(int color_num, int cgb_pal, pixel_source source) const noexcept
@@ -616,20 +616,8 @@ uint32_t Ppu::get_cgb_color(int color_num, int cgb_pal, pixel_source source) con
 		memcpy(&col,&sp_pal[offset],sizeof(col));		
 	}
 
-	// gameboy stores palletes in  format?
-	int blue = col & 0x1f;
-	int green = (col >> 5) & 0x1f;
-	int red = (col >> 10) & 0x1f;
-	
-	// convert rgb15 to rgb888
-	red = (red << 3) | (red >> 2);
-	blue = (blue << 3) | (blue >> 2);
-	green = (green << 3) | (green >> 2);
-
-
-	const uint32_t full_color = blue | (green << 8) | (red << 16);
-
-	return full_color | 0xff000000;
+	col = deset_bit(col,15);
+	return col_lut[col];
 }
 
 

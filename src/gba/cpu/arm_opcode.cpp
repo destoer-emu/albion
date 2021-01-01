@@ -48,12 +48,10 @@ void Cpu::exec_arm()
 
     // if the condition is not met just
     // advance past the instr
-    if(!cond_met((instr >> 28) & 0xf))
+    if(cond_met((instr >> 28) & 0xf))
     {
-       return;
+        execute_arm_opcode(instr);
     }
-
-    execute_arm_opcode(instr);
 }
 
 
@@ -934,7 +932,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
     else // store
     {
-        uint32_t value = regs[rd];
+        auto value = regs[rd];
         if(rd == PC)
         {
             // pc + 12

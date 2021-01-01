@@ -52,7 +52,9 @@ void gb_run_test_helper(const std::vector<std::string> &tests, int seconds)
 
                 else if(gb.mem.test_result == emu_test::pass)
                 {
-                    std::cout << fmt::format("{}: pass\n",x);
+                    // we are passing so many compared to fails at this point
+                    // it doesnt make sense to print them
+                    //std::cout << fmt::format("{}: pass\n",x);
                     pass++;
                     break;
                 }

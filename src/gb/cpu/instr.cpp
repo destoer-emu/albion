@@ -398,9 +398,101 @@ void Cpu::instr_jr_cond(bool cond, bool flag) noexcept
 	const auto operand = static_cast<int8_t>(mem.read_memt(pc++));
 	if(flag == cond)
 	{
-		cycle_delay(4); // internal delay
+		cycle_tick_t(4); // internal delay
+
+		// LY poll skip
+		/*
+		loop:
+			ld a, (ff00 + LY) (12t)
+			cp a, nn (8t)
+			jr<cond> loop (12t) <--- we assume the branch is taken
+		*/
+/*
+		// causes issues on gekkios tests and i dont know why...
+		if(pc < 0x8000 && mem.read_mem(pc-4) == 0xfe && mem.read_mem(pc-6) == 0xf0 
+			&& mem.read_mem(pc-5) == IO_LY && operand == -6 && !ppu.using_fifo())
+		{
+			// ok so here effectively we want to wait for the next inerrrupt 
+			// but only in increments of instructions so we will do it closest to the loop start
+			// so for what we care we want, timer, ppu, serial events we also need to make sure registers are in the right state
+			// atm this appears to be a nuisance to get right
+			const auto timestamp = scheduler.get_timestamp();
+			const auto ppu_event = scheduler.get(gameboy_event::ppu);
+			const auto timer_event = scheduler.get(gameboy_event::timer_reload);
+			const auto serial_event = scheduler.get(gameboy_event::serial);
+
+			uint64_t min = std::numeric_limits<uint64_t>::max();
+			if(ppu_event)
+			{
+				min = ppu_event.value().end - timestamp;
+			}
+
+
+			if(timer_event && is_set(mem.io[IO_IE],2))
+			{
+				const auto cyc = timer_event.value().end - timestamp;
+				min = std::min(cyc,min);
+			}
+
+			if(serial_event && is_set(mem.io[IO_IE],3))
+			{
+				const auto cyc = serial_event.value().end - timestamp;
+				min = std::min(cyc,min);
+			}
+
+			if(min != std::numeric_limits<uint64_t>::max())
+			{
+
+				// the easiest way to do this is to just skip whole loops
+				const uint64_t loops = min / 32;
+				//printf("loops: %d\n",loops);
+
+				if(loops > 1)
+				{ 
+					cycle_tick_t((loops-1) * 32);
+
+					cycle_tick_t(8);
+
+					// update the what the last loop should of done...
+					a = mem.read_iot(0xff00 + IO_LY);
+					instr_cp(mem.read_mem(pc-3));	
+	
+					cycle_tick_t(20);
+				}
+
+			}
+		}
+*/
+
+/*
+		// this can be used to find small loops that we can shortcut
+		if(operand >= -6 && operand <= 0)
+		{
+			static std::map<int,int> seq_set;
+			if(!seq_set.count(pc))
+			{
+				seq_set[pc] = 0;
+
+
+				uint16_t dst = pc + operand;
+				putchar('\n');
+				while(dst != pc)
+				{
+					std::cout << disass.disass_op(dst) << "\n";
+					dst += disass.get_op_sz(dst);
+				}
+				putchar('\n');
+			}
+
+			else
+			{
+				seq_set[pc] += 1;
+			}
+		}
+*/
 		pc += operand;
-	}	
+	}
+	
 }
 
 

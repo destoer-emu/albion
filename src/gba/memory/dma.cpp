@@ -319,11 +319,9 @@ void Dma::do_dma(int reg_num, dma_type req_type)
             r.dst_shadow = r.dst;
         }
     }
+    
+    r.interrupted = false;
 
-    else
-    {
-        r.interrupted = false;
-    }
 
     switch(req_type)
     {

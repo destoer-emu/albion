@@ -248,18 +248,46 @@ private:
     // default colors
     static constexpr uint32_t dmg_colors[3][4] = 
     {
-        {0xffffff,0xcccccc,0x77777777,0x000000},
-        {0xffffff,0xcccccc,0x77777777,0x000000},
-        {0xffffff,0xcccccc,0x77777777,0x000000}
+        {0xffffffff,0xffcccccc,0xff777777,0xff000000},
+        {0xffffffff,0xffcccccc,0xff777777,0xff000000},
+        {0xffffffff,0xffcccccc,0xff777777,0xff000000}
     };		
 
     // todo properly handle cgb in dmg
 	uint32_t dmg_pal[3][4] = 
 	{
-		{0xffffff,0xcccccc,0x77777777,0x000000},
-		{0xffffff,0xcccccc,0x77777777,0x000000},
-		{0xffffff,0xcccccc,0x77777777,0x000000}
+		{0xffffffff,0xffcccccc,0xff777777,0xff000000},
+		{0xffffffff,0xffcccccc,0xff777777,0xff000000},
+		{0xffffffff,0xffcccccc,0xff777777,0xff000000}
 	};
+
+
+    using ColorLut = std::array<uint32_t,32768>;
+    constexpr ColorLut pop_color_lut()
+    {
+        ColorLut lut{};
+
+        for(uint16_t col = 0; col < lut.size(); col++)
+        {
+            int blue = col & 0x1f;
+            int green = (col >> 5) & 0x1f;
+            int red = (col >> 10) & 0x1f;
+            
+            // convert rgb15 to rgb888
+            red = (red << 3) | (red >> 2);
+            blue = (blue << 3) | (blue >> 2);
+            green = (green << 3) | (green >> 2);
+
+
+            const uint32_t full_color = blue | (green << 8) | (red << 16);
+
+            lut[col] = full_color | 0xff000000;
+        }
+
+        return lut;
+    }
+
+    const ColorLut col_lut = pop_color_lut();
 
 };
 
