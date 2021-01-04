@@ -962,6 +962,11 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 				{
 					return io[0x30 + (apu.c3.get_duty_idx() / 2)];
 				}
+
+				else
+				{
+					return 0xff;
+				}
 			}
 			
 			// if its off allow "free reign" over it

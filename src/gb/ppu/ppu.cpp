@@ -784,19 +784,18 @@ bool Ppu::push_pixel() noexcept
 
 // need to handle bugs with the window
 void Ppu::tick_fetcher() noexcept
-{
-
-	// 1 cycle is tile num 
-	// 2nd is lb of data 
-	// 3rd is high byte of data 
-	// 4th attempt to push 
-	fetcher.cyc++; 
-	
+{	
 	// advance the fetcher if we dont have a tile dump waiting
 	// fetcher operates at half of base clock (4mhz)
 	// note atm this only fetches tiles but on real hardware we fetch sprites and tiles :D
 	if(!fetcher.ready) // fetch some data
 	{
+		// 1 cycle is tile num 
+		// 2nd is lb of data 
+		// 3rd is high byte of data 
+		// 4th attempt to push 
+		fetcher.cyc++; 
+		
 		// should fetch the number then low and then high byte
 		// but we will ignore this fact for now
 		// takes 3 cycles to fetch 8 pixels

@@ -28,6 +28,7 @@ void GB::reset(std::string rom_name, bool with_rom, bool use_bios)
 	{
 		mem.bios_enable();
 	}
+	printf("cgb: %s\n",cpu.get_cgb()? "true" : "false");
 }
 
 #ifdef DEBUG
