@@ -801,7 +801,24 @@ void Mem::write_mem(uint32_t addr,access_type v)
 
     switch(mem_region)
     {
-        case memory_region::bios: break; // read only
+        
+        case memory_region::bios:
+        {
+        /*
+            // logging hack
+            static int idx = 0;
+            if(addr == 0x4)
+            {
+                printf("%d: ",idx++);
+                for(int i = (sizeof(v) * 8) - 1; i >= 0; i--)
+                {
+                    printf("%d",is_set(v,i));
+                }
+                putchar('\n');
+            }
+        */
+            break; // read only
+        }
         case memory_region::wram_board: write_board_wram<access_type>(addr,v); break;
         case memory_region::wram_chip: write_chip_wram<access_type>(addr,v); break;
         case memory_region::io: write_io<access_type>(addr,v); break;

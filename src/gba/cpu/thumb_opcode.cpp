@@ -39,6 +39,7 @@ void Cpu::write_pc_thumb(uint32_t v)
 void Cpu::exec_thumb()
 {
     const auto op = fetch_thumb_opcode();
+    pc_actual += ARM_HALF_SIZE;
 
     execute_thumb_opcode(op);
 }
@@ -106,7 +107,7 @@ void Cpu::thumb_swi(uint16_t opcode)
     status_banked[idx] = get_cpsr();
 
     // lr in supervisor mode set to return addr
-    hi_banked[static_cast<int>(idx)][1] = regs[PC] - ARM_HALF_SIZE;
+    hi_banked[static_cast<int>(idx)][1] = pc_actual;
 
     // supervisor mode switch
     switch_mode(cpu_mode::supervisor);
@@ -119,7 +120,7 @@ void Cpu::thumb_swi(uint16_t opcode)
     internal_cycle();
 
     // branch to interrupt vector
-    write_pc_arm(0x8);
+    write_pc(0x8);
 }
 
 void Cpu::thumb_get_rel_addr(uint16_t opcode)
@@ -233,7 +234,7 @@ void Cpu::thumb_load_store_reg(uint16_t opcode)
 void Cpu::thumb_branch(uint16_t opcode)
 {
     const auto offset = sign_extend<int32_t>(opcode & 0x7ff,11) * 2;
-    write_pc_thumb(regs[PC] + offset);
+    write_pc(regs[PC] + offset);
 }
 
 void Cpu::thumb_load_store_half(uint16_t opcode)
@@ -283,7 +284,7 @@ void Cpu::thumb_push_pop(uint16_t opcode)
         // nS +1N +1I (pop) | (n+1)S +2N +1I(pop pc)
         if(lr)
         {
-            write_pc_thumb(mem.read_memt<uint32_t>(regs[SP]));
+            write_pc(mem.read_memt<uint32_t>(regs[SP]));
             regs[SP] += ARM_WORD_SIZE;
         }
     }
@@ -351,7 +352,7 @@ void Cpu::thumb_hi_reg_ops(uint16_t opcode)
 
             if(rd == PC)
             {
-                write_pc_thumb(regs[PC]);
+                write_pc(regs[PC]);
             }
             break;  
         }
@@ -368,7 +369,7 @@ void Cpu::thumb_hi_reg_ops(uint16_t opcode)
             regs[rd] = rs_val;
             if(rd == PC)
             {
-                write_pc_thumb(regs[PC]);
+                write_pc(regs[PC]);
             }
             break;
         }
@@ -528,7 +529,7 @@ void Cpu::thumb_multiple_load_store(uint16_t opcode)
         {
             const auto v = mem.read_memt<uint32_t>(regs[rb]);
             internal_cycle();
-            write_pc_thumb(v);
+            write_pc(v);
         }
 
         //stmia
@@ -661,12 +662,12 @@ void Cpu::thumb_long_bl(uint16_t opcode)
     else // 2nd instr
     {
         // tmp = next instr addr
-        const uint32_t tmp = regs[PC]-ARM_HALF_SIZE;
+        const uint32_t tmp = pc_actual;
         // pc = lr + offsetlow << 1
-        write_pc_thumb((regs[LR] + (offset << 1)));
+        write_pc((regs[LR] + (offset << 1)));
         // lr = tmp | 1
         regs[LR] = tmp | 1;
-        write_log(debug,"[cpu-thumb {:08x}] call {:08x}",tmp,regs[PC]);
+        write_log(debug,"[cpu-thumb {:08x}] call {:08x}",tmp,pc_actual);
     }
 }
 
@@ -728,7 +729,7 @@ void Cpu::thumb_cond_branch(uint16_t opcode)
 
     if(cond_met(cond))
     {
-        write_pc_thumb(addr);  
+        write_pc(addr);  
     }
 }
 

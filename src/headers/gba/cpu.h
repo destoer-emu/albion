@@ -23,7 +23,7 @@ public:
 
     uint32_t get_pc() const 
     {
-        return is_thumb? regs[PC] - 4 : regs[PC] - 8;
+        return pc_actual;
     }
     uint32_t get_user_regs(int idx) const {return user_regs[idx];}
     uint32_t get_current_regs(int idx) const {return regs[idx]; }
@@ -222,6 +222,7 @@ private:
 
     // backup stores
     uint32_t user_regs[16] = {0};
+    uint32_t pc_actual = 0;
     uint32_t cpsr = 0; // status reg
 
     // r8 - r12 banked

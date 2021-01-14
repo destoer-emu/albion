@@ -220,8 +220,7 @@ void Dma::write_control(int reg_num,int idx, uint8_t v)
         }
     }
 }
-
-
+// todo emulate 2 cycle startup from cpu to dma...  
 void Dma::handle_dma(dma_type req_type)
 {
     // a active dma will ofhold all others until it is done
@@ -399,7 +398,6 @@ void Dma::do_dma(int reg_num, dma_type req_type)
                     }
                 }
             }
-            cpu.cycle_tick(2);
             break;
         }
     }

@@ -512,7 +512,6 @@ void Cpu::timer_overflow(int timer_num)
 
 void Cpu::exec_instr_no_debug()
 {
-
     // step the cpu in thumb mode
     if(is_thumb) 
     {
@@ -529,7 +528,7 @@ void Cpu::exec_instr_no_debug()
 #ifdef DEBUG
 void Cpu::exec_instr_debug()
 {
-    const uint32_t pc = regs[PC] - (is_thumb? ARM_HALF_SIZE : ARM_WORD_SIZE);
+    const uint32_t pc = pc_actual;
     const uint32_t v = pipeline[0];
 	if(debug.breakpoint_hit(pc,v,break_type::execute))
 	{
@@ -546,7 +545,7 @@ void Cpu::step()
 {
     exec_instr();
     handle_power_state();
-    do_interrupts();
+    do_interrupts();   
 }
 
 
@@ -569,7 +568,7 @@ void Cpu::handle_power_state()
             // need a better check here to prevent the emulator just locking up
             if(!cpu_io.interrupt_enable)
             {
-                throw std::runtime_error(fmt::format("[halt] halt locked up at {:08x}",regs[PC]));
+                throw std::runtime_error(fmt::format("[halt] halt locked up at {:08x}",pc_actual));
             }
 
             // tick cycles until we an interrupt fires
@@ -734,7 +733,7 @@ void Cpu::load_registers(cpu_mode mode)
         case cpu_mode::user:
         {
             // load user registers back into registers
-            memcpy(regs,user_regs,sizeof(regs));
+            memcpy(regs,user_regs,sizeof(uint32_t) * 15);
             break;
         }
 
@@ -743,7 +742,6 @@ void Cpu::load_registers(cpu_mode mode)
         {
             // load bottom 8 user regs
             memcpy(regs,user_regs,sizeof(uint32_t)*8);
-            regs[PC] = user_regs[PC]; // may be overkill
 
             // load fiq banked 
             memcpy(&regs[8],fiq_banked,sizeof(uint32_t)*5);
@@ -763,9 +761,6 @@ void Cpu::load_registers(cpu_mode mode)
             // load first 13 user regs back to reg
             memcpy(regs,user_regs,sizeof(uint32_t)*13);
 
-
-            regs[PC] = user_regs[PC]; // may be overkill
-
             // load hi regs
             regs[SP] = hi_banked[idx][0];
             regs[LR] = hi_banked[idx][1];
@@ -777,10 +772,10 @@ void Cpu::load_registers(cpu_mode mode)
 
         default:
         {
-            auto err = fmt::format("[load-regs {:08x}]unhandled mode switch: {:x}\n",regs[PC],idx);
+            auto err = fmt::format("[load-regs {:08x}]unhandled mode switch: {:x}\n",pc_actual,idx);
             throw std::runtime_error(err);
         }
-    }    
+    }
 }
 
 
@@ -811,7 +806,7 @@ void Cpu::store_registers(cpu_mode mode)
         case cpu_mode::user:
         {
             // store user registers back into registers
-            memcpy(user_regs,regs,sizeof(user_regs));
+            memcpy(user_regs,regs,sizeof(uint32_t) * 15);
             break;
         }
 
@@ -820,7 +815,7 @@ void Cpu::store_registers(cpu_mode mode)
         {
             // store bottom 8 user regs
             memcpy(user_regs,regs,sizeof(uint32_t)*8);
-            user_regs[PC] = regs[PC]; // may be overkill
+
 
             // store fiq banked 
             memcpy(fiq_banked,&regs[8],sizeof(uint32_t)*5);
@@ -839,7 +834,7 @@ void Cpu::store_registers(cpu_mode mode)
         {
             // write back first 13 regs to user
             memcpy(user_regs,regs,sizeof(uint32_t)*13);
-            user_regs[PC] = regs[PC]; // may be overkill
+
 
             // store hi regs
             hi_banked[idx][0] = regs[SP];
@@ -851,7 +846,7 @@ void Cpu::store_registers(cpu_mode mode)
 
         default:
         {
-            auto err = fmt::format("[store-regs {:08x}]unhandled mode switch: {:x}\n",regs[PC],idx);
+            auto err = fmt::format("[store-regs {:08x}]unhandled mode switch: {:x}\n",pc_actual,idx);
             throw std::runtime_error(err);
         }
     }
@@ -1196,7 +1191,7 @@ void Cpu::service_interrupt()
     status_banked[idx] = get_cpsr();
 
     // lr is next instr + 4 for an irq 
-    hi_banked[idx][1] = regs[PC] + (is_thumb? ARM_HALF_SIZE : 0);
+    hi_banked[idx][1] = pc_actual + 4;
 
     // irq mode switch
     switch_mode(cpu_mode::irq);
@@ -1211,7 +1206,7 @@ void Cpu::service_interrupt()
 
     internal_cycle();
 
-    write_pc_arm(0x18); // irq handler    
+    write_pc(0x18); // irq handler    
 }
 
 void Cpu::write_pc(uint32_t v)
@@ -1219,12 +1214,15 @@ void Cpu::write_pc(uint32_t v)
     if(is_thumb)
     {
         write_pc_thumb(v);
+        pc_actual = v & ~1;
     }
 
     else
     {
         write_pc_arm(v);
+        pc_actual = v & ~3;
     } 
+    
 }
 
 }

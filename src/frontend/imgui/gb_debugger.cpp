@@ -282,7 +282,10 @@ void ImguiMainWindow::gameboy_draw_disassembly_child()
     }
 
     ImGui::BeginChild("disass view");
-    
+    if(ImGui::Button("hey"))
+    {
+        printf("pressed\n");
+    }
     // technically could be less than this but we dont know for sure
     constexpr int ITEMS_COUNT = 0x10000; 
     ImGuiListClipper clipper(ITEMS_COUNT); 

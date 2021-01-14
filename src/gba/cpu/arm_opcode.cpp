@@ -45,6 +45,7 @@ void Cpu::execute_arm_opcode(uint32_t instr)
 void Cpu::exec_arm()
 {
     const auto instr = fetch_arm_opcode();
+    pc_actual += ARM_WORD_SIZE;
 
     // if the condition is not met just
     // advance past the instr
@@ -89,7 +90,7 @@ void Cpu::arm_swi(uint32_t opcode)
     status_banked[idx] = get_cpsr();
 
     // lr in supervisor mode set to return addr
-    hi_banked[static_cast<int>(idx)][1] = regs[PC] - ARM_WORD_SIZE;
+    hi_banked[static_cast<int>(idx)][1] = pc_actual;
 
     // supervisor mode switch
     switch_mode(cpu_mode::supervisor);
@@ -99,7 +100,7 @@ void Cpu::arm_swi(uint32_t opcode)
     internal_cycle();
 
     // branch to interrupt vector
-    write_pc_arm(0x8);
+    write_pc(0x8);
 }
 
 // mul timings need to be worked on
@@ -292,7 +293,7 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
 
             if(rn == PC)
             {
-                write_pc_arm(regs[PC]);
+                write_pc(regs[PC]);
             }
 
 
@@ -400,7 +401,7 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
 
         if(rn == PC)
         {
-            write_pc_arm(regs[rn]);
+            write_pc(regs[rn]);
         }
     }
 
@@ -426,12 +427,12 @@ void Cpu::arm_branch(uint32_t opcode)
     if(is_set(opcode,24))
     {
         // save addr of next instr
-        regs[LR] = (regs[PC]-ARM_WORD_SIZE) & ~3; // bottom bits deset
+        regs[LR] = (pc_actual) & ~3; // bottom bits deset
     }
 
     // should switch to sequential access here
     // writing to the pc will trigger the pipeline refill
-    write_pc_arm(regs[PC] + offset);
+    write_pc(regs[PC] + offset);
 }
 
 // psr transfer
@@ -901,7 +902,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
                 internal_cycle(); // internal cycle for writeback
                 if(is_pc)
                 {
-                    write_pc_arm(regs[rd]);
+                    write_pc(regs[rd]);
                 }
                 break;
             }
@@ -912,7 +913,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
                 internal_cycle(); // internal cycle for writeback
                 if(is_pc)
                 {
-                    write_pc_arm(regs[rd]);
+                    write_pc(regs[rd]);
                 }
                 break;
             }
@@ -923,7 +924,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
                 internal_cycle(); // internal cycle for writeback
                 if(is_pc)
                 {
-                    write_pc_arm(regs[rd]);
+                    write_pc(regs[rd]);
                 }
                 break;
             }
@@ -967,7 +968,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
             if(rn == PC)
             {
-                write_pc_arm(regs[rn]);
+                write_pc(regs[rn]);
             }
         }
 
@@ -977,7 +978,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
             if(rn == PC)
             {
-                write_pc_arm(regs[rn]);
+                write_pc(regs[rn]);
             }
         }
     }
@@ -1066,7 +1067,7 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 
         if(rd == PC)
         {
-            write_pc_arm(regs[rd]);
+            write_pc(regs[rd]);
         }
     }
 
@@ -1105,7 +1106,7 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 
             if(rn == PC)
             {
-                write_pc_arm(regs[rn]);
+                write_pc(regs[rn]);
             }
         }
 
@@ -1115,7 +1116,7 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 
             if(rn == PC)
             {
-                write_pc_arm(regs[rn]);
+                write_pc(regs[rn]);
             }
         }
     }
