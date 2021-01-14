@@ -32,7 +32,7 @@ void Cpu::init()
     // setup main cpu state
     is_thumb = false;  // cpu in arm mode
 
-    regs[PC] = 0x08000000; // cartrige reset vector
+    write_pc(0x08000000); // cartrige reset vector
     regs[LR] = 0x08000000;
     cpsr = 0x1f;
     regs[SP] = 0x03007f00;
@@ -40,8 +40,7 @@ void Cpu::init()
     hi_banked[static_cast<int>(cpu_mode::irq)][0] = 0x03007FA0;
 
 
-//    regs[PC] = 0;
-    arm_fill_pipeline(); // fill the intitial cpu pipeline
+//  write_pc(0);
     arm_mode = cpu_mode::system;
     switch_mode(cpu_mode::system);
 
@@ -372,7 +371,7 @@ void Cpu::cycle_tick(int cycles)
 {
 
     UNUSED(cycles);
-
+    
     // hack until we fix timings
     //cycles = 1;
 
@@ -543,9 +542,9 @@ void Cpu::exec_instr_debug()
 
 void Cpu::step()
 {
-    exec_instr();
     handle_power_state();
     do_interrupts();   
+    exec_instr();
 }
 
 
@@ -868,7 +867,7 @@ cpu_mode Cpu::cpu_mode_from_bits(uint32_t v)
 
     // clearly no program should attempt this 
     // but is their a defined behavior for it?
-    auto err = fmt::format("unknown mode from bits: {:08x}:{:08x}\n",v,regs[PC]);
+    auto err = fmt::format("unknown mode from bits: {:08x}:{:08x}\n",v,pc_actual);
     throw std::runtime_error(err);
 }
 
@@ -1202,7 +1201,7 @@ void Cpu::service_interrupt()
     cpsr = deset_bit(cpsr,5); // toggle thumb in cpsr
     cpsr = set_bit(cpsr,7); //set the irq bit to mask interrupts
 
-    write_log(debug,"[irq {:08x}] interrupt flag: {:02x} ",regs[PC],cpu_io.interrupt_flag);
+    write_log(debug,"[irq {:08x}] interrupt flag: {:02x} ",pc_actual,cpu_io.interrupt_flag);
 
     internal_cycle();
 

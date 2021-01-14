@@ -61,7 +61,7 @@ void Cpu::exec_arm()
 void Cpu::arm_unknown(uint32_t opcode)
 {
     const auto op = ((opcode >> 4) & 0xf) | ((opcode >> 16) & 0xff0);
-    const auto err = fmt::format("[cpu-arm {:08x}] unknown opcode {:08x}:{:08x}\n{}\n",regs[PC],opcode,op,disass.disass_arm(get_pc()));
+    const auto err = fmt::format("[cpu-arm {:08x}] unknown opcode {:08x}:{:08x}\n{}\n",pc_actual,opcode,op,disass.disass_arm(get_pc()));
     throw std::runtime_error(err);
 }
 
@@ -342,7 +342,17 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
             {
                w = false;
             }
-            regs[i] = mem.read_memt<uint32_t>(addr);
+
+            if(i == PC)
+            {
+                write_pc(mem.read_memt<uint32_t>(addr));
+            }
+
+            else
+            {
+                regs[i] = mem.read_memt<uint32_t>(addr);
+            }
+
 
             // if pc is in list and s bit set  cpsr = spsr
             if(i == PC && s)
@@ -359,7 +369,7 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
                 // likely follows standard behavior for msr
                 else
                 {
-                    auto err = fmt::format("[block data: {:08x}] illegal status bank {:x}\n",regs[PC],idx);
+                    auto err = fmt::format("[block data: {:08x}] illegal status bank {:x}\n",pc_actual,idx);
                     throw std::runtime_error(err);
                 }
                 // TODO what happens if thumb bit changed here
@@ -554,7 +564,10 @@ void Cpu::arm_data_processing(uint32_t opcode)
         const auto imm = opcode & 0xff;
         const auto shift = ((opcode >> 8) & 0xf)*2;
 
-        shift_carry = shift != 0 && is_set(imm,shift-1);
+        if(shift != 0)
+        {
+            shift_carry = is_set(imm,shift-1);
+        }
         
         op2 = rotr(imm,shift);
     }
@@ -891,7 +904,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
         {
             case 0:
             {
-                auto err = fmt::format("hds illegal load op: {:08x}:{:08x}\n",regs[PC],opcode);
+                auto err = fmt::format("hds illegal load op: {:08x}:{:08x}\n",pc_actual,opcode);
                 throw std::runtime_error(err);
                 break;
             }
@@ -950,7 +963,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
             
             default: // doubleword ops not supported on armv4
             {
-                auto err = fmt::format("hds illegal store op: {:08x}:{:08x}\n",regs[PC],opcode);
+                auto err = fmt::format("hds illegal store op: {:08x}:{:08x}\n",pc_actual,opcode);
                 throw std::runtime_error(err);
             }
 
