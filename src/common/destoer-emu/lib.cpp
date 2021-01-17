@@ -25,7 +25,7 @@ void read_file(const std::string &filename, std::vector<uint8_t> &buf)
 
 void write_file(const std::string &filename, std::vector<uint8_t> &buf)
 {
-    std::ofstream fp(filename,std::ios::binary);
+    std::fstream fp(filename,std::ios::out | std::ios::binary);
 
     if(!fp)
     {

@@ -30,19 +30,8 @@ void Flash::init(size_t size, const std::string &rom_name)
 		return;
 	}
 
-	const auto save_name = get_save_file_name(filename);
-
-    auto fp = std::fstream(save_name, std::ios::in | std::ios::binary);
-    if(!fp)
-    {
-        return;
-    }
-
-    // todo check for non matching file sizes
-
-    fp.read(reinterpret_cast<char*>(ram.data()), ram.size());
-	
-    fp.close();	
+    const auto save_name = get_save_file_name(filename);
+    read_file(save_name,ram);
 }
 
 

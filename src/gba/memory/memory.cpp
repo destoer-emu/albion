@@ -109,16 +109,7 @@ void Mem::init(std::string filename)
 
         case save_type::sram:
         {
-            std::string save_name = filename;
-
-            size_t ext_idx = filename.find_last_of("."); 
-            if(ext_idx != std::string::npos)
-            {
-                save_name = filename.substr(0, ext_idx); 	
-            }
-
-            save_name += ".sav";
-
+            const auto save_name = get_save_file_name(filename);
             read_file(save_name,sram);
             break;
         }
@@ -166,7 +157,6 @@ void Mem::save_cart_ram()
         case save_type::sram:
         {
             const auto save_name = get_save_file_name(filename);
-
             write_file(save_name,sram);
             break;
         }
@@ -590,6 +580,19 @@ uint8_t Mem::read_io_regs(uint32_t addr)
 
         case IO_BLDALPHA: return disp.disp_io.eva;
         case IO_BLDALPHA+1: return disp.disp_io.evb;
+
+        // bg cnt
+        case IO_BG0CNT: return disp.disp_io.bg_cnt[0].read(0);
+        case IO_BG0CNT+1: return disp.disp_io.bg_cnt[0].read(1);
+
+        case IO_BG1CNT: return disp.disp_io.bg_cnt[1].read(0);
+        case IO_BG1CNT+1: return disp.disp_io.bg_cnt[1].read(1);
+
+        case IO_BG2CNT: return disp.disp_io.bg_cnt[2].read(0);
+        case IO_BG2CNT+1: return disp.disp_io.bg_cnt[2].read(1);
+
+        case IO_BG3CNT: return disp.disp_io.bg_cnt[3].read(0);
+        case IO_BG3CNT+1: return disp.disp_io.bg_cnt[3].read(1);
 
         // timers
 
