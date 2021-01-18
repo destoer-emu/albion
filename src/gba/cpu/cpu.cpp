@@ -1211,14 +1211,14 @@ void Cpu::write_pc(uint32_t v)
 {
     if(is_thumb)
     {
-        write_pc_thumb(v);
         pc_actual = v & ~1;
+        write_pc_thumb(v);
     }
 
     else
     {
-        write_pc_arm(v);
         pc_actual = v & ~3;
+        write_pc_arm(v);
     } 
     
 }

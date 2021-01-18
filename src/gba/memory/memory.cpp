@@ -713,7 +713,19 @@ access_type Mem::read_mem_handler(uint32_t addr)
 
     switch(mem_region)
     {
-        case memory_region::bios: return read_bios<access_type>(addr);
+        case memory_region::bios: 
+        {
+            // cant read from bios when not executing in it
+            if(cpu.get_pc() < 0x4000)
+            {
+                return read_bios<access_type>(addr);
+            }
+
+            else // approximation for open bus
+            {
+                return cpu.get_pipeline_val();
+            }
+        }
         case memory_region::wram_board: return read_board_wram<access_type>(addr);
         case memory_region::wram_chip: return read_chip_wram<access_type>(addr);
         case memory_region::io: return read_io<access_type>(addr);
@@ -769,8 +781,8 @@ access_type Mem::read_mem_handler(uint32_t addr)
             return 0;
         }
 
-        default:
-        case memory_region::undefined: return 0; // handle undefined accesses here
+        default: // approximation for open bus
+        case memory_region::undefined: return cpu.get_pipeline_val(); 
     }
 }
 

@@ -21,6 +21,11 @@ public:
     void step();
     void cycle_tick(int cylces); // advance the system state
 
+    uint32_t get_pipeline_val() const
+    {
+        return pipeline[1];
+    }
+
     uint32_t get_pc() const 
     {
         return pc_actual;
