@@ -12,11 +12,9 @@ namespace gameboyadvance
 // todo remove preftech hacks
 void Cpu::thumb_fill_pipeline() // need to verify this...
 {
-    pipeline[0] = mem.read_mem<uint16_t>(regs[PC]);
-    cycle_tick(1);
+    pipeline[0] = mem.read_memt<uint16_t>(regs[PC]);
     regs[PC] += ARM_HALF_SIZE;
-    pipeline[1] = mem.read_mem<uint16_t>(regs[PC]);
-    cycle_tick(1);
+    pipeline[1] = mem.read_memt<uint16_t>(regs[PC]);
 }
 
 
@@ -25,8 +23,7 @@ uint16_t Cpu::fetch_thumb_opcode()
     const uint16_t opcode = pipeline[0];
     pipeline[0] = pipeline[1];
     regs[PC] += ARM_HALF_SIZE;  
-    pipeline[1] = mem.read_mem<uint16_t>(regs[PC]);
-    cycle_tick(1);
+    pipeline[1] = mem.read_memt<uint16_t>(regs[PC]);
     return opcode;
 }
 

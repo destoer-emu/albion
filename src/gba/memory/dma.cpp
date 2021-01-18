@@ -363,7 +363,6 @@ void Dma::do_dma(int reg_num, dma_type req_type)
 
         default:
         {
-
             //write_log(debug,"dma {:x} from {:08x} to {:08x}\n",reg_num,r.src_shadow,r.dst_shadow);
             //std::cout << fmt::format("dma {:x} from {:08x} to {:08x}\n",reg_num,r.src_shadow,r.dst_shadow);
             // TODO how does internal cycles work for this?

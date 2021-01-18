@@ -53,6 +53,8 @@ dillon https://github.com/Dillonb
 
 ladystarbreeze https://github.com/ladystarbreeze
 
+DenSinH https://github.com/DenSinH/GBARoms
+
 # gb
 gekkio https://github.com/gekkio
 

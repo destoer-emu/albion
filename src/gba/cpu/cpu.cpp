@@ -371,7 +371,6 @@ void Cpu::cycle_tick(int cycles)
 {
 
     UNUSED(cycles);
-    
     // hack until we fix timings
     //cycles = 1;
 
@@ -1203,7 +1202,7 @@ void Cpu::service_interrupt()
 
     write_log(debug,"[irq {:08x}] interrupt flag: {:02x} ",pc_actual,cpu_io.interrupt_flag);
 
-    internal_cycle();
+    //internal_cycle();
 
     write_pc(0x18); // irq handler    
 }

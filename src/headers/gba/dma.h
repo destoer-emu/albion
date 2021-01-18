@@ -72,6 +72,9 @@ public:
 
     void turn_off_video_capture();
 
+    int active_dma;
+    std::array<DmaReg,4> dma_regs{0,1,2,3};
+
 private:
     Mem &mem;
     Cpu &cpu;
@@ -87,9 +90,6 @@ private:
         {+ARM_WORD_SIZE,-ARM_WORD_SIZE,0,+ARM_WORD_SIZE} // word
     };
 
-    int active_dma;
-
-    std::array<DmaReg,4> dma_regs{0,1,2,3};
     std::vector<dma_type> req_list;
 };
 

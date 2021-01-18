@@ -114,6 +114,7 @@ private:
     template<typename access_type>
     access_type read_sram(uint32_t addr);
 
+    uint8_t read_eeprom();
 
     template<typename access_type>
     access_type read_rom(uint32_t addr);
@@ -145,6 +146,9 @@ private:
     template<typename access_type>
     void write_flash(uint32_t addr,access_type v);
 
+    void write_eeprom(uint8_t v);
+
+    bool is_eeprom(uint32_t addr) const;
 
     template<typename access_type>
     void write_sram(uint32_t addr,access_type v);
@@ -275,6 +279,22 @@ private:
 
     // cart save ram
     std::vector<uint8_t> sram; // 0x8000
+
+    enum class eeprom_state
+    {
+        ready,
+        read_setup,
+        write_setup,
+        read_active
+    };
+
+    std::vector<uint8_t> eeprom; // 0x2000
+    int addr_size;
+    int eeprom_idx;
+    int eeprom_command;
+    uint32_t eeprom_addr;
+    uint64_t eeprom_data;
+    eeprom_state state;
 
     // external memory
 

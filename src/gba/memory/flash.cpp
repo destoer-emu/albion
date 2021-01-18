@@ -31,7 +31,10 @@ void Flash::init(size_t size, const std::string &rom_name)
 	}
 
     const auto save_name = get_save_file_name(filename);
-    read_file(save_name,ram);
+    try
+    {
+        read_file(save_name,ram);
+    } catch(std::exception &ex) {}
 }
 
 

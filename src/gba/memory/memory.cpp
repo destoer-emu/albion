@@ -110,13 +110,29 @@ void Mem::init(std::string filename)
         case save_type::sram:
         {
             const auto save_name = get_save_file_name(filename);
-            read_file(save_name,sram);
+            try
+            {
+                read_file(save_name,sram);
+            } catch(std::exception &ex) {}
+
+
             break;
         }
 
         case save_type::eeprom:
         {
-            puts("eeprom unsupported!");
+            std::fill(sram.begin(),sram.end(),0xff);
+            const auto save_name = get_save_file_name(filename);
+            try
+            {
+                read_file(save_name,sram);
+            } catch(std::exception &ex) {}
+            addr_size = -1;
+            state = eeprom_state::ready;
+            eeprom_idx = 0;
+            eeprom_addr = 0;
+            eeprom_command = 0;
+            eeprom_data = 0;
             break;
         }
     }
@@ -163,7 +179,8 @@ void Mem::save_cart_ram()
 
         case save_type::eeprom:
         {
-            puts("eeprom unsupported!");
+            const auto save_name = get_save_file_name(filename);
+            write_file(save_name,sram);            
             break;
         }
     }    
@@ -703,8 +720,26 @@ access_type Mem::read_mem_handler(uint32_t addr)
         case memory_region::pal: return read_pal_ram<access_type>(addr);
         case memory_region::vram: return read_vram<access_type>(addr);
         case memory_region::oam: return read_oam<access_type>(addr);
-        case memory_region::rom: return read_rom<access_type>(addr);
+        case memory_region::rom: 
+        {
+            const auto eeprom = is_eeprom(addr);
 
+            if(state == eeprom_state::read_active && eeprom)
+            {
+                return read_eeprom();
+            }
+
+            else if(eeprom && state == eeprom_state::ready)
+            {
+                return 1;
+            }
+
+            else
+            {
+                return read_rom<access_type>(addr);
+            }
+            return 0;
+        }
         // flash is also accesed here
         // we should really switch over to fptrs so this is nicer to swap stuff out
         case memory_region::cart_backup:
@@ -725,7 +760,10 @@ access_type Mem::read_mem_handler(uint32_t addr)
                     return sram[addr & 0x7fff];
                 }
 
-                default: break; //puts("invalid save type!"); exit(1);  
+                case save_type::eeprom:
+                {
+                    break;
+                }
             } 
 
             return 0;
@@ -775,7 +813,166 @@ access_type Mem::read_memt(uint32_t addr)
     return v;
 }
 
+bool Mem::is_eeprom(uint32_t addr) const
+{
+    return cart_type == save_type::eeprom
+        && (addr >= 0x0DFFFF00 || ((rom.size() < 32*1024*1024) && (addr >= 0x0D000000))) 
+        && addr <= 0x0DFFFFFF;
+}
 
+
+uint8_t Mem::read_eeprom()
+{
+    // return garbage
+    if(eeprom_idx < 4)
+    { 
+        eeprom_idx += 1;
+        return 1;
+    }
+
+    // actually return this out of sram
+    const bool bit = is_set(eeprom_data,63);
+    eeprom_data <<= 1;
+    eeprom_idx += 1;
+    if(eeprom_idx == 68)
+    {
+        state = eeprom_state::ready;
+        //puts("command done");
+        eeprom_idx = 0;
+        eeprom_command = 0;
+        eeprom_addr = 0;
+        eeprom_data = 0;
+    }
+    return bit;
+    
+}
+
+
+
+void Mem::write_eeprom(uint8_t v)
+{
+    // ok check for an active dma3 xfer
+    // then we will use the word size to get the addr length
+    if(addr_size == -1)
+    {
+        if(dma.active_dma == 3)
+        {
+            const auto reg = dma.dma_regs[3];
+            if(is_eeprom(reg.dst_shadow))
+            {
+                addr_size = reg.word_count_shadow - 3;
+                if(addr_size != 6 && addr_size != 14)
+                {
+                    //printf("warning unknown eeprom addr size: %d\n",addr_size);
+                    addr_size = -1;
+                }
+            }
+        }
+    }
+
+    if(addr_size == -1)
+    {
+        return;
+    }
+
+    switch(state)
+    {
+        case eeprom_state::ready:
+        {
+            if(addr_size == -1)
+            {
+                break;
+            }
+
+            eeprom_command <<= 1;
+            eeprom_command |= v & 1;
+            eeprom_idx += 1;
+
+            //printf("read write: %d\n",v & 1);
+
+            if(eeprom_idx == 2)
+            {
+                const auto command = (eeprom_command & 3);
+                if(command == 0b11)
+                {
+                    //puts("read setup"); // why are we gettigng a 2nd read command?
+                    state = eeprom_state::read_setup;
+                }
+
+                else if(command == 0b10)
+                {
+                    //puts("write setup");
+                    state = eeprom_state::write_setup;
+                }
+
+                else
+                {
+                    //printf("warning invalid eeprom command state: %d\n",eeprom_command);
+                }
+
+                eeprom_idx = 0;
+                eeprom_command = 0;
+                eeprom_addr = 0;  
+                eeprom_data = 0;    
+            }
+            break;
+        }
+
+        case eeprom_state::write_setup:
+        {
+            if(eeprom_idx < addr_size)
+            {
+                eeprom_addr <<= 1;
+                eeprom_addr |= v & 1;
+                eeprom_idx += 1;
+            }
+
+            // this aint triggering when it should
+            else if(eeprom_idx < addr_size + 64)
+            {
+                const auto set = v & 1;
+                //printf("%d\n",set);
+                // data off this is wrong check msb
+                eeprom_data <<= 1;
+                eeprom_data |= set;
+                eeprom_idx += 1;
+            }
+
+            // transfer end
+            else
+            {
+                handle_write<uint64_t>(sram,eeprom_addr * 8, eeprom_data);
+                //printf("write end %08x: %016lx\n",eeprom_addr,eeprom_data);
+                state = eeprom_state::ready;
+                eeprom_idx = 0;
+                eeprom_command = 0;
+                eeprom_addr = 0;
+                eeprom_data = 0;
+            }
+            break;
+        }
+
+        case eeprom_state::read_setup:
+        {
+            eeprom_addr <<= 1;
+            eeprom_addr |= v & 1;
+            eeprom_idx += 1;
+            if(eeprom_idx == addr_size)
+            {
+                state = eeprom_state::read_active;
+                eeprom_data = handle_read<uint64_t>(sram,eeprom_addr * 8);
+                //printf("read_addr: %08x: %016lx\n",eeprom_addr,eeprom_data);
+                eeprom_idx = 0;
+            }
+            break;
+        }
+        // ignore this
+        case eeprom_state::read_active:
+        {
+            break;
+        }
+    }    
+}
 
 // write mem
  // write mem unticked
@@ -828,7 +1025,17 @@ void Mem::write_mem(uint32_t addr,access_type v)
         case memory_region::pal: write_pal_ram<access_type>(addr,v); break;
         case memory_region::vram: write_vram<access_type>(addr,v); break;
         case memory_region::oam: write_oam<access_type>(addr,v); break;
-        case memory_region::rom: break;
+        case memory_region::rom:
+        {
+            const auto eeprom = is_eeprom(addr);
+            // check for eeprom access
+            if(eeprom)
+            {
+                write_eeprom(v);
+            }
+            break;
+        } 
+        
 
         // flash is also accessed here 
         // we will have to set mem_region by hand when it is
@@ -839,6 +1046,7 @@ void Mem::write_mem(uint32_t addr,access_type v)
                 case save_type::flash:
                 {
                     flash.write_flash(addr,v);
+                    cart_ram_dirty = true;
                     break;
                 }
 
@@ -847,12 +1055,15 @@ void Mem::write_mem(uint32_t addr,access_type v)
                 case save_type::sram:
                 {
                     sram[addr & 0x7fff] = v;
+                    cart_ram_dirty = true;
                     break;
                 }
 
-                default: break; //puts("invalid cart type!"); exit(1);
+                case save_type::eeprom:
+                {
+                    break;
+                }
             }
-            cart_ram_dirty = true;
             break;
         }
 
@@ -921,6 +1132,8 @@ template<typename access_type>
 void Mem::tick_mem_access(uint32_t addr)
 {
     UNUSED(addr);
+    //cpu.cycle_tick(1);
+
 
     // only allow up to 32bit
     static_assert(sizeof(access_type) <= 4);
@@ -939,7 +1152,6 @@ void Mem::tick_mem_access(uint32_t addr)
         // hardcode to sequential access!
         //cpu.cycle_tick(rom_wait_states[(region - 8) / 2][1][sizeof(access_type) >> 1]);
         cpu.cycle_tick(1);
-        return;
     }
 
     // should unmapped addresses still tick a cycle?
@@ -953,9 +1165,12 @@ void Mem::tick_mem_access(uint32_t addr)
         // we need to read up and S and N cycles
         // before we add them
         // this is enough to tip it over to where many thigns wont work...
+        // we need a timing test rom at some point to get to the bottom of why timings fail
+        // so badly!
         //cpu.cycle_tick(wait_states[region][sizeof(access_type) >> 1]);
-        cpu.cycle_tick(1);
+        //cpu.cycle_tick(1);
     }
+
 }
 
 
