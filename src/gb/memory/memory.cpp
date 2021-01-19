@@ -276,22 +276,6 @@ void Memory::init(std::string rom_name, bool with_rom, bool use_bios)
 
 	if(!use_bios)
 	{
-		// init io
-		io[0x10] = 0x80;
-		io[0x11] = 0xBF;	
-		io[0x12] = 0xF3;
-		io[0x14] = 0xBF;
-		io[0x16] = 0x3F;
-		io[0x19] = 0xBF;
-		io[0x1A] = 0x7F;
-		io[0x1B] = 0xFF;
-		io[0x1C] = 0x9F;
-		io[0x1E] = 0xBF;
-		io[0x20] = 0xFF;
-		io[0x23] = 0xBF;
-		io[0x24] = 0x77;
-		io[0x25] = 0xF3;
-		io[0x26] = 0xF1;
 		io[0x40] = 0x91;
 		io[0x47] = 0xFC;
 		io[0x48] = 0xFF;
@@ -479,7 +463,7 @@ void Memory::raw_write(uint16_t addr, uint8_t v) noexcept
 			// io regs
 			if(addr >= 0xff00)
 			{
-				io[addr & 0xff] = v;
+				write_io(addr,v);
 			}
 
 			// high wram mirror
@@ -837,13 +821,23 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 			return (cpu.internal_timer & 0xff00) >> 8;
 		}
 
+		case IO_NR10:
+		{
+			return apu.psg.read_nr10();
+		}
+
 		// sound regs
 		// nr 11 only 7 and 6 readable
 		case IO_NR11:
 		{
-			return (io[IO_NR11] & (128 + 64)) | (0xff-(128+64));
+			return apu.psg.read_nr11();
 		}
-			
+		
+		case IO_NR12:
+		{
+			return apu.psg.read_nr12();
+		}
+
 		// write only
 		case IO_NR13:
 		{
@@ -853,15 +847,20 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		// nr 14 only 6 is readable
 		case IO_NR14:
 		{
-			return (io[IO_NR14] & (64)) | (0xff-64);
+			return apu.psg.read_nr14();
 		}
 			
 		// nr 21 only bits 6-7 are r 
 		case IO_NR21:
 		{
-			return (io[IO_NR21] & (128 + 64)) | (0xff-(128+64));		
+			return apu.psg.read_nr21();	
 		}
 			
+		case IO_NR22:
+		{
+			return apu.psg.read_nr22();
+		}
+
 		// nr 23 write only
 		case IO_NR23:
 		{
@@ -871,13 +870,13 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		// nr 24 only bit 6 can be read 
 		case IO_NR24:
 		{
-			return (io[IO_NR24] & (64)) | (0xff-64);	
+			return apu.psg.read_nr24();
 		}
 			
 		// nr 30 only bit 7
 		case IO_NR30:
 		{
-			return (io[IO_NR30] & (128)) | (0xff-128);	
+			return apu.psg.read_nr30();	
 		}
 			
 		// nr 31 <-- unsure
@@ -889,7 +888,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		// nr 32 6-5 r
 		case IO_NR32:
 		{
-			return (io[IO_NR32] & (64 + 32)) | (0xff-(64+32));
+			return apu.psg.read_nr32();
 		}
 			
 		// nr33 write only
@@ -901,7 +900,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		// nr 34 6 r
 		case IO_NR34:
 		{
-			return (io[IO_NR34] & (64)) | (0xff-64);
+			return apu.psg.read_nr34();
 		}
 			
 		// nr 41
@@ -910,12 +909,37 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 			return 0xff;
 		}
 
+		case IO_NR42:
+		{
+			return apu.psg.read_nr42();
+		}
+
+		case IO_NR43:
+		{
+			return apu.psg.read_nr43();
+		}
+
 		// nr 44 bit 6
 		case IO_NR44:
 		{
-			return (io[IO_NR44] & (64)) | (0xff-64);		
+			return apu.psg.read_nr44();	
 		}		
 
+
+		case IO_NR50:
+		{
+			return apu.psg.read_nr50();
+		}
+
+		case IO_NR51:
+		{
+			return apu.psg.read_nr51();
+		}
+
+		case IO_NR52:
+		{
+			return apu.psg.read_nr52();
+		}
 
 		// unused
 		case 0x2a: case 0x2b: case 0x2c: 
@@ -953,24 +977,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		case 0x38: case 0x39: case 0x3a: case 0x3b:
 		case 0x3c: case 0x3d: case 0x3e: case 0x3f:
 		{
-			// if wave is on write to current byte <-- finish accuracy later
-			if(apu.chan_enabled(2))
-			{
-				// can only access on dmg when the wave channel is...
-				// todo
-				if(cpu.get_cgb())
-				{
-					return io[0x30 + (apu.c3.get_duty_idx() / 2)];
-				}
-
-				else
-				{
-					return 0xff;
-				}
-			}
-			
-			// if its off allow "free reign" over it
-			return io[addr & 0xff];	
+			return apu.psg.read_wave_table(addr-0xff30);
 		}
 
 
@@ -1104,7 +1111,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		{
 			if(cpu.get_cgb())
 			{
-				return apu.c1.get_output() | apu.c2.get_output() << 4;
+				return apu.psg.c1.get_output() | apu.psg.c2.get_output() << 4;
 			}
 			return 0xff;
 		}
@@ -1113,7 +1120,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		{
 			if(cpu.get_cgb())
 			{
-				return apu.c3.get_output() | apu.c4.get_output() << 4;
+				return apu.psg.c3.get_output() | apu.psg.c4.get_output() << 4;
 			}
 			return 0xff;
 		}
@@ -1862,11 +1869,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// sound registers
 		case IO_NR10:
 		{
-			if(apu.enabled())
-			{
-				apu.c1.sweep_write(v);
-				io[IO_NR10] = v | 128;
-			}
+			apu.psg.write_nr10(v);
 			break;
 		}
 
@@ -1874,126 +1877,58 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR11:
 		{
-			if(apu.enabled() || !cpu.get_cgb())
-			{
-				// bottom 6 bits are length data 
-				// set the internal counter to 64 - bottom 6 bits of data
-				apu.c1.write_lengthc(v);
-				// can only be written while on both versions
-				if(apu.enabled())
-				{
-					apu.c1.write_cur_duty(v);
-					io[IO_NR11] = v;
-				}
-			}
+			apu.psg.write_nr11(v);
 			break;
 		}
 
 		case IO_NR12:
 		{
-			if(apu.enabled())
-			{
-				io[IO_NR12] = v;
-				apu.c1.check_dac();
-				apu.c1.env_write(v);
-			}
+			apu.psg.write_nr12(v);
 			break;
 		}
 
 		case IO_NR13:
 		{
-			if(apu.enabled())
-			{
-				apu.c1.freq_write_lower(v);
-				io[IO_NR13] = v;
-			}
+			apu.psg.write_nr13(v);
 			break;
 		}
 
 		case IO_NR14:
 		{
-			if(apu.enabled())
+			apu.psg.write_nr14(v);
+			// trigger causes freq reload update the scheduler
+			if(is_set(v,7))
 			{
-				apu.c1.freq_write_higher(v);
-				
-
-				if(is_set(v,7)) // trigger
-				{
-					apu.c1.length_trigger();
-					apu.c1.freq_trigger();
-					apu.c1.env_trigger();
-					apu.c1.sweep_trigger();
-					apu.c1.duty_trigger();
-				}
-
-
-				apu.c1.length_write(v);
-				io[IO_NR14] = v;
-
-				// after all the trigger events have happend
-				// if the dac is off switch channel off				
-				apu.c1.check_dac();
+				apu.insert_chan1_period_event();
 			}
 			break;
 		}
 
-
-
 		case IO_NR21:
 		{
-			if(apu.enabled() || !cpu.get_cgb())
-			{
-				apu.c2.write_lengthc(v);
-				if(apu.enabled())
-				{
-					apu.c2.write_cur_duty(v);
-					io[IO_NR21] = v;
-				}
-			}
+			apu.psg.write_nr21(v);
 			break;
 		}
 
 		case IO_NR22:
 		{
-			if(apu.enabled())
-			{
-				io[IO_NR22] = v;
-				apu.c2.check_dac();	
-				apu.c2.env_write(v);
-			}
+			apu.psg.write_nr22(v);
 			break;
 		}
 
 		case IO_NR23:
 		{
-			if(apu.enabled())
-			{
-				io[IO_NR23] = v;
-				apu.c2.freq_write_lower(v);
-			}
+			apu.psg.write_nr23(v);
 			break;
 		}
 
 		case IO_NR24:
 		{
-			if(apu.enabled())
+			apu.psg.write_nr24(v);
+			// trigger causes freq reload update the scheduler
+			if(is_set(v,7))
 			{
-				apu.c2.freq_write_higher(v);
-
-
-				if(is_set(v,7)) // trigger
-				{
-					apu.c2.length_trigger();
-					apu.c2.freq_trigger();
-					apu.c2.env_trigger();
-					apu.c2.duty_trigger();
-				}
-
-				apu.c2.length_write(v);
-				io[IO_NR24] = v;
-
-
-				apu.c2.check_dac();	
+				apu.insert_chan2_period_event();
 			}
 			break;
 		}
@@ -2001,118 +1936,61 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_NR30:
 		{
-			if(apu.enabled())
-			{
-				io[IO_NR30] = v | 127;
-				apu.c3.check_dac();
-			}
+			apu.psg.write_nr30(v);
 			break;
 		}
 
 
 		case IO_NR31:
 		{
-			if(apu.enabled() || !cpu.get_cgb())
-			{
-				apu.c3.write_lengthc(v);
-				io[IO_NR31] = v;
-			}
+			apu.psg.write_nr31(v);
 			break;
 		}
 
 		case IO_NR32:
 		{
-			if(apu.enabled())
-			{
-				apu.c3.write_vol(v);
-				io[IO_NR32] = v | 159;
-			}
+			apu.psg.write_nr32(v);
 			break;
 		}
 
 		case IO_NR33:
 		{
-			if(apu.enabled())
-			{
-				apu.c3.freq_write_lower(v);
-				io[IO_NR33] = v;
-			}
+			apu.psg.write_nr33(v);
 			break;
 		}
 
 		case IO_NR34:
 		{
-			if(apu.enabled())
+			apu.psg.write_nr34(v);
+			// trigger causes freq reload update the scheduler
+			if(is_set(v,7))
 			{
-				apu.c3.freq_write_higher(v);
-
-
-
-				if(is_set(v,7)) // trigger
-				{
-					apu.c3.length_trigger();
-					apu.c3.freq_trigger();
-					apu.c3.wave_trigger();
-					apu.c3.vol_trigger();
-				}
-
-				apu.c3.length_write(v);
-				io[IO_NR34] = v | (16 + 32 + 8);
-
-				apu.c3.check_dac();	
+				apu.insert_chan3_period_event();
 			}
 			break;
 		}
 
 		case IO_NR41:
 		{
-			if(apu.enabled() || !cpu.get_cgb())
-			{
-				apu.c4.write_lengthc(v);
-				io[IO_NR41] = v | 192;
-			}
+			apu.psg.write_nr41(v);
 			break;
 		}
 
 		case IO_NR42:
 		{
-			if(apu.enabled())
-			{
-				io[IO_NR42] = v;
-				apu.c4.check_dac();
-				apu.c4.env_write(v);
-			}
+			apu.psg.write_nr42(v);
 			break;
 		}
 
 		case IO_NR43:
 		{
-			if(apu.enabled())
-			{
-				io[IO_NR43] = v;
-				apu.c4.noise_write(v);
-			}
+			apu.psg.write_nr43(v);
 			break;
 		}
 
 		case IO_NR44:
 		{
-
-
-			if(apu.enabled())
-			{
-				if(is_set(v,7)) // trigger
-				{
-					apu.c4.length_trigger();
-					apu.c4.env_trigger();
-					apu.c4.noise_trigger();
-				}
-
-				apu.c4.length_write(v);		
-				io[IO_NR44] = v | 63;
-
-				apu.c4.check_dac();	
-			}
+			apu.psg.write_nr44(v);
 			break;
 		}		
 
@@ -2120,20 +1998,14 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// nr 50
 		case IO_NR50:
 		{
-			if(apu.enabled())
-			{
-				io[IO_NR50] = v;
-			}
+			apu.psg.write_nr50(v);
 			break;
 		}
 
 			
 		case IO_NR51:
 		{
-			if(apu.enabled())
-			{
-				io[IO_NR51] = v;
-			}
+			apu.psg.write_nr51(v);
 			break;
 		}
 
@@ -2142,23 +2014,20 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// bits 0-3 read only 7 r/w 4-6 unused
 		case IO_NR52:
 		{
-			io[IO_NR52] |= 112;
-			
-
-
+			const auto nr52 = apu.psg.read_nr52();
 			// if we have disabled sound we should
 			// zero all the registers (nr10-nr51) 
 			// and lock writes until its on
-			if(is_set(io[IO_NR52],7) && !is_set(v,7))
+			if(is_set(nr52,7) && !is_set(v,7))
 			{
 				apu.disable_sound();
 			}
 			
 			// enabled
-			else if(!is_set(io[IO_NR52],7) && is_set(v,7))
+			else if(!is_set(nr52,7) && is_set(v,7))
 			{
 				apu.enable_sound();
-			}			
+			}
 			break;
 		}
 
@@ -2169,19 +2038,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		case 0x38: case 0x39: case 0x3a: case 0x3b:
 		case 0x3c: case 0x3d: case 0x3e: case 0x3f:
 		{
-			// if wave is on write to current byte <-- finish accuracy later
-			if(apu.chan_enabled(2))
-			{
-				if(cpu.get_cgb())
-				{
-					io[0x30 + (apu.c3.get_duty_idx() / 2)] = v;
-				}
-			}
-			
-			else // if its off allow "free reign" over it
-			{
-				io[addr & 0xff] = v;	
-			}
+			apu.psg.write_wave_table(addr-0xff30,v);
 			return;
 		}
 

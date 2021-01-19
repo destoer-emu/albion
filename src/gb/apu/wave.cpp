@@ -9,13 +9,14 @@ namespace gameboy
 //09 of blarggs test will be off due to the apu operating
 // 2 cycles at a time
 
-Wave::Wave(GB &gb, int c) :  Channel(gb,c), FreqReg(gb,c), cpu(gb.cpu), apu(gb.apu)
+Wave::Wave(int c,Psg &p) :  Channel(c,p), FreqReg(c)
 {
 
 }
 
-void Wave::init() noexcept
+void Wave::init(bool is_cgb) noexcept
 {
+	this->is_cgb = is_cgb;
 	init_channel();
 	freq_init();
 }
@@ -23,32 +24,10 @@ void Wave::init() noexcept
 
 void Wave::wave_trigger() noexcept
 {
-/*
-	// i think think this is only relevant while its being read...
-
-	// if triggered while on the first four bytes will
-	// get set to what the current 4 byte section...
-	// unless the channel is reading the first 4 in which case
-	// only the first will be overwritten with the current
-	if(!cpu.get_cgb() && apu.chan_enabled(2))
-	{
-		const uint32_t byte = duty_idx / 2;
-
-		if(byte < 4)
-		{
-			mem.io[0x30] = mem.io[0x30 + byte];
-		}
-
-		else
-		{
-			memcpy(&mem.io[0x30],&mem.io[0x30+(byte &~3)],4);
-		}
-	}
-*/
 	reset_duty();
 }
 
-void Wave::tick_period(uint32_t cycles) noexcept
+bool Wave::tick_period(uint32_t cycles) noexcept
 {
 	// handle wave ticking (square 3)	
 	period -= cycles;
@@ -63,7 +42,7 @@ void Wave::tick_period(uint32_t cycles) noexcept
 		if(dac_on() && enabled())
 		{
 			int pos = duty_idx / 2;
-			uint8_t byte = mem.io[0x30 + pos];
+			uint8_t byte = wave_table[pos];
 				
 			if(!is_set(duty_idx,0)) // access the high nibble first
 			{
@@ -92,8 +71,10 @@ void Wave::tick_period(uint32_t cycles) noexcept
 
 		// reload the timer
 		// period (2048-frequency)*2 (in cpu cycles)
-		freq_reload_period();			
+		freq_reload_period();
+		return true;			
 	}
+	return false;
 }
 
 

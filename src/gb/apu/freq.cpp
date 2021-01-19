@@ -5,8 +5,7 @@ namespace gameboy
 
 // CHANNEL 1,2,3 FREQUENCY
 
-FreqReg::FreqReg(GB &gb,int c) : freq_lower_mask(freq_lower_masks[c]), period_scale(freq_period_scales[c]), 
-    scheduler(gb.scheduler), channel_event(channel_events[c])
+FreqReg::FreqReg(int c) : freq_lower_mask(freq_lower_masks[c]), period_scale(freq_period_scales[c])
 {
 
 }
@@ -38,25 +37,8 @@ void FreqReg::freq_write_higher(uint8_t v) noexcept
 void FreqReg::freq_reload_period() noexcept
 {
     period = (2048 - freq)*period_scale;
-
-
-    insert_new_period_event();  
 }
 
-void FreqReg::insert_new_period_event() noexcept
-{
-    // create  a new event as the period has changed
-    // to double the ammount in double speed
-    // so it still operates as if the cpu was at 4mhz
-    const auto event = scheduler.create_event(period << scheduler.is_double(),channel_event);
-
-    // dont tick off the old event as 
-    // it will use the new value as we have just overwritten 
-    // the old internal counter
-    // this is not an event we are dropping and expecting to start later 
-
-    scheduler.insert(event,false);
-}
 
 int FreqReg::get_duty_idx() const noexcept
 {

@@ -8,17 +8,17 @@ namespace gameboy
 
 bool Channel::enabled() const noexcept
 {
-    return is_set(mem.io[IO_NR52],chan_number);
+    return psg.chan_enabled(chan_number);
 }
 
 void Channel::disable_chan() noexcept
 {
-    mem.io[IO_NR52] = deset_bit(mem.io[IO_NR52],chan_number);
+    psg.disable_chan(chan_number);
 }
 
 void Channel::enable_chan() noexcept
 {
-    mem.io[IO_NR52] = set_bit(mem.io[IO_NR52],chan_number);    
+    psg.enable_chan(chan_number);
 }
 
 void Channel::tick_lengthc() noexcept
@@ -39,8 +39,8 @@ void Channel::reset_length() noexcept
     lengthc = 0;
 }
 
-Channel::Channel(GB &gb, int c) : mem(gb.mem),apu(gb.apu), chan_number(c), trigger_addr(trigger_regs[c]),
-    max_len(max_lengths[c]),len_mask(len_masks[c]), dac_reg(dac_regs[c]), dac_mask(dac_masks[c])
+Channel::Channel(int c, Psg &p) : psg(p), chan_number(c),
+    max_len(max_lengths[c]),len_mask(len_masks[c]), dac_reg(psg.get_dac_ref(c)), dac_mask(dac_masks[c])
 {
 
 } 
@@ -77,7 +77,7 @@ void Channel::length_trigger() noexcept
 // also handles trigger effects
 void Channel::length_write(uint8_t v) noexcept
 {
-    const auto sequencer_step = apu.get_sequencer_step();
+    const auto sequencer_step = psg.get_sequencer_step();
 
     // if previously clear and now is enabled 
     // + next step doesent clock, clock the length counter
@@ -117,7 +117,7 @@ void Channel::write_lengthc(uint8_t v) noexcept
 
 bool Channel::dac_on() const noexcept
 {
-    return (mem.io[dac_reg] & dac_mask);    
+    return (dac_reg & dac_mask);    
 }
 
 void Channel::check_dac() noexcept

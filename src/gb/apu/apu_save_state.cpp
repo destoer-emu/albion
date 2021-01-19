@@ -6,13 +6,13 @@ namespace gameboy
 
 void Apu::save_state(std::ofstream &fp)
 {
-    c1.save_state(fp); c1.sweep_save_state(fp);
-    c2.save_state(fp);
-    c3.save_state(fp);
-    c4.save_state(fp);
+    psg.c1.save_state(fp); psg.c1.sweep_save_state(fp);
+    psg.c2.save_state(fp);
+    psg.c3.save_state(fp);
+    psg.c4.save_state(fp);
 
-	file_write_var(fp,sound_enabled);
 	file_write_var(fp,down_sample_cnt);
+	psg.save_state(fp);
 }
 
 
@@ -50,6 +50,7 @@ void Wave::save_state(std::ofstream &fp)
 {
 	file_write_var(fp,volume);
 	file_write_var(fp,volume_load);
+	file_write_arr(fp,wave_table,sizeof(wave_table));
 }
 
 
@@ -76,14 +77,14 @@ void Sweep::sweep_save_state(std::ofstream &fp)
 
 void Apu::load_state(std::ifstream &fp)
 {
-    c1.load_state(fp); c1.sweep_load_state(fp);
-    c2.load_state(fp);
-    c3.load_state(fp);
-    c4.load_state(fp);
+    psg.c1.load_state(fp); psg.c1.sweep_load_state(fp);
+    psg.c2.load_state(fp);
+    psg.c3.load_state(fp);
+    psg.c4.load_state(fp);
 
 
-	file_read_var(fp,sound_enabled);
 	file_read_var(fp,down_sample_cnt);
+	psg.load_state(fp);
 }
 
 
@@ -124,6 +125,7 @@ void Wave::load_state(std::ifstream &fp)
 {
 	file_read_var(fp,volume);
 	file_read_var(fp,volume_load);
+	file_read_arr(fp,wave_table,sizeof(wave_table));
 }
 
 

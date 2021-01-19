@@ -182,6 +182,8 @@ void Cpu::cycle_tick_t(uint32_t cycles) noexcept
 */
 	scheduler.tick(cycles);
 
+	//apu.tick(cycles >> is_double); // advance the apu state	
+
 	// if we are using the fifo this needs to be ticked each time
 	if(ppu.using_fifo())
 	{
@@ -223,22 +225,22 @@ void Cpu::switch_double_speed() noexcept
 
 	if(c1_active)
 	{
-		apu.c1.insert_new_period_event();
+		apu.insert_chan1_period_event();
 	}
 
 	if(c2_active)
 	{
-		apu.c2.insert_new_period_event();
+		apu.insert_chan2_period_event();
 	}
 
 	if(c3_active)
 	{
-		apu.c3.insert_new_period_event();
+		apu.insert_chan3_period_event();
 	}
 
 	if(c4_active)
 	{
-		apu.c4.insert_new_period_event();
+		apu.insert_chan4_period_event();
 	}
 
 	if(sample_push_active)
@@ -384,7 +386,7 @@ void Cpu::update_timers(uint32_t cycles) noexcept
 		// for the timer when its off
 		if(is_set(internal_timer,sound_bit) != sound_bit_old)
 		{
-			apu.advance_sequencer(); // advance the sequencer
+			apu.psg.advance_sequencer(); // advance the sequencer
 		}
 	}
 
@@ -397,7 +399,7 @@ void Cpu::update_timers(uint32_t cycles) noexcept
 		internal_timer += cycles;
 		if(is_set(internal_timer,sound_bit) != sound_bit_old)
 		{
-			apu.advance_sequencer(); // advance the sequencer
+			apu.psg.advance_sequencer(); // advance the sequencer
 		}
 	}
 

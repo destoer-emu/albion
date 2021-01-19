@@ -46,25 +46,37 @@ void GameboyScheduler::service_event(const EventNode<gameboy_event> &node)
 
         case gameboy_event::c1_period_elapse:
         {
-            apu.c1.tick_period(cycles_to_tick >> is_double());
+            if(apu.psg.c1.tick_period(cycles_to_tick >> is_double()))
+            {
+                apu.insert_chan1_period_event();
+            }
             break;
         }
 
         case gameboy_event::c2_period_elapse:
         {
-            apu.c2.tick_period(cycles_to_tick >> is_double());
+            if(apu.psg.c2.tick_period(cycles_to_tick >> is_double()))
+            {
+                apu.insert_chan2_period_event();
+            }
             break;
         }
 
         case gameboy_event::c3_period_elapse:
         {
-            apu.c3.tick_period(cycles_to_tick >> is_double());
+            if(apu.psg.c3.tick_period(cycles_to_tick >> is_double()))
+            {
+                apu.insert_chan3_period_event();
+            }
             break;
         }
 
         case gameboy_event::c4_period_elapse:
         {
-            apu.c4.tick_period(cycles_to_tick >> is_double());
+            if(apu.psg.c4.tick_period(cycles_to_tick >> is_double()))
+            {
+                apu.insert_chan4_period_event();
+            }
             break;
         }
 

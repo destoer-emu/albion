@@ -5,7 +5,7 @@ namespace gameboy
 
 // CHANNEL 1 SWEEP
 
-Sweep::Sweep(GB &gb, int c) : Square(gb,c)
+Sweep::Sweep(int c,Psg &p) : Square(c,p)
 {
 
 }
@@ -114,13 +114,7 @@ void Sweep::do_freqsweep() noexcept
 		// write back to shadow
 		sweep_shadow = temp;
 		
-		// write back low 8
-		mem.io[IO_NR13] = sweep_shadow & 0xff;
-
-		
-		// and high 3
-		mem.io[IO_NR14] &= ~0x7; // mask bottom 3
-		mem.io[IO_NR14] |= (sweep_shadow >> 8) & 0x7; // and write them out
+		psg.nr1_freq_writeback(sweep_shadow);
 		
 		// also back to our internal cached freq
 		freq = sweep_shadow;		
