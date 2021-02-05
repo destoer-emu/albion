@@ -1131,6 +1131,7 @@ m is:
 // all cycles from this are internal
 void Cpu::do_mul_cycles(uint32_t mul_operand)
 {
+
     auto cycles = 4;
 
     if((mul_operand & 0xffffff00) == 0 || (mul_operand & 0xffffff00) == 0xffffff00)

@@ -114,8 +114,6 @@ void Cpu::thumb_swi(uint16_t opcode)
     cpsr = deset_bit(cpsr,5); // toggle thumb in cpsr
     cpsr = set_bit(cpsr,7); //set the irq bit to mask interrupts
 
-    internal_cycle();
-
     // branch to interrupt vector
     write_pc(0x8);
 }

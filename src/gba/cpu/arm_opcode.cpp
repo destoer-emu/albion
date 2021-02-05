@@ -601,6 +601,9 @@ void Cpu::arm_data_processing(uint32_t opcode)
             {
                 op1 += 4;
             }
+            
+            // internal cycle for shift by register
+            internal_cycle();
         }
 
         else // shift ammount is an 5 bit int

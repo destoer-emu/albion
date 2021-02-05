@@ -73,7 +73,6 @@ void Display::advance_line()
     if(ly == 228)
     {
         // exit vblank
-        new_vblank = true;
         mode = display_mode::visible;
         ly = 0;
         update_vcount_compare();
@@ -132,7 +131,7 @@ void Display::advance_line()
 
     // exit hblank
     disp_io.disp_stat.hblank = false;
-    cyc_cnt = 0; // reset cycle counter
+    cyc_cnt -= 1232; // reset cycle counter
 }
 
 
@@ -184,6 +183,7 @@ void Display::tick(int cycles)
                 {
                     mode = display_mode::vblank;
                     disp_io.disp_stat.vblank = true;
+                    new_vblank = true;
 
                     // if vblank irq enabled
                     if(disp_io.disp_stat.vblank_irq_enable)
@@ -223,7 +223,7 @@ void Display::tick(int cycles)
             {
                 advance_line();
             }
-
+            
             // hblank is still active even in vblank
             else if(cyc_cnt >= 1006 && !disp_io.disp_stat.hblank) 
             {

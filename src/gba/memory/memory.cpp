@@ -544,6 +544,7 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         { 
             //auto err = fmt::format("[io {:08x}] unhandled write at {:08x}:{:x}",cpu.get_pc(),addr,v);
             //throw std::runtime_error(err);
+            break;
         }
     }
 }
@@ -616,7 +617,7 @@ uint8_t Mem::read_io_regs(uint32_t addr)
         case IO_TM0CNT_L: return cpu.cpu_io.timers[0].read_counter(0);
         case IO_TM0CNT_L+1: return cpu.cpu_io.timers[0].read_counter(1);
         case IO_TM0CNT_H: return cpu.cpu_io.timers[0].read_control(); 
-        case IO_TM0CNT_H+1: return 0; break; // upper byte not used
+        case IO_TM0CNT_H+1: return 0; // upper byte not used
 
         case IO_TM1CNT_L: return cpu.cpu_io.timers[1].read_counter(0); 
         case IO_TM1CNT_L+1: return cpu.cpu_io.timers[1].read_counter(1); 
@@ -1114,7 +1115,7 @@ void Mem::update_wait_states()
     // TODO: hack for prefetch if prefetch is enabled make access instant
     if(wait_cnt.prefetch)
     {
-        memset(&wait_states,1,sizeof(rom_wait_states));
+        memset(&rom_wait_states,1,sizeof(rom_wait_states));
         return;
     }
 
@@ -1155,6 +1156,8 @@ void Mem::tick_mem_access(uint32_t addr)
     const auto mem_region = memory_region_table[region];
     if(mem_region == memory_region::undefined)
     {
+        // how long should this take?
+        //cpu.cycle_tick(1);
         return;
     }
 
@@ -1180,7 +1183,7 @@ void Mem::tick_mem_access(uint32_t addr)
         // we need a timing test rom at some point to get to the bottom of why timings fail
         // so badly!
         //cpu.cycle_tick(wait_states[region][sizeof(access_type) >> 1]);
-        //cpu.cycle_tick(1);
+        cpu.cycle_tick(1);
     }
 
 }
