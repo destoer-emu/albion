@@ -11,9 +11,9 @@ Apu::Apu(GB &gb) : scheduler(gb.scheduler)
     playback.init(freq_playback,2048);
 }
 
-void Apu::init(bool is_cgb) noexcept
+void Apu::init(bool is_cgb, bool use_bios) noexcept
 {
-    psg.init(is_cgb);
+    psg.init(is_cgb,use_bios);
 
 	enable_sound();
 

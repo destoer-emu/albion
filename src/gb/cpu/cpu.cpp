@@ -61,7 +61,15 @@ void Cpu::init(bool use_bios)
 
 
 	is_double = false;
-    internal_timer = 0;
+	if(!use_bios)
+	{
+    	internal_timer = is_cgb? 0x2fb4 : 0xabc4;
+	}
+
+	else
+	{
+		use_bios = 0;
+	}
     
     joypad_state = 0xff;
 

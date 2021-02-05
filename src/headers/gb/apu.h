@@ -210,7 +210,7 @@ class Psg
 {
 public:
 	Psg();
-	void init(bool is_cgb);
+	void init(bool is_cgb,bool use_bios);
 
 	void reset_sequencer() noexcept;
 	int get_sequencer_step() const noexcept;
@@ -382,7 +382,7 @@ public:
 
 	void push_samples(uint32_t cycles) noexcept;
 
-	void init(bool is_cgb) noexcept;
+	void init(bool is_cgb, bool use_bios) noexcept;
 
 	void tick(uint32_t cycles) noexcept;
 

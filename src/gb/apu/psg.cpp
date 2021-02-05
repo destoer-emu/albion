@@ -8,46 +8,76 @@ Psg::Psg() : c1{0,*this}, c2{1,*this}, c3{2,*this},c4{3,*this}
 
 }
 
-void Psg::init(bool is_cgb)
+void Psg::init(bool is_cgb, bool use_bios)
 {
+    this->is_cgb = is_cgb;
+    
     // init every channel
     c1.init(); c1.sweep_init();
     c2.init();
     c3.init(is_cgb);
     c4.init();
 
-    this->is_cgb = is_cgb;
-
-    sequencer_step = 0;   
-
-    sound_enabled = true;
-
-    nr10 = 0x80;
-    nr11 = 0xBF;
-    nr12 = 0xF3;
-    nr13 = 0x00;
-    nr14 = 0xBF;
+    enable_sound();
+    if(!use_bios)
+    {
+        nr10 = 0x80;
+        nr11 = 0xBF;
+        nr12 = 0xF3;
+        nr13 = 0x00;
+        nr14 = 0xBF;
 
 
-    nr21 = 0x3f;
-    nr22 = 0;
-    nr33 = 0;
-    nr24 = 0xbf;
+        nr21 = 0x3f;
+        nr22 = 0;
+        nr33 = 0;
+        nr24 = 0xbf;
 
-    nr30 = 0x7f;
-    nr31 = 0xff;
-    nr32 = 0x9f;
-    nr33 = 0x00;
-    nr34 = 0xbf;
+        nr30 = 0x7f;
+        nr31 = 0xff;
+        nr32 = 0x9f;
+        nr33 = 0x00;
+        nr34 = 0xbf;
 
-    nr41 = 0xff;
-    nr22 = 0;
-    nr43 = 0;
-    nr44 = 0xbf;
+        nr41 = 0xff;
+        nr22 = 0;
+        nr43 = 0;
+        nr44 = 0xbf;
 
-	nr50 = 0x77;
-    nr51 = 0xF3;
-	nr52 = 0xF1;
+        nr50 = 0x77;
+        nr51 = 0xF3;
+        nr52 = 0xF1;
+    }
+
+    else
+    {
+        nr10 = 0x00;
+        nr11 = 0x00;
+        nr12 = 0x00;
+        nr13 = 0x00;
+        nr14 = 0x00;
+
+
+        nr21 = 0x00;
+        nr22 = 0x00;
+        nr33 = 0x00;
+        nr24 = 0x00;
+
+        nr30 = 0x00;
+        nr31 = 0x00;
+        nr32 = 0x00;
+        nr33 = 0x00;
+        nr34 = 0x00;
+
+        nr41 = 0x00;
+        nr22 = 0x00;
+        nr43 = 0x00;
+        nr44 = 0x00;
+
+        nr50 = 0x00;
+        nr51 = 0x00;
+        nr52 = 0x00;
+    }
 }
 
 void Psg::advance_sequencer() noexcept

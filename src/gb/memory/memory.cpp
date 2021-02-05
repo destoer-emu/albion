@@ -770,6 +770,7 @@ uint8_t Memory::read_cart_ram_mbc2(uint16_t addr) const noexcept
 // 0xff00 io regs (has side affects)
 uint8_t Memory::read_io(uint16_t addr) const noexcept
 {
+	//printf("%x\n",addr & 0xff);
     switch(addr & 0xff)
     {
         // joypad control reg <-- used for sgb command packets too
