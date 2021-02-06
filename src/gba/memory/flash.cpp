@@ -231,7 +231,17 @@ uint8_t Flash::read_flash(uint32_t addr)
 
     if(chip_identify && addr < 2)
     {
-        return addr == 0? 0x62 : 0x13;
+        // sayno 128k
+        if(ram.size() >= 0x20000)
+        {
+            return addr == 0? 0x62 : 0x13;
+        }
+
+        // panasonic 64k
+        else
+        {
+            return addr == 0? 0x32 : 0x1b;
+        }
     }
 
     return ram[(bank * 0x10000) + addr];

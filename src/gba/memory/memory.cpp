@@ -1183,7 +1183,7 @@ void Mem::tick_mem_access(uint32_t addr)
         // we need a timing test rom at some point to get to the bottom of why timings fail
         // so badly!
         //cpu.cycle_tick(wait_states[region][sizeof(access_type) >> 1]);
-        cpu.cycle_tick(1);
+        //cpu.cycle_tick(1);
     }
 
 }
@@ -1321,7 +1321,6 @@ template<>
 void Mem::write_io<uint8_t>(uint32_t addr,uint8_t v)
 {
     //io[addr & 0x3ff] = v;
-
     write_io_regs(addr,v);
 }
 
@@ -1330,7 +1329,6 @@ template<>
 void Mem::write_io<uint16_t>(uint32_t addr,uint16_t v)
 {
     //io[addr & 0x3ff] = v;
-
     write_io_regs(addr,v&0x000000ff);
     write_io_regs(addr+1,(v&0x0000ff00) >> 8);
 }
@@ -1340,7 +1338,6 @@ template<>
 void Mem::write_io<uint32_t>(uint32_t addr,uint32_t v)
 {
     //io[addr & 0x3ff] = v;
-
     write_io_regs(addr,v&0x000000ff);
     write_io_regs(addr+1,(v&0x0000ff00) >> 8); 
     write_io_regs(addr+2,(v&0x00ff0000) >> 16);
