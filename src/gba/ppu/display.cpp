@@ -75,7 +75,6 @@ void Display::advance_line()
         // exit vblank
         mode = display_mode::visible;
         ly = 0;
-        update_vcount_compare();
     }
 
     // not set on line 227

@@ -286,9 +286,7 @@ void ImguiMainWindow::gba_draw_disassembly_child()
 
 	if (ImGui::Button("Step"))
 	{
-        gba.debug.wake_up();
-        gba.cpu.step();
-        gba.debug.halt();
+        gba.cpu.exec_instr_no_debug();
 	}
 	ImGui::SameLine();
 
@@ -298,7 +296,7 @@ void ImguiMainWindow::gba_draw_disassembly_child()
         // bypass the current instr
         const auto old = gba.debug.breakpoints_enabled;
         gba.debug.breakpoints_enabled = false;
-        gba.cpu.step();
+        gba.cpu.exec_instr();
         gba.debug.breakpoints_enabled  = old;
 
         gba.debug.wake_up();

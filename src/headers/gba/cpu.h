@@ -18,7 +18,33 @@ public:
     Cpu(GBA &gba);
     void init();
     void log_regs();
-    void step();
+
+
+#ifdef DEBUG
+    using EXEC_INSTR_FPTR = void (Cpu::*)(void);
+
+    EXEC_INSTR_FPTR exec_instr_fptr = &Cpu::exec_instr_no_debug;
+
+    inline void exec_instr()
+    {
+        std::invoke(exec_instr_fptr,this);
+    }
+
+    void exec_instr_debug();
+
+#else 
+
+    inline void exec_instr()
+    {
+        exec_instr_no_debug();
+    }
+
+#endif
+
+
+    void exec_instr_no_debug();
+
+
     void cycle_tick(int cylces); // advance the system state
 
     uint32_t get_pipeline_val() const
@@ -85,30 +111,6 @@ private:
     void init_arm_opcode_table();
     void init_thumb_opcode_table();
     
-
-#ifdef DEBUG
-    using EXEC_INSTR_FPTR = void (Cpu::*)(void);
-
-    EXEC_INSTR_FPTR exec_instr_fptr = &Cpu::exec_instr_no_debug;
-
-    inline void exec_instr()
-    {
-        std::invoke(exec_instr_fptr,this);
-    }
-
-    void exec_instr_debug();
-
-#else 
-
-    inline void exec_instr()
-    {
-        exec_instr_no_debug();
-    }
-
-#endif
-
-    void exec_instr_no_debug();
-
 
     void exec_thumb();
     void exec_arm();

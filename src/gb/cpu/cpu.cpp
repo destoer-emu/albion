@@ -88,11 +88,6 @@ void Cpu::init(bool use_bios)
 	insert_new_timer_event();
 }
 
-void Cpu::step()
-{
-	// interrupts checked before the opcode fetch
-    exec_instr();
-}
 
 void Cpu::update_intr_req() noexcept
 {

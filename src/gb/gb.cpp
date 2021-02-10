@@ -216,12 +216,12 @@ void GB::run()
 	// break out early if we have hit a debug event
 	while(!ppu.new_vblank && !debug.is_halted()) 
     {
-        cpu.step();
+        cpu.exec_instr();
 	}
 #else 
 	while(!ppu.new_vblank) // exec until a vblank hits
     {
-        cpu.step();
+        cpu.exec_instr();
 	}
 #endif
 	mem.frame_end();

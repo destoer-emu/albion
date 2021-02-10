@@ -252,9 +252,7 @@ void ImguiMainWindow::gameboy_draw_disassembly_child()
 
     if(ImGui::Button("Step"))
     {
-        gb.debug.wake_up();
-        gb.cpu.step();
-        gb.debug.halt();
+        gb.cpu.exec_instr_no_debug();
     }
 
 
@@ -266,7 +264,7 @@ void ImguiMainWindow::gameboy_draw_disassembly_child()
         // bypass the current instr
         const auto old = gb.debug.breakpoints_enabled;
         gb.debug.breakpoints_enabled = false;
-        gb.cpu.step();
+        gb.cpu.exec_instr();
         gb.debug.breakpoints_enabled  = old;
 
         gb.debug.wake_up();

@@ -143,14 +143,14 @@ void Cpu::arm_mull(uint32_t opcode)
         {
             int64_t oper = ((int64_t)regs[rdhi] << 32) | (int64_t)regs[rdlo];
             ans =  v1 * v2 + oper;
-            //do_mul_cycles(regs[rm]);
-            //internal_cycle();
+            do_mul_cycles(regs[rm]);
+            internal_cycle();
         }
 
         else
         {
             ans = v1 * v2;
-            //do_mul_cycles(regs[rm]);
+            do_mul_cycles(regs[rm]);
         }
         result = (uint64_t)ans;
     }
@@ -158,7 +158,7 @@ void Cpu::arm_mull(uint32_t opcode)
     // write the ans
     regs[rdhi] = (result >> 32) & 0xffffffff;
     regs[rdlo] = result & 0xffffffff;
-    //internal_cycle();
+    internal_cycle();
 
 
     // c destroyed
@@ -186,14 +186,14 @@ void Cpu::arm_mul(uint32_t opcode)
     if(a) // mla
     {
         regs[rd] = regs[rm] * regs[rs] + regs[rn];
-        //do_mul_cycles(regs[rs]);
-        //internal_cycle(); // extra internal cycle for accumulate
+        do_mul_cycles(regs[rs]);
+        internal_cycle(); // extra internal cycle for accumulate
     }   
 
     else // mul
     {
         regs[rd] = regs[rm] * regs[rs];
-        //do_mul_cycles(regs[rs]);
+        do_mul_cycles(regs[rs]);
     }
 
     if(s)

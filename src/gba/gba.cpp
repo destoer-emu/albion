@@ -42,12 +42,12 @@ void GBA::run()
 	// break out early if we have hit a debug event
 	while(!disp.new_vblank && !debug.is_halted()) 
     {
-        cpu.step();
+        cpu.exec_instr();
 	}
 #else 
 	while(!disp.new_vblank) // exec until a vblank hits
     {
-        cpu.step();
+        cpu.exec_instr();
 	}
 #endif
 	if(disp.new_vblank)

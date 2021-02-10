@@ -36,7 +36,32 @@ public:
     void update_timers(uint32_t cycles) noexcept;
 
     void init(bool use_bios = false);
-    void step();
+
+#ifdef DEBUG
+    using EXEC_INSTR_FPTR = void (Cpu::*)(void);
+
+    EXEC_INSTR_FPTR exec_instr_fptr;
+
+    inline void exec_instr()
+    {
+        std::invoke(exec_instr_fptr,this);
+    }
+
+    void exec_instr_debug();
+
+#else 
+
+    inline void exec_instr()
+    {
+        exec_instr_no_debug();
+    }
+
+#endif
+
+
+    void exec_instr_no_debug();
+
+
     void tick_pending_cycles() noexcept;
     void cycle_tick(uint32_t cycles) noexcept; 
     void cycle_tick_t(uint32_t cycles) noexcept;
@@ -162,29 +187,6 @@ private:
     void write_de(uint16_t data) noexcept;
     void write_hl(uint16_t data) noexcept;
 
-#ifdef DEBUG
-    using EXEC_INSTR_FPTR = void (Cpu::*)(void);
-
-    EXEC_INSTR_FPTR exec_instr_fptr;
-
-    inline void exec_instr()
-    {
-        std::invoke(exec_instr_fptr,this);
-    }
-
-    void exec_instr_debug();
-
-#else 
-
-    inline void exec_instr()
-    {
-        exec_instr_no_debug();
-    }
-
-#endif
-
-    void exec_instr_no_debug();
-    
 
     void exec_cb(uint8_t cbop);
     void handle_halt();

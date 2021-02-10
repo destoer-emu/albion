@@ -510,6 +510,10 @@ void Cpu::timer_overflow(int timer_num)
 
 void Cpu::exec_instr_no_debug()
 {
+
+    handle_power_state();
+    do_interrupts(); 
+
     // step the cpu in thumb mode
     if(is_thumb) 
     {
@@ -520,7 +524,7 @@ void Cpu::exec_instr_no_debug()
     else
     {
         exec_arm();
-    }
+    }  
 }
 
 #ifdef DEBUG
@@ -538,14 +542,6 @@ void Cpu::exec_instr_debug()
     exec_instr_no_debug();
 }
 #endif
-
-void Cpu::step()
-{
-    handle_power_state();
-    do_interrupts();   
-    exec_instr();
-}
-
 
 // we need to replace this with proper scheduling but its fine for now
 void Cpu::handle_power_state()

@@ -527,7 +527,7 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_IE+1: cpu.cpu_io.interrupt_enable = (cpu.cpu_io.interrupt_enable & 0x00ff) | ((v & 0x3f) << 8);  break;
 
         case IO_IF: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & 0xff00) & ~v; break;
-        case IO_IF+1: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & 0x00ff) & ~((v & 0x3f) << 8);  break;
+        case IO_IF+1: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & 0x00ff) & ((~v & 0x3f) << 8);  break;
 
         case IO_POSTFLG: mem_io.postflg = v; break;
 
@@ -1183,7 +1183,7 @@ void Mem::tick_mem_access(uint32_t addr)
         // we need a timing test rom at some point to get to the bottom of why timings fail
         // so badly!
         //cpu.cycle_tick(wait_states[region][sizeof(access_type) >> 1]);
-        //cpu.cycle_tick(1);
+        cpu.cycle_tick(1);
     }
 
 }
