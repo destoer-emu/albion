@@ -46,13 +46,11 @@ uint8_t Timer::read_counter(int idx) const
         case 0:
         {
             return counter & 0xff;
-            break;
         }
 
         case 1:
         {
             return (counter >> 8) & 0xff;
-            break;
         }
     }
     return 0;
@@ -65,13 +63,13 @@ void Timer::write_counter(int idx, uint8_t v)
     {
         case 0:
         {
-            reload = (reload & ~0x00ff) | v;
+            reload = (reload & 0xff00) | v;
             break;
         }
 
         case 1:
         {
-            reload = (reload & ~0xff00) | (v << 8);
+            reload = (reload & 0x00ff) | (v << 8);
             break;
         }
     }
@@ -87,14 +85,15 @@ void Timer::write_control(uint8_t v)
     scale = v & 0x3;
     count_up = is_set(v,2);
     irq = is_set(v,6);
-    const bool old = enable;
-    enable = is_set(v,7);
+    const bool cur = is_set(v,7);
 
     // if we have just enabled the timer reload it
-    if(!old && enable)
+    if(!enable && cur)
     {
         counter = reload;
     }
+    
+    enable = cur;
 }
 
 

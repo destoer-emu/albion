@@ -163,7 +163,7 @@ void Dma::write_control(int reg_num,int idx, uint8_t v)
                     switch(reg_num)
                     {
                         // ???
-                        case 0: throw std::runtime_error("special dma for dma0"); break;
+                        case 0: r.start_time = dma_type::invalid; break;
                         case 1:
                         case 2: 
                         {

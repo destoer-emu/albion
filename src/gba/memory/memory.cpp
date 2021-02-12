@@ -206,13 +206,14 @@ uint16_t soundbias = 0;
 
 void Mem::write_io_regs(uint32_t addr,uint8_t v)
 {
-    addr &= IO_MASK;
-
     // io not mirrored bar one undocumented register
-    if(addr >= 0x400)
+    if(addr >= 0x04000400)
     {
         return;
     }
+
+
+    addr &= IO_MASK;
 
 
     // add to unused handler in default later
@@ -553,6 +554,12 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
 
 uint8_t Mem::read_io_regs(uint32_t addr)
 {
+    // todo optimise this
+    if(addr >= 0x04000400)
+    {
+        return 0;
+    }
+
     addr &= IO_MASK;
 
     // io not mirrored bar one undocumented register

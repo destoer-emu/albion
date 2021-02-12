@@ -417,20 +417,24 @@ void Cpu::tick_timers(int cycles)
         if(timer.cycle_count >= limit)
         {
             //puts("timer inc");
-            const auto old = timer.counter;
 
             // timer += how many limits passed
             // / (compilier is not smart enough to use a shift here)
-            timer.counter += timer.cycle_count >> timer.shift_table[timer.scale];
+            const auto ticks =  timer.cycle_count >> timer.shift_table[timer.scale];
 
             // adjust cycle count accordingly
             // % (compilier is not smart enough to use a & here)
             timer.cycle_count &= limit - 1;
 
             // timer overflowed
-            if(timer.counter < old)
+            if(timer.counter + ticks > 0xffff)
             {
                 timer_overflow(i);
+            }
+
+            else
+            {
+                timer.counter += ticks;
             }
         }
     }
