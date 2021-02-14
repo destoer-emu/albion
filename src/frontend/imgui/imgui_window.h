@@ -58,14 +58,14 @@ public:
     void swap_buffer(std::vector<uint32_t> &other);
     GLuint get_texture() const;
     void draw_texture();
-    std::mutex &get_mutex();
     int get_width() const { return x; } 
     int get_height() const { return y; } 
+
+    std::vector<uint32_t> buf;
+
 private:
-    std::mutex buf_mutex;
     int x;
     int y;
-    std::vector<uint32_t> buf;
     GLuint texture;
     bool first_time = true;
 };
@@ -81,14 +81,13 @@ public:
     void draw_tiles();
     void draw_palette();
 
-    std::atomic_bool enabled = false;
+    bool enabled = false;
     Texture bg_map;
     Texture tiles;
 
-    std::atomic_bool bg_map_higher = false;
+    bool bg_map_higher = false;
 
 private:
-    std::mutex pal_mutex;
     uint32_t palette_bg[32];
     uint32_t palette_sp[32];
 };
@@ -97,19 +96,20 @@ private:
 class GBADisplayViewer
 {
 public:
-    GBADisplayViewer();
+    void init();
     void update(gameboyadvance::GBA &gb);
     void draw_palette();
+    void draw_map();
 
 
-    std::atomic_bool enabled = false;
+    bool enabled = false;
 
 private:
     static constexpr int PAL_X = 16;
     static constexpr int PAL_Y = 16;
     std::array<uint32_t,PAL_X*PAL_Y> palette{0};
 
-    std::mutex pal_mutex;
+    std::array<Texture,4> bg_maps;
 };
 
 class ImguiMainWindow

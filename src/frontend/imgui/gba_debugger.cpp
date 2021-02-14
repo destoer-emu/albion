@@ -59,21 +59,60 @@ void gba_handle_input(GBA &gba)
 
 }
 
-GBADisplayViewer::GBADisplayViewer()
+void GBADisplayViewer::init()
 {
-
+    for(auto &t: bg_maps)
+    {
+        t.init_texture(512,512);
+    }
 }
 
 void GBADisplayViewer::update(GBA &gba)
 {
-    std::scoped_lock<std::mutex> guard(pal_mutex);
     gba.disp.render_palette(palette.data(),palette.size());    
+    for(int i = 0; i < 4; i++)
+    {
+        gba.disp.render_map(i,bg_maps[i].buf);
+    }
 }
 
 
+void GBADisplayViewer::draw_map()
+{
+    ImGui::Begin("gba bg map"); 
+
+    const int SIZE = 4;
+    static const char * window_names[SIZE] = 
+    {
+        "bg 0",
+        "bg 1",
+        "bg 2",
+        "bg 3"
+    };
+
+    static int selected = 0;
+
+    // combo box to select view type
+    if(ImGui::BeginCombo("",window_names[selected]))
+    {
+        for(int i = 0; i < SIZE; i++)
+        {
+            if(ImGui::Selectable(window_names[i],selected == i))
+            {
+                selected = i;
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    auto &t = bg_maps[selected];
+    t.update_texture();
+    ImGui::Image((void*)(intptr_t)t.get_texture(),ImVec2(t.get_width(),t.get_height()));    
+    ImGui::End();    
+}
+
 void GBADisplayViewer::draw_palette()
 {
-    std::scoped_lock<std::mutex> guard(pal_mutex);
     ImGui::Begin("gba palette");
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     auto p = ImGui::GetCursorScreenPos();
@@ -81,9 +120,6 @@ void GBADisplayViewer::draw_palette()
 	{
 		for(int col = 0; col < PAL_X; col++)
 		{
-            // smash a colored box here somehow...
-            // think we need to conver it to float first
-            // i cant find the api call to draw the box
             float sz = 20.0;
             float x = (p.x + (col * sz));
             float y = (p.y + (row * sz));

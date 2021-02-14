@@ -19,7 +19,6 @@ void GameboyDisplayViewer::update(GB &gb)
     auto b = gb.ppu.render_bg(bg_map_higher);
     tiles.swap_buffer(t);
     bg_map.swap_buffer(b);
-    std::scoped_lock<std::mutex> guard(pal_mutex);
     gb.ppu.render_palette(palette_bg,palette_sp);    
 }
 
@@ -45,7 +44,6 @@ void GameboyDisplayViewer::draw_tiles()
 
 void GameboyDisplayViewer::draw_palette()
 {
-    std::scoped_lock<std::mutex> guard(pal_mutex);
     ImGui::Begin("cgb palette");
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     auto p = ImGui::GetCursorScreenPos();

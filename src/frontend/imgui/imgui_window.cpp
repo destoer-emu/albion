@@ -5,7 +5,6 @@
 
 void Texture::update_texture()
 {
-    std::scoped_lock<std::mutex> guard(buf_mutex);
     glEnable(GL_TEXTURE_2D); 
     glBindTexture(GL_TEXTURE_2D,texture);
     glTexSubImage2D(GL_TEXTURE_2D,0,0,0,x,y,GL_RGBA, GL_UNSIGNED_BYTE,buf.data());
@@ -42,7 +41,6 @@ void Texture::init_texture(const int X, const int Y)
 
 void Texture::swap_buffer(std::vector<uint32_t> &other)
 {
-    std::scoped_lock<std::mutex> guard(buf_mutex);
     std::swap(other,buf);
 }
 
@@ -601,7 +599,7 @@ void ImguiMainWindow::menu_bar(Debug &debug)
             else
             {
                 gb_display_viewer.enabled = false;
-                gba_display_viewer.enabled = true;
+                gba_display_viewer.enabled = false;
             }
 
             ImGui::EndMenu();
@@ -646,6 +644,7 @@ void ImguiMainWindow::mainloop()
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     screen.init_texture(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);
     gb_display_viewer.init();
+    gba_display_viewer.init();
     
     
     FpsCounter fps;
@@ -767,6 +766,7 @@ void ImguiMainWindow::mainloop()
                 case current_window::display_viewer:
                 {
                     gba_display_viewer.draw_palette();
+                    gba_display_viewer.draw_map();
                     break;
                 }
 
@@ -812,7 +812,6 @@ void ImguiMainWindow::mainloop()
         {
             fact_y = fact_x;
         }
-
 
         // recalc the heights with the new factor
         int screen_y = screen.get_height() * fact_y;

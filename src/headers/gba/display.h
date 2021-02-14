@@ -26,8 +26,8 @@ public:
     void update_vcount_compare();
 
     void render_palette(uint32_t *palette, size_t size);
+    void render_map(int id, std::vector<uint32_t> &map);
 
-    
     uint32_t convert_color(uint16_t color)
     {
         return col_lut[deset_bit(color,15)];

@@ -1243,19 +1243,17 @@ uint8_t Mem::read_io<uint8_t>(uint32_t addr)
 template<>
 uint16_t Mem::read_io<uint16_t>(uint32_t addr)
 {
-    uint16_t v = read_io_regs(addr);
-    v |= read_io_regs(addr+1) << 8;
-    return v;
+    return read_io_regs(addr)
+        | read_io_regs(addr+1) << 8;
 }
 
 template<>
 uint32_t Mem::read_io<uint32_t>(uint32_t addr)
 {
-    uint32_t v = read_io_regs(addr);
-    v |= read_io_regs(addr+1) << 8;
-    v |= read_io_regs(addr+2) << 16;
-    v |= read_io_regs(addr+3) << 24;
-    return v;
+    return read_io_regs(addr)
+        | read_io_regs(addr+1) << 8
+        | read_io_regs(addr+2) << 16
+        | read_io_regs(addr+3) << 24;
 }
 
 
@@ -1271,7 +1269,12 @@ template<typename access_type>
 access_type Mem::read_vram(uint32_t addr)
 {
     //return vram[addr-0x06000000];
-    addr = (addr - 0x06000000) %  0x18000;
+    addr = addr & 0x1FFFF;
+    if(addr > 0x17fff)
+    {
+        // align to 32k chunk
+        addr -= 0xFFFF;
+    }
     return handle_read<access_type>(vram,addr);
 }
 
@@ -1374,7 +1377,12 @@ void Mem::write_oam(uint32_t addr,access_type v)
 template<typename access_type>
 void Mem::write_vram(uint32_t addr,access_type v)
 {
-    addr = (addr - 0x06000000) % 0x18000;
+    addr = addr & 0x1FFFF;
+    if(addr > 0x17fff)
+    {
+        // align to 32k chunk
+        addr -= 0xFFFF;
+    }
 
     // 8bit write does weird stuff depending on address
     if constexpr(std::is_same<access_type,uint8_t>())
@@ -1387,7 +1395,7 @@ void Mem::write_vram(uint32_t addr,access_type v)
             vram[(addr & ~1) + 1] = v;
         }
 
-        else if(addr < 0x10000)
+        else if(!is_bitmap && addr < 0x10000)
         {
             vram[addr & ~1] = v;
             vram[(addr & ~1) + 1] = v;

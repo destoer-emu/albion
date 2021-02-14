@@ -289,15 +289,17 @@ void Display::render_text(int id)
         // read out the bg entry and rip all the information we need about the tile
         const uint32_t bg_map_entry = handle_read<uint16_t>(mem.vram,bg_map_base+bg_map_offset);
 
-        const bool x_flip = is_set(bg_map_entry,10);
-        const bool y_flip = is_set(bg_map_entry,11);
-
-        const uint32_t tile_num = bg_map_entry & 0x3ff; 
-        const uint32_t pal_num = (bg_map_entry >> 12) & 0xf;
-
 
         if(bg_map_entry != old_entry)
         {
+
+            const bool x_flip = is_set(bg_map_entry,10);
+            const bool y_flip = is_set(bg_map_entry,11);
+
+            const uint32_t tile_num = bg_map_entry & 0x3ff; 
+            const uint32_t pal_num = (bg_map_entry >> 12) & 0xf;
+
+
             // render a full tile but then just lie and say we rendered less
             TileData *tile_data = &bg_lines[id][x];
             read_tile(tile_data,id,col_256,bg_tile_data_base,pal_num,tile_num,line,x_flip,y_flip);
@@ -313,18 +315,6 @@ void Display::render_text(int id)
     }   
  
 }
-
-
-// for frontend debugging
-
-void Display::render_palette(uint32_t *palette, size_t size)
-{
-    for(size_t i = 0; i < size; i++)
-    {
-        palette[i] = convert_color(handle_read<uint16_t>(mem.pal_ram,i*2));
-    }   
-}
-
 
 
 uint16_t Display::get_color(const TileData &data, const pixel_source source)
