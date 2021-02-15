@@ -15,19 +15,21 @@ public:
 
     void init();
     void tick(int cylces); 
+    void push_samples(int cycles);
 
     void push_dma_a(int8_t x);
     void push_dma_b(int8_t x);
     
+    void insert_new_sample_event();
 
     ApuIo apu_io;
 
     GbaPlayback playback;
 private:
-    void push_samples(int cycles);
 
     Mem &mem;
     Cpu &cpu;
+    GBAScheduler &scheduler;
 
     int8_t dma_a_sample;
     int8_t dma_b_sample;

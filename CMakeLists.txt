@@ -10,8 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 
 #set(FRONTEND "QT")
-#set(FRONTEND "SDL")
-set(FRONTEND "IMGUI")
+set(FRONTEND "SDL")
+#set(FRONTEND "IMGUI")
 
 # external frontend
 #set(FRONTEND "HEADLESS")

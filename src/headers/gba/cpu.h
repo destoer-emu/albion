@@ -211,6 +211,7 @@ private:
     Debug &debug;
     Disass &disass;
     Apu &apu;
+    GBAScheduler &scheduler;
 
     // underlying registers
 

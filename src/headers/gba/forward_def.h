@@ -9,5 +9,6 @@ class Apu;
 class Display;
 class Disass;
 class GBA;
+class GBAScheduler;
 
 }

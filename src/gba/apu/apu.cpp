@@ -3,7 +3,7 @@
 namespace gameboyadvance
 {
 
-Apu::Apu(GBA &gba) : mem(gba.mem), cpu(gba.cpu)
+Apu::Apu(GBA &gba) : mem(gba.mem), cpu(gba.cpu), scheduler(gba.scheduler)
 {
     playback.init(44100,sample_size);
 }
@@ -18,6 +18,7 @@ void Apu::init()
     down_sample_cnt = (16 * 1024 * 1024) / 44100;
     dma_a_sample = 0;
     dma_b_sample = 0;
+    insert_new_sample_event();
 }
 
 void Apu::tick(int cycles)
@@ -27,13 +28,21 @@ void Apu::tick(int cycles)
     push_samples(cycles);
 }
 
+void Apu::insert_new_sample_event()
+{
+    // handle double speed in a min
+    const auto event = scheduler.create_event(down_sample_cnt,gba_event::sample_push);
+    scheduler.insert(event,false);
+}
+
+
 // down sample it first
 // shoud sample at 16mhz / sample rate in sound bias
 void Apu::push_samples(int cycles)
 {
     down_sample_cnt -= cycles;
 
-    if(down_sample_cnt >= 0)
+    if(down_sample_cnt > 0)
     {
         return;
     }
@@ -41,6 +50,7 @@ void Apu::push_samples(int cycles)
     else
     {
         down_sample_cnt = (16 * 1024 * 1024) / 44100;
+        insert_new_sample_event();
     }
 
 

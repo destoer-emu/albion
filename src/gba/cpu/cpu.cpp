@@ -5,7 +5,7 @@ namespace gameboyadvance
 {
 
 Cpu::Cpu(GBA &gba) : disp(gba.disp), mem(gba.mem), debug(gba.debug), 
-    disass(gba.disass), apu(gba.apu)
+    disass(gba.disass), apu(gba.apu), scheduler(gba.scheduler)
 {
     init_opcode_table();
 }   
@@ -375,9 +375,10 @@ void Cpu::cycle_tick(int cycles)
     //cycles = 1;
 
     disp.tick(cycles);
-    apu.tick(cycles);
+    //apu.tick(cycles);
     tick_timers(cycles);
 
+    scheduler.tick(cycles);
 }
 
 
@@ -878,9 +879,12 @@ cpu_mode Cpu::cpu_mode_from_bits(uint32_t v)
 bool Cpu::cond_met(int opcode)
 {
 
+    const auto cond = opcode & 0xf;
+
+
     // switch on the cond bits
     // (lower 4)
-    switch(static_cast<arm_cond>(opcode & 0xf))
+    switch(static_cast<arm_cond>(cond))
     {
         // z set
         case arm_cond::eq: return flag_z;

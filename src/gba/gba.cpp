@@ -25,12 +25,14 @@ void GBA::change_breakpoint_enable(bool enabled)
 // init all sub compenents
 void GBA::reset(std::string filename)
 {
+	scheduler.init();
     mem.init(filename);
     //disass.init(); 
     disp.init();
 	apu.init();
     cpu.init();
 	debug.write_logger("[new gba instance] {}",filename);
+	throttle_emu = true;
 }
 
 

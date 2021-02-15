@@ -223,20 +223,7 @@ void Display::tick(int cycles)
                 advance_line();
             }
             
-            // hblank is still active even in vblank
-            else if(cyc_cnt >= 1006 && !disp_io.disp_stat.hblank) 
-            {
-                // enter hblank (dont set the internal mode here)
-                disp_io.disp_stat.hblank = true;
 
-                // should the irq be delayed as well?
-                if(disp_io.disp_stat.hblank_irq_enable)
-                {
-                    cpu.request_interrupt(interrupt::hblank);
-                }
-
-                // dma does not happen here
-            }
             break;
         }
     }
