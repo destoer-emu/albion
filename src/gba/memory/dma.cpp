@@ -3,6 +3,9 @@
 namespace gameboyadvance
 {
 
+
+// TODO double check dma priority
+
 Dma::Dma(GBA &gba) : mem(gba.mem), cpu(gba.cpu) , debug(gba.debug)
 {
 
@@ -299,25 +302,17 @@ void Dma::do_dma(int reg_num, dma_type req_type)
 {
     auto &r = dma_regs[reg_num];
 
-    if(r.drq)
+
+    // reload word count
+    r.word_count_shadow = (r.word_count == 0 )? r.max_count: r.word_count;
+
+    // if in dst_cnt is in mode 3
+    // reload the dst
+    if(r.dst_cnt == 3)
     {
-        puts("unimplemented drq dma");
-        exit(1);
+        r.dst_shadow = r.dst;
     }
 
-    // only wanna do this on first entry
-    if(!r.interrupted)
-    {
-        // reload word count
-        r.word_count_shadow = (r.word_count == 0 )? r.max_count: r.word_count;
-
-        // if in dst_cnt is in mode 3
-        // reload the dst
-        if(r.dst_cnt == 3)
-        {
-            r.dst_shadow = r.dst;
-        }
-    }
     
     r.interrupted = false;
 
@@ -347,14 +342,6 @@ void Dma::do_dma(int reg_num, dma_type req_type)
                     r.src_shadow += addr_increment_table[r.is_word][r.src_cnt];
                 }
 
-
-                if(r.interrupted)
-                {
-                    r.word_offset = i;
-                    req_list.push_back(req_type);
-                    return;
-                }
-
                 // dst is not incremented when doing fifo dma
             }
             break;
@@ -372,13 +359,7 @@ void Dma::do_dma(int reg_num, dma_type req_type)
                 {
                     const auto v = mem.read_memt<uint32_t>(r.src_shadow);
                     mem.write_memt<uint32_t>(r.dst_shadow,v);
-                    handle_increment(reg_num);
-                    if(r.interrupted)
-                    {
-                        r.word_offset = i;
-                        req_list.push_back(req_type);
-                        return;
-                    }      
+                    handle_increment(reg_num);  
                 }
             }
 
@@ -389,12 +370,6 @@ void Dma::do_dma(int reg_num, dma_type req_type)
                     const auto v = mem.read_memt<uint16_t>(r.src_shadow);
                     mem.write_memt<uint16_t>(r.dst_shadow,v);
                     handle_increment(reg_num);
-                    if(r.interrupted)
-                    {
-                        r.word_offset = i;
-                        req_list.push_back(req_type);
-                        return;
-                    }
                 }
             }
             break;

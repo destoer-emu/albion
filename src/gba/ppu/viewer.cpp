@@ -96,7 +96,8 @@ void Display::render_map(int id, std::vector<uint32_t> &map)
             // read out the bg entry and rip all the information we need about the tile
             const uint32_t bg_map_entry = handle_read<uint16_t>(mem.vram,bg_map_base+bg_map_offset);
 
-            if(bg_map_entry != old_entry)
+            UNUSED(old_entry);
+            //if(bg_map_entry != old_entry)
             {
 
                 const bool x_flip = is_set(bg_map_entry,10);
@@ -104,6 +105,9 @@ void Display::render_map(int id, std::vector<uint32_t> &map)
 
                 const uint32_t tile_num = bg_map_entry & 0x3ff; 
                 const uint32_t pal_num = (bg_map_entry >> 12) & 0xf;
+
+                // ok our emerald bug symtom is trash written into the first tile slot at 
+                // 0x06008000 sometimes... time to trace this
 
                 // render a full tile but then just lie and say we rendered less
                 read_tile(buf,id,col_256,bg_tile_data_base,pal_num,tile_num,y,x_flip,y_flip);

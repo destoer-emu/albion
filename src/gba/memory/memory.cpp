@@ -1018,7 +1018,6 @@ void Mem::write_mem(uint32_t addr,access_type v)
     }   
 #endif
 
-
     switch(mem_region)
     {
         
@@ -1273,8 +1272,9 @@ access_type Mem::read_vram(uint32_t addr)
     if(addr > 0x17fff)
     {
         // align to 32k chunk
-        addr -= 0xFFFF;
+        addr = 0x10000 + (addr & 0x7fff);
     }
+
     return handle_read<access_type>(vram,addr);
 }
 
@@ -1381,7 +1381,7 @@ void Mem::write_vram(uint32_t addr,access_type v)
     if(addr > 0x17fff)
     {
         // align to 32k chunk
-        addr -= 0xFFFF;
+        addr = 0x10000 + (addr & 0x7fff);
     }
 
     // 8bit write does weird stuff depending on address
@@ -1420,8 +1420,8 @@ void Mem::write_pal_ram(uint32_t addr,access_type v)
     // of the accessed halfword
     if constexpr(std::is_same<access_type,uint8_t>())
     {
-        vram[addr & ~1] = v;
-        vram[(addr & ~1) + 1] = v;
+        pal_ram[addr & ~1] = v;
+        pal_ram[(addr & ~1) + 1] = v;
     }
 
     else

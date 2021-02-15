@@ -528,7 +528,7 @@ void Cpu::exec_instr_no_debug()
     else
     {
         exec_arm();
-    }  
+    }
 }
 
 #ifdef DEBUG
@@ -605,7 +605,7 @@ void Cpu::print_regs()
 
     puts("USER & SYSTEM REGS");
 
-    for(int i = 0; i < 16; i++)
+    for(int i = 0; i < 15; i++)
     {
         printf("%s: %08x ",user_regs_names[i],user_regs[i]);
         if((i % 2) == 0)
@@ -613,6 +613,8 @@ void Cpu::print_regs()
             putchar('\n');
         }
     }
+
+    printf("pc: %08x ",pc_actual);
 
 
     puts("\n\nFIQ BANKED");

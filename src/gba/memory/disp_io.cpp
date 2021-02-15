@@ -132,15 +132,13 @@ void BgOffset::write(int idx, uint8_t v)
     {
         case 0:
         {
-            offset &= 0xff00;
-            offset |= v;
+            offset = (offset & 0xff00) | v;
             break;
         }
 
         case 1:
         {
-            offset &= 0x00ff;
-            offset |= ((v & 1) << 8);
+            offset = (offset & 0x00ff)  | (v & 1) << 8;
             break;
         }
     }
