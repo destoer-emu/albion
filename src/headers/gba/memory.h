@@ -18,6 +18,11 @@ public:
     Mem(GBA &gba);
     void init(std::string filename);
 
+    bool can_fast_memcpy(uint32_t src, uint32_t dst);
+
+    template<typename access_type>
+    void fast_memcpy(uint32_t src, uint32_t dst);
+
     void save_cart_ram();
 
 
@@ -78,6 +83,9 @@ private:
     Display &disp;
     Apu &apu;
     GBAScheduler &scheduler;
+
+
+    std::vector<uint8_t> &get_backing_vector(uint32_t addr);
 
     template<typename access_type>
     void tick_mem_access(uint32_t addr);
@@ -268,6 +276,8 @@ private:
         {5,5,8}, // cart backup needs to be setup depending on cart type
     };
     
+    static_assert(sizeof(wait_states) == sizeof(wait_states_default));
+
     int rom_wait_states[3][2][3];
 
 
@@ -306,6 +316,7 @@ private:
     std::vector<uint8_t> rom; // variable
 
     std::vector<uint8_t*> page_table;
+    std::vector<uint8_t*> memcpy_page_table;
 
 };
 
@@ -328,4 +339,7 @@ extern template void Mem::write_memt<uint8_t>(uint32_t addr, uint8_t v);
 extern template void Mem::write_memt<uint16_t>(uint32_t addr, uint16_t v);
 extern template void Mem::write_memt<uint32_t>(uint32_t addr, uint32_t v);
 
+
+extern template void Mem::fast_memcpy<uint16_t>(uint32_t src, uint32_t dst);
+extern template void Mem::fast_memcpy<uint32_t>(uint32_t src, uint32_t dst);
 }

@@ -153,6 +153,7 @@ void Mem::init(std::string filename)
     }
     mem_io.init();
     dma.init();
+    
     memcpy(wait_states,wait_states_default,sizeof(wait_states));
     update_wait_states();
 
@@ -288,6 +289,21 @@ void Mem::frame_end()
 			cart_ram_dirty = false;
 		}
 	}
+}
+
+template<typename access_type>
+uint32_t align_addr(uint32_t addr)
+{
+    // only allow up to 32bit
+    static_assert(sizeof(access_type) <= 4);
+
+    // 28 bit bus
+    addr &= 0x0fffffff;
+
+    // handle address alignment
+    addr &= ~(sizeof(access_type)-1);    
+
+    return addr;
 }
 
 // hack for soundbias to boot bios...
@@ -959,14 +975,7 @@ access_type Mem::read_mem_handler(uint32_t addr)
 template<typename access_type>
 access_type Mem::read_mem(uint32_t addr)
 {
-    // only allow up to 32bit
-    static_assert(sizeof(access_type) <= 4);
-
-    // 28 bit bus
-    addr &= 0x0fffffff;
-
-    // handle address alignment
-    addr &= ~(sizeof(access_type)-1);
+    addr = align_addr<access_type>(addr);
 
 #ifdef DEBUG
     const auto v = read_mem_handler<access_type>(addr);
@@ -1159,14 +1168,7 @@ template<typename access_type>
 void Mem::write_mem(uint32_t addr,access_type v)
 {
 
-    // only allow up to 32bit
-    static_assert(sizeof(access_type) <= 4);
-
-    // 28 bit bus
-    addr &= 0x0fffffff;
-
-    // handle address alignemt
-    addr &= ~(sizeof(access_type)-1);
+    addr = align_addr<access_type>(addr);
 
     const auto mem_region = memory_region_table[(addr >> 24) & 0xf];
 #ifdef DEBUG
@@ -1265,7 +1267,7 @@ void Mem::write_memt(uint32_t addr,access_type v)
 // we also need to a test refactor using one lib, constants and compiling in one dir
 // and impl a basic timing test
 // this is completly botched...
-void set_wait(int buf[], int wait)
+void set_wait(int *buf, int wait)
 {
     buf[0] =  wait + 1;
     buf[1] =  wait + 1;
@@ -1280,8 +1282,16 @@ void Mem::update_wait_states()
     // TODO: hack for prefetch if prefetch is enabled make access instant
     if(wait_cnt.prefetch)
     {
-        memset(&rom_wait_states,1,sizeof(rom_wait_states));
-        return;
+        for(int x = 0; x < 3; x++)
+        {
+            for(int y = 0; y < 2; y++)
+            {
+                for(int z = 0; z < 3; z++)
+                {
+                    rom_wait_states[x][y][z] = 1;
+                }
+            }
+        }
     }
 
     const auto wait_first0 = wait_first_table[wait_cnt.wait01];
@@ -1330,8 +1340,7 @@ void Mem::tick_mem_access(uint32_t addr)
     if(mem_region == memory_region::rom)
     {
         // hardcode to sequential access!
-        //cpu.cycle_tick(rom_wait_states[(region - 8) / 2][1][sizeof(access_type) >> 1]);
-        cpu.cycle_tick(1);
+        cpu.cycle_tick(rom_wait_states[(region - 8) / 2][1][sizeof(access_type) >> 1]);
     }
 
     // should unmapped addresses still tick a cycle?
@@ -1341,14 +1350,7 @@ void Mem::tick_mem_access(uint32_t addr)
         // 4 -> 2 (word)
         // 2 -> 1 (half)
         // 1 -> 0 (byte)
-        // our waitstates are busted ive stubbed them for now
-        // we need to read up and S and N cycles
-        // before we add them
-        // this is enough to tip it over to where many thigns wont work...
-        // we need a timing test rom at some point to get to the bottom of why timings fail
-        // so badly!
-        //cpu.cycle_tick(wait_states[region][sizeof(access_type) >> 1]);
-        cpu.cycle_tick(1);
+        cpu.cycle_tick(wait_states[region][sizeof(access_type) >> 1]);
     }
 
 }
@@ -1592,6 +1594,29 @@ void Mem::write_chip_wram(uint32_t addr,access_type v)
 {
     //chip_wram[addr & 0x7fff] = v;
     handle_write<access_type>(chip_wram,addr&0x7fff,v);
+}
+
+
+std::vector<uint8_t> &Mem::get_backing_vector(uint32_t addr)
+{
+    UNUSED(addr);
+    return vram;
+}
+
+bool Mem::can_fast_memcpy(uint32_t src, uint32_t dst)
+{
+    src = align_addr<uint32_t>(src);
+    dst = align_addr<uint32_t>(src);
+    UNUSED(dst);
+    UNUSED(src);
+    return true;
+}
+
+template<typename access_type>
+void Mem::fast_memcpy(uint32_t src, uint32_t dst)
+{
+    UNUSED(src);
+    UNUSED(dst);
 }
 
 }
