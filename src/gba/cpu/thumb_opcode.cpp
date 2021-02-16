@@ -228,17 +228,16 @@ void Cpu::thumb_branch(uint16_t opcode)
 {
     const auto offset = sign_extend<int32_t>(opcode & 0x7ff,11) * 2;
     
-    if(offset == -4)
+    const auto old = pc_actual;
+
+    write_pc(regs[PC] + offset);
+
+    if(old == pc_actual)
     {
         while(!(cpu_io.interrupt_flag & cpu_io.interrupt_enable))
         {
             scheduler.skip_to_event(); 
-        }       
-    }
-    
-    else
-    {
-        write_pc(regs[PC] + offset);
+        }               
     }
 }
 

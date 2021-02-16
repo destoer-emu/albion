@@ -436,20 +436,20 @@ void Cpu::arm_branch(uint32_t opcode)
         regs[LR] = (pc_actual) & ~3; // bottom bits deset
     }
 
-    if(offset == -8)
+    const auto old = pc_actual;
+
+    // should switch to sequential access here
+    // writing to the pc will trigger the pipeline refill
+    write_pc(regs[PC] + offset);
+
+    if(old == pc_actual)
     {
         while(!(cpu_io.interrupt_flag & cpu_io.interrupt_enable))
         {
             scheduler.skip_to_event(); 
-        }       
+        }   
     }
-    
-    else
-    {
-        // should switch to sequential access here
-        // writing to the pc will trigger the pipeline refill
-        write_pc(regs[PC] + offset);
-    }
+
 }
 
 // psr transfer
