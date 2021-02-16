@@ -436,7 +436,7 @@ void Cpu::arm_branch(uint32_t opcode)
         regs[LR] = (pc_actual) & ~3; // bottom bits deset
     }
 
-    const auto old = pc_actual;
+    const auto old = pc_actual-4;
 
     // should switch to sequential access here
     // writing to the pc will trigger the pipeline refill
@@ -444,10 +444,7 @@ void Cpu::arm_branch(uint32_t opcode)
 
     if(old == pc_actual)
     {
-        while(!(cpu_io.interrupt_flag & cpu_io.interrupt_enable))
-        {
-            scheduler.skip_to_event(); 
-        }   
+        scheduler.skip_to_event();  
     }
 
 }

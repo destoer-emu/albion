@@ -19,6 +19,8 @@ public:
     void init();
     void log_regs();
 
+    void update_intr_status();
+
 
 #ifdef DEBUG
     using EXEC_INSTR_FPTR = void (Cpu::*)(void);
@@ -226,6 +228,9 @@ private:
     bool flag_n;
     bool flag_c;
     bool flag_v;
+
+    bool interrupt_request;
+    bool interrupt_service;
 
 
 

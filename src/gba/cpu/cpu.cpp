@@ -53,6 +53,7 @@ void Cpu::init()
 
 
     cpu_io.init();
+    update_intr_status();
 }
 
 
@@ -596,13 +597,13 @@ void Cpu::handle_power_state()
 
             // tick cycles until we an interrupt fires
             // this is gonna be slow as hell until we get a event system
-            while(!(cpu_io.interrupt_flag & cpu_io.interrupt_enable))
+            while(!interrupt_request)
             {
                 if(scheduler.size() == 0)
                 {
                     throw std::runtime_error("halt infinite loop");
                 }
-                scheduler.skip_to_event();
+                scheduler.skip_to_event();     
             }
             cpu_io.halt_cnt.state = HaltCnt::power_state::normal;
             break;
@@ -1190,13 +1191,17 @@ void Cpu::do_mul_cycles(uint32_t mul_operand)
     }
 }
 
-
-
+void Cpu::update_intr_status()
+{
+    interrupt_request = cpu_io.interrupt_flag & cpu_io.interrupt_enable;
+    interrupt_service = interrupt_request & cpu_io.ime;
+}
 
 // write the interrupt req bit
 void Cpu::request_interrupt(interrupt i)
 {
     cpu_io.interrupt_flag = set_bit(cpu_io.interrupt_flag,static_cast<int>(i));   
+    update_intr_status();
 }
 
 
@@ -1208,7 +1213,7 @@ void Cpu::do_interrupts()
     }
 
     // the handler will find out what fired for us!
-    if((cpu_io.interrupt_flag & cpu_io.interrupt_enable) != 0 && cpu_io.ime)
+    if(interrupt_service)
     {
         service_interrupt();
     }

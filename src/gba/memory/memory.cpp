@@ -156,7 +156,7 @@ void Mem::init(std::string filename)
     update_wait_states();
 
     // if we are not using the bios boot we need to set postflg
-    mem_io.postflg = 1;
+    mem_io.postflg = 1;   
 }
 
 
@@ -559,14 +559,36 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case SIOCNT+1: mem_io.siocnt.write(1,v); break;
 
 
-        case IO_IME: cpu.cpu_io.ime = is_set(v,0); break;
+        case IO_IME: cpu.cpu_io.ime = is_set(v,0); cpu.update_intr_status(); break;
         case IO_IME+1: case IO_IME+2: case IO_IME+3: break; // unused
 
-        case IO_IE: cpu.cpu_io.interrupt_enable = (cpu.cpu_io.interrupt_enable & 0xff00) | v; break;
-        case IO_IE+1: cpu.cpu_io.interrupt_enable = (cpu.cpu_io.interrupt_enable & 0x00ff) | ((v & 0x3f) << 8);  break;
+        case IO_IE:
+        { 
+            cpu.cpu_io.interrupt_enable = (cpu.cpu_io.interrupt_enable & 0xff00) | v;
+            cpu.update_intr_status(); 
+            break;
+        }
 
-        case IO_IF: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & 0xff00) & ~v; break;
-        case IO_IF+1: cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & 0x00ff) & ((~v & 0x3f) << 8);  break;
+        case IO_IE+1: 
+        {
+            cpu.cpu_io.interrupt_enable = (cpu.cpu_io.interrupt_enable & 0x00ff) | ((v & 0x3f) << 8);
+            cpu.update_intr_status();
+            break;
+        }
+
+        case IO_IF: 
+        {
+            cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & 0xff00) & ~v;
+            cpu.update_intr_status();
+            break;
+        }
+
+        case IO_IF+1:
+        {
+            cpu.cpu_io.interrupt_flag = (cpu.cpu_io.interrupt_flag & 0x00ff) & ((~v & 0x3f) << 8);
+            cpu.update_intr_status();
+            break;
+        }
 
         case IO_POSTFLG: mem_io.postflg = v; break;
 
