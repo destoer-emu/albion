@@ -11,9 +11,14 @@ namespace gameboyadvance
 enum class gba_event
 {
     sample_push,
+    timer0,
+    timer1,
+    timer2,
+    timer3,
+    display
 };
 
-constexpr size_t EVENT_SIZE = 1;
+constexpr size_t EVENT_SIZE = 6;
 
 class GBAScheduler : public Scheduler<EVENT_SIZE,gba_event>
 {

@@ -12,7 +12,7 @@ namespace gameboyadvance
 // see 8 bit writes to video memory for doom bug
 
 
-Display::Display(GBA &gba) : mem(gba.mem), cpu(gba.cpu)
+Display::Display(GBA &gba) : mem(gba.mem), cpu(gba.cpu), scheduler(gba.scheduler)
 {
     screen.resize(SCREEN_WIDTH*SCREEN_HEIGHT);
     bg_lines.resize(4);
@@ -40,6 +40,7 @@ void Display::init()
 
     window_0_y_triggered = false;
     window_1_y_triggered = false;
+    insert_new_ppu_event();	
 }
 
 // not asserted on irq enable changes
@@ -167,6 +168,7 @@ void Display::tick(int cycles)
                 }
                 mem.dma.handle_dma(dma_type::hblank);
             }
+            insert_new_ppu_event();	
             break;
         }
 
@@ -211,7 +213,7 @@ void Display::tick(int cycles)
                 // flag should be set later at 1006 cycles because of oam search?
                 disp_io.disp_stat.hblank = true;
             }
-
+            insert_new_ppu_event();	
             break;
         }
 
@@ -223,10 +225,53 @@ void Display::tick(int cycles)
                 advance_line();
             }
             
+            else if(cyc_cnt >= 1006 && !disp_io.disp_stat.hblank) 
+            {
+                // enter hblank (dont set the internal mode here)
+                disp_io.disp_stat.hblank = true;
 
+                // should the irq be delayed as well?
+                if(disp_io.disp_stat.hblank_irq_enable)
+                {
+                    cpu.request_interrupt(interrupt::hblank);
+                }
+
+
+                // dma does not happen here
+            }
+            insert_new_ppu_event();	
             break;
         }
     }
+}
+
+void Display::insert_new_ppu_event()
+{
+    uint32_t cycles = 0;
+
+    switch(mode)
+    {
+        case display_mode::vblank:
+        {
+            cycles = cyc_cnt < 1006? 1006 - cyc_cnt : 1232 - cyc_cnt;
+            break; 
+        }
+
+        case display_mode::hblank:
+        {
+            cycles = cyc_cnt < 1006? 1006 - cyc_cnt : 1232 - cyc_cnt;
+            break;
+        }
+
+        case display_mode::visible:
+        {
+            cycles = 960 - cyc_cnt;
+            break;
+        }
+    }
+
+    const auto event = scheduler.create_event(cycles,gba_event::display);
+    scheduler.insert(event,false);       
 }
 
 }

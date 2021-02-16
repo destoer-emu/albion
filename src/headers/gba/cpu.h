@@ -47,6 +47,9 @@ public:
 
     void cycle_tick(int cylces); // advance the system state
 
+    void tick_timer(int t, int cycles);
+    void insert_new_timer_event(int timer);
+
     uint32_t get_pipeline_val() const
     {
         return pipeline[1];
@@ -187,8 +190,6 @@ private:
     // timers
     void tick_timers(int cycles);
     void timer_overflow(int timer);
-    uint32_t timers[4] = {0};
-    uint32_t timer_scale[4] = {0};
 
     // mode switching
     void switch_mode(cpu_mode new_mode);

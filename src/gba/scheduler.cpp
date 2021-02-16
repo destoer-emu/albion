@@ -31,6 +31,36 @@ void GBAScheduler::service_event(const EventNode<gba_event> &node)
             apu.push_samples(cycles_to_tick);
             break;
         }
+
+        case gba_event::timer0:
+        {
+            cpu.tick_timer(0,cycles_to_tick);
+            break;
+        }
+
+        case gba_event::timer1:
+        {
+            cpu.tick_timer(1,cycles_to_tick);
+            break;
+        }
+
+        case gba_event::timer2:
+        {
+            cpu.tick_timer(2,cycles_to_tick);
+            break;
+        }
+
+        case gba_event::timer3:
+        {
+            cpu.tick_timer(3,cycles_to_tick);
+            break;
+        }
+
+        case gba_event::display:
+        {
+            disp.tick(cycles_to_tick);
+            break;
+        }
     }
 }
 

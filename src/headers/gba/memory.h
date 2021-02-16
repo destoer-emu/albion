@@ -77,6 +77,7 @@ private:
     Cpu &cpu;
     Display &disp;
     Apu &apu;
+    GBAScheduler &scheduler;
 
     template<typename access_type>
     void tick_mem_access(uint32_t addr);
@@ -154,6 +155,9 @@ private:
     void write_sram(uint32_t addr,access_type v);
 
     void update_wait_states();
+
+    void write_timer_control(int timer,uint8_t v);
+    uint8_t read_timer_counter(int timer, int idx);
 
     // last accessed memory region
     enum class memory_region

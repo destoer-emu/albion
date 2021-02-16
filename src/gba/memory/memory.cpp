@@ -24,7 +24,7 @@ template void Mem::write_memt<uint32_t>(uint32_t addr, uint32_t v);
 
 
 Mem::Mem(GBA &gba) : dma{gba}, debug(gba.debug), cpu(gba.cpu), 
-    disp(gba.disp), apu(gba.apu)
+    disp(gba.disp), apu(gba.apu), scheduler(gba.scheduler)
 {
     // alloc our underlying system memory
     bios_rom.resize(0x4000);
@@ -204,6 +204,43 @@ void Mem::frame_end()
 // fix when we properly impl the reg
 uint16_t soundbias = 0;
 
+
+void Mem::write_timer_control(int timer,uint8_t v)
+{
+    
+    auto &t = cpu.cpu_io.timers[timer];
+    t.write_control(v);
+
+    // timer is enabled and count up not set 
+    if(t.enable && !t.count_up)
+    {
+        cpu.insert_new_timer_event(timer);
+    } 
+
+    if(!t.enable)
+    {
+        const auto event_type = static_cast<gba_event>(timer+static_cast<int>(gba_event::timer0));
+        scheduler.remove(event_type);
+    }        
+}
+
+
+uint8_t Mem::read_timer_counter(int timer, int idx)
+{
+    const auto event_type = static_cast<gba_event>(timer+static_cast<int>(gba_event::timer0));
+    const auto active = scheduler.is_active(event_type);
+
+    // remove and reinsert event
+    scheduler.remove(event_type);
+
+    if(active)
+    {
+        cpu.insert_new_timer_event(timer);
+    }
+
+    return cpu.cpu_io.timers[timer].read_counter(idx);
+}
+
 void Mem::write_io_regs(uint32_t addr,uint8_t v)
 {
     // io not mirrored bar one undocumented register
@@ -374,22 +411,23 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
 
         case IO_TM0CNT_L: cpu.cpu_io.timers[0].write_counter(0,v); break;
         case IO_TM0CNT_L+1: cpu.cpu_io.timers[0].write_counter(1,v); break;
-        case IO_TM0CNT_H: cpu.cpu_io.timers[0].write_control(v); break;
+        case IO_TM0CNT_H: write_timer_control(0,v); break;
         case IO_TM0CNT_H+1: break; // upper byte not used
 
         case IO_TM1CNT_L: cpu.cpu_io.timers[1].write_counter(0,v); break;
         case IO_TM1CNT_L+1: cpu.cpu_io.timers[1].write_counter(1,v); break;
-        case IO_TM1CNT_H: cpu.cpu_io.timers[1].write_control(v); break;
+        case IO_TM1CNT_H: write_timer_control(1,v); break;
+
         case IO_TM1CNT_H+1: break; // upper byte not used
 
         case IO_TM2CNT_L: cpu.cpu_io.timers[2].write_counter(0,v); break;
         case IO_TM2CNT_L+1: cpu.cpu_io.timers[2].write_counter(1,v); break;
-        case IO_TM2CNT_H: cpu.cpu_io.timers[2].write_control(v); break;
+        case IO_TM2CNT_H: write_timer_control(2,v); break;
         case IO_TM2CNT_H+1: break; // upper byte not used
 
         case IO_TM3CNT_L: cpu.cpu_io.timers[3].write_counter(0,v); break;
         case IO_TM3CNT_L+1: cpu.cpu_io.timers[3].write_counter(1,v); break;
-        case IO_TM3CNT_H: cpu.cpu_io.timers[3].write_control(v); break;
+        case IO_TM3CNT_H: write_timer_control(3,v); break;
         case IO_TM3CNT_H+1: break; // upper byte not used
 
 
@@ -621,23 +659,23 @@ uint8_t Mem::read_io_regs(uint32_t addr)
 
         // timers
 
-        case IO_TM0CNT_L: return cpu.cpu_io.timers[0].read_counter(0);
-        case IO_TM0CNT_L+1: return cpu.cpu_io.timers[0].read_counter(1);
+        case IO_TM0CNT_L: return read_timer_counter(0,0);
+        case IO_TM0CNT_L+1: return read_timer_counter(0,1);
         case IO_TM0CNT_H: return cpu.cpu_io.timers[0].read_control(); 
         case IO_TM0CNT_H+1: return 0; // upper byte not used
 
-        case IO_TM1CNT_L: return cpu.cpu_io.timers[1].read_counter(0); 
-        case IO_TM1CNT_L+1: return cpu.cpu_io.timers[1].read_counter(1); 
+        case IO_TM1CNT_L: return read_timer_counter(1,0);
+        case IO_TM1CNT_L+1: return read_timer_counter(1,1); 
         case IO_TM1CNT_H: return cpu.cpu_io.timers[1].read_control();
         case IO_TM1CNT_H+1: return 0; // upper byte not used
 
-        case IO_TM2CNT_L: return cpu.cpu_io.timers[2].read_counter(0); 
-        case IO_TM2CNT_L+1: return cpu.cpu_io.timers[2].read_counter(1); 
+        case IO_TM2CNT_L: return read_timer_counter(2,0);
+        case IO_TM2CNT_L+1: return read_timer_counter(2,1);
         case IO_TM2CNT_H: return cpu.cpu_io.timers[2].read_control(); 
         case IO_TM2CNT_H+1: return 0; // upper byte not used
 
-        case IO_TM3CNT_L: return cpu.cpu_io.timers[3].read_counter(0); 
-        case IO_TM3CNT_L+1: return cpu.cpu_io.timers[3].read_counter(1);
+        case IO_TM3CNT_L: return read_timer_counter(3,0);
+        case IO_TM3CNT_L+1: return read_timer_counter(3,1);
         case IO_TM3CNT_H: return cpu.cpu_io.timers[3].read_control(); 
         case IO_TM3CNT_H+1: return 0; // upper byte not used
 

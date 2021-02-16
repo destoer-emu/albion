@@ -374,9 +374,9 @@ void Cpu::cycle_tick(int cycles)
     // hack until we fix timings
     //cycles = 1;
 
-    disp.tick(cycles);
+    //disp.tick(cycles);
     //apu.tick(cycles);
-    tick_timers(cycles);
+    //tick_timers(cycles);
 
     scheduler.tick(cycles);
 }
@@ -388,6 +388,23 @@ void Cpu::internal_cycle()
     cycle_tick(1);
 }
 
+
+void Cpu::insert_new_timer_event(int timer)
+{
+    const auto event_type = static_cast<gba_event>(timer + static_cast<int>(gba_event::timer0));
+
+    // smash off any existing event
+    scheduler.remove(event_type);
+
+    // ok here we want to know how many cycles it will take for an overflow
+    const auto &r = cpu_io.timers[timer];
+    const auto limit = r.cycle_limit[r.scale];
+    const auto cycles = (limit * (0x10000 - r.counter)) - r.cycle_count;
+
+    const auto event = scheduler.create_event(cycles,event_type);
+    scheduler.insert(event,false);    
+}
+
 // should have a list of active timers that aernt count up
 // so we aernt needlesly checking them, allthough this is kind of defetaed by a scheduler
 // we should also cache the limit and scale on the reg write!
@@ -396,49 +413,56 @@ void Cpu::tick_timers(int cycles)
     // for each timer
     for(int i = 0; i < 4; i++)
     {        
-        auto &timer = cpu_io.timers[i];
-
-        // increments on prev timer overflow so we dont care
-        if(timer.count_up)
-        {
-            continue;
-        }
-
-        // timer is not enabled we dont care
-        if(!timer.enable)
-        {
-            continue;
-        }
-
-        timer.cycle_count += cycles;
-
-        const auto limit = timer.cycle_limit[timer.scale];
-
-        // if its above the threshold
-        if(timer.cycle_count >= limit)
-        {
-            //puts("timer inc");
-
-            // timer += how many limits passed
-            // / (compilier is not smart enough to use a shift here)
-            const auto ticks =  timer.cycle_count >> timer.shift_table[timer.scale];
-
-            // adjust cycle count accordingly
-            // % (compilier is not smart enough to use a & here)
-            timer.cycle_count &= limit - 1;
-
-            // timer overflowed
-            if(timer.counter + ticks > 0xffff)
-            {
-                timer_overflow(i);
-            }
-
-            else
-            {
-                timer.counter += ticks;
-            }
-        }
+        tick_timer(i,cycles);
     }
+}
+
+
+void Cpu::tick_timer(int t, int cycles)
+{
+    auto &timer = cpu_io.timers[t];
+
+    // increments on prev timer overflow so we dont care
+    if(timer.count_up)
+    {
+        return;
+    }
+
+    // timer is not enabled we dont care
+    if(!timer.enable)
+    {
+        return;
+    }
+
+    timer.cycle_count += cycles;
+
+    const auto limit = timer.cycle_limit[timer.scale];
+
+    // if its above the threshold
+    if(timer.cycle_count >= limit)
+    {
+        //puts("timer inc");
+
+        // timer += how many limits passed
+        // / (compilier is not smart enough to use a shift here)
+        const auto ticks =  timer.cycle_count >> timer.shift_table[timer.scale];
+
+        // adjust cycle count accordingly
+        // % (compilier is not smart enough to use a & here)
+        timer.cycle_count &= limit - 1;
+
+        // timer overflowed
+        if(timer.counter + ticks > 0xffff)
+        {
+            timer_overflow(t);
+            insert_new_timer_event(t);
+        }
+
+        else
+        {
+            timer.counter += ticks;
+        }
+    }    
 }
 
 void Cpu::timer_overflow(int timer_num)

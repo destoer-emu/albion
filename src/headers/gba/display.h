@@ -25,6 +25,9 @@ public:
 
     void update_vcount_compare();
 
+    void insert_new_ppu_event();
+
+
     void render_palette(uint32_t *palette, size_t size);
     void render_map(int id, std::vector<uint32_t> &map);
 
@@ -89,6 +92,7 @@ private:
 
     Mem &mem;
     Cpu &cpu;
+    GBAScheduler &scheduler;
 
     
     std::vector<std::vector<TileData>> bg_lines;
