@@ -542,7 +542,7 @@ void Cpu::exec_instr_no_debug()
 {
 
     handle_power_state();
-    do_interrupts(); 
+    
 
     // step the cpu in thumb mode
     if(is_thumb) 
@@ -555,6 +555,8 @@ void Cpu::exec_instr_no_debug()
     {
         exec_arm();
     }
+
+    do_interrupts(); 
 }
 
 #ifdef DEBUG

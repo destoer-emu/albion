@@ -3,9 +3,8 @@
 namespace gameboyadvance
 {
 
-/*
-    fix rendering issues, mosiac,
-    fix our dma sound, then unstub the memory writes
+/*  TODO
+    mosiac,unstub the memory writes
 */
 
 

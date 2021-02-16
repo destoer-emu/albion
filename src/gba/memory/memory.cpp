@@ -34,6 +34,7 @@ Mem::Mem(GBA &gba) : dma{gba}, debug(gba.debug), cpu(gba.cpu),
     vram.resize(0x18000);
     oam.resize(0x400); 
     sram.resize(0x8000);
+    rom.resize(32*1024*1024);
     std::fill(board_wram.begin(),board_wram.end(),0);
     std::fill(chip_wram.begin(),chip_wram.end(),0);
     std::fill(pal_ram.begin(),pal_ram.end(),0);
@@ -157,6 +158,95 @@ void Mem::init(std::string filename)
 
     // if we are not using the bios boot we need to set postflg
     mem_io.postflg = 1;   
+
+
+    page_table.resize(16384);
+    for(size_t i = 0; i < page_table.size(); i++)
+    {
+        uint32_t base = i * 0x4000;
+
+        const auto mem_region = memory_region_table[(base >> 24) & 0xf];
+
+        switch(mem_region)
+        {
+            // TODO switch this out when we enter it
+            // so we dont actually have to constantly have this null
+            // when we are fetching out of it
+            case memory_region::bios:
+            {
+                page_table[i] = nullptr;
+                break;
+            }
+
+            case memory_region::wram_board:
+            {
+                page_table[i] = &board_wram[base & 0x3ffff];
+                break;
+            }
+
+            case memory_region::wram_chip:
+            {
+                page_table[i] = &chip_wram[base & 0x7fff];
+                break;
+            }
+
+            case memory_region::io:
+            {
+                page_table[i] = nullptr;
+                break;
+            }
+
+            case memory_region::pal:
+            {
+                page_table[i] = nullptr;
+                break;
+            }
+
+            case memory_region::vram:
+            {
+                base = base & 0x1FFFF;
+                if(base > 0x17fff)
+                {
+                    // align to 32k chunk
+                    base = 0x10000 + (base & 0x7fff);
+                }
+                page_table[i] = &vram[base];
+                break;
+            }
+
+            case memory_region::oam:
+            {
+                page_table[i] = nullptr;
+                break;
+            }
+
+            case memory_region::rom:
+            {
+                if(is_eeprom(base))
+                {
+                    page_table[i] = nullptr;
+                }
+
+                else
+                {
+                    page_table[i] = &rom[base & 0x1FFFFFF];
+                }
+                break;
+            }
+
+            case memory_region::cart_backup:
+            {
+                page_table[i] = nullptr;
+                break;
+            }
+
+            case memory_region::undefined:
+            {
+                page_table[i] = nullptr;
+                break;
+            }
+        }
+    }
 }
 
 
@@ -777,6 +867,15 @@ template<typename access_type>
 access_type Mem::read_mem_handler(uint32_t addr)
 {
 
+    const auto page = addr >> 14;
+    if(page_table[page] != nullptr)
+    {
+        access_type v;
+        const uint8_t *buf = page_table[page] + (addr & (0x4000-1));
+        memcpy(&v,buf,sizeof(v));
+        return v;
+    }
+
     const auto mem_region = memory_region_table[(addr >> 24) & 0xf];
 
     switch(mem_region)
@@ -1263,16 +1362,6 @@ void Mem::tick_mem_access(uint32_t addr)
 template<typename access_type>
 access_type Mem::read_rom(uint32_t addr)
 {
-
-    uint32_t len = rom.size();
-    // while not illegal it probably means the there are errors
-    if(((addr&0x1FFFFFF) + sizeof(access_type)) > len)
-    {
-        // unused
-        return 0;
-    }
-
-
     //return rom[addr - <whatever page start>];
     return handle_read<access_type>(rom,addr&0x1FFFFFF);        
 }

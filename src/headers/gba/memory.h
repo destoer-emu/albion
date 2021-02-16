@@ -305,6 +305,8 @@ private:
     // main game rom
     std::vector<uint8_t> rom; // variable
 
+    std::vector<uint8_t*> page_table;
+
 };
 
 
