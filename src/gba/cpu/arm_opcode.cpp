@@ -1,6 +1,5 @@
-#include <gba/cpu.h>
-#include <gba/memory.h>
-#include <gba/disass.h>
+#include <gba/gba.h>
+
 
 namespace gameboyadvance
 {
@@ -437,9 +436,20 @@ void Cpu::arm_branch(uint32_t opcode)
         regs[LR] = (pc_actual) & ~3; // bottom bits deset
     }
 
-    // should switch to sequential access here
-    // writing to the pc will trigger the pipeline refill
-    write_pc(regs[PC] + offset);
+    if(offset == -8)
+    {
+        while(!(cpu_io.interrupt_flag & cpu_io.interrupt_enable))
+        {
+            scheduler.skip_to_event(); 
+        }       
+    }
+    
+    else
+    {
+        // should switch to sequential access here
+        // writing to the pc will trigger the pipeline refill
+        write_pc(regs[PC] + offset);
+    }
 }
 
 // psr transfer

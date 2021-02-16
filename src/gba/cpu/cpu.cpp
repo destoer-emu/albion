@@ -598,7 +598,11 @@ void Cpu::handle_power_state()
             // this is gonna be slow as hell until we get a event system
             while(!(cpu_io.interrupt_flag & cpu_io.interrupt_enable))
             {
-                cycle_tick(1);
+                if(scheduler.size() == 0)
+                {
+                    throw std::runtime_error("halt infinite loop");
+                }
+                scheduler.skip_to_event();
             }
             cpu_io.halt_cnt.state = HaltCnt::power_state::normal;
             break;

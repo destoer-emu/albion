@@ -1,6 +1,4 @@
-#include <gba/cpu.h>
-#include <gba/memory.h>
-#include <gba/disass.h>
+#include <gba/gba.h>
 
 
 // i need to properly handle pipeline effects
@@ -229,7 +227,19 @@ void Cpu::thumb_load_store_reg(uint16_t opcode)
 void Cpu::thumb_branch(uint16_t opcode)
 {
     const auto offset = sign_extend<int32_t>(opcode & 0x7ff,11) * 2;
-    write_pc(regs[PC] + offset);
+    
+    if(offset == -4)
+    {
+        while(!(cpu_io.interrupt_flag & cpu_io.interrupt_enable))
+        {
+            scheduler.skip_to_event(); 
+        }       
+    }
+    
+    else
+    {
+        write_pc(regs[PC] + offset);
+    }
 }
 
 void Cpu::thumb_load_store_half(uint16_t opcode)
