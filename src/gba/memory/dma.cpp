@@ -39,7 +39,6 @@ void DmaReg::init()
     src_shadow = 0;
     dst_shadow = 0;
     word_count_shadow = 0;
-    word_offset = 0;
 
     dst_cnt = 0;
     src_cnt = 0;
@@ -298,6 +297,51 @@ void Dma::turn_off_video_capture()
     }
 }
 
+bool Dma::do_fast_dma(int reg_num)
+{
+    auto &r = dma_regs[reg_num];
+
+
+    // okay for now lets just handle both src & dst incrementing
+    if(r.src_cnt != 0 || r.dst_cnt != 0)
+    {
+        return false;
+    }
+
+    bool success = false;
+
+    if(r.is_word)
+    {
+        success = mem.fast_memcpy<uint32_t>(r.dst_shadow,r.src_shadow,r.word_count_shadow);        
+    }
+
+    else
+    {
+        success = mem.fast_memcpy<uint16_t>(r.dst_shadow,r.src_shadow,r.word_count_shadow); 
+    }
+
+    if(success)
+    {
+        // increment + reload is forbidden dont use it
+        if(r.src_cnt != 3)
+        {
+            r.src_shadow += addr_increment_table[r.is_word][r.src_cnt] * r.word_count_shadow;
+        }
+
+        r.dst_shadow += addr_increment_table[r.is_word][r.dst_cnt] * r.word_count_shadow;
+
+        // todo haddle the dma timing
+        //const auto src_reg = memory_region_table[(r.src_shadow >> 24) & 0xf];
+        //cycle_tick(r.word_count_shadow * )
+        //const auto dst_reg = memory_region_table[(r.dst_shadow >> 24) & 0xf];
+        //puts("hi");
+        // TODO FIX THSI APPROXMIATION
+        //cpu.cycle_tick(r.word_count_shadow*2);
+    }
+
+    return success;
+}
+
 void Dma::do_dma(int reg_num, dma_type req_type)
 {
     auto &r = dma_regs[reg_num];
@@ -330,7 +374,7 @@ void Dma::do_dma(int reg_num, dma_type req_type)
             // need to rework our memory model to handle
             // the n & s cycles implictly at some point
             // dma takes 2N + 2(n-1)s +xI
-            for(size_t i = r.word_offset; i < 4; i++)
+            for(size_t i = 0; i < 4; i++)
             {
                 const auto v = mem.read_memt<uint32_t>(r.src_shadow);
                 mem.write_memt<uint32_t>(r.dst_shadow,v);
@@ -353,23 +397,30 @@ void Dma::do_dma(int reg_num, dma_type req_type)
             //write_log(debug,"dma {:x} from {:08x} to {:08x}\n",reg_num,r.src_shadow,r.dst_shadow);
             //std::cout << fmt::format("dma {:x} from {:08x} to {:08x}\n",reg_num,r.src_shadow,r.dst_shadow);
             // TODO how does internal cycles work for this?
-            if(r.is_word)
-            {
-                for(size_t i = r.word_offset; i < r.word_count_shadow; i++)
-                {
-                    const auto v = mem.read_memt<uint32_t>(r.src_shadow);
-                    mem.write_memt<uint32_t>(r.dst_shadow,v);
-                    handle_increment(reg_num);  
-                }
-            }
 
-            else
+            // todo check for interrupts when we actually handle dma priority
+
+            // cannot easily use a memcpy
+            if(!do_fast_dma(reg_num))
             {
-                for(size_t i = r.word_offset; i < r.word_count_shadow; i++)
+                if(r.is_word)
                 {
-                    const auto v = mem.read_memt<uint16_t>(r.src_shadow);
-                    mem.write_memt<uint16_t>(r.dst_shadow,v);
-                    handle_increment(reg_num);
+                    for(size_t i = 0; i < r.word_count_shadow; i++)
+                    {
+                        const auto v = mem.read_memt<uint32_t>(r.src_shadow);
+                        mem.write_memt<uint32_t>(r.dst_shadow,v);
+                        handle_increment(reg_num);  
+                    }
+                }
+
+                else
+                {
+                    for(size_t i = 0; i < r.word_count_shadow; i++)
+                    {
+                        const auto v = mem.read_memt<uint16_t>(r.src_shadow);
+                        mem.write_memt<uint16_t>(r.dst_shadow,v);
+                        handle_increment(reg_num);
+                    }
                 }
             }
             break;
@@ -388,8 +439,6 @@ void Dma::do_dma(int reg_num, dma_type req_type)
     {
         r.enable = false;
     }
-
-    r.word_offset = 0;
 }
 
 

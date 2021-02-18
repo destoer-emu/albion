@@ -51,6 +51,7 @@ void Cpu::init()
     flag_c = false;
     flag_n = false;
 
+    in_bios = false;
 
     cpu_io.init();
     update_intr_status();
@@ -543,7 +544,6 @@ void Cpu::exec_instr_no_debug()
 
     handle_power_state();
     
-
     // step the cpu in thumb mode
     if(is_thumb) 
     {
@@ -1254,12 +1254,16 @@ void Cpu::write_pc(uint32_t v)
     if(is_thumb)
     {
         pc_actual = v & ~1;
+        in_bios = pc_actual < 0x4000;
+        mem.switch_bios(in_bios);
         write_pc_thumb(v);
     }
 
     else
     {
         pc_actual = v & ~3;
+        in_bios = pc_actual < 0x4000;
+        mem.switch_bios(in_bios);
         write_pc_arm(v);
     } 
     

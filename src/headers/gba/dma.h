@@ -31,7 +31,6 @@ struct DmaReg
     uint32_t src_shadow;
     uint32_t dst_shadow;
     uint16_t word_count_shadow;
-    uint32_t word_offset;
 
 
     int dst_cnt; // 0 = inc, 1 = dec, 3 = inc/reload
@@ -83,6 +82,8 @@ private:
     void do_dma(int reg_num,dma_type req_type);
     void check_dma(dma_type req_type);
     void handle_increment(int reg_num);
+    bool do_fast_dma(int reg_num);
+
 
     static constexpr int32_t addr_increment_table[2][4] = 
     {

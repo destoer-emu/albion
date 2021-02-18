@@ -22,6 +22,13 @@ template void Mem::write_memt<uint8_t>(uint32_t addr, uint8_t v);
 template void Mem::write_memt<uint16_t>(uint32_t addr, uint16_t v);
 template void Mem::write_memt<uint32_t>(uint32_t addr, uint32_t v);
 
+template bool Mem::fast_memcpy<uint16_t>(uint32_t src, uint32_t dst, uint32_t n);
+template bool Mem::fast_memcpy<uint32_t>(uint32_t src, uint32_t dst, uint32_t n);
+
+template uint32_t Mem::get_waitstates<uint32_t>(uint32_t addr) const;
+template uint32_t Mem::get_waitstates<uint16_t>(uint32_t addr) const;
+template uint32_t Mem::get_waitstates<uint8_t>(uint32_t addr) const;
+
 
 Mem::Mem(GBA &gba) : dma{gba}, debug(gba.debug), cpu(gba.cpu), 
     disp(gba.disp), apu(gba.apu), scheduler(gba.scheduler)
@@ -41,6 +48,14 @@ Mem::Mem(GBA &gba) : dma{gba}, debug(gba.debug), cpu(gba.cpu),
     std::fill(vram.begin(),vram.end(),0);
     std::fill(oam.begin(),oam.end(),0);
     std::fill(sram.begin(),sram.end(),0);
+
+
+    backing_vec[static_cast<size_t>(memory_region::wram_board)] = board_wram.data();
+    backing_vec[static_cast<size_t>(memory_region::wram_chip)] = chip_wram.data();
+    backing_vec[static_cast<size_t>(memory_region::pal)] = pal_ram.data();
+    backing_vec[static_cast<size_t>(memory_region::vram)] = vram.data();
+    backing_vec[static_cast<size_t>(memory_region::oam)] = oam.data();
+    backing_vec[static_cast<size_t>(memory_region::rom)] = rom.data();
 }
 
 void Mem::init(std::string filename)
@@ -153,6 +168,7 @@ void Mem::init(std::string filename)
     }
     mem_io.init();
     dma.init();
+    
     memcpy(wait_states,wait_states_default,sizeof(wait_states));
     update_wait_states();
 
@@ -249,6 +265,18 @@ void Mem::init(std::string filename)
     }
 }
 
+void Mem::switch_bios(bool in_bios)
+{
+    if(in_bios)
+    {
+        page_table[0] = bios_rom.data();
+    }
+
+    else
+    {
+        page_table[0] = nullptr;
+    }
+}
 
 void Mem::save_cart_ram()
 {
@@ -288,6 +316,21 @@ void Mem::frame_end()
 			cart_ram_dirty = false;
 		}
 	}
+}
+
+template<typename access_type>
+uint32_t align_addr(uint32_t addr)
+{
+    // only allow up to 32bit
+    static_assert(sizeof(access_type) <= 4);
+
+    // 28 bit bus
+    addr &= 0x0fffffff;
+
+    // handle address alignment
+    addr &= ~(sizeof(access_type)-1);    
+
+    return addr;
 }
 
 // hack for soundbias to boot bios...
@@ -883,7 +926,8 @@ access_type Mem::read_mem_handler(uint32_t addr)
         case memory_region::bios: 
         {
             // cant read from bios when not executing in it
-            if(cpu.get_pc() < 0x4000)
+            if(cpu.is_in_bios())
+            //if(cpu.get_pc() < 0x4000)
             {
                 return read_bios<access_type>(addr);
             }
@@ -959,14 +1003,7 @@ access_type Mem::read_mem_handler(uint32_t addr)
 template<typename access_type>
 access_type Mem::read_mem(uint32_t addr)
 {
-    // only allow up to 32bit
-    static_assert(sizeof(access_type) <= 4);
-
-    // 28 bit bus
-    addr &= 0x0fffffff;
-
-    // handle address alignment
-    addr &= ~(sizeof(access_type)-1);
+    addr = align_addr<access_type>(addr);
 
 #ifdef DEBUG
     const auto v = read_mem_handler<access_type>(addr);
@@ -1159,14 +1196,7 @@ template<typename access_type>
 void Mem::write_mem(uint32_t addr,access_type v)
 {
 
-    // only allow up to 32bit
-    static_assert(sizeof(access_type) <= 4);
-
-    // 28 bit bus
-    addr &= 0x0fffffff;
-
-    // handle address alignemt
-    addr &= ~(sizeof(access_type)-1);
+    addr = align_addr<access_type>(addr);
 
     const auto mem_region = memory_region_table[(addr >> 24) & 0xf];
 #ifdef DEBUG
@@ -1265,7 +1295,7 @@ void Mem::write_memt(uint32_t addr,access_type v)
 // we also need to a test refactor using one lib, constants and compiling in one dir
 // and impl a basic timing test
 // this is completly botched...
-void set_wait(int buf[], int wait)
+void set_wait(int *buf, int wait)
 {
     buf[0] =  wait + 1;
     buf[1] =  wait + 1;
@@ -1280,8 +1310,16 @@ void Mem::update_wait_states()
     // TODO: hack for prefetch if prefetch is enabled make access instant
     if(wait_cnt.prefetch)
     {
-        memset(&rom_wait_states,1,sizeof(rom_wait_states));
-        return;
+        for(int x = 0; x < 3; x++)
+        {
+            for(int y = 0; y < 2; y++)
+            {
+                for(int z = 0; z < 3; z++)
+                {
+                    rom_wait_states[x][y][z] = 1;
+                }
+            }
+        }
     }
 
     const auto wait_first0 = wait_first_table[wait_cnt.wait01];
@@ -1302,18 +1340,10 @@ void Mem::update_wait_states()
 }
 
 
-// this is very hacky to get around our shoddy timings atm
-// Emerald breaks in battle under this though im not sure timings is the reason
-// metroid also showing lines, need to debug the gfx issues on the save files too
-// it might be an issue with the pipeline...
+
 template<typename access_type>
-void Mem::tick_mem_access(uint32_t addr)
+uint32_t Mem::get_waitstates(uint32_t addr) const
 {
-    UNUSED(addr);
-    //cpu.cycle_tick(1);
-
-
-    // only allow up to 32bit
     static_assert(sizeof(access_type) <= 4);
 
     // need to re pull the region incase dma triggered reads
@@ -1322,16 +1352,14 @@ void Mem::tick_mem_access(uint32_t addr)
     if(mem_region == memory_region::undefined)
     {
         // how long should this take?
-        //cpu.cycle_tick(1);
-        return;
+        return 1;
     }
 
     // need to lookup waitstaes in seperate table for rom
     if(mem_region == memory_region::rom)
     {
         // hardcode to sequential access!
-        //cpu.cycle_tick(rom_wait_states[(region - 8) / 2][1][sizeof(access_type) >> 1]);
-        cpu.cycle_tick(1);
+        return rom_wait_states[(region - 8) / 2][1][sizeof(access_type) >> 1];
     }
 
     // should unmapped addresses still tick a cycle?
@@ -1341,16 +1369,23 @@ void Mem::tick_mem_access(uint32_t addr)
         // 4 -> 2 (word)
         // 2 -> 1 (half)
         // 1 -> 0 (byte)
-        // our waitstates are busted ive stubbed them for now
-        // we need to read up and S and N cycles
-        // before we add them
-        // this is enough to tip it over to where many thigns wont work...
-        // we need a timing test rom at some point to get to the bottom of why timings fail
-        // so badly!
-        //cpu.cycle_tick(wait_states[region][sizeof(access_type) >> 1]);
-        cpu.cycle_tick(1);
+        return wait_states[region][sizeof(access_type) >> 1];
     }
+}
 
+// this is very hacky to get around our shoddy timings atm
+// Emerald breaks in battle under this though im not sure timings is the reason
+// metroid also showing lines, need to debug the gfx issues on the save files too
+// it might be an issue with the pipeline...
+template<typename access_type>
+void Mem::tick_mem_access(uint32_t addr)
+{
+    //cpu.cycle_tick(1);
+
+
+    // only allow up to 32bit
+    static_assert(sizeof(access_type) <= 4);
+    cpu.cycle_tick(get_waitstates<access_type>(addr));
 }
 
 
@@ -1592,6 +1627,96 @@ void Mem::write_chip_wram(uint32_t addr,access_type v)
 {
     //chip_wram[addr & 0x7fff] = v;
     handle_write<access_type>(chip_wram,addr&0x7fff,v);
+}
+
+
+uint32_t Mem::align_addr_to_region(uint32_t addr) const
+{
+    const auto region = static_cast<int>(memory_region_table[(addr >> 24) & 0xf]);
+    return addr & region_info[region].mask;
+}
+
+bool Mem::can_fast_memcpy(uint32_t dst, uint32_t src, uint32_t bytes) const
+{
+    const auto src_reg = memory_region_table[(src >> 24) & 0xf];
+    const auto dst_reg = memory_region_table[(dst >> 24) & 0xf];
+
+    if(src_reg == memory_region::io || src_reg == memory_region::cart_backup || 
+        src_reg == memory_region::bios || src_reg == memory_region::undefined)
+    {
+        return false;
+    }
+
+    if(dst_reg == memory_region::io || dst_reg == memory_region::cart_backup || 
+        dst_reg == memory_region::bios || dst_reg == memory_region::undefined || dst_reg == memory_region::rom) 
+    {
+        return false;
+    }
+
+    if(is_eeprom(src))
+    {
+        return false;
+    }
+
+    const auto src_offset = align_addr_to_region(src);
+    const auto dst_offset = align_addr_to_region(dst);
+
+    const auto src_size = region_info[static_cast<int>(src_reg)].size;
+    const auto dst_size = region_info[static_cast<int>(dst_reg)].size;
+
+    const bool in_range = (src_offset+bytes <= src_size && dst_offset+bytes <= dst_size);
+/*
+    if(!in_range)
+    {
+        printf("[%08x] not in region bounds: %08x:%08x:%08x:%08x\n",bytes,src_offset+bytes,dst_offset+bytes,src_size,dst_size);
+        printf("%08x:%08x\n",src,dst);
+    }
+*/
+    return in_range;
+}
+
+template<typename access_type>
+bool Mem::fast_memcpy(uint32_t dst, uint32_t src, uint32_t n)
+{
+    static_assert(sizeof(access_type) >= 2);
+
+    src = align_addr<access_type>(src);
+    dst = align_addr<access_type>(dst);
+
+    const auto bytes = n*sizeof(access_type);
+
+    if(!can_fast_memcpy(dst,src,bytes))
+    {
+        return false;
+    }
+
+
+    
+
+    const auto src_reg = memory_region_table[(src >> 24) & 0xf];
+    const auto dst_reg = memory_region_table[(dst >> 24) & 0xf];
+
+    uint8_t *src_ptr = backing_vec[static_cast<size_t>(src_reg)];
+    uint8_t *dst_ptr = backing_vec[static_cast<size_t>(dst_reg)];
+
+    assert(src_ptr != nullptr);
+    assert(dst_ptr != nullptr);
+
+    const auto src_offset = align_addr_to_region(src);
+    const auto dst_offset = align_addr_to_region(dst);
+
+    memcpy(dst_ptr+dst_offset,src_ptr+src_offset,bytes);  
+
+    const auto src_wait = get_waitstates<access_type>(src);
+    const auto dst_wait = get_waitstates<access_type>(dst);
+
+    for(size_t i = 0; i < n; i++)
+    {
+        cpu.cycle_tick(src_wait);
+        cpu.cycle_tick(dst_wait);
+    }
+
+    return true; 
 }
 
 }

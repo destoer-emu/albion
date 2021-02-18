@@ -57,6 +57,11 @@ public:
         return pipeline[1];
     }
 
+    bool is_in_bios() const
+    {
+        return in_bios;
+    }
+
     uint32_t get_pc() const 
     {
         return pc_actual;
@@ -256,6 +261,7 @@ private:
     // what context is the arm cpu in
     cpu_mode arm_mode;
 
+    bool in_bios;
 
     // cpu pipeline
     uint32_t pipeline[2] = {0};

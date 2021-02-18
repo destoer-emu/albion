@@ -18,12 +18,21 @@ public:
     Mem(GBA &gba);
     void init(std::string filename);
 
+
+    template<typename access_type>
+    bool fast_memcpy(uint32_t dst, uint32_t src, uint32_t n);
+
     void save_cart_ram();
+
+    void switch_bios(bool in_bios);
 
 
     // TODO change memory accessors to
     // func pointer call when running under a debugger
     // will have to specialize the pointer for each type...
+
+    template<typename access_type>
+    uint32_t get_waitstates(uint32_t addr) const;
 
 
     template<typename access_type>
@@ -78,6 +87,7 @@ private:
     Display &disp;
     Apu &apu;
     GBAScheduler &scheduler;
+
 
     template<typename access_type>
     void tick_mem_access(uint32_t addr);
@@ -166,6 +176,42 @@ private:
         io,pal,vram,oam,rom,cart_backup,
         undefined
     };
+
+    struct RegionData
+    {
+        RegionData(uint32_t m, uint32_t s)
+        {
+            mask = m;
+            size =s;
+        }
+
+        uint32_t mask;
+        uint32_t size;
+    };
+
+    // note this assumes that accesses are in bounds
+    // these masks wont work if the size is exceeded
+    // i.e in the case of vram
+    RegionData region_info[10]
+    {
+        {0x3fff,0x4000},
+        {0x3ffff,0x40000},
+        {0x7fff,0x8000},
+        {0x3ff,0x400},
+        {0x3ff,0x400},
+        {0x1ffff,0x18000},
+        {0x3ff,0x400},
+        {(32*1024*1024)-1,32*1024*1024},
+        {0,0}, // varies
+        {0,0}, // not valid
+    };
+
+
+    uint8_t *backing_vec[10] = {nullptr};
+    bool can_fast_memcpy(uint32_t dst, uint32_t src,uint32_t n) const;
+    uint32_t align_addr_to_region(uint32_t addr) const;
+
+
 
     enum class save_type
     {
@@ -268,6 +314,9 @@ private:
         {5,5,8}, // cart backup needs to be setup depending on cart type
     };
     
+
+    static_assert(sizeof(wait_states) == sizeof(wait_states_default));
+
     int rom_wait_states[3][2][3];
 
 
@@ -306,6 +355,7 @@ private:
     std::vector<uint8_t> rom; // variable
 
     std::vector<uint8_t*> page_table;
+    std::vector<uint8_t*> memcpy_page_table;
 
 };
 
@@ -328,4 +378,12 @@ extern template void Mem::write_memt<uint8_t>(uint32_t addr, uint8_t v);
 extern template void Mem::write_memt<uint16_t>(uint32_t addr, uint16_t v);
 extern template void Mem::write_memt<uint32_t>(uint32_t addr, uint32_t v);
 
+
+extern template bool Mem::fast_memcpy<uint16_t>(uint32_t src, uint32_t dst, uint32_t n);
+extern template bool Mem::fast_memcpy<uint32_t>(uint32_t src, uint32_t dst, uint32_t n);
+
+
+extern template uint32_t Mem::get_waitstates<uint32_t>(uint32_t addr) const;
+extern template uint32_t Mem::get_waitstates<uint16_t>(uint32_t addr) const;
+extern template uint32_t Mem::get_waitstates<uint8_t>(uint32_t addr) const;
 }
