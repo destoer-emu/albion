@@ -41,7 +41,7 @@ protected:
     MinHeap<EVENT_SIZE,event_type> event_list;
 
     // current elapsed time
-    uint64_t timestamp = 0;
+    uint32_t timestamp = 0;
 };
 
 
@@ -63,6 +63,21 @@ template<size_t SIZE,typename event_type>
 void Scheduler<SIZE,event_type>::tick(uint32_t cycles)
 {
     timestamp += cycles;
+
+    if(is_set(timestamp,31))
+    {
+        uint32_t min = 0xffffffff;
+        for(const auto &x: event_list.buf)
+        {
+            min = std::min(min,x.start);
+        }
+
+        for(auto &x: event_list.buf)
+        {
+            x.end -= min;
+            x.start -= min;
+        }
+    }
 
     while(event_list.size())
     {

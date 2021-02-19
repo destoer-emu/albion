@@ -16,10 +16,10 @@ struct EventNode
     }
 
     // when event was added
-    uint64_t start;
+    uint32_t start;
 
     // when it will trigger
-    uint64_t end;
+    uint32_t end;
 
     event_type type;
 
@@ -69,6 +69,7 @@ public:
     bool is_active(event_type t) const;
 	void insert(EventNode<event_type> event);
 
+    std::array<EventNode<event_type>,SIZE> buf;
 private:
     void heapify(size_t idx);
     void verify();
@@ -81,7 +82,6 @@ private:
 	void swap(size_t idx1, size_t idx2);
 
     std::array<EventNode<event_type>*,SIZE> heap;
-    std::array<EventNode<event_type>,SIZE> buf;
     // stores pos of each event so it can be deleted fast
     std::array<size_t,SIZE> type_idx;
     
