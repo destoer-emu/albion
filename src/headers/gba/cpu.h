@@ -10,7 +10,71 @@
 
 namespace gameboyadvance
 {
+// tests if a cond field in an instr has been met
+constexpr bool cond_lut_helper(uint32_t cond, uint32_t flags)
+{
+    const auto ac = static_cast<arm_cond>(cond);
 
+    const bool flag_z = flags & 1;
+    const bool flag_c = flags & 2;
+    const bool flag_n = flags & 4;
+    const bool flag_v = flags & 8;
+
+    // switch on the cond bits
+    // (lower 4)
+    switch(ac)
+    {
+        // z set
+        case arm_cond::eq: return flag_z;
+        
+        // z clear
+        case arm_cond::ne: return !flag_z;
+
+        // c set
+        case arm_cond::cs: return flag_c;
+
+        // c clear
+        case arm_cond::cc: return !flag_c;
+
+        // n set
+        case arm_cond::mi: return flag_n;
+
+        // n clear
+        case arm_cond::pl: return !flag_n;
+
+        // v set
+        case arm_cond::vs: return flag_v; 
+
+        // v clear
+        case arm_cond::vc: return !flag_v;
+
+        // c set and z clear
+        case arm_cond::hi: return flag_c && !flag_z;
+
+        // c clear or z set
+        case arm_cond::ls: return !flag_c || flag_z;
+
+        // n equals v
+        case arm_cond::ge: return flag_n == flag_v;
+
+        // n not equal to v
+        case arm_cond::lt: return flag_n != flag_v; 
+
+        // z clear and N equals v
+        case arm_cond::gt: return !flag_z && flag_n == flag_v;
+
+        // z set or n not equal to v
+        case arm_cond::le: return flag_z || flag_n != flag_v;
+
+        // allways
+        case arm_cond::al: return true;
+
+        // not valid - see cond_invalid.gba
+        case arm_cond::nv: return false;
+
+    }
+    return true; // shoud not be reached
+}
 
 class Cpu
 {
@@ -21,6 +85,7 @@ public:
 
     void update_intr_status();
 
+    void handle_power_state();
 
 #ifdef DEBUG
     using EXEC_INSTR_FPTR = void (Cpu::*)(void);
@@ -137,11 +202,6 @@ private:
 
     void internal_cycle();
 
-    bool cond_met(int opcode);
-
-    
-    void handle_power_state();
-
     //arm cpu instructions
     void arm_unknown(uint32_t opcode);
     void arm_branch(uint32_t opcode);
@@ -188,6 +248,8 @@ private:
     uint32_t logical_or(uint32_t v1, uint32_t v2, bool s);
     uint32_t logical_eor(uint32_t v1, uint32_t v2, bool s);
     void do_mul_cycles(uint32_t mul_operand);
+
+    bool cond_met(uint32_t opcode);
 
     // interrupts
     //void request_interrupt(Interrupt interrupt);
@@ -261,10 +323,38 @@ private:
     // what context is the arm cpu in
     cpu_mode arm_mode;
 
+    // rather than 16 by 16 bool array
+    // store are a bitset
+    using COND_LUT = std::array<uint16_t,16>;
+
+    constexpr COND_LUT gen_cond_lut()
+    {
+        COND_LUT arr{};
+        for(uint32_t c = 0; c < 16; c++)
+        {
+            for(uint32_t f = 0; f < 16; f++)
+            {
+                if(cond_lut_helper(c,f))
+                {
+                    arr[c] = set_bit(arr[c],f);
+                }
+            }
+        }
+
+        return arr;
+    }
+
+    const COND_LUT cond_lut = gen_cond_lut();
+
+
+
+
     bool in_bios;
 
     // cpu pipeline
     uint32_t pipeline[2] = {0};
+
+    uint32_t pending_cycles;
 };
 
 }

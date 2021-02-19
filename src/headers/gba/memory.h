@@ -355,8 +355,6 @@ private:
     std::vector<uint8_t> rom; // variable
 
     std::vector<uint8_t*> page_table;
-    std::vector<uint8_t*> memcpy_page_table;
-
 };
 
 

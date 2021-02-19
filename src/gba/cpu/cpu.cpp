@@ -537,13 +537,16 @@ void Cpu::timer_overflow(int timer_num)
     }
 }
 
+bool Cpu::cond_met(uint32_t cond)
+{
+    const auto flags = flag_z | flag_c << 1 | flag_n << 2 | flag_v << 3;
+
+    return is_set(cond_lut[cond],flags);
+}
 
 
 void Cpu::exec_instr_no_debug()
-{
-
-    handle_power_state();
-    
+{    
     // step the cpu in thumb mode
     if(is_thumb) 
     {
@@ -905,69 +908,6 @@ cpu_mode Cpu::cpu_mode_from_bits(uint32_t v)
 }
 
 
-// tests if a cond field in an instr has been met
-// change this to a lut later
-bool Cpu::cond_met(int opcode)
-{
-
-    const auto cond = opcode & 0xf;
-
-
-    // switch on the cond bits
-    // (lower 4)
-    switch(static_cast<arm_cond>(cond))
-    {
-        // z set
-        case arm_cond::eq: return flag_z;
-        
-        // z clear
-        case arm_cond::ne: return !flag_z;
-
-        // c set
-        case arm_cond::cs: return flag_c;
-
-        // c clear
-        case arm_cond::cc: return !flag_c;
-
-        // n set
-        case arm_cond::mi: return flag_n;
-
-        // n clear
-        case arm_cond::pl: return !flag_n;
-
-        // v set
-        case arm_cond::vs: return flag_v; 
-
-        // v clear
-        case arm_cond::vc: return !flag_v;
-
-        // c set and z clear
-        case arm_cond::hi: return flag_c && !flag_z;
-
-        // c clear or z set
-        case arm_cond::ls: return !flag_c || flag_z;
-
-        // n equals v
-        case arm_cond::ge: return flag_n == flag_v;
-
-        // n not equal to v
-        case arm_cond::lt: return flag_n != flag_v; 
-
-        // z clear and N equals v
-        case arm_cond::gt: return !flag_z && flag_n == flag_v;
-
-        // z set or n not equal to v
-        case arm_cond::le: return flag_z || flag_n != flag_v;
-
-        // allways
-        case arm_cond::al: return true;
-
-        // not valid - see cond_invalid.gba
-        case arm_cond::nv: return false;
-
-    }
-    return true; // shoud not be reached
-}
 
 // common arithmetic and logical operations
 

@@ -20,7 +20,8 @@ uint16_t Cpu::fetch_thumb_opcode()
 {
     const uint16_t opcode = pipeline[0];
     pipeline[0] = pipeline[1];
-    regs[PC] += ARM_HALF_SIZE;  
+    regs[PC] += ARM_HALF_SIZE; 
+    pc_actual += ARM_HALF_SIZE; 
     pipeline[1] = mem.read_memt<uint16_t>(regs[PC]);
     return opcode;
 }
@@ -34,7 +35,6 @@ void Cpu::write_pc_thumb(uint32_t v)
 void Cpu::exec_thumb()
 {
     const auto op = fetch_thumb_opcode();
-    pc_actual += ARM_HALF_SIZE;
 
     execute_thumb_opcode(op);
 }

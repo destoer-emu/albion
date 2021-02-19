@@ -25,6 +25,7 @@ uint32_t Cpu::fetch_arm_opcode()
     const uint32_t opcode = pipeline[0];
     pipeline[0] = pipeline[1];
     regs[PC] += ARM_WORD_SIZE; 
+    pc_actual += ARM_WORD_SIZE;
     pipeline[1] = mem.read_memt<uint32_t>(regs[PC]);
     return opcode;
 }
@@ -41,7 +42,6 @@ void Cpu::execute_arm_opcode(uint32_t instr)
 void Cpu::exec_arm()
 {
     const auto instr = fetch_arm_opcode();
-    pc_actual += ARM_WORD_SIZE;
 
     // if the condition is not met just
     // advance past the instr

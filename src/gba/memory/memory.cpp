@@ -318,21 +318,6 @@ void Mem::frame_end()
 	}
 }
 
-template<typename access_type>
-uint32_t align_addr(uint32_t addr)
-{
-    // only allow up to 32bit
-    static_assert(sizeof(access_type) <= 4);
-
-    // 28 bit bus
-    addr &= 0x0fffffff;
-
-    // handle address alignment
-    addr &= ~(sizeof(access_type)-1);    
-
-    return addr;
-}
-
 // hack for soundbias to boot bios...
 // fix when we properly impl the reg
 uint16_t soundbias = 0;
@@ -725,7 +710,7 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
 
         case IO_POSTFLG: mem_io.postflg = v; break;
 
-        case IO_HALTCNT: cpu.cpu_io.halt_cnt.write(v); break;
+        case IO_HALTCNT: cpu.cpu_io.halt_cnt.write(v);  cpu.handle_power_state(); break;
 
         // gamepak wait timings ignore for now
         case IO_WAITCNT: mem_io.wait_cnt.write(0,v); update_wait_states(); break;
@@ -907,6 +892,22 @@ void Mem::check_joypad_intr()
 
 
 template<typename access_type>
+uint32_t align_addr(uint32_t addr)
+{
+    // only allow up to 32bit
+    static_assert(sizeof(access_type) <= 4);
+
+    // 28 bit bus
+    addr &= 0x0fffffff;
+
+    // handle address alignment
+    addr &= ~(sizeof(access_type)-1);    
+
+    return addr;
+}
+
+
+template<typename access_type>
 access_type Mem::read_mem_handler(uint32_t addr)
 {
 
@@ -1014,8 +1015,7 @@ access_type Mem::read_mem(uint32_t addr)
     }
     return v;
 #else    
-    const auto v = read_mem_handler<access_type>(addr);
-    return v;    
+    return read_mem_handler<access_type>(addr);    
 #endif
 }
 
@@ -1349,27 +1349,31 @@ uint32_t Mem::get_waitstates(uint32_t addr) const
     // need to re pull the region incase dma triggered reads
     const int region =  (addr >> 24) & 0xf; 
     const auto mem_region = memory_region_table[region];
-    if(mem_region == memory_region::undefined)
+    
+    switch(mem_region)
     {
-        // how long should this take?
-        return 1;
-    }
+        case memory_region::undefined:
+        {
+            // how long should this take?
+            return 1;
+        }
 
-    // need to lookup waitstaes in seperate table for rom
-    if(mem_region == memory_region::rom)
-    {
-        // hardcode to sequential access!
-        return rom_wait_states[(region - 8) / 2][1][sizeof(access_type) >> 1];
-    }
+        // need to lookup waitstaes in seperate table for rom
+        case memory_region::rom:
+        {
+            // hardcode to sequential access!
+            return rom_wait_states[(region - 8) / 2][1][sizeof(access_type) >> 1];
+        }
 
-    // should unmapped addresses still tick a cycle?
-    else
-    {
-        // access type >> 1 to get the value
-        // 4 -> 2 (word)
-        // 2 -> 1 (half)
-        // 1 -> 0 (byte)
-        return wait_states[region][sizeof(access_type) >> 1];
+        // should unmapped addresses still tick a cycle?
+        default:
+        {
+            // access type >> 1 to get the value
+            // 4 -> 2 (word)
+            // 2 -> 1 (half)
+            // 1 -> 0 (byte)
+            return wait_states[region][sizeof(access_type) >> 1];
+        }
     }
 }
 
