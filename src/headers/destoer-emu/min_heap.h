@@ -70,6 +70,7 @@ public:
 	void insert(EventNode<event_type> event);
 
     std::array<EventNode<event_type>,SIZE> buf;
+    const size_t IDX_INVALID = 0xffffffff;
 private:
     void heapify(size_t idx);
     void verify();
@@ -85,7 +86,6 @@ private:
     // stores pos of each event so it can be deleted fast
     std::array<size_t,SIZE> type_idx;
     
-    const size_t IDX_INVALID = 0xffffffff;
     size_t len = 0;
 };
 

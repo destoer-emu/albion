@@ -796,7 +796,8 @@ void Display::render()
     // ideally we would try to cull draws
     // that are not enabled in the window
     cache_window();
-    
+    render_sprites(render_mode);
+
     switch(render_mode)
     {
 
@@ -897,7 +898,6 @@ void Display::render()
             throw std::runtime_error(err);
         }
     }
-    render_sprites(render_mode);
 
     merge_layers();
 }
