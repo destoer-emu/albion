@@ -49,7 +49,7 @@ void Apu::push_samples(int cycles)
 
     else
     {
-        down_sample_cnt = ((16 * 1024 * 1024) / 44100) + down_sample_cnt;
+        down_sample_cnt = ((16 * 1024 * 1024) / 44100);
         insert_new_sample_event();
     }
 

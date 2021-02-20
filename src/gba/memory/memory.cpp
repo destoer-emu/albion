@@ -1362,7 +1362,9 @@ uint32_t Mem::get_waitstates(uint32_t addr) const
         case memory_region::rom:
         {
             // hardcode to sequential access!
-            return rom_wait_states[(region - 8) / 2][1][sizeof(access_type) >> 1];
+            return 1;
+            // bugs out in metroid fusion final boss why?
+            //return rom_wait_states[(region - 8) / 2][1][sizeof(access_type) >> 1];
         }
 
         // should unmapped addresses still tick a cycle?

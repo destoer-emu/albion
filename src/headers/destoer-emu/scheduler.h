@@ -42,6 +42,7 @@ protected:
 
     // current elapsed time
     uint32_t timestamp = 0;
+    uint32_t min_timestamp = 0;
 };
 
 
@@ -51,6 +52,7 @@ void Scheduler<SIZE,event_type>::init()
 {
     event_list.clear();
     timestamp = 0;
+    min_timestamp = 0;
 }
 
 template<size_t SIZE,typename event_type>
@@ -85,17 +87,19 @@ void Scheduler<SIZE,event_type>::tick(uint32_t cycles)
             }
         }
         timestamp -= min;
+        min_timestamp -= min;
     }
 
     while(event_list.size())
     {
         // if the timestamp is greater than the event fire
         // handle the event and remove it
-        const auto event = event_list.peek();
-        if(timestamp >= event.end)
+        if(timestamp >= min_timestamp)
         {
             // remove min event
+            const auto event = event_list.peek();
             event_list.pop();
+            min_timestamp = event_list.peek().end;
             service_event(event);
         }
 
@@ -113,6 +117,7 @@ void Scheduler<SIZE,event_type>::insert(const EventNode<event_type> &node,bool t
 {
     remove(node.type,tick_old);
     event_list.insert(node);
+    min_timestamp = event_list.peek().end;
 }
 
 template<size_t SIZE,typename event_type>
@@ -125,6 +130,7 @@ void Scheduler<SIZE,event_type>::remove(event_type type,bool tick_old)
     {
         service_event(event.value());
         event_list.remove(type);
+        min_timestamp = event_list.peek().end;
     }
 }
 
@@ -156,7 +162,7 @@ uint64_t Scheduler<SIZE,event_type>::get_timestamp() const
 template<size_t SIZE,typename event_type>
 uint64_t Scheduler<SIZE,event_type>::get_next_event_cycles() const
 {
-    return event_list.peek().end - timestamp;
+    return min_timestamp - timestamp;
 }
 
 template<size_t SIZE,typename event_type>

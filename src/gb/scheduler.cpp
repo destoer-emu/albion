@@ -20,7 +20,7 @@ GameboyScheduler::GameboyScheduler(GB &gb) : cpu(gb.cpu), ppu(gb.ppu),
 // option to align cycles for things like waitloop may be required
 void GameboyScheduler::skip_to_event()
 {
-    auto cycles = event_list.peek().end - timestamp;
+    auto cycles = min_timestamp - timestamp;
 
     // make sure we are on a 4 cycle boundary
     cycles = (cycles + 3) & ~0x3; 

@@ -11,7 +11,7 @@ GBAScheduler::GBAScheduler(GBA &gba) : cpu(gba.cpu), disp(gba.disp),
 // option to align cycles for things like waitloop may be required
 void GBAScheduler::skip_to_event()
 {
-    auto cycles = event_list.peek().end - timestamp;
+    auto cycles = min_timestamp - timestamp;
 
     cpu.cycle_tick(cycles);
 } 

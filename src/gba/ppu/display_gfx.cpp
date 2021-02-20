@@ -514,6 +514,7 @@ void Display::merge_layers()
             const auto &s = sprite_line[x];
             const auto sprite_color = read_obj_palette(s.pal_num,s.col_num);
             const bool sprite_enable = sprite_window_enabled(x);
+            
             for(int i = lim-1; i >= 0; i--)
             {
                 const auto bg = bg_priority[i].bg;
