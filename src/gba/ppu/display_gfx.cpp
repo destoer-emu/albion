@@ -3,11 +3,7 @@
 namespace gameboyadvance
 {
 // TODO
-// fix gfx glitches in fire emblem after title screen
 // metroid screen tears (allthough i think this a timing issue)
-// try and fix battle start bug in emerald
-
-// todo cache these from the color lut on pal write to directly return a uint32_t
 
 // renderer helper functions
 uint16_t Display::read_bg_palette(uint32_t pal_num,uint32_t idx)
@@ -23,12 +19,42 @@ uint16_t Display::read_obj_palette(uint32_t pal_num,uint32_t idx)
 }
 
 
-void Display::read_tile(TileData tile[],unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, uint32_t y,bool x_flip, bool y_flip)
+// TODO: specialise this with lambda to only bother drawing 2nd target when we actually need to
+// do a blend
+void Display::draw_tile(uint32_t x,const TileData &&p)
+{
+    if(!bg_window_enabled(p.bg,x))
+    {
+        return;
+    }
+
+
+    // 1st target is empty
+    if(scanline[0][x].col_num == 0)
+    {
+        scanline[0][x] = p;
+    }
+
+    // 2nd target is empty
+    else if(scanline[1][x].col_num == 0)
+    {
+        scanline[1][x] = p;
+    }
+}
+
+
+void Display::read_tile(uint32_t x,uint32_t tile_offset,unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
+    uint32_t y,bool x_flip, bool y_flip)
 {
     uint32_t tile_y = y % 8;
     tile_y = y_flip? 7-tile_y : tile_y;
 
 
+
+    // okay how do we make cutting into tiles work properly
+    // we need to start the offsets off in both at tile_offset
+    // and term it accoridngly
+    // and ideally the same for the SCREEN_WIDTH check
 
     // 8bpp 
     if(col_256)
@@ -36,17 +62,18 @@ void Display::read_tile(TileData tile[],unsigned int bg,bool col_256,uint32_t ba
         // each tile accounts for 8 vertical pixels but is 64 bytes long
         const uint32_t addr = base+(tile_num*0x40) + (tile_y * 8); 
 
-        int x_pix = x_flip? 7 : 0;
+        int x_pix = x_flip? 7-tile_offset : tile_offset;
         const int x_step = x_flip? -1 : +1;
-        for(int x = 0; x < 8; x++, x_pix += x_step)
-        {
-            
-            const auto tile_data = mem.vram[addr+x_pix];
 
-            tile[x].col_num = tile_data;
-            // set pal as zero so that the col num is the sole indexer
-            tile[x].pal_num = 0;
-            tile[x].bg = bg;
+        int end = 8 - tile_offset;
+        if(x + end >= SCREEN_WIDTH)
+        {
+            end = 8 - ((x + end) & 7);  
+        }
+        for(int i = 0; i < end; i++, x_pix += x_step)
+        {
+            const auto tile_data = mem.vram[addr+x_pix];
+            draw_tile(x+i,TileData(tile_data,0,bg));
         }
 
     }
@@ -54,37 +81,36 @@ void Display::read_tile(TileData tile[],unsigned int bg,bool col_256,uint32_t ba
     //4bpp
     else
     {
-
         // each tile accounts for 8 vertical pixels but is 32 bytes long
         const uint32_t addr = base+(tile_num*0x20) + (tile_y * 4); 
 
-        int x_pix = x_flip? 3 : 0;
+        int x_pix = x_flip? 7 - tile_offset : tile_offset;
         const int x_step = x_flip? -1 : +1;
 
-        // depending on x flip we need to swap the nibbles
-        // ie with no xflip we need to use the lower nibble first
-        // then shift down the 2nd nibble out of the byte
-        // when we are x flipping the 1st part of the data
-        // will be in the higher part of the  byte
-        // as we are reading it backwards
-        const int shift_one = x_flip << 2;
-        const int shift_two = !x_flip << 2;
+        int shift = (x_flip << 2);
 
-        for(int x = 0; x < 8; x += 2, x_pix += x_step)
+        // we are offset into t he sequence so we need to go to the next one early
+        if(tile_offset & 1)
         {
-            // read out the color indexs from the tile
-            const uint8_t tile_data = mem.vram[addr+x_pix];
+            shift = (shift + 4) & 4;
+        }
 
-            const uint32_t idx1 = (tile_data >> shift_one) & 0xf;
-            const uint32_t idx2 = (tile_data >> shift_two) & 0xf;
+        int end = 8 - tile_offset;
 
-            tile[x].col_num = idx1; 
-            tile[x].pal_num = pal_num;
-            tile[x].bg = bg;
+        if(x + end >= SCREEN_WIDTH)
+        {
+            end = 8 - ((x + end) & 7);  
+        }
 
-            tile[x+1].col_num = idx2; 
-            tile[x+1].pal_num = pal_num;
-            tile[x+1].bg = bg;
+        for(int i = 0; i < end; i++, x_pix += x_step)
+        {
+            if(x+i >= SCREEN_WIDTH)
+            {
+                return;
+            }
+            const uint8_t tile_data = (mem.vram[addr+x_pix/2] >> shift) & 0xf;
+            shift = (shift + 4) & 4;
+            draw_tile(x+i,TileData(tile_data,pal_num,bg));
         }
     }
 }
@@ -114,10 +140,6 @@ void Display::render_affine(int id)
     const auto map_size = cord_size / 8;
     const auto area_overflow = bg_cnt.area_overflow;
 
-    const TileData transparent(0,0,0);
-
-    auto &buf = bg_lines[id];
-
     auto &ref_point = id == 2? disp_io.bg2_ref_point : disp_io.bg3_ref_point;
 
     // what do i do with actual paramaters here?
@@ -129,6 +151,11 @@ void Display::render_affine(int id)
 
     for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
     {
+
+        if(!bg_window_enabled(id,x))
+        {
+            continue;
+        }
 
         const auto x_param = static_cast<int32_t>(x);
         const auto y_param = static_cast<int32_t>(ly); 
@@ -157,9 +184,9 @@ void Display::render_affine(int id)
                 }
             }
 
+            // transparent
             else
             {
-                buf[x] = transparent;
                 continue;
             }
         }
@@ -175,9 +202,9 @@ void Display::render_affine(int id)
                 }
             }
 
+            // transparent
             else
             {
-                buf[x] = transparent;
                 continue;
             }
         }
@@ -195,10 +222,7 @@ void Display::render_affine(int id)
         // affine is allways 8bpp
         const uint8_t tile_data = mem.vram[addr+tile_x];
 
-        buf[x].col_num = tile_data;
-        // set pal as zero so that the col num is the sole indexer
-        buf[x].pal_num = 0;
-        buf[x].bg = id;
+        draw_tile(x,TileData(tile_data,0,id));
     }
 
     ref_point_x += scale_param.b >> 8;
@@ -211,8 +235,6 @@ void Display::render_text(int id)
     {
         return;
     }
-
-    uint32_t old_entry = 0xffffffff;
 
     const auto &cnt = disp_io.bg_cnt[id];
     const uint32_t bg_tile_data_base = cnt.char_base_block * 0x4000;
@@ -241,7 +263,8 @@ void Display::render_text(int id)
     // 32 by 32 map so it wraps around again at 32 
     bg_map_base += (map_y % 0x20) * 64; // (2 * 32);
             
-    for(uint32_t x = 0; x < SCREEN_WIDTH+16; x += 8)
+    uint32_t  pixels_drawn = 0;
+    for(uint32_t x = 0; x < SCREEN_WIDTH; x += pixels_drawn)
     {
         // 8 for each map but each map takes 2 bytes
         // its 32 by 32 so we want it to wrap back around
@@ -289,29 +312,29 @@ void Display::render_text(int id)
         // read out the bg entry and rip all the information we need about the tile
         const uint32_t bg_map_entry = handle_read<uint16_t>(mem.vram,bg_map_base+bg_map_offset);
 
-
-        if(bg_map_entry != old_entry)
+        uint32_t tile_offset;
+        if(x == 0)
         {
-
-            const bool x_flip = is_set(bg_map_entry,10);
-            const bool y_flip = is_set(bg_map_entry,11);
-
-            const uint32_t tile_num = bg_map_entry & 0x3ff; 
-            const uint32_t pal_num = (bg_map_entry >> 12) & 0xf;
-
-
-            // render a full tile but then just lie and say we rendered less
-            TileData *tile_data = &bg_lines[id][x];
-            read_tile(tile_data,id,col_256,bg_tile_data_base,pal_num,tile_num,line,x_flip,y_flip);
-            old_entry = bg_map_entry;
+            tile_offset = x_pos & 7;
+            pixels_drawn = 8 - tile_offset;
         }
 
-
-        // just copy our old chunk here as its the same
         else
         {
-            memcpy(&bg_lines[id][x], &bg_lines[id][x-8],sizeof(TileData) * 8);
+            tile_offset = 0;
+            pixels_drawn = 8;
         }
+
+        const bool x_flip = is_set(bg_map_entry,10);
+        const bool y_flip = is_set(bg_map_entry,11);
+
+        const uint32_t tile_num = bg_map_entry & 0x3ff; 
+        const uint32_t pal_num = (bg_map_entry >> 12) & 0xf;
+
+
+        // render a full tile but then just lie and say we rendered less
+        
+        read_tile(x,tile_offset,id,col_256,bg_tile_data_base,pal_num,tile_num,line,x_flip,y_flip);
     }   
  
 }
@@ -408,6 +431,7 @@ void Display::merge_layers()
     // TODO handle bitmap bg enable
     if(is_bitmap)
     {
+    
         // check directly against the screen
         // if sprite loses 
         // (ideally we would not render the bitmap at all if has lost priority)
@@ -424,69 +448,7 @@ void Display::merge_layers()
 
     else
     {
-        // tuck the sort function away somewhere
 
-        static constexpr unsigned int bg_limits[3][2] = 
-        {
-            {0,4},
-            {0,3},
-            {2,4}
-        };
-
-        // ideally id find a nicer way to split off is_bitmap so this is not required
-        const auto start = bg_limits[render_mode][0];
-        const auto end = bg_limits[render_mode][1];
-        
-
-
-
-        // employ painters algortihm for now
-        // im not sure if we should just reverse iterate over it
-        // and find the first non transparent pixel
-        // also we should ideally cache this bg_priority array on bg_cnt writes
-
-        // ideally we would ignore comparsion for the entire line if the bg is not enabled
-        struct BgPriority
-        {
-            int bg;
-            int priority;
-        };
-
-        // max of four but we may end up using less
-        BgPriority bg_priority[4];
-
-        unsigned int lim = end-start;
-
-        unsigned int new_lim = 0;
-
-        for(unsigned int i = 0; i < lim; i++)
-        {
-            const auto bg = i+start;
-            // dont bother with inactive bgs
-            if(disp_cnt.bg_enable[bg]) 
-            {
-                bg_priority[new_lim].bg = bg;
-                bg_priority[new_lim].priority = disp_io.bg_cnt[bg].priority;
-                new_lim++;
-            }
-        }
-        lim = new_lim;
-
-        // reverse sort so highest priority is at the end of the array
-        std::sort(&bg_priority[0],&bg_priority[lim],
-        [](const BgPriority &a, const BgPriority &b)
-        {
-            // if they have equal priority the lower bg idx wins
-            if(a.priority == b.priority)
-            {
-                return a.bg > b.bg;
-            }
-
-            // else by the bg_cnt priority
-            return a.priority > b.priority;
-        });
-
-   
         const auto &bld_cnt = disp_io.bld_cnt;
 
         // ok so now after we find what exsacly is the first to win
@@ -495,106 +457,42 @@ void Display::merge_layers()
         // and perform whatever effect if we need to :)
         for(size_t x = 0; x < SCREEN_WIDTH; x++)
         {
-            // pull the top two opaque layers
-            // ideally we would only pull one if the obj on this x cord is
-            // not semi transparent
-            uint16_t color1 = read_bg_palette(0,0);
-            uint16_t color2 = color1;
-            pixel_source source1 = pixel_source::bd;
-            pixel_source source2 = pixel_source::bd;
-
-            // presume that there is a valid bg layer
-            // and we will descend to find the first and compare against sprite
-            // and dump whichever in the correct slot
-            // after that we can just check at the end hey is the 1st one still bd
-            // if so then we have to do a extra check on the sprite being enabled
-            // because it means there we no enabled bgs and we need to do this for the 2nd 
-            // aswell incase there is a sprite below the 1st bg but enabled over everything else
 
             const auto &s = sprite_line[x];
-            const auto sprite_color = read_obj_palette(s.pal_num,s.col_num);
             const bool sprite_enable = sprite_window_enabled(x);
-            
-            for(int i = lim-1; i >= 0; i--)
+
+            // check color1 prioritys
+            // TODO: can we push this off into the sprite rendering code?
+            // this will require a pre pass for doing the obj window
+
+            pixel_source source1 = pixel_source::bd;
+            const auto &b1 = scanline[0][x];
+
+            const auto bg_priority1 = disp_io.bg_cnt[b1.bg].priority;
+
+            // lower priority is higher, sprite wins even if its equal
+            const bool obj_win1 = s.col_num != 0 && sprite_enable && (s.bg <= bg_priority1 || b1.col_num == 0);
+
+            uint32_t color1;
+
+            if(obj_win1)
             {
-                const auto bg = bg_priority[i].bg;
-                // here we are finding out how far we are offset into the intial tile
-                // as we render each tile fully in render text then just cut into it here
-                const auto scx = disp_io.bg_offset_x[bg].offset & 7;
-                const auto &b = bg_lines[bg][x+scx];
-
-
-                // valid bg pixel now check if there is a sprite at it with <= priority
-                if(bg_window_enabled(bg,x) && b.col_num != 0)
-                {
-                    const auto bg_priority = disp_io.bg_cnt[bg].priority;
-
-                    // lower priority is higher, sprite wins even if its equal
-                    const bool obj_win = s.col_num != 0 && sprite_enable && s.bg <= bg_priority;
-
-                    // first time
-                    if(source1 == pixel_source::bd)
-                    {
-                        const auto bg_color = read_bg_palette(b.pal_num,b.col_num);
-
-                        if(obj_win)
-                        {
-                            color1 = sprite_color;
-                            source1 = pixel_source::obj;
-                            color2 = bg_color;
-                            source2 = static_cast<pixel_source>(bg);
-                            break;
-                        }
-
-                        else
-                        {
-                            color1 = bg_color;
-                            source1 = static_cast<pixel_source>(bg);                        
-                        }
-                    }
-
-                    // 2nd time (break out and we are done)
-                    else
-                    {
-                        if(obj_win)
-                        {
-                            color2 = sprite_color;
-                            source2 = pixel_source::obj;
-                        }
-
-                        else
-                        {
-                            color2 = read_bg_palette(b.pal_num,b.col_num);
-                            source2 = static_cast<pixel_source>(bg);                        
-                        }
-                        break;
-                    }
-                }
+                color1 = read_obj_palette(s.pal_num,s.col_num);
+                source1 = pixel_source::obj;
             }
 
-    
-            if(source1 == pixel_source::bd)
+            else if(b1.col_num != 0)
             {
-                // bd has no priority
-                if(s.col_num != 0 && sprite_enable)
-                {
-                    color1 = sprite_color;
-                    source1 = pixel_source::obj;
-                } 
+                color1 = read_bg_palette(b1.pal_num,b1.col_num);
+                source1 = static_cast<pixel_source>(b1.bg);
             }
 
-            else if(source2 == pixel_source::bd)
+            else
             {
-                // bd has no priority
-                if(s.col_num != 0 && sprite_enable)
-                {
-                    color2 = sprite_color;
-                    source2 = pixel_source::obj;
-                } 
+                color1 = read_bg_palette(0,0);
             }
 
-
-
+            UNUSED(source1);
             // special effects disabled dont care
             if(!special_window_enabled(x))
             {
@@ -602,6 +500,40 @@ void Display::merge_layers()
                 continue;
             }
 
+            // TODO:
+            // if we can trivially see that there wont be any alpha blending on this line
+            // dont bother fetching the 2nd color
+            
+            // check color2 prioritys
+            pixel_source source2 = pixel_source::bd;
+            const auto &b2 = scanline[1][x];
+
+            const auto bg_priority2 = disp_io.bg_cnt[b2.bg].priority;
+
+            // lower priority is higher, sprite wins even if its equal
+            // if obj has allready won then we dont care
+            const bool obj_win2 = s.col_num != 0 && sprite_enable && 
+                (s.bg <= bg_priority2 || b2.col_num == 0) && !obj_win1;
+
+            uint32_t color2;
+
+            if(obj_win2)
+            {
+                color2 = read_obj_palette(s.pal_num,s.col_num);
+                source2 = pixel_source::obj;
+            }
+
+            else if(b2.col_num != 0)
+            {
+                color2 = read_bg_palette(b2.pal_num,b2.col_num);
+                source2 = static_cast<pixel_source>(b2.bg);
+            }
+
+            else
+            {
+                color2 = read_bg_palette(0,0);
+            }
+    
 
             // TODO look at metroid save for edge case with alpha blending
             // handle sfx 
@@ -671,6 +603,7 @@ void Display::merge_layers()
             }
 
             screen[(ly*SCREEN_WIDTH) + x] = convert_color(color1);
+            
         }
     }
 }
@@ -794,10 +727,70 @@ void Display::render()
     const auto disp_cnt = disp_io.disp_cnt;
     const auto render_mode = disp_cnt.bg_mode; 
 
+    const TileData DEAD_PIXEL(0,0,0);
+    std::fill(scanline[0].begin(),scanline[0].end(),DEAD_PIXEL);
+    std::fill(scanline[1].begin(),scanline[1].end(),DEAD_PIXEL);
+
     // ideally we would try to cull draws
     // that are not enabled in the window
     cache_window();
     render_sprites(render_mode);
+
+    // okay what order do we need to render in?
+    static constexpr unsigned int bg_limits[3][2] = 
+    {
+        {0,4},
+        {0,3},
+        {2,4}
+    };
+
+    // ideally id find a nicer way to split off is_bitmap so this is not required
+    const auto start = bg_limits[render_mode][0];
+    const auto end = bg_limits[render_mode][1];
+    
+
+
+
+    // sort bg so we draw the one with the highest priority into our scanline first
+    struct BgPriority
+    {
+        int bg;
+        int priority;
+    };
+
+    // max of four but we may end up using less
+    BgPriority bg_priority[4];
+
+    unsigned int lim = end-start;
+
+    unsigned int new_lim = 0;
+
+    for(unsigned int i = 0; i < lim; i++)
+    {
+        const auto bg = i+start;
+        // dont bother with inactive bgs
+        if(disp_cnt.bg_enable[bg]) 
+        {
+            bg_priority[new_lim].bg = bg;
+            bg_priority[new_lim].priority = disp_io.bg_cnt[bg].priority;
+            new_lim++;
+        }
+    }
+    lim = new_lim;
+
+    // reverse sort so highest priority is at the end of the array
+    std::sort(&bg_priority[0],&bg_priority[lim],
+    [](const BgPriority &a, const BgPriority &b)
+    {
+        // if they have equal priority the lower bg idx wins
+        if(a.priority == b.priority)
+        {
+            return a.bg > b.bg;
+        }
+
+        // else by the bg_cnt priority
+        return a.priority > b.priority;
+    });
 
     switch(render_mode)
     {
@@ -805,9 +798,9 @@ void Display::render()
         case 0x0: // text mode
         {
             //render_bg(0,4);
-            for(unsigned int bg = 0; bg < 4; bg++)
+            for(int i = lim-1; i >= 0; i--)
             {
-                render_text(bg);
+                render_text(bg_priority[i].bg);   
             }
             break;
         }
@@ -816,13 +809,21 @@ void Display::render()
         // needs checking
         case 0x1: // text mode
         {
-            //render_bg(0,3);
-            for(unsigned int bg = 0; bg < 2; bg++)
+            // render_bg(0,4)
+            // 2 is affine
+            for(int i = lim-1; i >= 0; i--)
             {
-                render_text(bg);
-            }
+                const auto bg = bg_priority[i].bg;
+                if(bg != 2)
+                {
+                    render_text(bg);
+                }
 
-            render_affine(2);
+                else
+                {
+                    render_affine(bg);
+                }   
+            }
 
             break;
         }
@@ -832,9 +833,10 @@ void Display::render()
         case 0x2: // bg mode 2
         {
             //render_bg(2,4);
-            for(unsigned int bg = 2; bg < 4; bg++)
+            for(int i = lim-1; i >= 0; i--)
             {
-                render_affine(bg);
+                const auto bg = bg_priority[i].bg;
+                render_affine(bg);  
             }
             break;
         }

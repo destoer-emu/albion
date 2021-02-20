@@ -5,7 +5,6 @@ namespace gameboyadvance
 
 void Display::render_sprites(int mode)
 {
-
     const TileData lose_bg(0,0,5);
     // make all of the line lose
     // until something is rendred over it
@@ -44,7 +43,6 @@ void Display::render_sprites(int mode)
             continue;
         }
 
-        // todo handle obj window
         const int obj_mode = (attr0 >> 10) & 0x3;
 
 

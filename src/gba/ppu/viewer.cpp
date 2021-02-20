@@ -13,6 +13,74 @@ void Display::render_palette(uint32_t *palette, size_t size)
     }   
 }
 
+void Display::read_viewer_tile(TileData tile[],unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
+    uint32_t y,bool x_flip, bool y_flip)
+{
+    uint32_t tile_y = y % 8;
+    tile_y = y_flip? 7-tile_y : tile_y;
+
+
+
+    // 8bpp 
+    if(col_256)
+    {
+        // each tile accounts for 8 vertical pixels but is 64 bytes long
+        const uint32_t addr = base+(tile_num*0x40) + (tile_y * 8); 
+
+        int x_pix = x_flip? 7 : 0;
+        const int x_step = x_flip? -1 : +1;
+        for(int x = 0; x < 8; x++, x_pix += x_step)
+        {
+            
+            const auto tile_data = mem.vram[addr+x_pix];
+
+            tile[x].col_num = tile_data;
+            // set pal as zero so that the col num is the sole indexer
+            tile[x].pal_num = 0;
+            tile[x].bg = bg;
+        }
+
+    }
+
+    //4bpp
+    else
+    {
+
+        // each tile accounts for 8 vertical pixels but is 32 bytes long
+        const uint32_t addr = base+(tile_num*0x20) + (tile_y * 4); 
+
+        int x_pix = x_flip? 3 : 0;
+        const int x_step = x_flip? -1 : +1;
+
+        // depending on x flip we need to swap the nibbles
+        // ie with no xflip we need to use the lower nibble first
+        // then shift down the 2nd nibble out of the byte
+        // when we are x flipping the 1st part of the data
+        // will be in the higher part of the  byte
+        // as we are reading it backwards
+        const int shift_one = x_flip << 2;
+        const int shift_two = !x_flip << 2;
+
+        for(int x = 0; x < 8; x += 2, x_pix += x_step)
+        {
+            // read out the color indexs from the tile
+            const uint8_t tile_data = mem.vram[addr+x_pix];
+
+            const uint32_t idx1 = (tile_data >> shift_one) & 0xf;
+            const uint32_t idx2 = (tile_data >> shift_two) & 0xf;
+
+            tile[x].col_num = idx1; 
+            tile[x].pal_num = pal_num;
+            tile[x].bg = bg;
+
+            tile[x+1].col_num = idx2; 
+            tile[x+1].pal_num = pal_num;
+            tile[x+1].bg = bg;
+        }
+    }
+}
+
+
 
 void Display::render_map(int id, std::vector<uint32_t> &map)
 {
@@ -110,7 +178,7 @@ void Display::render_map(int id, std::vector<uint32_t> &map)
                 // 0x06008000 sometimes... time to trace this
 
                 // render a full tile but then just lie and say we rendered less
-                read_tile(buf,id,col_256,bg_tile_data_base,pal_num,tile_num,y,x_flip,y_flip);
+                read_viewer_tile(buf,id,col_256,bg_tile_data_base,pal_num,tile_num,y,x_flip,y_flip);
                 old_entry = bg_map_entry;
             }
 

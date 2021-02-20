@@ -14,15 +14,13 @@ namespace gameboyadvance
 Display::Display(GBA &gba) : mem(gba.mem), cpu(gba.cpu), scheduler(gba.scheduler)
 {
     screen.resize(SCREEN_WIDTH*SCREEN_HEIGHT);
-    bg_lines.resize(4);
-    for(auto &x: bg_lines)
+    for(auto &x: scanline)
     {
         // two tile lee weigh so we can just draw extra
         // and scroll into it
-        x.resize(SCREEN_WIDTH+16);
+        x.resize(SCREEN_WIDTH);
     }
     sprite_line.resize(SCREEN_WIDTH);
-    bg_line.resize(SCREEN_WIDTH);
     sprite_semi_transparent.resize(SCREEN_WIDTH);
     window.resize(SCREEN_WIDTH);
     oam_priority.resize(SCREEN_WIDTH);

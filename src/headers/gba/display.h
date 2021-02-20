@@ -80,9 +80,13 @@ private:
     uint16_t read_bg_palette(uint32_t pal_num,uint32_t idx);
     uint16_t read_obj_palette(uint32_t pal_num,uint32_t idx);
     uint16_t get_color(const TileData &data, const pixel_source source);
-    void read_tile(TileData tile[],unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
+    void read_tile(uint32_t x,uint32_t tile_offset,unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
+        uint32_t y,bool x_flip, bool y_flip);
+    
+    void read_viewer_tile(TileData tile[],unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
         uint32_t y,bool x_flip, bool y_flip);
 
+    void draw_tile(uint32_t x,const TileData &&p);
 
     unsigned int cyc_cnt = 0; // current number of elapsed cycles
     unsigned int ly = 0; // current number of cycles
@@ -94,9 +98,7 @@ private:
     Cpu &cpu;
     GBAScheduler &scheduler;
 
-    
-    std::vector<std::vector<TileData>> bg_lines;
-    std::vector<TileData> bg_line;
+    std::array<std::vector<TileData>,2> scanline;
     std::vector<TileData> sprite_line;
     std::vector<bool> sprite_semi_transparent;
     std::vector<window_source> window;
