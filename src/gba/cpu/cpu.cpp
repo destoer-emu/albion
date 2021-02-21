@@ -1136,7 +1136,7 @@ void Cpu::do_mul_cycles(uint32_t mul_operand)
 void Cpu::update_intr_status()
 {
     interrupt_request = cpu_io.interrupt_flag & cpu_io.interrupt_enable;
-    interrupt_service = interrupt_request & cpu_io.ime;
+    interrupt_service = interrupt_request && cpu_io.ime;
 }
 
 // write the interrupt req bit
@@ -1149,13 +1149,9 @@ void Cpu::request_interrupt(interrupt i)
 
 void Cpu::do_interrupts()
 {
-    if(is_set(cpsr,7)) // irqs maksed
-    {
-        return;
-    }
-
     // the handler will find out what fired for us!
-    if(interrupt_service)
+    // just check irqs aernt masked
+    if(interrupt_service && !is_set(cpsr,7))
     {
         service_interrupt();
     }

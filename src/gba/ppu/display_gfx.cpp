@@ -36,7 +36,7 @@ void Display::draw_tile(uint32_t x,const TileData &&p)
     }
 }
 
-
+template<bool window_is_trivial>
 void Display::read_tile(uint32_t x,uint32_t tile_offset,unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
     uint32_t y,bool x_flip, bool y_flip)
 {
@@ -67,7 +67,19 @@ void Display::read_tile(uint32_t x,uint32_t tile_offset,unsigned int bg,bool col
 
         for(int i = 0; i < end; i++, x_pix += x_step)
         {
-            if(bg_window_enabled(bg,x+i))
+            bool window_enable;
+
+            if constexpr(window_is_trivial)
+            {
+                window_enable = true;
+            }
+
+            else
+            {
+                window_enable = bg_window_enabled(bg,x+i);
+            }
+
+            if(window_enable)
             {
                 const auto tile_data = mem.vram[addr+x_pix];
                 if(tile_data != 0)
@@ -108,7 +120,21 @@ void Display::read_tile(uint32_t x,uint32_t tile_offset,unsigned int bg,bool col
 
         for(uint32_t i = 0; i < end; i++, x_pix += x_step)
         {
-            if(bg_window_enabled(bg,x+i))
+            // if we know ahead of time that this background will allways be enabled for the entire line
+            // then dont bother to keep constantly checking it
+            bool window_enable;
+
+            if constexpr(window_is_trivial)
+            {
+                window_enable = true;
+            }
+
+            else
+            {
+                window_enable = bg_window_enabled(bg,x+i);
+            }
+
+            if(window_enable)
             {
                 const uint8_t tile_data = (mem.vram[addr+x_pix/2] >> shift) & 0xf;
                 shift = (shift + 4) & 4;
@@ -238,6 +264,45 @@ void Display::render_affine(int id)
     ref_point_y += scale_param.d >> 8;
 }
 
+// nasty optimisation
+bool Display::is_bg_window_trivial(int id)
+{
+    const auto &win_arr = disp_io.win_cnt.win_arr;
+    const auto &disp_cnt = disp_io.disp_cnt;
+
+    // window enabled, window triggered, window has a gap, window has bg disabled.
+    // TODO: make this check less verbose
+    const bool win0_enable = window_0_y_triggered  && disp_cnt.window0_enable;
+    const bool win0_trigger = (win0_enable && disp_io.win0h.x1 != disp_io.win0h.x2 
+       && !win_arr[static_cast<size_t>(window_source::zero)].bg_enable[id]);
+
+    const bool win1_enable = window_1_y_triggered  && disp_cnt.window1_enable;
+    const bool win1_trigger = (win1_enable && disp_io.win1h.x1 != disp_io.win1h.x2
+        && !win_arr[static_cast<size_t>(window_source::one)].bg_enable[id]);
+
+    const bool obj_trigger  = (disp_cnt.obj_window_enable 
+        && !win_arr[static_cast<size_t>(window_source::obj)].bg_enable[id]);
+
+
+    
+    const bool bg_window_trivial = !
+    (
+        win1_trigger || obj_trigger || win0_trigger ||
+        (
+            // if our bg is not enabled in out our last hope is // one of our enabled windows covers the whole screen
+            (disp_cnt.windowing_enabled && !win_arr[static_cast<size_t>(window_source::out)].bg_enable[id]) &&  
+        
+            !(win0_enable && disp_io.win0h.x1 == 0 && disp_io.win0h.x2 >= SCREEN_WIDTH && win_arr[static_cast<size_t>(window_source::zero)].bg_enable[id]) &&
+
+            !(!win0_trigger && win1_enable && disp_io.win1h.x1 == 0 && 
+                disp_io.win1h.x2 >= SCREEN_WIDTH && win_arr[static_cast<size_t>(window_source::one)].bg_enable[id])
+        )
+    );   
+
+    UNUSED(bg_window_trivial);
+    return false;
+}
+
 void Display::render_text(int id)
 {
     if(!disp_io.disp_cnt.bg_enable[id])
@@ -273,6 +338,15 @@ void Display::render_text(int id)
     bg_map_base += (map_y % 0x20) * 64; // (2 * 32);
             
     uint32_t  pixels_drawn = 0;
+
+    
+    // call a function that does not do window checks if it is clear that the entire line has this bg enabled
+    bool bg_window_trivial = is_bg_window_trivial(id);
+
+
+    const auto read_tile_func = bg_window_trivial? &Display::read_tile<true> : &Display::read_tile<false>; 
+
+
     for(uint32_t x = 0; x < SCREEN_WIDTH; x += pixels_drawn)
     {
         // 8 for each map but each map takes 2 bytes
@@ -343,7 +417,7 @@ void Display::render_text(int id)
 
         // render a full tile but then just lie and say we rendered less
         
-        read_tile(x,tile_offset,id,col_256,bg_tile_data_base,pal_num,tile_num,line,x_flip,y_flip);
+        std::invoke(read_tile_func,this,x,tile_offset,id,col_256,bg_tile_data_base,pal_num,tile_num,line,x_flip,y_flip);
     }   
  
 }

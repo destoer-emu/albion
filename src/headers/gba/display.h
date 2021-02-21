@@ -73,10 +73,13 @@ private:
     bool special_window_enabled(unsigned int x) const;
 
     void cache_window();
+    bool is_bg_window_trivial(int id);
 
     // renderer helper functions
     uint16_t read_bg_palette(uint32_t pal_num,uint32_t idx);
     uint16_t read_obj_palette(uint32_t pal_num,uint32_t idx);
+
+    template<bool window_is_trivial>
     void read_tile(uint32_t x,uint32_t tile_offset,unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
         uint32_t y,bool x_flip, bool y_flip);
     
