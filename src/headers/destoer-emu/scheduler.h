@@ -69,7 +69,7 @@ void Scheduler<SIZE,event_type>::tick(uint32_t cycles)
     if(is_set(timestamp,31))
     {
         uint32_t min = 0xffffffff;
-        puts("timestamp overflow");
+        //puts("timestamp overflow");
         for(const auto &x: event_list.buf)
         {
             if(event_list.is_active(x.type))

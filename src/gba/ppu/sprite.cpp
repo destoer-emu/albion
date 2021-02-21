@@ -5,11 +5,12 @@ namespace gameboyadvance
 
 void Display::render_sprites(int mode)
 {
-    const TileData lose_bg(0,0,5);
+    const TileData lose_bg(read_bg_palette(0,0),pixel_source::bd);
     // make all of the line lose
     // until something is rendred over it
     std::fill(sprite_line.begin(),sprite_line.end(),lose_bg);
     std::fill(sprite_semi_transparent.begin(),sprite_semi_transparent.end(),false);
+    std::fill(sprite_priority.begin(),sprite_priority.end(),5);
 
     // objects aernt enabled do nothing more
     if(!disp_io.disp_cnt.obj_enable)
@@ -24,7 +25,7 @@ void Display::render_sprites(int mode)
 
     // have to traverse it in forward order
     // even though reverse is easier to handle most cases
-    for(int i = 0; i < 128; i++)
+    for(uint32_t i = 0; i < 128; i++)
     {
         int obj_idx = i * 8;
         
@@ -273,13 +274,14 @@ void Display::render_sprites(int mode)
                     {
                         if(idx != 0)
                         {
-                            sprite_line[x_offset].col_num = idx;
-                            sprite_line[x_offset].pal_num = pal;
+                            const auto color = read_obj_palette(pal,idx);
+                            sprite_line[x_offset].color = color;
+                            sprite_line[x_offset].source = pixel_source::obj;
                             oam_priority[x_offset] = i;
                         }
 
                          // hardware bug priority is updated even if transparent
-                        sprite_line[x_offset].bg = priority;
+                        sprite_priority[x_offset] = priority;
                     }
                 }
 
@@ -315,13 +317,14 @@ void Display::render_sprites(int mode)
                     {
                         if(tile_data != 0)
                         {
-                            sprite_line[x_offset].col_num = tile_data;
-                            sprite_line[x_offset].pal_num = 0;
+                            const auto color = read_obj_palette(0,tile_data);
+                            sprite_line[x_offset].color = color;
+                            sprite_line[x_offset].source = pixel_source::obj;
                             oam_priority[x_offset] = i;
                         }
 
-                                                // hardware bug priority is updated even if transparent
-                        sprite_line[x_offset].bg = priority;
+                        // hardware bug priority is updated even if transparent
+                        sprite_priority[x_offset] = priority;
                     }
                 }
 

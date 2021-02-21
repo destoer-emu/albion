@@ -109,6 +109,7 @@ struct DispCnt
     bool window0_enable;
     bool window1_enable;
     bool obj_window_enable;
+    bool windowing_enabled;
 };
 
 struct Mosaic

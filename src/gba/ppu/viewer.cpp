@@ -34,10 +34,8 @@ void Display::read_viewer_tile(TileData tile[],unsigned int bg,bool col_256,uint
             
             const auto tile_data = mem.vram[addr+x_pix];
 
-            tile[x].col_num = tile_data;
-            // set pal as zero so that the col num is the sole indexer
-            tile[x].pal_num = 0;
-            tile[x].bg = bg;
+            tile[x].color = read_bg_palette(0,tile_data);
+            tile[x].source = static_cast<pixel_source>(bg);
         }
 
     }
@@ -69,13 +67,11 @@ void Display::read_viewer_tile(TileData tile[],unsigned int bg,bool col_256,uint
             const uint32_t idx1 = (tile_data >> shift_one) & 0xf;
             const uint32_t idx2 = (tile_data >> shift_two) & 0xf;
 
-            tile[x].col_num = idx1; 
-            tile[x].pal_num = pal_num;
-            tile[x].bg = bg;
+            tile[x].color = read_bg_palette(pal_num,idx1);
+            tile[x].source = static_cast<pixel_source>(bg);
 
-            tile[x+1].col_num = idx2; 
-            tile[x+1].pal_num = pal_num;
-            tile[x+1].bg = bg;
+            tile[x+1].color = read_bg_palette(pal_num,idx2);
+            tile[x+1].source = static_cast<pixel_source>(bg);
         }
     }
 }
@@ -186,13 +182,12 @@ void Display::render_map(int id, std::vector<uint32_t> &map)
             // to pull the colors directly but this will do for now.
             for(int i = 0; i < 8; i++)
             {
-                const auto b = buf[i];
-                const auto color = convert_color(read_bg_palette(b.pal_num,b.col_num));
+                const auto &b = buf[i];
 
                 //printf("%08x\n",color);
 
                 // just use max size. and we will not bother writing off the end
-                map[(y * 512) + x + i] = color;
+                map[(y * 512) + x + i] = b.color;
             }
         }
     }

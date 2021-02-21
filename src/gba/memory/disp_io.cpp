@@ -1,4 +1,4 @@
-#include <gba/disp_io.h>
+#include <gba/gba.h>
 
 namespace gameboyadvance
 {
@@ -161,6 +161,7 @@ void DispCnt::init()
     window0_enable = false;
     window1_enable = false;
     obj_window_enable = false;
+    windowing_enabled = false;
 }
 
 uint8_t DispCnt::read(int idx) const
@@ -207,10 +208,17 @@ void DispCnt::write(int idx, uint8_t v)
                 bg_enable[i] = is_set(v,i);
             }
 
+            windowing_enabled = false;
+
             obj_enable = is_set(v,4);
             window0_enable = is_set(v,5);
             window1_enable = is_set(v,6);
             obj_window_enable = is_set(v,7);
+
+            if(window0_enable || window1_enable || obj_window_enable)
+            {
+                windowing_enabled = true;
+            }
             break;
         }
     }
@@ -441,6 +449,11 @@ void WindowDimensionH::init()
 
 void WindowDimensionH::write(int idx, uint8_t v)
 {
+    if(v > SCREEN_WIDTH)
+    {
+        v = SCREEN_WIDTH;
+    }
+
     switch(idx)
     {
         case 0: x2 = v; break;

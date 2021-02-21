@@ -23,20 +23,14 @@ uint16_t Display::read_obj_palette(uint32_t pal_num,uint32_t idx)
 // do a blend
 void Display::draw_tile(uint32_t x,const TileData &&p)
 {
-    if(!bg_window_enabled(p.bg,x))
-    {
-        return;
-    }
-
-
     // 1st target is empty
-    if(scanline[0][x].col_num == 0)
+    if(scanline[0][x].source == pixel_source::bd)
     {
         scanline[0][x] = p;
     }
 
     // 2nd target is empty
-    else if(scanline[1][x].col_num == 0)
+    else if(scanline[1][x].source == pixel_source::bd)
     {
         scanline[1][x] = p;
     }
@@ -46,8 +40,8 @@ void Display::draw_tile(uint32_t x,const TileData &&p)
 void Display::read_tile(uint32_t x,uint32_t tile_offset,unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
     uint32_t y,bool x_flip, bool y_flip)
 {
-    uint32_t tile_y = y % 8;
-    tile_y = y_flip? 7-tile_y : tile_y;
+    uint32_t tile_y = y & 7;
+    tile_y = y_flip? tile_y ^ 7 : tile_y;
 
 
 
@@ -62,7 +56,7 @@ void Display::read_tile(uint32_t x,uint32_t tile_offset,unsigned int bg,bool col
         // each tile accounts for 8 vertical pixels but is 64 bytes long
         const uint32_t addr = base+(tile_num*0x40) + (tile_y * 8); 
 
-        int x_pix = x_flip? 7-tile_offset : tile_offset;
+        int x_pix = x_flip? tile_offset ^ 7 : tile_offset;
         const int x_step = x_flip? -1 : +1;
 
         int end = 8 - tile_offset;
@@ -70,10 +64,18 @@ void Display::read_tile(uint32_t x,uint32_t tile_offset,unsigned int bg,bool col
         {
             end = 8 - ((x + end) & 7);  
         }
+
         for(int i = 0; i < end; i++, x_pix += x_step)
         {
-            const auto tile_data = mem.vram[addr+x_pix];
-            draw_tile(x+i,TileData(tile_data,0,bg));
+            if(bg_window_enabled(bg,x+i))
+            {
+                const auto tile_data = mem.vram[addr+x_pix];
+                if(tile_data != 0)
+                {
+                    const auto color = read_bg_palette(0,tile_data);
+                    draw_tile(x+i,TileData(color,static_cast<pixel_source>(bg)));
+                }
+            }
         }
 
     }
@@ -84,10 +86,10 @@ void Display::read_tile(uint32_t x,uint32_t tile_offset,unsigned int bg,bool col
         // each tile accounts for 8 vertical pixels but is 32 bytes long
         const uint32_t addr = base+(tile_num*0x20) + (tile_y * 4); 
 
-        int x_pix = x_flip? 7 - tile_offset : tile_offset;
+        uint32_t x_pix = x_flip? tile_offset ^ 7 : tile_offset;
         const int x_step = x_flip? -1 : +1;
 
-        int shift = (x_flip << 2);
+        uint32_t shift = (x_flip << 2);
 
         // we are offset into t he sequence so we need to go to the next one early
         if(tile_offset & 1)
@@ -95,22 +97,27 @@ void Display::read_tile(uint32_t x,uint32_t tile_offset,unsigned int bg,bool col
             shift = (shift + 4) & 4;
         }
 
-        int end = 8 - tile_offset;
+        uint32_t end = 8 - tile_offset;
 
+        // we are going to overdraw we need to clip
+        // how much we are drawing
         if(x + end >= SCREEN_WIDTH)
         {
             end = 8 - ((x + end) & 7);  
         }
 
-        for(int i = 0; i < end; i++, x_pix += x_step)
+        for(uint32_t i = 0; i < end; i++, x_pix += x_step)
         {
-            if(x+i >= SCREEN_WIDTH)
+            if(bg_window_enabled(bg,x+i))
             {
-                return;
+                const uint8_t tile_data = (mem.vram[addr+x_pix/2] >> shift) & 0xf;
+                shift = (shift + 4) & 4;
+                if(tile_data != 0)
+                {
+                    const auto color = read_bg_palette(pal_num,tile_data);
+                    draw_tile(x+i,TileData(color,static_cast<pixel_source>(bg)));
+                }
             }
-            const uint8_t tile_data = (mem.vram[addr+x_pix/2] >> shift) & 0xf;
-            shift = (shift + 4) & 4;
-            draw_tile(x+i,TileData(tile_data,pal_num,bg));
         }
     }
 }
@@ -151,7 +158,6 @@ void Display::render_affine(int id)
 
     for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
     {
-
         if(!bg_window_enabled(id,x))
         {
             continue;
@@ -213,16 +219,19 @@ void Display::render_affine(int id)
         const auto tile_num = mem.vram[bg_map_base + ((y_affine / 8) * map_size) + (x_affine / 8)];
 
         // now figure out where we are offset into the current tile and smash it into the line
-        const auto tile_x = x_affine % 8;
-        const auto tile_y = y_affine % 8;
+        const auto tile_x = x_affine & 7;
+        const auto tile_y = y_affine & 7;
 
         // each tile accounts for 8 vertical pixels but is 64 bytes long
         const uint32_t addr = bg_tile_data_base+(tile_num*0x40) + (tile_y * 8); 
         
         // affine is allways 8bpp
         const uint8_t tile_data = mem.vram[addr+tile_x];
-
-        draw_tile(x,TileData(tile_data,0,id));
+        if(tile_data != 0)
+        {
+            const auto color = read_bg_palette(0,tile_data);
+            draw_tile(x,TileData(color,static_cast<pixel_source>(id)));
+        }
     }
 
     ref_point_x += scale_param.b >> 8;
@@ -340,12 +349,6 @@ void Display::render_text(int id)
 }
 
 
-uint16_t Display::get_color(const TileData &data, const pixel_source source)
-{
-    return source == pixel_source::obj? read_obj_palette(data.pal_num,data.col_num) : read_bg_palette(data.pal_num,data.col_num);
-}
-
-
 // all blend parameters are in 1.4 fixed point
 
 inline int32_t do_blend_calc(int32_t eva, int32_t evb, int32_t color1,int32_t color2)
@@ -439,9 +442,9 @@ void Display::merge_layers()
         {
             const auto s = sprite_line[x];
             // col number zero is transparent
-            if(s.col_num != 0 && sprite_window_enabled(x))
+            if(s.source != pixel_source::bd && sprite_window_enabled(x))
             {
-                screen[(ly*SCREEN_WIDTH) + x] = convert_color(read_obj_palette(s.pal_num,s.col_num));
+                screen[(ly*SCREEN_WIDTH) + x] = convert_color(s.color);
             }
         }
     }
@@ -458,45 +461,27 @@ void Display::merge_layers()
         for(size_t x = 0; x < SCREEN_WIDTH; x++)
         {
 
-            const auto &s = sprite_line[x];
+            auto &s = sprite_line[x];
             const bool sprite_enable = sprite_window_enabled(x);
 
             // check color1 prioritys
             // TODO: can we push this off into the sprite rendering code?
             // this will require a pre pass for doing the obj window
 
-            pixel_source source1 = pixel_source::bd;
-            const auto &b1 = scanline[0][x];
+            auto &b1 = scanline[0][x];
 
-            const auto bg_priority1 = disp_io.bg_cnt[b1.bg].priority;
+            const auto bg_priority1 = disp_io.bg_cnt[static_cast<uint32_t>(b1.source)].priority;
 
             // lower priority is higher, sprite wins even if its equal
-            const bool obj_win1 = s.col_num != 0 && sprite_enable && (s.bg <= bg_priority1 || b1.col_num == 0);
+            const bool obj_win1 = s.source != pixel_source::bd && sprite_enable && (sprite_priority[x] <= bg_priority1 || b1.source == pixel_source::bd);
 
-            uint32_t color1;
+            auto &p1 = obj_win1? s : b1;
 
-            if(obj_win1)
-            {
-                color1 = read_obj_palette(s.pal_num,s.col_num);
-                source1 = pixel_source::obj;
-            }
 
-            else if(b1.col_num != 0)
-            {
-                color1 = read_bg_palette(b1.pal_num,b1.col_num);
-                source1 = static_cast<pixel_source>(b1.bg);
-            }
-
-            else
-            {
-                color1 = read_bg_palette(0,0);
-            }
-
-            UNUSED(source1);
             // special effects disabled dont care
             if(!special_window_enabled(x))
             {
-                screen[(ly*SCREEN_WIDTH) + x] = convert_color(color1);
+                screen[(ly*SCREEN_WIDTH) + x] = convert_color(p1.color);
                 continue;
             }
 
@@ -505,35 +490,16 @@ void Display::merge_layers()
             // dont bother fetching the 2nd color
             
             // check color2 prioritys
-            pixel_source source2 = pixel_source::bd;
-            const auto &b2 = scanline[1][x];
+            auto &b2 = scanline[1][x];
 
-            const auto bg_priority2 = disp_io.bg_cnt[b2.bg].priority;
+            const auto bg_priority2 = disp_io.bg_cnt[static_cast<uint32_t>(b2.source)].priority;
 
             // lower priority is higher, sprite wins even if its equal
             // if obj has allready won then we dont care
-            const bool obj_win2 = s.col_num != 0 && sprite_enable && 
-                (s.bg <= bg_priority2 || b2.col_num == 0) && !obj_win1;
+            const bool obj_win2 = !obj_win1 && s.source != pixel_source::bd && sprite_enable && 
+                (sprite_priority[x] <= bg_priority2 || b2.source == pixel_source::bd);
 
-            uint32_t color2;
-
-            if(obj_win2)
-            {
-                color2 = read_obj_palette(s.pal_num,s.col_num);
-                source2 = pixel_source::obj;
-            }
-
-            else if(b2.col_num != 0)
-            {
-                color2 = read_bg_palette(b2.pal_num,b2.col_num);
-                source2 = static_cast<pixel_source>(b2.bg);
-            }
-
-            else
-            {
-                color2 = read_bg_palette(0,0);
-            }
-    
+            auto &p2 = obj_win2? s : b2;
 
             // TODO look at metroid save for edge case with alpha blending
             // handle sfx 
@@ -541,12 +507,13 @@ void Display::merge_layers()
             // if semi transparent object is 1st layer
             // then we need to override the mode to alpha blending
             int special_effect = bld_cnt.special_effect;
-            const bool second_target_enable = bld_cnt.second_target_enable[static_cast<int>(source2)];
+            const bool second_target_enable = bld_cnt.second_target_enable[static_cast<int>(p2.source)];
             // if there are overlapping layers and sprite is semi transparent
             // do alpha blend
-            const bool semi_transparent = sprite_semi_transparent[x] && source1 == pixel_source::obj
+            const bool semi_transparent = sprite_semi_transparent[x] && p1.source == pixel_source::obj
                 && second_target_enable;
 
+            const bool first_target_enable = bld_cnt.first_target_enable[static_cast<int>(p1.source)];
 
             if(semi_transparent)
             {
@@ -556,7 +523,8 @@ void Display::merge_layers()
 
             // todo account for special effects window
             // and split this function off
-            
+           
+
             switch(special_effect)
             {
                 // no special effects just slam to screen
@@ -568,13 +536,13 @@ void Display::merge_layers()
                 // alpha blending (delayed because we handle it along with semi transparency)
                 case 1:
                 {
-                    const bool first_target_enable = semi_transparent || bld_cnt.first_target_enable[static_cast<int>(source1)];
-                    if(first_target_enable && source1 != pixel_source::bd)
+                    
+                    if((first_target_enable || semi_transparent) && p1.source != pixel_source::bd)
                     {
                         // we have a 1st and second target now we just need to blend them :P
                         if(second_target_enable)
                         {
-                            color1 = do_blend(disp_io.eva,disp_io.evb,color1,color2);
+                            p1.color = do_blend(disp_io.eva,disp_io.evb,p1.color,p2.color);
                         }
                     }
                     break;
@@ -584,9 +552,9 @@ void Display::merge_layers()
                 // brighness increase 
                 case 2:
                 {
-                    if(bld_cnt.first_target_enable[static_cast<int>(source1)])
+                    if(first_target_enable)
                     {
-                        color1 = do_brighten(disp_io.evy,color1);
+                        p1.color = do_brighten(disp_io.evy,p1.color);
                     }
                     break;
                 }
@@ -594,34 +562,17 @@ void Display::merge_layers()
                 // brightness decrease
                 case 3:
                 {
-                    if(bld_cnt.first_target_enable[static_cast<int>(source1)])
+                    if(first_target_enable)
                     {
-                        color1 = do_darken(disp_io.evy,color1);
+                        p1.color = do_darken(disp_io.evy,p1.color);
                     }
                     break;
                 }
             }
 
-            screen[(ly*SCREEN_WIDTH) + x] = convert_color(color1);
+            screen[(ly*SCREEN_WIDTH) + x] = convert_color(p1.color);
             
         }
-    }
-}
-
-
-// account for l > r behavior
-bool window_in_range(const unsigned int c, const unsigned int w1, const unsigned int w2)
-{
-    // in this case the nearest screen edge to
-    // the window is bound is valid
-    if(w1 > w2)
-    {
-        return c >= w1 || c < w2;
-    }
-
-    else
-    {
-        return c >= w1 && c < w2;
     }
 }
 
@@ -644,36 +595,60 @@ void Display::cache_window()
     const bool trigger_0 = disp_cnt.window0_enable && window_0_y_triggered;
     const bool trigger_1 = disp_cnt.window1_enable && window_1_y_triggered;
 
-    for(size_t x = 0; x < SCREEN_WIDTH; x++)
+    // figure out which is enabled at current cords
+    // if both are prefer win 0
+
+    // first check win0
+    // if not enabled check win 1
+
+    std::fill(window.begin(),window.end(), window_source::out);
+
+
+    if(trigger_0)
     {
+        const bool win0_wrap = disp_io.win0h.x1 > disp_io.win0h.x2;
 
-        // figure out which is enabled at current cords
-        // if both are prefer win 0
+        const uint32_t end = win0_wrap? SCREEN_WIDTH : disp_io.win0h.x2;
 
-        // first check win0
-        // if not enabled check win 1
-
-        if(trigger_0)
+        for(uint32_t x = disp_io.win0h.x1; x < end; x++)
         {
-            if(window_in_range(x,disp_io.win0h.x1,disp_io.win0h.x2))
+            window[x] = window_source::zero;
+        }
+
+        if(win0_wrap)
+        {
+            for(uint32_t x = 0; x < disp_io.win0h.x2; x++)
             {
                 window[x] = window_source::zero;
-                continue;  
             }
         }
+    }
 
-        
-        if(trigger_1)
+
+    if(trigger_1)
+    {
+        const bool win1_wrap = disp_io.win1h.x1 > disp_io.win1h.x2;
+
+        const uint32_t end = win1_wrap? SCREEN_WIDTH : disp_io.win1h.x2;
+
+        for(uint32_t x = disp_io.win1h.x1; x < end; x++)
         {
-            if(window_in_range(x,disp_io.win1h.x1,disp_io.win1h.x2))
-            {     
+            if(window[x] != window_source::zero)
+            {
                 window[x] = window_source::one;
-                continue;
             }
         }
 
-
-        window[x] = window_source::out; 
+        if(win1_wrap)
+        {
+            for(uint32_t x = 0; x < disp_io.win1h.x2; x++)
+            {
+                if(window[x] != window_source::zero)
+                {
+                    window[x] = window_source::one;
+                }
+            }
+        }
     }    
 }
 
@@ -683,7 +658,7 @@ bool Display::bg_window_enabled(unsigned int bg, unsigned int x) const
     const auto &disp_cnt = disp_io.disp_cnt;
 
     // if no windows are active then out of window is not enabled
-    if(!disp_cnt.window0_enable && !disp_cnt.window1_enable && !disp_cnt.obj_window_enable)
+    if(!disp_cnt.windowing_enabled)
     {
         return true;
     }
@@ -698,7 +673,7 @@ bool Display::sprite_window_enabled(unsigned int x) const
     const auto &disp_cnt = disp_io.disp_cnt;
 
     // if no windows are active then out of window is not enabled
-    if(!disp_cnt.window0_enable && !disp_cnt.window1_enable && !disp_cnt.obj_window_enable)
+    if(!disp_cnt.windowing_enabled)
     {
         return true;
     }
@@ -713,7 +688,7 @@ bool Display::special_window_enabled(unsigned int x) const
     const auto &disp_cnt = disp_io.disp_cnt;
 
     // if no windows are active then out of window is not enabled
-    if(!disp_cnt.window0_enable && !disp_cnt.window1_enable && !disp_cnt.obj_window_enable)
+    if(!disp_cnt.windowing_enabled)
     {
         return true;
     }
@@ -727,7 +702,7 @@ void Display::render()
     const auto disp_cnt = disp_io.disp_cnt;
     const auto render_mode = disp_cnt.bg_mode; 
 
-    const TileData DEAD_PIXEL(0,0,0);
+    const TileData DEAD_PIXEL(read_bg_palette(0,0),pixel_source::bd);
     std::fill(scanline[0].begin(),scanline[0].end(),DEAD_PIXEL);
     std::fill(scanline[1].begin(),scanline[1].end(),DEAD_PIXEL);
 

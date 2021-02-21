@@ -46,16 +46,14 @@ private:
     {
         TileData() {}
 
-        TileData(uint16_t c, uint32_t p, uint32_t b)
+        TileData(uint16_t c, pixel_source s)
         {
-            col_num = c;
-            pal_num = p;
-            bg = b;
+            color = c;
+            source = s;
         }
 
-        uint16_t col_num = 0;
-        uint32_t pal_num = 0;
-        uint32_t bg = 0;
+        uint16_t color = 0;
+        pixel_source source = pixel_source::bd;
     };
 
     void render();
@@ -79,7 +77,6 @@ private:
     // renderer helper functions
     uint16_t read_bg_palette(uint32_t pal_num,uint32_t idx);
     uint16_t read_obj_palette(uint32_t pal_num,uint32_t idx);
-    uint16_t get_color(const TileData &data, const pixel_source source);
     void read_tile(uint32_t x,uint32_t tile_offset,unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
         uint32_t y,bool x_flip, bool y_flip);
     
@@ -102,7 +99,8 @@ private:
     std::vector<TileData> sprite_line;
     std::vector<bool> sprite_semi_transparent;
     std::vector<window_source> window;
-    std::vector<int> oam_priority;
+    std::vector<uint32_t> oam_priority;
+    std::vector<uint32_t> sprite_priority;
 
 
     using ColorLut = std::array<uint32_t,32768>;

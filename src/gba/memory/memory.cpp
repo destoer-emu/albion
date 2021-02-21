@@ -1024,7 +1024,7 @@ access_type Mem::read_mem(uint32_t addr)
 template<typename access_type>
 access_type Mem::read_memt(uint32_t addr)
 {
-    access_type v = read_mem<access_type>(addr);
+    const auto v = read_mem<access_type>(addr);
     tick_mem_access<access_type>(addr);
     return v;
 }
