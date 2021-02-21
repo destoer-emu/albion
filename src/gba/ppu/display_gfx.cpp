@@ -299,8 +299,7 @@ bool Display::is_bg_window_trivial(int id)
         )
     );   
 
-    UNUSED(bg_window_trivial);
-    return false;
+    return bg_window_trivial;
 }
 
 void Display::render_text(int id)
