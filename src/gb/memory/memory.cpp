@@ -96,6 +96,15 @@ void Memory::init_mem_table() noexcept
 	memory_table[0xe].read_memf = &Memory::read_wram_low;
 	memory_table[0xf].read_memf = &Memory::read_hram;
 
+	// init page table
+	unlock_vram();
+	page_table[0xa] = nullptr;
+	page_table[0xb] = nullptr;
+	page_table[0xc] = wram.data();
+	page_table[0xd] = &cgb_wram_bank[0][0];
+	page_table[0xe] = wram.data();
+	page_table[0xf] = nullptr;
+
 
     // write mem
 	memory_table[0x8].write_memf = &Memory::write_vram;
@@ -119,6 +128,9 @@ void Memory::init_banking_table() noexcept
 	memory_table[0x5].read_memf = &Memory::read_rom_bank;
 	memory_table[0x6].read_memf = &Memory::read_rom_bank;
 	memory_table[0x7].read_memf = &Memory::read_rom_bank;
+
+	update_page_table_bank();
+	update_page_table_sram();
 
 
 	switch(rom_info.type)
@@ -269,11 +281,6 @@ void Memory::init(std::string rom_name, bool with_rom, bool use_bios)
 	load_cart_ram();
 
 
-    // init our function table
-	init_mem_table();
-
-	init_banking_table();
-
 	if(!use_bios)
 	{
 		io[0x40] = 0x91;
@@ -345,8 +352,33 @@ void Memory::init(std::string rom_name, bool with_rom, bool use_bios)
 	test_result = emu_test::running;
 	gekkio_pass_count = 0;
 	gekkio_fail_count = 0;
+
+    // init our function table
+	init_mem_table();
+
+	init_banking_table();
+
+	if(use_bios)
+	{
+		for(int i = 0; i < 8; i++)
+		{
+			page_table[i] = nullptr;
+		}
+	}
 }
 
+
+void Memory::lock_vram()
+{
+	page_table[0x8] = nullptr;
+	page_table[0x9] = nullptr;
+}
+
+void Memory::unlock_vram()
+{
+	page_table[0x8] = &vram[vram_bank][0];
+	page_table[0x9] = &vram[vram_bank][0x1000];
+}
 
 
 uint8_t Memory::read_bios(uint16_t addr) const noexcept
@@ -590,7 +622,7 @@ uint8_t Memory::raw_read(uint16_t addr) const noexcept
 #ifdef DEBUG
 uint8_t Memory::read_mem_debug(uint16_t addr) const noexcept
 {
-	const uint8_t value = std::invoke(memory_table[(addr & 0xf000) >> 12].read_memf,this,addr);
+	const uint8_t value = read_mem_no_debug(addr);
 	if(debug.breakpoint_hit(addr,value,break_type::read))
 	{
 		// halt until told otherwhise :)
@@ -604,7 +636,14 @@ uint8_t Memory::read_mem_debug(uint16_t addr) const noexcept
 
 uint8_t Memory::read_mem_no_debug(uint16_t addr) const noexcept
 {
-    return std::invoke(memory_table[(addr & 0xf000) >> 12].read_memf,this,addr);
+	const auto idx = (addr & 0xf000) >> 12;
+	if(page_table[idx] != nullptr)
+	{
+		const uint8_t *buf = page_table[idx] + (addr & 0xfff);
+		return *buf;
+	}
+	
+    return std::invoke(memory_table[idx].read_memf,this,addr);
 }
 
 
@@ -620,7 +659,7 @@ void Memory::write_mem_debug(uint16_t addr, uint8_t v) noexcept
 		debug.halt();
 	}
 
-	std::invoke(memory_table[(addr & 0xf000) >> 12].write_memf,this,addr,v);
+	write_mem_no_debug(addr,v);
 }
 #endif
 
@@ -1679,7 +1718,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 				cgb_wram_bank_idx -= 1;
 				
 				io[IO_SVBK] = v | 248;
-				
+				page_table[0xd] = &cgb_wram_bank[cgb_wram_bank_idx][0];
 			}
 			
 			else
@@ -1717,6 +1756,10 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			{
 				vram_bank = v & 1;
 				io[IO_VBANK] = v | 254;
+				if(ppu.get_mode() != ppu_mode::pixel_transfer)
+				{
+					unlock_vram();
+				}
 			}
 			break;
 		}

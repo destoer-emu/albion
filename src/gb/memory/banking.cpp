@@ -15,6 +15,7 @@ void Memory::ram_bank_enable(uint16_t address, uint8_t v) noexcept
 	
 	// if data is = 0xa enable ram
 	enable_ram = ((v & 0xf) == 0xa);	
+	update_page_table_sram();
 }
 
 // whole 8 bits matter for mbc5
@@ -28,7 +29,8 @@ void Memory::ram_bank_enable_mbc5(uint16_t address, uint8_t v) noexcept
 	}
 	
 	// if data is = 0xa enable ram
-	enable_ram = (v == 0xa);	
+	enable_ram = (v == 0xa);
+	update_page_table_sram();	
 }
 
 
@@ -48,6 +50,7 @@ void Memory::change_lo_rom_bank_mbc1(uint16_t address, uint8_t v) noexcept
     {
 		cart_rom_bank &= rom_info.no_rom_banks - 1;
 	}
+	update_page_table_bank();
 }
 
 // 0x4000 - 0x5fff
@@ -67,6 +70,7 @@ void Memory::mbc1_banking_change(uint16_t address, uint8_t v) noexcept
     {
 		ram_bank_change_mbc1();
 	}
+	update_page_table_bank();
 }
 
 // 0x6000 - 0x7fff
@@ -86,6 +90,8 @@ void Memory::change_mode_mbc1(uint16_t address, uint8_t v) noexcept
 	{
 		ram_bank_change_mbc1();
 	}
+	update_page_table_sram();
+	update_page_table_bank();
 }
 
 // a well programmed game should not cause this to be called 
@@ -107,6 +113,7 @@ void Memory::change_hi_rom_bank_mbc1() noexcept
 	{
 		cart_rom_bank &= rom_info.no_rom_banks - 1;
 	}
+	update_page_table_bank();
 }
 
 
@@ -129,6 +136,7 @@ void Memory::ram_bank_change_mbc1() noexcept
     {
 		cart_ram_bank &= rom_info.no_ram_banks - 1;
 	}
+	update_page_table_sram();
 }
 
 
@@ -158,6 +166,7 @@ void Memory::lower_bank_write_mbc2(uint16_t address, uint8_t v) noexcept
 		{
 			cart_rom_bank &= rom_info.no_rom_banks - 1;
 		}	
+		update_page_table_bank();
 	}
 }
 
@@ -181,6 +190,7 @@ void Memory::change_rom_bank_mbc3(uint16_t address,uint8_t v) noexcept
 	{
 		cart_rom_bank = 1;
 	}
+	update_page_table_bank();
 }
 
 // 0x4000 - 0x6000
@@ -207,6 +217,7 @@ void Memory::mbc3_ram_bank_change(uint16_t address,uint8_t v) noexcept
 	{
 		cart_ram_bank &= rom_info.no_ram_banks -1;
 	}
+	update_page_table_sram();
 }	
 
 
@@ -223,6 +234,7 @@ void Memory::change_lo_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept
 		cart_rom_bank &= rom_info.no_rom_banks - 1;
 	}			
 	// bank zero actually acceses bank 0
+	update_page_table_bank();
 }
 
 
@@ -235,6 +247,7 @@ void Memory::change_hi_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept
 	{
 		cart_rom_bank &= rom_info.no_rom_banks - 1;
 	}
+	update_page_table_bank();
 }
 
 // 0x4000 - 0x6000
@@ -253,6 +266,44 @@ void Memory::mbc5_ram_bank_change(uint16_t address,uint8_t data) noexcept
 	{
 		cart_ram_bank &= rom_info.no_ram_banks - 1;	
 	}	
+	update_page_table_sram();
+}
+
+void Memory::update_page_table_bank()
+{
+
+	for(int i = 0; i < 0x4; i++)
+	{
+		if(!rom_banking && rom_info.type == rom_type::mbc1)
+		{
+			page_table[i] = &rom[((cart_rom_bank & ~0x1f) * 0x4000) + (i * 0x1000)]; 
+		}
+
+		else
+		{
+			page_table[i] = &rom[(i * 0x1000)];
+		}
+	}
+
+	for(int i = 0x4; i < 0x8; i++)
+	{
+		page_table[i] = &rom[cart_rom_bank * 0x4000 + ((i-4) * 0x1000)];
+	}
+}
+
+void Memory::update_page_table_sram()
+{
+	if(enable_ram && cart_ram_bank != CART_RAM_BANK_INVALID && rom_info.type != rom_type::mbc2)
+	{
+		page_table[0xa] =  &cart_ram_banks[cart_ram_bank][0];
+		page_table[0xb] =  &cart_ram_banks[cart_ram_bank][0x1000];
+	}
+
+	else
+	{
+		page_table[0xa] = nullptr;
+		page_table[0xb] = nullptr;
+	}
 }
 
 }

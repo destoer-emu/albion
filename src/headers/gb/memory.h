@@ -27,6 +27,9 @@ public:
 
     void tick_dma(uint32_t cycles) noexcept;
 
+    void lock_vram();
+    void unlock_vram();
+
     using WRITE_MEM_FPTR = void (Memory::*)(uint16_t addr,uint8_t data) noexcept;
     using READ_MEM_FPTR = uint8_t (Memory::*)(uint16_t addr) const noexcept;
     using READ_MEM_MUT_FPTR = uint8_t (Memory::*)(uint16_t addr) noexcept;
@@ -124,12 +127,16 @@ public:
     std::vector<uint8_t> io; // 0x100
     std::vector<std::vector<uint8_t>> vram; // 0x4000
     std::vector<uint8_t> oam; // 0xa0
+    std::array<uint8_t*,16> page_table;
 
     // direct write access no side affects
     void raw_write(uint16_t addr, uint8_t v) noexcept;
     void raw_write_word(uint16_t addr, uint16_t v) noexcept;
     uint8_t raw_read(uint16_t addr) const noexcept;
     uint16_t raw_read_word(uint16_t addr) const noexcept;
+
+    void update_page_table_bank();
+    void update_page_table_sram();
 
     void frame_end();
 

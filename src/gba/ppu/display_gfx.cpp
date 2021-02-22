@@ -411,7 +411,7 @@ void Display::render_text(int id)
         // dont bother to do window checks
         if(bg_window_trivial)
         {
-            for(int i = 0; i < end; i++)
+            for(uint32_t i = 0; i < end; i++)
             {
                 draw_tile(x+i,tile_data[i+tile_offset]); 
             }
@@ -419,7 +419,7 @@ void Display::render_text(int id)
 
         else
         {
-            for(int i = 0; i < end; i++)
+            for(uint32_t i = 0; i < end; i++)
             {
                 if(bg_window_enabled(id,x+i))
                 {

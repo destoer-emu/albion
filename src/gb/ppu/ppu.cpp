@@ -318,6 +318,8 @@ void Ppu::turn_lcd_off() noexcept
 
 	scanline_counter = 0; // counter is reset?
 	current_line = 0; // reset ly
+
+	mem.unlock_vram();
 }
 
 // 1st line after this turns on oam search will fail
@@ -383,6 +385,7 @@ void Ppu::switch_hblank() noexcept
 
 	stat_update();
 	insert_new_ppu_event();	
+	mem.unlock_vram();
 
 }
 
@@ -505,6 +508,7 @@ void Ppu::update_graphics(uint32_t cycles) noexcept
 				read_sprites();
 				stat_update();
 				insert_new_ppu_event();
+				mem.lock_vram();
 			}
 			break;
 		}

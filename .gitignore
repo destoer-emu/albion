@@ -30,3 +30,5 @@ converted.gb
 ALL_BUILD.vcxproj.user
 converted.sav
 destoer-emu.vcxproj.user
+destoer-emu
+vgcore.*
