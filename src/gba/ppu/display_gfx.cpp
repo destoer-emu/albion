@@ -21,7 +21,7 @@ uint16_t Display::read_obj_palette(uint32_t pal_num,uint32_t idx)
 
 // TODO: specialise this with lambda to only bother drawing 2nd target when we actually need to
 // do a blend
-void Display::draw_tile(uint32_t x,const TileData &&p)
+void Display::draw_tile(uint32_t x,const TileData &p)
 {
     // 1st target is empty
     if(scanline[0][x].source == pixel_source::bd)
@@ -36,19 +36,14 @@ void Display::draw_tile(uint32_t x,const TileData &&p)
     }
 }
 
-template<bool window_is_trivial>
-void Display::read_tile(uint32_t x,uint32_t tile_offset,unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
+void Display::read_tile(TileData *tile,unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
     uint32_t y,bool x_flip, bool y_flip)
 {
     uint32_t tile_y = y & 7;
     tile_y = y_flip? tile_y ^ 7 : tile_y;
 
 
-
-    // okay how do we make cutting into tiles work properly
-    // we need to start the offsets off in both at tile_offset
-    // and term it accoridngly
-    // and ideally the same for the SCREEN_WIDTH check
+    const TileData DEAD_TILE(read_bg_palette(0,0),pixel_source::bd);
 
     // 8bpp 
     if(col_256)
@@ -56,37 +51,21 @@ void Display::read_tile(uint32_t x,uint32_t tile_offset,unsigned int bg,bool col
         // each tile accounts for 8 vertical pixels but is 64 bytes long
         const uint32_t addr = base+(tile_num*0x40) + (tile_y * 8); 
 
-        int x_pix = x_flip? tile_offset ^ 7 : tile_offset;
+        int x_pix = x_flip? 7 : 0;
         const int x_step = x_flip? -1 : +1;
-
-        int end = 8 - tile_offset;
-        if(x + end >= SCREEN_WIDTH)
+        for(int x = 0; x < 8; x++, x_pix += x_step)
         {
-            end = 8 - ((x + end) & 7);  
-        }
-
-        for(int i = 0; i < end; i++, x_pix += x_step)
-        {
-            bool window_enable;
-
-            if constexpr(window_is_trivial)
+            
+            const auto tile_data = mem.vram[addr+x_pix];
+            if(tile_data)
             {
-                window_enable = true;
+                tile[x].color = read_bg_palette(0,tile_data);
+                tile[x].source = static_cast<pixel_source>(bg);
             }
 
             else
             {
-                window_enable = bg_window_enabled(bg,x+i);
-            }
-
-            if(window_enable)
-            {
-                const auto tile_data = mem.vram[addr+x_pix];
-                if(tile_data != 0)
-                {
-                    const auto color = read_bg_palette(0,tile_data);
-                    draw_tile(x+i,TileData(color,static_cast<pixel_source>(bg)));
-                }
+                tile[x] = DEAD_TILE;
             }
         }
 
@@ -95,54 +74,50 @@ void Display::read_tile(uint32_t x,uint32_t tile_offset,unsigned int bg,bool col
     //4bpp
     else
     {
+
         // each tile accounts for 8 vertical pixels but is 32 bytes long
         const uint32_t addr = base+(tile_num*0x20) + (tile_y * 4); 
 
-        uint32_t x_pix = x_flip? tile_offset ^ 7 : tile_offset;
+        int x_pix = x_flip? 3 : 0;
         const int x_step = x_flip? -1 : +1;
 
-        uint32_t shift = (x_flip << 2);
+        // depending on x flip we need to swap the nibbles
+        // ie with no xflip we need to use the lower nibble first
+        // then shift down the 2nd nibble out of the byte
+        // when we are x flipping the 1st part of the data
+        // will be in the higher part of the  byte
+        // as we are reading it backwards
+        const int shift_one = x_flip << 2;
+        const int shift_two = !x_flip << 2;
 
-        // we are offset into t he sequence so we need to go to the next one early
-        if(tile_offset & 1)
+        for(int x = 0; x < 8; x += 2, x_pix += x_step)
         {
-            shift = (shift + 4) & 4;
-        }
+            // read out the color indexs from the tile
+            const uint8_t tile_data = mem.vram[addr+x_pix];
 
-        uint32_t end = 8 - tile_offset;
-
-        // we are going to overdraw we need to clip
-        // how much we are drawing
-        if(x + end >= SCREEN_WIDTH)
-        {
-            end = 8 - ((x + end) & 7);  
-        }
-
-        for(uint32_t i = 0; i < end; i++, x_pix += x_step)
-        {
-            // if we know ahead of time that this background will allways be enabled for the entire line
-            // then dont bother to keep constantly checking it
-            bool window_enable;
-
-            if constexpr(window_is_trivial)
+            const uint32_t idx1 = (tile_data >> shift_one) & 0xf;
+            const uint32_t idx2 = (tile_data >> shift_two) & 0xf;
+            if(idx1)
             {
-                window_enable = true;
+                tile[x].color = read_bg_palette(pal_num,idx1);
+                tile[x].source = static_cast<pixel_source>(bg);
             }
 
             else
             {
-                window_enable = bg_window_enabled(bg,x+i);
+                tile[x] = DEAD_TILE;
             }
 
-            if(window_enable)
+
+            if(idx2)
             {
-                const uint8_t tile_data = (mem.vram[addr+x_pix/2] >> shift) & 0xf;
-                shift = (shift + 4) & 4;
-                if(tile_data != 0)
-                {
-                    const auto color = read_bg_palette(pal_num,tile_data);
-                    draw_tile(x+i,TileData(color,static_cast<pixel_source>(bg)));
-                }
+                tile[x+1].color = read_bg_palette(pal_num,idx2);
+                tile[x+1].source = static_cast<pixel_source>(bg);
+            }
+
+            else
+            {
+                tile[x+1] = DEAD_TILE;
             }
         }
     }
@@ -309,6 +284,8 @@ void Display::render_text(int id)
         return;
     }
 
+    uint32_t old_entry = 0xffffffff;
+
     const auto &cnt = disp_io.bg_cnt[id];
     const uint32_t bg_tile_data_base = cnt.char_base_block * 0x4000;
     uint32_t bg_map_base =  cnt.screen_base_block * 0x800;
@@ -325,7 +302,7 @@ void Display::render_text(int id)
     const uint32_t scroll_y = disp_io.bg_offset_y[id].offset;
 
     // modulo for x and y should probably depend on the size of bg map
-    const uint32_t line = (ly + scroll_y) % 512;
+    const uint32_t line = (ly + scroll_y) & 511;
 
     // what is the start tiles
     uint32_t map_x = scroll_x / 8; 
@@ -334,29 +311,27 @@ void Display::render_text(int id)
 
     // add the current y offset to the base for this line
     // 32 by 32 map so it wraps around again at 32 
-    bg_map_base += (map_y % 0x20) * 64; // (2 * 32);
+    bg_map_base += (map_y & 0x1f) * 64; // (2 * 32);
             
     uint32_t  pixels_drawn = 0;
 
     
     // call a function that does not do window checks if it is clear that the entire line has this bg enabled
-    bool bg_window_trivial = is_bg_window_trivial(id);
+    const bool bg_window_trivial = is_bg_window_trivial(id);
 
 
-    const auto read_tile_func = bg_window_trivial? &Display::read_tile<true> : &Display::read_tile<false>; 
-
-
+    TileData tile_data[8];
     for(uint32_t x = 0; x < SCREEN_WIDTH; x += pixels_drawn)
     {
         // 8 for each map but each map takes 2 bytes
         // its 32 by 32 so we want it to wrap back around
         // at that point
-        uint32_t bg_map_offset = (map_x++ % 0x20) * 2; 
+        uint32_t bg_map_offset = (map_x++ & 0x1f) * 2; 
    
 
         
 
-        uint32_t x_pos = (x + scroll_x) % 512;
+        uint32_t x_pos = (x + scroll_x) & 511;
 
         // if we are at greater than 256 x or y
         // we will be in a higher map than the initial
@@ -407,16 +382,52 @@ void Display::render_text(int id)
             pixels_drawn = 8;
         }
 
-        const bool x_flip = is_set(bg_map_entry,10);
-        const bool y_flip = is_set(bg_map_entry,11);
+        if(bg_map_entry != old_entry)
+        {
 
-        const uint32_t tile_num = bg_map_entry & 0x3ff; 
-        const uint32_t pal_num = (bg_map_entry >> 12) & 0xf;
+            const bool x_flip = is_set(bg_map_entry,10);
+            const bool y_flip = is_set(bg_map_entry,11);
+
+            const uint32_t tile_num = bg_map_entry & 0x3ff; 
+            const uint32_t pal_num = (bg_map_entry >> 12) & 0xf;
 
 
-        // render a full tile but then just lie and say we rendered less
-        
-        std::invoke(read_tile_func,this,x,tile_offset,id,col_256,bg_tile_data_base,pal_num,tile_num,line,x_flip,y_flip);
+            // render a full tile but then just lie and say we rendered less
+            read_tile(tile_data,id,col_256,bg_tile_data_base,pal_num,tile_num,line,x_flip,y_flip);
+            old_entry = bg_map_entry;
+        }
+
+
+        uint32_t end = pixels_drawn;
+
+        // we are going to overdraw we need to clip
+        // how much we are drawing
+        if(x + end >= SCREEN_WIDTH)
+        {
+            end = 8 - ((x + end) & 7);  
+        }
+    
+        // we know we are enabled for the entire scanline
+        // dont bother to do window checks
+        if(bg_window_trivial)
+        {
+            for(int i = 0; i < end; i++)
+            {
+                draw_tile(x+i,tile_data[i+tile_offset]); 
+            }
+        }
+
+        else
+        {
+            for(int i = 0; i < end; i++)
+            {
+                if(bg_window_enabled(id,x+i))
+                {
+                    draw_tile(x+i,tile_data[i+tile_offset]);
+                }
+            }
+        }
+
     }   
  
 }
