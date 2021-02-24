@@ -1,6 +1,6 @@
 #include <gb/gb.h>
 
-namespace gameboy
+namespace gameboy_psg
 { 
 
 // CHANNEL 1 & 2 SQAURE WAVE
@@ -12,7 +12,7 @@ Square::Square(int c,Psg &p) : Channel(c,p), FreqReg(c)
 
 void Square::init() noexcept
 {
-	freq_init();
+	freq_init(psg.mode);
 	env_init();
 	cur_duty = 0;
 }

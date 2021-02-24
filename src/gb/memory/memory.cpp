@@ -308,24 +308,6 @@ void Memory::init(std::string rom_name, bool with_rom, bool use_bios)
 	io[0x20] = 0xff;
 	
 
-	// on cgb wave ram is
-	if(rom_cgb_enabled())
-	{
-		static constexpr uint8_t wave_ram_initial[] =
-		{
-			0x00, 0xFF, 0x00, 0xFF,
-			0x00, 0xFF, 0x00, 0xFF, 
-			0x00, 0xFF, 0x00, 0xFF, 
-			0x00, 0xFF, 0x00, 0xFF
-		}; 
-
-		for(int i = 0; i < 16; i++)
-		{
-			io[0x30 + i] = wave_ram_initial[i];
-		}
-	}
-
-
     // banking vars
     enable_ram = false; // is ram banking enabled
     cart_ram_bank = (rom_info.no_ram_banks > 0) ? 0 : CART_RAM_BANK_INVALID;

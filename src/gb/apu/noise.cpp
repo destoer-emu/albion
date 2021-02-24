@@ -1,6 +1,6 @@
 #include <gb/gb.h>
 
-namespace gameboy
+namespace gameboy_psg
 {
 
 Noise::Noise(int c,Psg &p) : Channel(c,p)
@@ -19,6 +19,7 @@ void Noise::init() noexcept
 	divisor_idx = 0; // indexes into divisors table
 	shift_reg = 0; // 15 bit reg    
 	period = 0;
+	period_factor = psg.mode == psg_mode::gba? 4 : 1;
 }
 
 bool Noise::tick_period(uint32_t cycles) noexcept
@@ -76,7 +77,7 @@ void Noise::noise_trigger() noexcept
 void Noise::reload_period() noexcept
 {
 	// "The noise channel's frequency timer period is set by a base divisor shifted left some number of bits. "
-	period = divisors[divisor_idx] << clock_shift;
+	period = (divisors[divisor_idx] << clock_shift) * period_factor;
 }
 
 

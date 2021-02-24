@@ -1,6 +1,6 @@
 #include <gb/gb.h>
 
-namespace gameboy
+namespace gameboy_psg
 {
 
 Psg::Psg() : c1{0,*this}, c2{1,*this}, c3{2,*this},c4{3,*this}
@@ -8,14 +8,14 @@ Psg::Psg() : c1{0,*this}, c2{1,*this}, c3{2,*this},c4{3,*this}
 
 }
 
-void Psg::init(bool is_cgb, bool use_bios)
+void Psg::init(psg_mode mode, bool use_bios)
 {
-    this->is_cgb = is_cgb;
+    this->mode = mode;
     
     // init every channel
     c1.init(); c1.sweep_init();
     c2.init();
-    c3.init(is_cgb);
+    c3.init(mode);
     c4.init();
 
     enable_sound();
@@ -170,7 +170,7 @@ void Psg::enable_sound() noexcept
 
     // reset length coutners when powerd up
     // if on cgb
-    if(is_cgb)
+    if(mode != psg_mode::dmg)
     {
         c1.reset_length();
         c2.reset_length();
@@ -236,7 +236,7 @@ uint8_t Psg::read_nr10() const noexcept
 
 void Psg::write_nr11(uint8_t v) noexcept
 {
-    if(sound_enabled || !is_cgb)
+    if(sound_enabled || mode == psg_mode::dmg)
     {
         // bottom 6 bits are length data 
         // set the internal counter to 64 - bottom 6 bits of data
@@ -312,7 +312,7 @@ uint8_t Psg::read_nr14() const noexcept
 
 void Psg::write_nr21(uint8_t v) noexcept
 {
-    if(sound_enabled || !is_cgb)
+    if(sound_enabled || mode == psg_mode::dmg)
     {
         c2.write_lengthc(v);
         if(sound_enabled)
@@ -384,6 +384,13 @@ void Psg::write_nr30(uint8_t v) noexcept
 {
     if(sound_enabled)
     {
+    
+        if(mode == psg_mode::gba)
+        {
+            c3.dimension = is_set(v,5);
+            c3.bank_idx = is_set(v,6);            
+        }
+
         nr30 = v | 127;
         c3.check_dac();
     }    
@@ -391,12 +398,19 @@ void Psg::write_nr30(uint8_t v) noexcept
 
 uint8_t Psg::read_nr30() const noexcept
 {
-    return (nr30 & (128)) | (0xff-128);
+    const uint8_t base = (nr30 & (128)) | (0xff-128);
+
+    if(mode == psg_mode::gba)
+    {
+        return base | c3.dimension << 5 | c3.bank_idx << 6;
+    }
+
+    return base;
 }
 
 void Psg::write_nr31(uint8_t v) noexcept
 {
-    if(sound_enabled || !is_cgb)
+    if(sound_enabled || mode == psg_mode::dmg)
     {
         c3.write_lengthc(v);
         nr31 = v;
@@ -454,7 +468,7 @@ uint8_t Psg::read_nr34() const noexcept
 
 void Psg::write_nr41(uint8_t v) noexcept
 {
-    if(sound_enabled || !is_cgb)
+    if(sound_enabled || mode == psg_mode::dmg)
     {
         c4.write_lengthc(v);
         nr41 = v | 192;
@@ -566,18 +580,31 @@ void Psg::write_wave_table(int idx, uint8_t v) noexcept
 {
     assert(idx < 0x20);
 
-    // if wave is on write to current byte <-- finish accuracy later
+    // if wave is on write to current byte <-- finish accuracy later (dmg)
     if(chan_enabled(2))
     {
-        if(is_cgb)
+        if(mode == psg_mode::gba)
         {
-            c3.wave_table[(c3.get_duty_idx() / 2)] = v;
+            c3.wave_table[!c3.bank_idx][(c3.get_duty_idx() / 2)] = v;
+        }
+
+        else if(mode == psg_mode::cgb)
+        {
+            c3.wave_table[0][(c3.get_duty_idx() / 2)] = v;
         }
     }
 
     else // if its off allow "free reign" over it
     {
-        c3.wave_table[idx] = v;	
+        if(mode == psg_mode::gba)
+        {
+            c3.wave_table[!c3.bank_idx][idx] = v;	
+        }
+
+        else
+        {
+            c3.wave_table[0][idx] = v;
+        }
     }
 }
 
@@ -590,9 +617,14 @@ uint8_t Psg::read_wave_table(int idx) const noexcept
     {
         // can only access on dmg when the wave channel is...
         // todo
-        if(is_cgb)
+        if(mode == psg_mode::cgb)
         {
-            return c3.wave_table[c3.get_duty_idx() / 2];
+            return c3.wave_table[0][c3.get_duty_idx() / 2];
+        }
+
+        else if(mode == psg_mode::gba)
+        {
+            return c3.wave_table[!c3.bank_idx][c3.get_duty_idx() / 2];
         }
 
         else
@@ -602,7 +634,15 @@ uint8_t Psg::read_wave_table(int idx) const noexcept
     }
     
     // if its off allow "free reign" over it
-    return c3.wave_table[idx];    
+    if(mode != psg_mode::gba)
+    {
+        return c3.wave_table[0][idx];
+    }
+
+    else
+    {
+        return c3.wave_table[!c3.bank_idx][idx];
+    }    
 }
 
 
@@ -622,7 +662,7 @@ const uint8_t &Psg::get_dac_ref(int idx) const noexcept
 
 void Psg::save_state(std::ofstream &fp)
 {
-	file_write_var(fp,is_cgb);
+	file_write_var(fp,mode);
 
 
 	file_write_var(fp,sound_enabled);
@@ -665,7 +705,7 @@ void Psg::save_state(std::ofstream &fp)
 
 void Psg::load_state(std::ifstream &fp)
 {
-	file_read_var(fp,is_cgb);
+	file_read_var(fp,mode);
 
 
 	file_read_var(fp,sound_enabled);

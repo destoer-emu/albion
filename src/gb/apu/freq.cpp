@@ -1,6 +1,6 @@
 #include <gb/gb.h>
  
-namespace gameboy
+namespace gameboy_psg
 {
 
 // CHANNEL 1,2,3 FREQUENCY
@@ -17,11 +17,12 @@ int FreqReg::get_period() const noexcept
 
 
 
-void FreqReg::freq_init() noexcept
+void FreqReg::freq_init(psg_mode mode) noexcept
 {
 	freq = 0;
 	period = 0;
-    duty_idx = 0;    
+    duty_idx = 0;  
+    period_factor = mode == psg_mode::gba? 4 : 1;  
 }
 
 void FreqReg::freq_write_lower(uint8_t v) noexcept
@@ -36,7 +37,7 @@ void FreqReg::freq_write_higher(uint8_t v) noexcept
 
 void FreqReg::freq_reload_period() noexcept
 {
-    period = (2048 - freq)*period_scale;
+    period = (2048 - freq)*period_scale*period_factor;
 }
 
 

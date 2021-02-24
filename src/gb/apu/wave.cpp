@@ -1,7 +1,7 @@
 #include <gb/gb.h>
  
 
-namespace gameboy
+namespace gameboy_psg
 {
 
 //CHANNEL 3 WAVE
@@ -14,11 +14,29 @@ Wave::Wave(int c,Psg &p) :  Channel(c,p), FreqReg(c)
 
 }
 
-void Wave::init(bool is_cgb) noexcept
+void Wave::init(psg_mode mode) noexcept
 {
-	this->is_cgb = is_cgb;
+	this->mode = mode;
 	init_channel();
-	freq_init();
+	freq_init(mode);
+	bank_idx = false;
+	dimension = false;
+
+	if(mode == psg_mode::cgb)
+	{
+		static constexpr uint8_t wave_ram_initial[] =
+		{
+			0x00, 0xFF, 0x00, 0xFF,
+			0x00, 0xFF, 0x00, 0xFF, 
+			0x00, 0xFF, 0x00, 0xFF, 
+			0x00, 0xFF, 0x00, 0xFF
+		}; 
+
+		for(int i = 0; i < 16; i++)
+		{
+			wave_table[0][i] = wave_ram_initial[i];
+		}
+	}
 }
 
 
@@ -36,13 +54,34 @@ bool Wave::tick_period(uint32_t cycles) noexcept
 	if(period <= 0)
 	{
 		// duty is the wave table index for wave channel 
+		
+		// check by here for the 2nd bank
+		if(dimension)
+		{
+			// about to overflow switch to over bank
+			if(duty_idx == 0x1f)
+			{
+				bank_idx = !bank_idx;
+			}
+		}
+
 		duty_idx  = (duty_idx + 1) & 0x1f; 
 
 		// dac is enabled
 		if(dac_on() && enabled())
 		{
 			int pos = duty_idx / 2;
-			uint8_t byte = wave_table[pos];
+
+			uint8_t byte;
+			if(mode != psg_mode::gba)
+			{
+				byte = wave_table[0][pos];
+			}
+
+			else
+			{
+				byte = wave_table[bank_idx][pos];
+			}
 				
 			if(!is_set(duty_idx,0)) // access the high nibble first
 			{
@@ -60,8 +99,8 @@ bool Wave::tick_period(uint32_t cycles) noexcept
 			{
 				byte = 0;
 			}
+
 			output = byte;
-			
 		}
 			
 		else

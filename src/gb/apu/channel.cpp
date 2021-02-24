@@ -1,7 +1,7 @@
 #include <gb/apu.h>
 #include <gb/gb.h>
  
-namespace gameboy
+namespace gameboy_psg
 {
 
 // SHARED CHANNEL FUNCTIONS

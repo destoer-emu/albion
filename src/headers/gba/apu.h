@@ -4,6 +4,8 @@
 #include <frontend/gba/playback.h>
 #include <gba/forward_def.h>
 #include <gba/apu_io.h>
+#include <gb/apu.h>
+#include <gba/scheduler.h>
 
 namespace gameboyadvance
 {
@@ -19,12 +21,58 @@ public:
 
     void push_dma_a(int8_t x);
     void push_dma_b(int8_t x);
-    
+
+	void disable_sound();
+	void enable_sound();
+
     void insert_new_sample_event();
+
+
+    void insert_sequencer_event()
+    {
+        const auto event = scheduler.create_event((16*1024*1024) / 512,gba_event::psg_sequencer);
+        scheduler.insert(event,false);
+    }
+
+	void insert_chan1_period_event()
+	{
+		insert_period_event(psg.c1.get_period(),gba_event::c1_period_elapse);
+	}
+
+	void insert_chan2_period_event()
+	{
+		insert_period_event(psg.c2.get_period(),gba_event::c2_period_elapse);
+	}
+
+	void insert_chan3_period_event()
+	{
+		insert_period_event(psg.c3.get_period(),gba_event::c3_period_elapse);
+	}
+
+	void insert_chan4_period_event()
+	{
+		insert_period_event(psg.c4.get_period(),gba_event::c4_period_elapse);
+	}
+
+	void insert_period_event(int period, gba_event chan) noexcept
+	{
+		// create  a new event as the period has changed
+		// need to half the ammount if we are in double speed
+		const auto event = scheduler.create_event(period,chan);
+
+		// dont tick off the old event as 
+		// it will use the new value as we have just overwritten 
+		// the old internal counter
+		// this is not an event we are dropping and expecting to start later 
+
+		scheduler.insert(event,false);
+	}
+
 
     ApuIo apu_io;
 
     GbaPlayback playback;
+    gameboy_psg::Psg psg;
 private:
 
     Mem &mem;

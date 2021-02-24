@@ -1360,7 +1360,7 @@ void Ppu::sprite_fetch(Pixel_Obj *buf,bool use_fifo) noexcept
 				sp.sprite_idx = cur_sprite;
 				sp.cgb_pal = attributes & 0x7;
 
-				bool is_tile = (pixel_ref.source <= pixel_source::tile);
+				const bool is_tile = (pixel_ref.source <= pixel_source::tile);
 
 				// if a tile is there check which has priority
 				if(is_tile)

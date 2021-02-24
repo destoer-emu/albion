@@ -627,12 +627,6 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_SOUNDCNT_H: apu.apu_io.sound_cnt.write_h(0,v); break;
         case IO_SOUNDCNT_H+1: apu.apu_io.sound_cnt.write_h(1,v); break;
 
-        // stubbed
-        case IO_SOUNDCNT_X: break;
-        case IO_SOUNDCNT_X+1: break; // unused
-        case IO_SOUNDCNT_X+2: break; // unused
-        case IO_SOUNDCNT_X+3: break; // unused
-
         case IO_SOUNDBIAS: soundbias = (soundbias & 0xff00) | v; break;
         case IO_SOUNDBIAS+1: soundbias = (soundbias & 0x00ff) | (v << 8); break;
 
@@ -717,6 +711,189 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_WAITCNT+1: mem_io.wait_cnt.write(1,v); update_wait_states(); break;
         case IO_WAITCNT+2: break;
         case IO_WAITCNT+3: break;
+
+
+        // gb psg
+		// sound registers
+		case IO_NR10:
+		{
+			apu.psg.write_nr10(v);
+			break;
+		}
+
+
+
+		case IO_NR11:
+		{
+			apu.psg.write_nr11(v);
+			break;
+		}
+
+		case IO_NR12:
+		{
+			apu.psg.write_nr12(v);
+			break;
+		}
+
+		case IO_NR13:
+		{
+			apu.psg.write_nr13(v);
+			break;
+		}
+
+		case IO_NR14:
+		{
+			apu.psg.write_nr14(v);
+			// trigger causes freq reload update the scheduler
+			if(is_set(v,7))
+			{
+				apu.insert_chan1_period_event();
+			}
+			break;
+		}
+
+		case IO_NR21:
+		{
+			apu.psg.write_nr21(v);
+			break;
+		}
+
+		case IO_NR22:
+		{
+			apu.psg.write_nr22(v);
+			break;
+		}
+
+		case IO_NR23:
+		{
+			apu.psg.write_nr23(v);
+			break;
+		}
+
+		case IO_NR24:
+		{
+			apu.psg.write_nr24(v);
+			// trigger causes freq reload update the scheduler
+			if(is_set(v,7))
+			{
+				apu.insert_chan2_period_event();
+			}
+			break;
+		}
+
+		case IO_NR30:
+		{
+			apu.psg.write_nr30(v);
+			break;
+		}
+
+
+		case IO_NR31:
+		{
+			apu.psg.write_nr31(v);
+			break;
+		}
+
+		case IO_NR32:
+		{
+			apu.psg.write_nr32(v);
+			break;
+		}
+
+		case IO_NR33:
+		{
+			apu.psg.write_nr33(v);
+			break;
+		}
+
+		case IO_NR34:
+		{
+			apu.psg.write_nr34(v);
+			// trigger causes freq reload update the scheduler
+			if(is_set(v,7))
+			{
+				apu.insert_chan3_period_event();
+			}
+			break;
+		}
+
+		case IO_NR41:
+		{
+			apu.psg.write_nr41(v);
+			break;
+		}
+
+		case IO_NR42:
+		{
+			apu.psg.write_nr42(v);
+			break;
+		}
+
+		case IO_NR43:
+		{
+			apu.psg.write_nr43(v);
+			break;
+		}
+
+		case IO_NR44:
+		{
+			apu.psg.write_nr44(v);
+			break;
+		}		
+
+
+		// nr 50
+		case IO_NR50:
+		{
+			apu.psg.write_nr50(v);
+			break;
+		}
+
+			
+		case IO_NR51:
+		{
+			apu.psg.write_nr51(v);
+			break;
+		}
+
+
+		// bits 0-3 read only 7 r/w 4-6 unused
+		case IO_NR52:
+		{
+			const auto nr52 = apu.psg.read_nr52();
+			// if we have disabled sound we should
+			// zero all the registers (nr10-nr51) 
+			// and lock writes until its on
+			if(is_set(nr52,7) && !is_set(v,7))
+			{
+				apu.disable_sound();
+			}
+			
+			// enabled
+			else if(!is_set(nr52,7) && is_set(v,7))
+			{
+				apu.enable_sound();
+			}
+			break;
+		}
+
+
+        // wave table
+        case 0x90: case 0x91: case 0x92: case 0x93:
+        case 0x94: case 0x95: case 0x96: case 0x97:
+        case 0x98: case 0x99: case 0x9a: case 0x9b:
+        case 0x9c: case 0x9d: case 0x9e: case 0x9f:
+        {
+            apu.psg.write_wave_table(addr-0x90,v);
+            break;
+        }
+
+
+
+
+
+
+
 
 
         default: // here we will handle open bus when we have all our io regs done :)
@@ -842,6 +1019,143 @@ uint8_t Mem::read_io_regs(uint32_t addr)
         case SIOCNT+1: return mem_io.siocnt.read(0);
 
         case IO_POSTFLG: return mem_io.postflg;
+
+
+
+
+
+        // gb psg
+		case IO_NR10:
+		{
+			return apu.psg.read_nr10();
+		}
+
+		// sound regs
+		// nr 11 only 7 and 6 readable
+		case IO_NR11:
+		{
+			return apu.psg.read_nr11();
+		}
+		
+		case IO_NR12:
+		{
+			return apu.psg.read_nr12();
+		}
+
+		// write only
+		case IO_NR13:
+		{
+			return 0xff;
+		}
+			
+		// nr 14 only 6 is readable
+		case IO_NR14:
+		{
+			return apu.psg.read_nr14();
+		}
+			
+		// nr 21 only bits 6-7 are r 
+		case IO_NR21:
+		{
+			return apu.psg.read_nr21();	
+		}
+			
+		case IO_NR22:
+		{
+			return apu.psg.read_nr22();
+		}
+
+		// nr 23 write only
+		case IO_NR23:
+		{
+			return 0xff;
+		}
+			
+		// nr 24 only bit 6 can be read 
+		case IO_NR24:
+		{
+			return apu.psg.read_nr24();
+		}
+			
+		// nr 30 only bit 7
+        // TODO: handle wave ram bank extenstion
+		case IO_NR30:
+		{
+			return apu.psg.read_nr30();	
+		}
+			
+		// nr 31 <-- unsure
+		case IO_NR31:
+		{
+			return 0xff;
+		}
+			
+		// nr 32 6-5 r
+		case IO_NR32:
+		{
+			return apu.psg.read_nr32();
+		}
+			
+		// nr33 write only
+		case IO_NR33:
+		{
+			return 0xff;
+		}
+			
+		// nr 34 6 r
+		case IO_NR34:
+		{
+			return apu.psg.read_nr34();
+		}
+			
+		// nr 41
+		case IO_NR41:
+		{
+			return 0xff;
+		}
+
+		case IO_NR42:
+		{
+			return apu.psg.read_nr42();
+		}
+
+		case IO_NR43:
+		{
+			return apu.psg.read_nr43();
+		}
+
+		// nr 44 bit 6
+		case IO_NR44:
+		{
+			return apu.psg.read_nr44();	
+		}		
+
+
+		case IO_NR50:
+		{
+			return apu.psg.read_nr50();
+		}
+
+		case IO_NR51:
+		{
+			return apu.psg.read_nr51();
+		}
+
+		case IO_NR52:
+		{
+			return apu.psg.read_nr52();
+		}
+
+
+        // wave table
+        case 0x90: case 0x91: case 0x92: case 0x93:
+        case 0x94: case 0x95: case 0x96: case 0x97:
+        case 0x98: case 0x99: case 0x9a: case 0x9b:
+        case 0x9c: case 0x9d: case 0x9e: case 0x9f:
+        {
+            return apu.psg.read_wave_table(addr-0x90);
+        }
+
 
         default:
         {

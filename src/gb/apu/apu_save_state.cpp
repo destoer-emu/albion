@@ -1,21 +1,9 @@
 #include <gb/apu.h>
 
 
-namespace gameboy
+
+namespace gameboy_psg
 {
-
-void Apu::save_state(std::ofstream &fp)
-{
-    psg.c1.save_state(fp); psg.c1.sweep_save_state(fp);
-    psg.c2.save_state(fp);
-    psg.c3.save_state(fp);
-    psg.c4.save_state(fp);
-
-	file_write_var(fp,down_sample_cnt);
-	psg.save_state(fp);
-}
-
-
 void Channel::chan_save_state(std::ofstream &fp)
 {
     file_write_var(fp,lengthc);
@@ -72,21 +60,6 @@ void Sweep::sweep_save_state(std::ofstream &fp)
 	file_write_var(fp,sweep_calced);
 	file_write_var(fp,sweep_reg);
 }
-
-
-
-void Apu::load_state(std::ifstream &fp)
-{
-    psg.c1.load_state(fp); psg.c1.sweep_load_state(fp);
-    psg.c2.load_state(fp);
-    psg.c3.load_state(fp);
-    psg.c4.load_state(fp);
-
-
-	file_read_var(fp,down_sample_cnt);
-	psg.load_state(fp);
-}
-
 
 
 void Channel::chan_load_state(std::ifstream &fp)
@@ -147,6 +120,36 @@ void Sweep::sweep_load_state(std::ifstream &fp)
 	file_read_var(fp,sweep_timer);
 	file_read_var(fp,sweep_calced);
 	file_read_var(fp,sweep_reg);
+}
+
+}
+
+
+namespace gameboy
+{
+
+void Apu::load_state(std::ifstream &fp)
+{
+    psg.c1.load_state(fp); psg.c1.sweep_load_state(fp);
+    psg.c2.load_state(fp);
+    psg.c3.load_state(fp);
+    psg.c4.load_state(fp);
+
+
+	file_read_var(fp,down_sample_cnt);
+	psg.load_state(fp);
+}
+
+
+void Apu::save_state(std::ofstream &fp)
+{
+    psg.c1.save_state(fp); psg.c1.sweep_save_state(fp);
+    psg.c2.save_state(fp);
+    psg.c3.save_state(fp);
+    psg.c4.save_state(fp);
+
+	file_write_var(fp,down_sample_cnt);
+	psg.save_state(fp);
 }
 
 }

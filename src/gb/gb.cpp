@@ -23,7 +23,9 @@ void GB::reset(std::string rom_name, bool with_rom, bool use_bios)
 	cpu.init(use_bios);
     ppu.init();
     disass.init();
-	apu.init(cpu.get_cgb(),use_bios);
+	const auto mode = cpu.get_cgb()? gameboy_psg::psg_mode::cgb : gameboy_psg::psg_mode::dmg;
+
+	apu.init(mode,use_bios);
 	throttle_emu = true;
 	if(use_bios)
 	{

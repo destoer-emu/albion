@@ -1,7 +1,7 @@
 #include <gb/apu.h>
 
 
-namespace gameboy
+namespace gameboy_psg
 {
 
 // CHANNEL 1,2,4 envelope

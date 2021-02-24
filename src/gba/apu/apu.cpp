@@ -18,12 +18,63 @@ void Apu::init()
     down_sample_cnt = (16 * 1024 * 1024) / 44100;
     dma_a_sample = 0;
     dma_b_sample = 0;
+
+    psg.init(gameboy_psg::psg_mode::gba,true);
+
     insert_new_sample_event();
+    insert_sequencer_event();
+
+    enable_sound();
 }
+
+void Apu::disable_sound()
+{
+    psg.disable_sound();
+
+
+    // remove all our events for the apu until we renable it
+    scheduler.remove(gba_event::c1_period_elapse,false);
+    scheduler.remove(gba_event::c2_period_elapse,false);
+    scheduler.remove(gba_event::c3_period_elapse,false);
+    scheduler.remove(gba_event::c4_period_elapse,false);
+
+
+}
+
+void Apu::enable_sound()
+{
+    psg.enable_sound();
+
+
+    // renable our events in the scheduler
+    insert_chan1_period_event();
+    insert_chan2_period_event();
+    insert_chan3_period_event();
+    insert_chan4_period_event();
+
+
+}
+
+
 
 void Apu::tick(int cycles)
 {
-    // should probably tick psgs here
+
+    static uint32_t seq_cycles = 0;
+
+    seq_cycles += cycles;
+
+    if(seq_cycles >= (16 * 1024 * 1024) / 512)
+    {
+        psg.advance_sequencer();
+        seq_cycles = 0;
+    }
+
+
+    if(psg.enabled())
+    {
+        psg.tick_periods(cycles);   
+    }
 
     push_samples(cycles);
 }
@@ -68,23 +119,63 @@ void Apu::push_samples(int cycles)
     // (this code also aint checking if the channels are enabled)
     // we also need to handle soundbias
     // and eventually the internal resampling rate
+    // along with the psg sound scaling
     int volume = 50;
 
 
+
+    float output[4];
+    output[0] = static_cast<float>(psg.c1.get_output()) / 100;
+    output[1] = static_cast<float>(psg.c2.get_output()) / 100;
+    output[2] = static_cast<float>(psg.c3.get_output()) / 100;
+    output[3] = static_cast<float>(psg.c4.get_output()) / 100;
+
+    const auto sound_select = psg.read_nr51();
+    const auto nr50 = psg.read_nr50();
+
+
+
     // mix left and right channels
+
+    // mix dma left
     float bufferin0 = 0.0;
+    
     float bufferin1 = static_cast<float>(dma_a_sample) / 128.0;
     playback.mix_samples(bufferin0,bufferin1,volume);
     bufferin1 = static_cast<float>(dma_b_sample) / 128.0;
     playback.mix_samples(bufferin0,bufferin1,volume);
+ 
+    // mix psg left
+    int psg_volume = 20*((nr50 & 7)+1);
+    for(int i = 0; i < 4; i++)
+    {
+        if(is_set(sound_select,i))
+        {
+            float bufferin1 = output[i];
+            playback.mix_samples(bufferin0,bufferin1,psg_volume);
+        }            
+    }
     const float left =  bufferin0;
 
-    // right output
+    // mix dma right
     bufferin0 = 0;
+    
     bufferin1 = static_cast<float>(dma_a_sample) / 128.0;
     playback.mix_samples(bufferin0,bufferin1,volume);
     bufferin1 = static_cast<float>(dma_b_sample) / 128.0;
     playback.mix_samples(bufferin0,bufferin1,volume);
+    
+
+    // mix psg right
+    psg_volume = 20*(((nr50 >> 4) & 7)+1);
+    for(int i = 0; i < 4; i++)
+    {
+        if(is_set(sound_select,i+4))
+        {
+            float bufferin1 = output[i];
+            playback.mix_samples(bufferin0,bufferin1,psg_volume);
+        }            
+    } 
     const float right =  bufferin0;
 
     playback.push_sample(left,right);

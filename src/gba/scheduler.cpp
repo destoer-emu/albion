@@ -32,6 +32,51 @@ void GBAScheduler::service_event(const EventNode<gba_event> &node)
             break;
         }
 
+
+        case gba_event::c1_period_elapse:
+        {
+            if(apu.psg.c1.tick_period(cycles_to_tick))
+            {
+                apu.insert_chan1_period_event();
+            }
+            break;
+        }
+
+        case gba_event::c2_period_elapse:
+        {
+            if(apu.psg.c2.tick_period(cycles_to_tick))
+            {
+                apu.insert_chan2_period_event();
+            }
+            break;
+        }
+
+        case gba_event::c3_period_elapse:
+        {
+            if(apu.psg.c3.tick_period(cycles_to_tick))
+            {
+                apu.insert_chan3_period_event();
+            }
+            break;
+        }
+
+        case gba_event::c4_period_elapse:
+        {
+            if(apu.psg.c4.tick_period(cycles_to_tick))
+            {
+                apu.insert_chan4_period_event();
+            }
+            break;
+        }
+
+        case gba_event::psg_sequencer:
+        {
+            apu.psg.advance_sequencer();
+            apu.insert_sequencer_event();
+            break;
+        }
+
+
         case gba_event::timer0:
         {
             cpu.tick_timer(0,cycles_to_tick);

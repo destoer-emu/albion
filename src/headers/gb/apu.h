@@ -5,10 +5,16 @@
 #include <gb/mem_constants.h>
 #include <gb/scheduler.h>
 
-namespace gameboy
+namespace gameboy_psg
 {
-
 class Psg;
+
+enum psg_mode
+{
+	dmg,
+	cgb,
+	gba
+};
 
 
 class Channel
@@ -67,7 +73,7 @@ class FreqReg
 
 public:
 	FreqReg(int c);
-	void freq_init() noexcept;
+	void freq_init(psg_mode mode) noexcept;
 	void freq_write_lower(uint8_t v) noexcept;
 	void freq_write_higher(uint8_t v) noexcept;
 	void freq_reload_period() noexcept;
@@ -80,6 +86,7 @@ public:
 protected:
 	int freq = 0;
 	int period = 0;
+	int period_factor = 0;
 
 
 	const int freq_lower_mask;
@@ -126,7 +133,6 @@ public:
 	void load_state(std::ifstream &fp);
 protected:
 	int cur_duty = 0;
-
 	static constexpr int duty[4][8] = 
 	{
 		{0,0,0,0,0,0,0,1},   // 12.5
@@ -157,11 +163,12 @@ private:
 	uint8_t sweep_reg = 0; // nr10 copy
 };
 
+
 class Wave : public Channel, public FreqReg
 {
 public:
 	Wave( int c, Psg &p);
-	void init(bool is_cgb) noexcept;
+	void init(psg_mode mode) noexcept;
 	void wave_trigger() noexcept;
 	void vol_trigger() noexcept;
 	void write_vol(uint8_t v) noexcept;
@@ -169,10 +176,12 @@ public:
 	void save_state(std::ofstream &fp);
 	void load_state(std::ifstream &fp);
 
-	uint8_t wave_table[0x20];
+	bool bank_idx;
+	bool dimension;
+	uint8_t wave_table[2][0x20];
 
 private:
-	bool is_cgb;
+	psg_mode mode;
 	int volume = 0;
 	int volume_load = 0;
 };
@@ -202,6 +211,7 @@ private:
 	int divisor_idx = 0; // indexes into divisors table
 	uint16_t shift_reg = 0; // 15 bit reg
 	int period = 0;
+	int period_factor = 0;
 };
 
 
@@ -210,7 +220,7 @@ class Psg
 {
 public:
 	Psg();
-	void init(bool is_cgb,bool use_bios);
+	void init(psg_mode mode,bool use_bios);
 
 	void reset_sequencer() noexcept;
 	int get_sequencer_step() const noexcept;
@@ -328,12 +338,12 @@ public:
 	// ^ handled in the memory function 
 	uint8_t read_nr52() const noexcept;
 
+	psg_mode mode;
 private:
 	void tick_length_counters() noexcept;
 	void clock_envelopes() noexcept;
 
-	bool is_cgb;
-
+	
 
 	bool sound_enabled = true;
 
@@ -373,6 +383,12 @@ private:
 	uint8_t nr52;
 };
 
+}
+
+namespace gameboy
+{
+
+
 class Apu
 {	
 public:
@@ -382,7 +398,7 @@ public:
 
 	void push_samples(uint32_t cycles) noexcept;
 
-	void init(bool is_cgb, bool use_bios) noexcept;
+	void init(gameboy_psg::psg_mode mode, bool use_bios) noexcept;
 
 	void tick(uint32_t cycles) noexcept;
 
@@ -412,7 +428,7 @@ public:
 		insert_period_event(psg.c4.get_period(),gameboy_event::c4_period_elapse);
 	}
 
-	Psg psg;
+	gameboy_psg::Psg psg;
 	GbPlayback playback;
 private:
 	// needs to go in with the psg class

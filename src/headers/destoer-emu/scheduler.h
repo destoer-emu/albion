@@ -52,7 +52,7 @@ void Scheduler<SIZE,event_type>::init()
 {
     event_list.clear();
     timestamp = 0;
-    min_timestamp = 0;
+    min_timestamp = 0xffffffff;
 }
 
 template<size_t SIZE,typename event_type>
@@ -130,8 +130,8 @@ void Scheduler<SIZE,event_type>::remove(event_type type,bool tick_old)
     {
         service_event(event.value());
         event_list.remove(type);
-        min_timestamp = event_list.peek().end;
     }
+    min_timestamp = event_list.peek().end;
 }
 
 template<size_t SIZE,typename event_type>

@@ -1,6 +1,6 @@
 #include <gb/gb.h>
 
-namespace gameboy
+namespace gameboy_psg
 { 
 
 // CHANNEL 1 SWEEP

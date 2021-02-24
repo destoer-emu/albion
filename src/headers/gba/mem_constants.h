@@ -112,4 +112,34 @@ constexpr uint32_t IO_FIFO_B = 0x040000A4 & IO_MASK;
 
 // serial
 constexpr uint32_t SIOCNT = 0x04000128 & IO_MASK;
+
+
+
+// gb psgs
+constexpr uint32_t IO_NR10 = 0x04000060 & IO_MASK;
+constexpr uint32_t IO_NR11 = 0x04000062 & IO_MASK;
+constexpr uint32_t IO_NR12 = 0x04000063 & IO_MASK;
+constexpr uint32_t IO_NR13 = 0x04000064 & IO_MASK;
+constexpr uint32_t IO_NR14 = 0x04000065 & IO_MASK;
+
+constexpr uint32_t IO_NR21 = 0x04000068 & IO_MASK;
+constexpr uint32_t IO_NR22 = 0x04000069 & IO_MASK;
+constexpr uint32_t IO_NR23 = 0x0400006C & IO_MASK;
+constexpr uint32_t IO_NR24 = 0x0400006D & IO_MASK;
+
+constexpr uint32_t IO_NR30 = 0x04000070 & IO_MASK;
+constexpr uint32_t IO_NR31 = 0x04000072 & IO_MASK;
+constexpr uint32_t IO_NR32 = 0x04000073 & IO_MASK;
+constexpr uint32_t IO_NR33 = 0x04000074 & IO_MASK;
+constexpr uint32_t IO_NR34 = 0x04000075 & IO_MASK;
+
+constexpr uint32_t IO_NR41 = 0x04000078 & IO_MASK;
+constexpr uint32_t IO_NR42 = 0x04000079 & IO_MASK;
+constexpr uint32_t IO_NR43 = 0x0400007C & IO_MASK;
+constexpr uint32_t IO_NR44 = 0x0400007D & IO_MASK;
+
+constexpr uint32_t IO_NR50 = 0x04000080 & IO_MASK;
+constexpr uint32_t IO_NR51 = 0x04000081 & IO_MASK;
+constexpr uint32_t IO_NR52 = 0x04000084 & IO_MASK;
+
 }
