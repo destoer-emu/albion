@@ -69,39 +69,38 @@ GLuint Texture::get_texture() const
 }
 
 // contructor and destructor code taken from imgui
-// https://github.com/ocornut/imgui/blob/master/examples/example_glfw_opengl3/main.cpp
+// https://github.com/ocornut/imgui/blob/master/examples/example_sdl_opengl3/main.cpp
 
 // init imgui
 ImguiMainWindow::ImguiMainWindow()
 {
     // Setup window
-    glfwSetErrorCallback(glfw_error_callback);
-    if (!glfwInit())
-        exit(1);
-
     // Decide GL+GLSL versions
-#if __APPLE__
-    // GL 3.2 + GLSL 150
+#ifdef __APPLE__
+    // GL 3.2 Core + GLSL 150
     const char* glsl_version = "#version 150";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 #else
     // GL 3.0 + GLSL 130
     const char* glsl_version = "#version 130";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
-    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 #endif
 
     // Create window with graphics context
-    window = glfwCreateWindow(800, 600, "destoer-emu", NULL, NULL);
-    if (window == NULL)
-        exit(1);
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1); // Enable vsync
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+    SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    window = SDL_CreateWindow("destoer-emu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, window_flags);
+    gl_context = SDL_GL_CreateContext(window);
+    SDL_GL_MakeCurrent(window, gl_context);
+    SDL_GL_SetSwapInterval(1); // Enable vsync
 
     // Initialize OpenGL loader
 #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
@@ -110,6 +109,14 @@ ImguiMainWindow::ImguiMainWindow()
     bool err = glewInit() != GLEW_OK;
 #elif defined(IMGUI_IMPL_OPENGL_LOADER_GLAD)
     bool err = gladLoadGL() == 0;
+#elif defined(IMGUI_IMPL_OPENGL_LOADER_GLAD2)
+    bool err = gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress) == 0; // glad2 recommend using the windowing library loader instead of the (optionally) bundled one.
+#elif defined(IMGUI_IMPL_OPENGL_LOADER_GLBINDING2)
+    bool err = false;
+    glbinding::Binding::initialize();
+#elif defined(IMGUI_IMPL_OPENGL_LOADER_GLBINDING3)
+    bool err = false;
+    glbinding::initialize([](const char* name) { return (glbinding::ProcAddress)SDL_GL_GetProcAddress(name); });
 #else
     bool err = false; // If you use IMGUI_IMPL_OPENGL_LOADER_CUSTOM, your loader is likely to requires some form of initialization.
 #endif
@@ -122,7 +129,7 @@ ImguiMainWindow::ImguiMainWindow()
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); UNUSED(io);
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
@@ -130,21 +137,24 @@ ImguiMainWindow::ImguiMainWindow()
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();
 
-    // Setup Platform/Renderer bindings
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);  
+    // Setup Platform/Renderer backends
+    ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
+    ImGui_ImplOpenGL3_Init(glsl_version);
+    
 }
 
 
 ImguiMainWindow::~ImguiMainWindow()
 {
     // Cleanup
+    // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 
-    glfwDestroyWindow(window);
-    glfwTerminate();    
+    SDL_GL_DeleteContext(gl_context);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 }
 
 // assume its allways running a gb instance for now
@@ -492,6 +502,7 @@ void ImguiMainWindow::enable_audio()
 
         case emu_type::gba:
         {
+            gba.apu.playback.start();
             break;
         }
 
@@ -516,6 +527,7 @@ void ImguiMainWindow::disable_audio()
 
         case emu_type::gba:
         {
+            gba.apu.playback.stop();
             break;
         }
 
@@ -653,150 +665,237 @@ void ImguiMainWindow::mainloop()
     gba_controller.init();
 
     // Main loop
-    while (!glfwWindowShouldClose(window))
+    bool done = false;
+    while (!done)
     {
         fps.reading_start();
+
+
+        const bool focus = SDL_GetWindowFlags(window) & SDL_WINDOW_MOUSE_FOCUS;
 
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
         // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
         // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
         // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
-        glfwPollEvents();
-
-        // Start the Dear ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        if(running_type == emu_type::gameboy) 
+        SDL_Event event;
+        while (SDL_PollEvent(&event))
         {
-            if(emu_running)
-            { 
-                gameboy_run_frame();
+            ImGui_ImplSDL2_ProcessEvent(&event);
+            
+            switch(event.type)
+            {
+
+                case SDL_QUIT:
+                {
+                    done = true;
+                    break;
+                }
+
+                case SDL_WINDOWEVENT: 
+                {
+                    if(event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
+                    {
+                        done = true;
+                    }
+                    break;
+                }
+
+                case SDL_KEYDOWN:
+                {
+                    switch(running_type)
+                    {
+                        case emu_type::gameboy:
+                        {
+                            gb.key_input(event.key.keysym.sym,true);
+                            break;
+                        }
+
+                        case emu_type::gba:
+                        {
+                        gba.key_input(event.key.keysym.sym,true);
+                        break;
+                        }
+
+                        default: break;
+                    }
+
+                    break;
+                }
+                
+                case SDL_KEYUP:
+                {
+                    switch(running_type)
+                    {
+                        case emu_type::gameboy:
+                        {
+                            gb.key_input(event.key.keysym.sym,false);
+                            break;
+                        }
+
+                        case emu_type::gba:
+                        {
+                        gba.key_input(event.key.keysym.sym,false);
+                        break;
+                        }
+
+                        default: break;
+                    }
+
+                    break;
+                }
             }
 
-            menu_bar(gb.debug);
+        }
 
-            switch(selected_window)
+
+        
+        if(emu_running)
+        {
+            switch(running_type)
             {
-                case current_window::file:
+                case emu_type::gameboy: gameboy_run_frame(); break;
+                case emu_type::gba: gba_run_frame(); break;
+                default: break;
+            }
+        }
+
+        if(focus)
+        {
+            // Start the Dear ImGui frame
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplSDL2_NewFrame(window);
+            ImGui::NewFrame();
+
+            switch(running_type)
+            {
+                case emu_type::gameboy:
+                {
+                    menu_bar(gb.debug);
+
+                    switch(selected_window)
+                    {
+                        case current_window::file:
+                        {
+                            file_browser();
+                            break;
+                        }
+
+                        case current_window::cpu:
+                        {
+                            gameboy_draw_cpu_info();
+                            break;
+                        }
+
+
+                        case current_window::breakpoint:
+                        {
+                            gameboy_draw_breakpoints();
+                            break;
+                        }
+
+
+                        case current_window::memory:
+                        {
+                            gameboy_draw_memory();
+                            break;
+                        }
+
+                        case current_window::display_viewer:
+                        {
+                            gb_display_viewer.draw_bg_map();
+                            gb_display_viewer.draw_tiles();
+                            gb_display_viewer.draw_palette();
+                            gameboy_draw_screen();
+                            break;
+                        }
+
+                        case current_window::screen:
+                        {
+                            break;
+                        }
+
+                        case current_window::full_debugger:
+                        {
+                            break;
+                        }
+                    }
+                    break;
+                }
+
+                case emu_type::gba:
+                {
+                    menu_bar(gba.debug);
+
+                    switch(selected_window)
+                    {
+                        case current_window::file:
+                        {
+                            file_browser();
+                            break;
+                        }
+
+                        case current_window::cpu:
+                        {
+                            gba_draw_cpu_info();
+                            break;
+                        }
+
+
+                        case current_window::breakpoint:
+                        {
+                            gba_draw_breakpoints();
+                            break;
+                        }
+
+
+                        case current_window::memory:
+                        {
+                            gba_draw_memory();
+                            break;
+                        }
+
+                        case current_window::display_viewer:
+                        {
+                            gba_display_viewer.draw_palette();
+                            gba_display_viewer.draw_map();
+                            break;
+                        }
+
+                        case current_window::screen:
+                        {
+                            break;
+                        }
+
+                        case current_window::full_debugger:
+                        {
+                            break;
+                        }
+                    }
+                    break;
+                }
+
+                default:
                 {
                     file_browser();
                     break;
                 }
-
-                case current_window::cpu:
-                {
-                    gameboy_draw_cpu_info();
-                    break;
-                }
-
-
-                case current_window::breakpoint:
-                {
-                    gameboy_draw_breakpoints();
-                    break;
-                }
-
-
-                case current_window::memory:
-                {
-                    gameboy_draw_memory();
-                    break;
-                }
-
-                case current_window::display_viewer:
-                {
-                    gb_display_viewer.draw_bg_map();
-                    gb_display_viewer.draw_tiles();
-                    gb_display_viewer.draw_palette();
-                    gameboy_draw_screen();
-                    break;
-                }
-
-                case current_window::screen:
-                {
-                    break;
-                }
-
-                case current_window::full_debugger:
-                {
-                    break;
-                }
             }
+            ImGui::Render();
         }
 
-        else if(running_type == emu_type::gba)
-        {
-            if(emu_running)
-            { 
-                gba_run_frame();
-            }
-            menu_bar(gba.debug);
-
-            switch(selected_window)
-            {
-                case current_window::file:
-                {
-                    file_browser();
-                    break;
-                }
-
-                case current_window::cpu:
-                {
-                    gba_draw_cpu_info();
-                    break;
-                }
-
-
-                case current_window::breakpoint:
-                {
-                    gba_draw_breakpoints();
-                    break;
-                }
-
-
-                case current_window::memory:
-                {
-                    gba_draw_memory();
-                    break;
-                }
-
-                case current_window::display_viewer:
-                {
-                    gba_display_viewer.draw_palette();
-                    gba_display_viewer.draw_map();
-                    break;
-                }
-
-                case current_window::screen:
-                {
-                    break;
-                }
-
-                case current_window::full_debugger:
-                {
-                    break;
-                }
-            }
-        }
-
-        else if(running_type == emu_type::none)
-        {
-            file_browser();
-        }
+        
 
         // Rendering
-        ImGui::Render();
         int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
+        SDL_GetWindowSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
+
         // lets figure out how much to scale by
-        const int y = display_h - static_cast<int>(menubar_size.y);
+        const int y = focus? display_h - static_cast<int>(menubar_size.y) : display_h;
         const int x = display_w;
 
         int fact_y = y / screen.get_height();
@@ -832,14 +931,17 @@ void ImguiMainWindow::mainloop()
 
         // and set it back to how imgui expects it
         glViewport(0, 0, display_w, display_h);
+        
+        if(focus)
+        {
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        }
 
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        glfwSwapBuffers(window);
+        SDL_GL_SwapWindow(window);
 
         fps.reading_end();
 
-        glfwSetWindowTitle(window,fmt::format("destoer-emu: {}",fps.get_fps()).c_str());
+        SDL_SetWindowTitle(window,fmt::format("destoer-emu: {}",fps.get_fps()).c_str());
     }
     stop_instance();
 }

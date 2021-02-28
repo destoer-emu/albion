@@ -4,61 +4,6 @@
 using namespace gameboyadvance;
 
 
-// TODO
-// refactor this so we just have one version of this
-// shared across all frontends
-// with a is_key_pressed() function defined in key.h
-// to keep down on code duplication
-void gba_handle_input(GBA &gba)
-{
-    static constexpr int scancodes[] = {GLFW_KEY_A,GLFW_KEY_S,GLFW_KEY_SPACE,GLFW_KEY_ENTER,
-        GLFW_KEY_RIGHT,GLFW_KEY_LEFT,GLFW_KEY_UP,GLFW_KEY_DOWN,GLFW_KEY_D,GLFW_KEY_F};
-    
-
-    static constexpr button gba_key[] = {button::a,button::b,button::select,button::start,button::right,
-        button::left,button::up,button::down,button::r,button::l};
-
-    static constexpr int len = sizeof(scancodes) / sizeof(scancodes[0]);
-
-    // figure out why this assert fails it shouldunt do!
-    static_assert(len == (sizeof(gba_key) / sizeof(gba_key[0])));
-
-
-    // cache last state so we can filter by state change
-    static bool pressed[len] = {false};
-
-
-    for(int i = 0; i < len; i++)
-    {
-        bool down = ImGui::IsKeyDown(scancodes[i]);
-
-        if(down && !pressed[i])
-        {
-            gba.button_event(gba_key[i],true);
-            pressed[i] = true;
-        }
-
-        // aint pressed
-        else if(pressed[i] && !down)
-        {
-            gba.button_event(gba_key[i],false);
-            pressed[i] = false;  
-        }
-    }
-
-    if(ImGui::IsKeyDown(GLFW_KEY_K))
-    {
-        gba.key_input(static_cast<int>(emu_key::k),true);
-        glfwSwapInterval(0); // Disable vsync
-    }
-
-    else if(ImGui::IsKeyDown(GLFW_KEY_L))
-    {
-        gba.key_input(static_cast<int>(emu_key::l),true);
-    }
-
-}
-
 void GBADisplayViewer::init()
 {
     for(auto &t: bg_maps)
@@ -137,8 +82,6 @@ void ImguiMainWindow::gba_run_frame()
         //auto start = std::chrono::system_clock::now();
         gba_controller.update(gba);
 
-        gba_handle_input(gba);
-
         gba.run();
 
         if(gba.disp.new_vblank)
@@ -162,7 +105,7 @@ void ImguiMainWindow::gba_run_frame()
         gba.debug.write_logger(ex.what());
         std::cout << ex.what() << "\n";
         emu_running = false;
-        glfwSwapInterval(1);
+        SDL_GL_SetSwapInterval(1); // Enable vsync
         return;
     }    
 }

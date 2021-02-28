@@ -62,15 +62,6 @@ if(WIN32)
 			include_directories(${OPENGL_INCLUDE_DIRS})
 			link_libraries(${OPENGL_LIBRARIES})
 		endif()
-
-		#this doesent work either :P
-		#find_package(GLFW REQUIRED)
-		#if(GLFW_FOUND)
-			#include_directories(${GLFW_INCLUDE_DIRS})
-			#include_directories(${GLFW_LIBRARIES})
-			include_directories("C:/glfw-3.3.2.bin.WIN64/include")
-			link_libraries("C:/glfw-3.3.2.bin.WIN64/lib-vc2019/glfw3.lib")
-		#endif()
 	endif()
 
 
@@ -87,7 +78,7 @@ else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -pthread -Ofast")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lSDL2")
 	if(${FRONTEND} STREQUAL "IMGUI") 
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lglfw  -lGL -lGLEW")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lGL -lGLEW")
 	endif()
 endif()
 
@@ -150,12 +141,13 @@ include_directories("src")
 
 
 if(${FRONTEND} STREQUAL "IMGUI")
+	include_directories("/usr/include/SDL2")
 	file(GLOB frontend_files
 		"src/frontend/imgui/*.h"
 		"src/frontend/imgui/*.cpp"
 		"src/common/thirdparty/imgui/*.cpp"
 		"src/common/thirdparty/imgui/*.h"
-		"src/common/thirdparty/imgui/examples/imgui_impl_glfw.cpp"
+		"src/common/thirdparty/imgui/examples/imgui_impl_sdl.cpp"
 		"src/common/thirdparty/imgui/examples/imgui_impl_opengl3.cpp"	
 	)
 endif()

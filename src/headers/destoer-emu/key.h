@@ -3,24 +3,6 @@
 #include <frontend/imgui/imgui_window.h>
 
 
-#ifdef FRONTEND_IMGUI
-enum class emu_key
-{
-    enter = GLFW_KEY_ENTER,		
-    space = GLFW_KEY_SPACE,
-    down = GLFW_KEY_DOWN,
-    up = GLFW_KEY_UP,
-    left = GLFW_KEY_LEFT,
-    right = GLFW_KEY_RIGHT,
-    a = GLFW_KEY_A,
-    s = GLFW_KEY_S,
-    d = GLFW_KEY_D,
-    f = GLFW_KEY_F,
-    k = GLFW_KEY_K,
-    l = GLFW_KEY_L
-};
-#endif
-
 
 #ifdef FRONTEND_QT
 enum class emu_key
@@ -41,7 +23,7 @@ enum class emu_key
 #endif
 
 
-#ifdef FRONTEND_SDL
+#if defined FRONTEND_SDL || defined FRONTEND_IMGUI 
 enum class emu_key
 {
     enter = SDLK_RETURN,		

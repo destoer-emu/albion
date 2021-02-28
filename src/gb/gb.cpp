@@ -64,7 +64,7 @@ void GB::key_input(int key, bool pressed)
 				apu.playback.stop();
 				throttle_emu = false;
 				#ifdef FRONTEND_IMGUI
-					glfwSwapInterval(0); // Disable vsync
+				SDL_GL_SetSwapInterval(0); // Disable vsync
 				#endif
 				break;
 			}
@@ -74,7 +74,7 @@ void GB::key_input(int key, bool pressed)
 				apu.playback.start();
 				throttle_emu = true;
 				#ifdef FRONTEND_IMGUI
-					glfwSwapInterval(1); // Enable vsync
+				SDL_GL_SetSwapInterval(1); // Enable vsync
 				#endif						
 				break;
 			}

@@ -355,8 +355,6 @@ private:
 
     // cpu pipeline
     uint32_t pipeline[2] = {0};
-
-    uint32_t pending_cycles;
 };
 
 }

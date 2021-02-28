@@ -66,60 +66,13 @@ void GameboyDisplayViewer::draw_palette()
 }
 
 
-// looks like we need to use imgui for the key input :P
-void gameboy_handle_input(GB &gb)
-{
-    static constexpr int scancodes[] = {GLFW_KEY_A,GLFW_KEY_S,GLFW_KEY_ENTER,GLFW_KEY_SPACE,
-        GLFW_KEY_RIGHT,GLFW_KEY_LEFT,GLFW_KEY_UP,GLFW_KEY_DOWN};
-    
-    static constexpr button gb_key[] = {button::a,button::b,button::start,
-        button::select,button::right,button::left,button::up,button::down};
-
-    static constexpr int len = sizeof(scancodes) / sizeof(scancodes[0]);
-
-    static_assert(sizeof(scancodes) == sizeof(gb_key));
-
-    // cache last state so we can filter by state change
-    static bool pressed[len] = {false};
-
-    for(int i = 0; i < len; i++)
-    {
-        bool down = ImGui::IsKeyDown(scancodes[i]);
-
-        if(down && !pressed[i]) // just pressed
-        {
-            gb.key_pressed(gb_key[i]);
-            pressed[i] = true;
-        }
-
-        // just released
-        else if(!down &&  pressed[i])
-        {
-            gb.key_released(gb_key[i]); 
-            pressed[i] = false; 
-        }
-    }
-
-    if(ImGui::IsKeyDown(GLFW_KEY_K))
-    {
-        gb.key_input(static_cast<int>(emu_key::k),true);
-    }
-
-    else if(ImGui::IsKeyDown(GLFW_KEY_L))
-    {
-        gb.key_input(static_cast<int>(emu_key::l),true);
-    }
-}
-
 // we will switch them in and out but for now its faster to just copy it
 void ImguiMainWindow::gameboy_run_frame()
 {
     try
     {
         gb_controller.update(gb);
-
-        gameboy_handle_input(gb);
-        
+  
         gb.run();
 
         if(gb_display_viewer.enabled)
@@ -138,7 +91,7 @@ void ImguiMainWindow::gameboy_run_frame()
     {
         std::cout << ex.what() << "\n";
         emu_running = false;
-        glfwSwapInterval(1);
+        SDL_GL_SetSwapInterval(1); // Enable vsync
         return;
     }
 }

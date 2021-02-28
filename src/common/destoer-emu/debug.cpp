@@ -2,6 +2,21 @@
 
 #ifdef DEBUG
 
+
+// todo text debugger rewrite
+// determine arg type int or string
+// follwing functions (base)
+// disass
+// step
+// break
+// watch
+// trace
+// registers
+// memory
+// clear breakpoints
+// disable / enable break points
+// disable / enable watch points
+
 // wake the instance up
 void Debug::wake_up()
 {

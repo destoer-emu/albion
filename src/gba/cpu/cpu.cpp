@@ -602,7 +602,6 @@ void Cpu::handle_power_state()
             }
 
             // tick cycles until we an interrupt fires
-            // this is gonna be slow as hell until we get a event system
             while(!interrupt_request)
             {
                 if(scheduler.size() == 0)
