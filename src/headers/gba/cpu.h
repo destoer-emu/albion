@@ -349,6 +349,8 @@ private:
 
 
 
+    Trace trace;
+
     bool in_bios;
 
     // cpu pipeline

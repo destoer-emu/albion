@@ -153,6 +153,7 @@ void ApuIo::init()
     sound_cnt.init();
     fifo_a.init();
     fifo_b.init();
+    soundbias = 0x200;
 }
 
 }

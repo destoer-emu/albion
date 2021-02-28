@@ -121,7 +121,7 @@ void Display::render_map(int id, std::vector<uint32_t> &map)
                 //printf("%08x\n",color);
 
                 // just use max size. and we will not bother writing off the end
-                map[(y * 512) + x + i] = b.color;
+                map[(y * 512) + x + i] = convert_color(b.color);
             }
         }
     }

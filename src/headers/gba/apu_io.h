@@ -76,6 +76,7 @@ struct ApuIo
     SoundCnt sound_cnt{*this};
     SoundFifo fifo_a;
     SoundFifo fifo_b;
+    uint16_t soundbias = 0;
 };
 
 }

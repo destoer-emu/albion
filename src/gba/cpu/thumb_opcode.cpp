@@ -669,6 +669,7 @@ void Cpu::thumb_long_bl(uint16_t opcode)
         // lr = tmp | 1
         regs[LR] = tmp | 1;
         write_log(debug,"[cpu-thumb {:08x}] call {:08x}",tmp,pc_actual);
+        //printf("[%08x] call %08x\n",tmp,pc_actual);
     }
 }
 

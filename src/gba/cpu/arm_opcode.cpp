@@ -919,6 +919,8 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
             case 1: // ldrh
             {
                 regs[rd] = mem.read_memt<uint16_t>(addr);
+                // result rotated right by 8 on arm7 if unaligned 
+                regs[rd] = rotr(regs[rd],8*(addr&1)); 
                 internal_cycle(); // internal cycle for writeback
                 if(is_pc)
                 {
@@ -940,7 +942,20 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
             case 3: // ldrsh
             {
-                regs[rd] = sign_extend<uint32_t>(mem.read_memt<uint16_t>(addr),16);
+
+                if(!(addr & 1))
+                {
+                    regs[rd] = sign_extend<uint32_t>(mem.read_memt<uint16_t>(addr),16);
+                }
+
+                // unaligned
+                else
+                {
+                    regs[rd] = sign_extend<uint32_t>(mem.read_memt<uint8_t>(addr),8);
+                }
+
+
+
                 internal_cycle(); // internal cycle for writeback
                 if(is_pc)
                 {
@@ -1071,6 +1086,7 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
     // perform the specifed memory access
     if(load) // ldr
     {
+        // ldrb
         if(is_byte)
         {
             regs[rd] = mem.read_memt<uint8_t>(addr);

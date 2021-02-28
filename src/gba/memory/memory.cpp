@@ -65,6 +65,8 @@ void Mem::init(std::string filename)
     // read out rom
     read_file(filename,rom);
 
+
+
     
 
     std::fill(board_wram.begin(),board_wram.end(),0);
@@ -152,8 +154,23 @@ void Mem::init(std::string filename)
             break;
         }
     }
+    const auto size = rom.size();
+    std::cout << "rom size: " << size << "\n";
 
-    std::cout << "rom size: " << rom.size() << "\n";
+    if(size >= 32*1024*1024)
+    {
+        throw std::runtime_error("rom is too large!");
+    }
+
+    rom.resize(32*1024*1024);
+
+    // account for out of range open bus
+    for(int i = ((size-1) & ~1); i < 32*1024*1024; i += 2)
+    {
+        handle_write<uint16_t>(rom,i,(i / 2) & 0xffff);
+    }
+
+
 
     cart_ram_dirty = false;
     frame_count = 0;
@@ -317,10 +334,6 @@ void Mem::frame_end()
 		}
 	}
 }
-
-// hack for soundbias to boot bios...
-// fix when we properly impl the reg
-uint16_t soundbias = 0;
 
 
 void Mem::write_timer_control(int timer,uint8_t v)
@@ -627,8 +640,8 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
         case IO_SOUNDCNT_H: apu.apu_io.sound_cnt.write_h(0,v); break;
         case IO_SOUNDCNT_H+1: apu.apu_io.sound_cnt.write_h(1,v); break;
 
-        case IO_SOUNDBIAS: soundbias = (soundbias & 0xff00) | v; break;
-        case IO_SOUNDBIAS+1: soundbias = (soundbias & 0x00ff) | (v << 8); break;
+        case IO_SOUNDBIAS: apu.apu_io.soundbias = (apu.apu_io.soundbias & 0xff00) | v; break;
+        case IO_SOUNDBIAS+1: apu.apu_io.soundbias = (apu.apu_io.soundbias & 0x00ff) | (v << 8); break;
 
         // fifo a
         case IO_FIFO_A: apu.apu_io.fifo_a.write(static_cast<int8_t>(v)); break;
@@ -997,8 +1010,8 @@ uint8_t Mem::read_io_regs(uint32_t addr)
         case IO_TM3CNT_H+1: return 0; // upper byte not used
 
 
-        case IO_SOUNDBIAS: return soundbias;
-        case IO_SOUNDBIAS+1: return soundbias >> 8;
+        case IO_SOUNDBIAS: return apu.apu_io.soundbias;
+        case IO_SOUNDBIAS+1: return apu.apu_io.soundbias >> 8;
 
         case IO_IME: return cpu.cpu_io.ime;
         case IO_IME+1: case IO_IME+2: case IO_IME+3: return 0; // stub
@@ -1160,7 +1173,9 @@ uint8_t Mem::read_io_regs(uint32_t addr)
         default:
         {
             //auto err = fmt::format("[io {:08x}] unhandled read at {:08x}",cpu.get_pc(),addr);
+            //std::cout << err << "\n";
             //throw std::runtime_error(err);
+            // open bus
             return 0;
         }
     }
@@ -1291,11 +1306,24 @@ access_type Mem::read_mem_handler(uint32_t addr)
                     return flash.read_flash(addr);
                 }
 
-                // byte access only check what happens when
-                // a non byte access is attempted...
+
                 case save_type::sram:
                 {
-                    return sram[addr & 0x7fff];
+                    // dma cant access sram?
+                    if(dma.active_dma == 0)
+                    {
+                        return 0;
+                    }
+
+                    // handle non 8 bit accesses
+                    uint32_t ans = sram[addr & 0x7fff];
+                    // some of these dont work nicely...
+                    if constexpr(sizeof(access_type) > 1)
+                    {
+                        ans = ans | ans << 8;
+                        ans = ans | ans << 16;
+                    }
+                    return ans;
                 }
 
                 case save_type::eeprom:
@@ -1324,7 +1352,7 @@ access_type Mem::read_mem(uint32_t addr)
     const auto v = read_mem_handler<access_type>(addr);
     if(debug.breakpoint_hit(addr,v,break_type::read))
     {
-        write_log(debug,"write breakpoint hit at {:08x}:{:08x}:{:08x}",addr,v,cpu.get_pc());
+        write_log(debug,"read breakpoint hit at {:08x}:{:08x}:{:08x}",addr,v,cpu.get_pc());
         debug.halt();
     }
     return v;
@@ -1509,7 +1537,6 @@ void Mem::write_eeprom(uint8_t v)
 template<typename access_type>
 void Mem::write_mem(uint32_t addr,access_type v)
 {
-
     addr = align_addr<access_type>(addr);
 
     const auto mem_region = memory_region_table[(addr >> 24) & 0xf];
@@ -1576,6 +1603,12 @@ void Mem::write_mem(uint32_t addr,access_type v)
                 // a non byte access is attempted...
                 case save_type::sram:
                 {
+                    // dma cant touch sram?
+                    if(dma.active_dma == 0)
+                    {
+                        return;
+                    }
+
                     sram[addr & 0x7fff] = v;
                     cart_ram_dirty = true;
                     break;
@@ -1675,9 +1708,15 @@ uint32_t Mem::get_waitstates(uint32_t addr) const
         // need to lookup waitstaes in seperate table for rom
         case memory_region::rom:
         {
-            // hardcode to sequential access!
+            // approximation
+            if(sizeof(access_type) == 4)
+            {
+                return 2;
+            }
+
             return 1;
             // bugs out in metroid fusion final boss why?
+            // hardcode to sequential access!
             //return rom_wait_states[(region - 8) / 2][1][sizeof(access_type) >> 1];
         }
 

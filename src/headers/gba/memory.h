@@ -248,7 +248,7 @@ private:
         memory_region::rom, // waitstate 2
         memory_region::rom, // waitstate 2
         memory_region::cart_backup, // cart ram
-        memory_region::undefined
+        memory_region::cart_backup // cart ram mirror
     };
 
 

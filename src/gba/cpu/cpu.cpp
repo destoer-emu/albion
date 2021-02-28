@@ -40,7 +40,7 @@ void Cpu::init()
     hi_banked[static_cast<int>(cpu_mode::irq)][0] = 0x03007FA0;
 
 
-//  write_pc(0);
+    //write_pc(0);
     arm_mode = cpu_mode::system;
     switch_mode(cpu_mode::system);
 
@@ -55,6 +55,7 @@ void Cpu::init()
 
     cpu_io.init();
     update_intr_status();
+    trace.clear();
 }
 
 
@@ -903,6 +904,7 @@ cpu_mode Cpu::cpu_mode_from_bits(uint32_t v)
 
     // clearly no program should attempt this 
     // but is their a defined behavior for it?
+    trace.print();
     auto err = fmt::format("unknown mode from bits: {:08x}:{:08x}\n",v,pc_actual);
     throw std::runtime_error(err);
 }
@@ -1187,6 +1189,14 @@ void Cpu::service_interrupt()
 
 void Cpu::write_pc(uint32_t v)
 {
+    if(v >= 0x0fffffff)
+    {
+        printf("[%08x] heh: %08x\n",pc_actual,v);
+        throw std::runtime_error("fuck off");
+    }
+    
+    const auto source = pc_actual - (2 << !is_thumb); 
+
     if(is_thumb)
     {
         pc_actual = v & ~1;
@@ -1202,7 +1212,8 @@ void Cpu::write_pc(uint32_t v)
         mem.switch_bios(in_bios);
         write_pc_arm(v);
     } 
-    
+
+    trace.add(source,pc_actual);
 }
 
 }

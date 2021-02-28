@@ -1,7 +1,7 @@
 #pragma once
 #include <destoer-emu/lib.h>
 
-#ifdef DEBUG
+
 enum class break_type : int
 {
     
@@ -39,6 +39,7 @@ public:
     ~Debug();
 
     // logging function!
+#ifdef DEBUG
     template<typename... Args>
     void write_logger(std::string x,Args... args)
     {
@@ -53,6 +54,10 @@ public:
             #endif
         }
     }
+#else
+    void write_logger(std::string x,...) { UNUSED(x); }
+#endif
+
 
     void wake_up();
     void halt();
@@ -85,21 +90,45 @@ private:
 
 
 
+struct Trace
+{
+    Trace()
+    {
+        clear();
+    }
+
+    void clear()
+    {
+        idx = 0;
+        memset(history_target,0,sizeof(history_target));
+        memset(history_source,0,sizeof(history_source));
+    }
+
+    void add(uint32_t src, uint32_t dst)
+    {
+        history_source[idx] = src;
+        history_target[idx] = dst;
+        idx = (idx + 1) & 0xf;
+    }
+
+    void print()
+    {
+        puts("pc trace:\n");
+        for(int i = 0; i < 0x10; i++)
+        {
+            const auto offset = (idx + i) & 0xf;
+            printf("%d: %08x -> %08x\n",i,history_source[offset],history_target[offset]);
+        }
+    }
+
+    uint32_t idx;
+    uint32_t history_target[0x10] = {0};
+    uint32_t history_source[0x10] = {0};
+};
+
+
+
 //----- logger macro definition ---
 // might be a less nasty way to ensure these drop away
 // when the debugger is not compiled into the code
 #define write_log(X,...) (X).write_logger(__VA_ARGS__)
-
-
-#else
-
-
-class Debug 
-{
-public: 
-    void write_logger(std::string x,...) { UNUSED(x); }
-};
-#define write_log(...)
-
-
-#endif  

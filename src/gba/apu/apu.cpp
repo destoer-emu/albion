@@ -105,7 +105,7 @@ void Apu::push_samples(int cycles)
     }
 
 
-    if(!playback.is_playing()) 
+    if(!playback.is_playing() || !psg.enabled()) 
     { 
         return; 
     }
@@ -120,6 +120,7 @@ void Apu::push_samples(int cycles)
     // we also need to handle soundbias
     // and eventually the internal resampling rate
     // along with the psg sound scaling
+    // figure out how the volume and the bias works properly tomorrow lol
     int volume = 50;
 
 
@@ -139,12 +140,20 @@ void Apu::push_samples(int cycles)
 
     // mix dma left
     float bufferin0 = 0.0;
+    float bufferin1 = 0.0;
+
+    if(apu_io.sound_cnt.enable_left_a)
+    {
+        bufferin1 = static_cast<float>(dma_a_sample) / 128.0;
+        playback.mix_samples(bufferin0,bufferin1,volume);
+    }
+
+    if(apu_io.sound_cnt.enable_left_b)
+    {
+        bufferin1 = static_cast<float>(dma_b_sample) / 128.0;
+        playback.mix_samples(bufferin0,bufferin1,volume);
+    }
     
-    float bufferin1 = static_cast<float>(dma_a_sample) / 128.0;
-    playback.mix_samples(bufferin0,bufferin1,volume);
-    bufferin1 = static_cast<float>(dma_b_sample) / 128.0;
-    playback.mix_samples(bufferin0,bufferin1,volume);
- 
     // mix psg left
     int psg_volume = 20*((nr50 & 7)+1);
     for(int i = 0; i < 4; i++)
@@ -160,11 +169,17 @@ void Apu::push_samples(int cycles)
     // mix dma right
     bufferin0 = 0;
     
-    bufferin1 = static_cast<float>(dma_a_sample) / 128.0;
-    playback.mix_samples(bufferin0,bufferin1,volume);
-    bufferin1 = static_cast<float>(dma_b_sample) / 128.0;
-    playback.mix_samples(bufferin0,bufferin1,volume);
-    
+    if(apu_io.sound_cnt.enable_right_a)
+    {
+        bufferin1 = static_cast<float>(dma_a_sample) / 128.0;
+        playback.mix_samples(bufferin0,bufferin1,volume);
+    }
+
+    if(apu_io.sound_cnt.enable_right_b)
+    {
+        bufferin1 = static_cast<float>(dma_b_sample) / 128.0;
+        playback.mix_samples(bufferin0,bufferin1,volume);
+    }
 
     // mix psg right
     psg_volume = 20*(((nr50 >> 4) & 7)+1);

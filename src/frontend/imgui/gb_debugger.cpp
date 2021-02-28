@@ -138,6 +138,7 @@ void ImguiMainWindow::gameboy_run_frame()
     {
         std::cout << ex.what() << "\n";
         emu_running = false;
+        glfwSwapInterval(1);
         return;
     }
 }
