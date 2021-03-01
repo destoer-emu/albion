@@ -1383,6 +1383,8 @@ void Memory::oam_dma_disable() noexcept
 	// this seems kinda heavy
 	init_mem_table();
 	init_banking_table();
+	update_page_table_bank();
+	update_page_table_sram();
 }
 
 void Memory::oam_dma_enable() noexcept
@@ -1420,6 +1422,12 @@ void Memory::oam_dma_enable() noexcept
 			memory_table[i].write_memf = &Memory::write_blocked;
 			memory_table[i].read_memf = &Memory::read_oam_dma;
 		}
+	}
+
+	// use fallback handlers during oam dma
+	for(int i = 0; i < 16; i++)
+	{
+		page_table[i] = nullptr;
 	}
 
 }
