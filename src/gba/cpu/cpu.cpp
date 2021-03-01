@@ -1187,13 +1187,7 @@ void Cpu::service_interrupt()
 }
 
 void Cpu::write_pc(uint32_t v)
-{
-    if(v >= 0x0fffffff)
-    {
-        printf("[%08x] heh: %08x\n",pc_actual,v);
-        throw std::runtime_error("fuck off");
-    }
-    
+{    
     const auto source = pc_actual - (2 << !is_thumb); 
 
     if(is_thumb)
