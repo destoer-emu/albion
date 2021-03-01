@@ -80,9 +80,9 @@ private:
     Debug &debug;
 
     void do_dma(int reg_num,dma_type req_type);
-    void check_dma(dma_type req_type);
     void handle_increment(int reg_num);
     bool do_fast_dma(int reg_num);
+    void check_dma();
 
 
     static constexpr int32_t addr_increment_table[2][4] = 
@@ -91,7 +91,8 @@ private:
         {+ARM_WORD_SIZE,-ARM_WORD_SIZE,0,+ARM_WORD_SIZE} // word
     };
 
-    std::vector<dma_type> req_list;
+    std::array<bool,4> dma_request;
+    uint32_t req_count = 0;
 };
 
 };

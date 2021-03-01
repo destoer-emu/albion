@@ -1684,6 +1684,9 @@ void Mem::update_wait_states()
     const auto wait_second2 = wait_cnt.wait22? 8 : 1;
     set_wait(&rom_wait_states[2][0][0],wait_first2);
     set_wait(&rom_wait_states[2][1][0],wait_second2);
+
+    const auto sram_wait = wait_first_table[wait_cnt.sram_cnt];
+    set_wait(&wait_states[static_cast<size_t>(memory_region::cart_backup)][0],sram_wait);
 }
 
 

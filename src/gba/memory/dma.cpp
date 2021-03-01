@@ -3,9 +3,6 @@
 namespace gameboyadvance
 {
 
-
-// TODO double check dma priority
-
 Dma::Dma(GBA &gba) : mem(gba.mem), cpu(gba.cpu) , debug(gba.debug)
 {
 
@@ -18,8 +15,12 @@ void Dma::init()
         x.init();
     }
 
-    req_list.clear();
     active_dma = -1;
+    req_count = 0;
+    for(int i = 0; i < 4; i++)
+    {
+        dma_request[i] = false;
+    }
 }
 
 
@@ -222,72 +223,53 @@ void Dma::write_control(int reg_num,int idx, uint8_t v)
         }
     }
 }
-// todo emulate 2 cycle startup from cpu to dma...  
+// TODO: emulate 2 cycle startup from cpu to dma...  
+// TODO: properly handle dma priority
 void Dma::handle_dma(dma_type req_type)
 {
-    // a active dma will ofhold all others until it is done
-    // even if it has a lower priority
-    if(active_dma != -1)
-    {
-        // this needs to be made faster
-        // we need a quick way to lookup
-        // all of a given req type
-        // and find the one with the higest priority
 
-
-        // check if a dma needs to overtake another
-        for(int i = 0; i < 4; i++)
-        { 
-            const auto &r = dma_regs[i];
-
-
-            if(r.enable && r.start_time == req_type)
-            {
-                // this is at a higher priority
-                if(active_dma > i)
-                {
-                    dma_regs[active_dma].interrupted = true;
-                }
-            }
-        }
-    
-
-        // push this to a list of types that need to get checked
-        req_list.push_back(req_type);
-        return;
-    }
-
-    check_dma(req_type);
-
-    // dmas could of become queued during the last one
-    // so we need to recheck them until there no more to
-    // service
-    while(req_list.size())
-    {
-        const auto req = req_list.back();
-        req_list.pop_back();
-        check_dma(req);
-    }
-}
-
-
-void Dma::check_dma(dma_type req_type)
-{
-    // higher priority dmas can hijack lower ones during transfer
     for(int i = 0; i < 4; i++)
     {
         const auto &r = dma_regs[i];
 
-
-        if(r.enable && r.start_time == req_type)
+        if(r.enable && r.start_time == req_type && !dma_request[i])  
         {
-            active_dma = i;
-            do_dma(i,req_type); 
-            active_dma = -1;
-        }   
-    }    
+            dma_request[i] = true;
+            req_count++;
+        }      
+    }
+
+    if(active_dma == -1)
+    {
+        check_dma();
+    }
 }
 
+
+void Dma::check_dma()
+{
+    // TODO: rechecking every dma in a loop is inefficent
+    // how much cpu time is spent on this?
+    for(int i = 0; i < 4; i++)
+    {
+        if(dma_request[i])
+        {
+            active_dma = i;
+            do_dma(i,dma_regs[i].start_time); 
+            req_count--;
+            dma_request[i] = false;
+            active_dma = -1;
+        }
+    }
+    
+    while(req_count)
+    {
+        if(active_dma == -1)
+        {
+            check_dma();
+        }
+    }
+}
 
 void Dma::turn_off_video_capture()
 {
@@ -329,14 +311,6 @@ bool Dma::do_fast_dma(int reg_num)
         }
 
         r.dst_shadow += addr_increment_table[r.is_word][r.dst_cnt] * r.word_count_shadow;
-
-        // todo haddle the dma timing
-        //const auto src_reg = memory_region_table[(r.src_shadow >> 24) & 0xf];
-        //cycle_tick(r.word_count_shadow * )
-        //const auto dst_reg = memory_region_table[(r.dst_shadow >> 24) & 0xf];
-        //puts("hi");
-        // TODO FIX THSI APPROXMIATION
-        //cpu.cycle_tick(r.word_count_shadow*2);
     }
 
     return success;
