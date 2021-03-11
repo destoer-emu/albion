@@ -157,7 +157,13 @@ int main(int argc, char *argv[])
     UNUSED(argc); UNUSED(argv);
 
     ImguiMainWindow window;
-    window.mainloop();
+    std::string rom_name = "";
+    if(argc == 2)
+    {
+        rom_name = argv[1];
+    }
+
+    window.mainloop(rom_name);
 #endif
 
 #ifdef SDL_REQUIRED

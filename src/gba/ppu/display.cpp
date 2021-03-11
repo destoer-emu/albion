@@ -85,27 +85,30 @@ void Display::advance_line()
 
     // see window_midframe.gba
     // when is this checked? in hblank or line start?
-    if(ly == disp_io.win0v.y1)
-    {
-        window_0_y_triggered = true;
-    }
 
-    else if(ly == disp_io.win0v.y2)
+    if(ly == disp_io.win0v.y2)
     {
         window_0_y_triggered = false;
     }
 
+    else if(ly == disp_io.win0v.y1)
+    {
+        window_0_y_triggered = true;
+    }
 
-    if(ly == disp_io.win1v.y1)
+
+
+    if(ly == disp_io.win1v.y2)
+    {
+        window_1_y_triggered = false;
+    }
+
+
+    else if(ly == disp_io.win1v.y1)
     {
         window_1_y_triggered = true;
     }
 
-
-    else if(ly == disp_io.win1v.y2)
-    {
-        window_1_y_triggered = false;
-    }
 
 
     // if there is a video capture dma turn it off
@@ -144,7 +147,7 @@ void Display::tick(int cycles)
         case display_mode::visible:
         {
             // enter hblank 
-            if(cyc_cnt >= 960)
+            if(cyc_cnt >= 1006)
             {
 
 
@@ -155,7 +158,7 @@ void Display::tick(int cycles)
                 }
 
                 mode = display_mode::hblank;
-
+                disp_io.disp_stat.hblank = true;
 
                 // flag should not get set to later
 
@@ -206,11 +209,6 @@ void Display::tick(int cycles)
                 }
             }
 
-            else if(cyc_cnt >= 1006)
-            {
-                // flag should be set later at 1006 cycles because of oam search?
-                disp_io.disp_stat.hblank = true;
-            }
             insert_new_ppu_event();	
             break;
         }
@@ -257,13 +255,13 @@ void Display::insert_new_ppu_event()
 
         case display_mode::hblank:
         {
-            cycles = cyc_cnt < 1006? 1006 - cyc_cnt : 1232 - cyc_cnt;
+            cycles = 1232 - cyc_cnt;
             break;
         }
 
         case display_mode::visible:
         {
-            cycles = 960 - cyc_cnt;
+            cycles = 1006 - cyc_cnt;
             break;
         }
     }

@@ -122,7 +122,7 @@ class ImguiMainWindow
 public:
     ImguiMainWindow();
     ~ImguiMainWindow();
-    void mainloop(); 
+    void mainloop(const std::string &rom_name); 
 private:
 
     void start_instance();

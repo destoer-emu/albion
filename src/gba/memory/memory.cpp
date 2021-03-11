@@ -1708,11 +1708,12 @@ uint32_t Mem::get_waitstates(uint32_t addr) const
             return 1;
         }
 
-        // need to lookup waitstaes in seperate table for rom
+        // need to lookup waitstaates in seperate table for rom
+        // TODO: this is very hacky to get around our shoddy timings atm
         case memory_region::rom:
         {
             // approximation
-            if(sizeof(access_type) == 4)
+            if constexpr(sizeof(access_type) == 4)
             {
                 return 2;
             }
@@ -1735,10 +1736,7 @@ uint32_t Mem::get_waitstates(uint32_t addr) const
     }
 }
 
-// this is very hacky to get around our shoddy timings atm
-// Emerald breaks in battle under this though im not sure timings is the reason
-// metroid also showing lines, need to debug the gfx issues on the save files too
-// it might be an issue with the pipeline...
+
 template<typename access_type>
 void Mem::tick_mem_access(uint32_t addr)
 {

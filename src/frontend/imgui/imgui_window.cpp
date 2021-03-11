@@ -635,7 +635,7 @@ void ImguiMainWindow::menu_bar(Debug &debug)
     }
 }
 
-void ImguiMainWindow::mainloop()
+void ImguiMainWindow::mainloop(const std::string &rom_name)
 {
 
 
@@ -663,6 +663,12 @@ void ImguiMainWindow::mainloop()
 
     gb_controller.init();
     gba_controller.init();
+
+
+    if(rom_name != "")
+    {
+        new_instance(rom_name,false);
+    }
 
     // Main loop
     bool done = false;
@@ -713,8 +719,8 @@ void ImguiMainWindow::mainloop()
 
                         case emu_type::gba:
                         {
-                        gba.key_input(event.key.keysym.sym,true);
-                        break;
+                            gba.key_input(event.key.keysym.sym,true);
+                            break;
                         }
 
                         default: break;
@@ -735,8 +741,8 @@ void ImguiMainWindow::mainloop()
 
                         case emu_type::gba:
                         {
-                        gba.key_input(event.key.keysym.sym,false);
-                        break;
+                            gba.key_input(event.key.keysym.sym,false);
+                            break;
                         }
 
                         default: break;
@@ -895,7 +901,7 @@ void ImguiMainWindow::mainloop()
 
 
         // lets figure out how much to scale by
-        const int y = focus? display_h - static_cast<int>(menubar_size.y) : display_h;
+        const int y = display_h - static_cast<int>(menubar_size.y);
         const int x = display_w;
 
         int fact_y = y / screen.get_height();

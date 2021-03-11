@@ -35,11 +35,13 @@ class Debug
 {
 public:
 
-    Debug();
-    ~Debug();
+
 
     // logging function!
 #ifdef DEBUG
+    Debug();
+    ~Debug();
+    
     template<typename... Args>
     void write_logger(std::string x,Args... args)
     {
