@@ -349,6 +349,7 @@ private:
     uint32_t eeprom_addr;
     uint64_t eeprom_data;
     eeprom_state state;
+    uint32_t rom_size;
 
     // external memory
 

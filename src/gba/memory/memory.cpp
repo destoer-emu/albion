@@ -154,10 +154,10 @@ void Mem::init(std::string filename)
             break;
         }
     }
-    const auto size = rom.size();
-    std::cout << "rom size: " << size << "\n";
+    rom_size = rom.size();
+    std::cout << "rom size: " << rom_size << "\n";
 
-    if(size >= 32*1024*1024)
+    if(rom_size >= 32*1024*1024)
     {
         throw std::runtime_error("rom is too large!");
     }
@@ -165,7 +165,7 @@ void Mem::init(std::string filename)
     rom.resize(32*1024*1024);
 
     // account for out of range open bus
-    for(int i = ((size-1) & ~1); i < 32*1024*1024; i += 2)
+    for(int i = ((rom_size-1) & ~1); i < 32*1024*1024; i += 2)
     {
         handle_write<uint16_t>(rom,i,(i / 2) & 0xffff);
     }
@@ -1239,7 +1239,7 @@ uint32_t align_addr(uint32_t addr)
 template<typename access_type>
 access_type Mem::read_mem_handler(uint32_t addr)
 {
-
+/*
     const auto page = addr >> 14;
     if(page_table[page] != nullptr)
     {
@@ -1248,7 +1248,7 @@ access_type Mem::read_mem_handler(uint32_t addr)
         memcpy(&v,buf,sizeof(v));
         return v;
     }
-
+*/
     const auto mem_region = memory_region_table[(addr >> 24) & 0xf];
 
     switch(mem_region)
@@ -1257,7 +1257,6 @@ access_type Mem::read_mem_handler(uint32_t addr)
         {
             // cant read from bios when not executing in it
             if(cpu.is_in_bios())
-            //if(cpu.get_pc() < 0x4000)
             {
                 return read_bios<access_type>(addr);
             }
@@ -1291,7 +1290,6 @@ access_type Mem::read_mem_handler(uint32_t addr)
             {
                 return read_rom<access_type>(addr);
             }
-            return 0;
         }
         // flash is also accesed here
         // we should really switch over to fptrs so this is nicer to swap stuff out
@@ -1374,7 +1372,7 @@ access_type Mem::read_memt(uint32_t addr)
 bool Mem::is_eeprom(uint32_t addr) const
 {
     return cart_type == save_type::eeprom
-        && (addr >= 0x0DFFFF00 || ((rom.size() < 32*1024*1024) && (addr >= 0x0D000000))) 
+        && (addr >= 0x0DFFFF00 || ((rom_size < 32*1024*1024) && (addr >= 0x0D000000))) 
         && addr <= 0x0DFFFFFF;
 }
 
