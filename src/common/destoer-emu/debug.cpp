@@ -140,6 +140,7 @@ Debug::Debug()
         puts("failed to open log file!");
         exit(1);
     }
+    disable_everything();
 }
 
 Debug::~Debug()

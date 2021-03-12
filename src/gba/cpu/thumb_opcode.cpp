@@ -7,6 +7,149 @@
 namespace gameboyadvance
 {
 
+void Cpu::init_thumb_opcode_table()
+{
+    thumb_opcode_table.resize(256);
+
+    for(int i = 0; i < 256; i++)
+    {
+        thumb_opcode_table[i] = &Cpu::thumb_unknown;
+
+        // THUMB.1: move shifted register
+        // top 3 bits unset
+        if(((i >> 5) & 0b111) == 0b000 && ((i >> 3) & 0b11) != 0b11)
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_mov_reg_shift;
+        }
+
+        // THUMB.2: add/subtract
+        else if(((i >> 3) & 0b11111) == 0b00011)
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_add_sub;
+        }
+
+
+
+        // THUMB.3: move/compare/add/subtract immediate
+        else if(((i >> 5) & 0b111) == 0b001)
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_mcas_imm;
+        }
+
+
+        // THUMB.4: ALU operations
+        else if(((i >> 2) & 0b111111) == 0b010000)
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_alu;
+        }
+
+        // THUMB.5: Hi register operations/branch exchange
+        else if(((i >> 2) & 0b111111) == 0b010001)
+        {
+           thumb_opcode_table[i] = &Cpu::thumb_hi_reg_ops;
+        }
+
+        // THUMB.6: load PC-relative
+        else if(((i >> 3) & 0b11111) ==  0b01001)
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_ldr_pc;
+        }
+
+
+        // THUMB.7: load/store with register offset
+        else if(((i >> 4) & 0b1111) == 0b0101 && !is_set(i,1))
+        {
+           thumb_opcode_table[i] = &Cpu::thumb_load_store_reg;
+        }
+
+        // THUMB.8: load/store sign-extended byte/halfword
+        else if(((i >> 4) & 0b1111) == 0b0101 && is_set(i,1))
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_load_store_sbh;
+        }
+
+        // THUMB.9: load/store with immediate offset
+        else if(((i>>5) & 0b111) == 0b011)
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_ldst_imm;
+        }
+
+
+
+        //THUMB.10: load/store halfword
+        else if(((i >> 4) & 0b1111) == 0b1000)
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_load_store_half;
+        }
+
+        // THUMB.11: load/store SP-relative
+        else if(((i >> 4) & 0b1111) == 0b1001)
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_load_store_sp;
+        }
+
+        // THUMB.12: get relative address
+        else if(((i >> 4) & 0b1111) == 0b1010)
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_get_rel_addr;
+        }
+        
+
+
+        // THUMB.13: add offset to stack pointer
+        else if(i == 0b10110000)
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_sp_add;
+        }
+
+
+
+        //THUMB.14: push/pop registers
+        else if(((i >> 4) & 0b1111) == 0b1011 
+            && ((i >> 1) & 0b11) == 0b10)
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_push_pop;
+        }
+
+        //  THUMB.15: multiple load/store
+        else if(((i >> 4) & 0b1111) == 0b1100)
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_multiple_load_store;
+        }
+
+        // THUMB.16: conditional branch
+        else if(((i >> 4)  & 0b1111) == 0b1101 && (i & 0xf) != 0xf)
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_cond_branch;
+        }
+
+        // THUMB.17: software interrupt and breakpoint
+        else if(i == 0b11011111)
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_swi;
+        }
+
+
+        // THUMB.18: unconditional branch
+        else if(((i >> 3) & 0b11111) == 0b11100)
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_branch;
+        }
+ 
+        // THUMB.19: long branch with link
+        else if(((i >> 4) & 0b1111) == 0b1111)
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_long_bl;
+        }
+
+        else 
+        {
+            thumb_opcode_table[i] = &Cpu::thumb_unknown;
+        }                 
+    }
+}
+
+
 // todo remove preftech hacks
 void Cpu::thumb_fill_pipeline() // need to verify this...
 {

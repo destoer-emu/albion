@@ -1239,7 +1239,6 @@ uint32_t align_addr(uint32_t addr)
 template<typename access_type>
 access_type Mem::read_mem_handler(uint32_t addr)
 {
-/*
     const auto page = addr >> 14;
     if(page_table[page] != nullptr)
     {
@@ -1248,7 +1247,6 @@ access_type Mem::read_mem_handler(uint32_t addr)
         memcpy(&v,buf,sizeof(v));
         return v;
     }
-*/
     const auto mem_region = memory_region_table[(addr >> 24) & 0xf];
 
     switch(mem_region)

@@ -1,5 +1,5 @@
 #include <gba/gba.h>
-
+#include <gba/arm_lut.h>
 
 namespace gameboyadvance
 {
@@ -101,23 +101,20 @@ void Cpu::arm_swi(uint32_t opcode)
 
 // mul timings need to be worked on
 // double check where internal cycles go here
+template<bool S, bool A, bool U>
 void Cpu::arm_mull(uint32_t opcode)
 {
     const auto rm = opcode & 0xf;
     const auto rs = (opcode >> 8) & 0xf;
     const auto rdhi = (opcode >> 16) & 0xf;
     const auto rdlo = (opcode >> 12) & 0xf;
-    const bool s = is_set(opcode,20);
-    const bool a = is_set(opcode,21);
-    const bool u = !is_set(opcode,22);
-    
 
     uint64_t result;
 
-    if(u) // unsigned
+    if constexpr(U) // unsigned
     {
         uint64_t ans;
-        if(a)
+        if constexpr(A)
         {
             const uint64_t oper = ((uint64_t)regs[rdhi] << 32) | (uint64_t)regs[rdlo];
             ans = (uint64_t)regs[rs] * (uint64_t)regs[rm] + oper;
@@ -138,7 +135,7 @@ void Cpu::arm_mull(uint32_t opcode)
         int64_t ans;
         const auto v1 = sign_extend<int64_t>(regs[rs],32);
         const auto v2 = sign_extend<int64_t>(regs[rm],32);
-        if(a)
+        if constexpr(A)
         {
             int64_t oper = ((int64_t)regs[rdhi] << 32) | (int64_t)regs[rdlo];
             ans =  v1 * v2 + oper;
@@ -161,7 +158,7 @@ void Cpu::arm_mull(uint32_t opcode)
 
 
     // c destroyed
-    if(s)
+    if constexpr(S)
     {
         set_nz_flag_long(result);
 
@@ -171,6 +168,7 @@ void Cpu::arm_mull(uint32_t opcode)
 }
 
 // neeeds a more accurate timings fix
+template<const bool S, const bool A>
 void Cpu::arm_mul(uint32_t opcode)
 {
     // first is s cycle from pipeline rest is internal
@@ -179,10 +177,8 @@ void Cpu::arm_mul(uint32_t opcode)
     const auto rd = (opcode >> 16) & 0xf;
     const auto rs = (opcode >> 8) & 0xf;
     const auto rm = opcode & 0xf;
-    const bool s = is_set(opcode,20);
-    const bool a = is_set(opcode,21);
 
-    if(a) // mla
+    if constexpr (A) // mla
     {
         regs[rd] = regs[rm] * regs[rs] + regs[rn];
         do_mul_cycles(regs[rs]);
@@ -195,7 +191,7 @@ void Cpu::arm_mul(uint32_t opcode)
         do_mul_cycles(regs[rs]);
     }
 
-    if(s)
+    if constexpr(S)
     {
         set_nz_flag(regs[rd]);
 
@@ -204,19 +200,19 @@ void Cpu::arm_mul(uint32_t opcode)
     }
 }
 
+template<const bool B>
 void Cpu::arm_swap(uint32_t opcode)
 {
     const auto rm = opcode & 0xf;
     const auto rd = (opcode >> 12) & 0xf;
     const auto rn = (opcode >> 16) & 0xf;
 
-    const bool is_byte = is_set(opcode,22);
 
     // swp works propely even if rm and rn are the same
     uint32_t tmp; 
 
     // rd = [rn], [rn] = rm
-    if(is_byte)
+    if constexpr(B)
     {
         tmp = mem.read_memt<uint8_t>(regs[rn]);
         mem.write_memt<uint8_t>(regs[rn],regs[rm]);
@@ -236,13 +232,9 @@ void Cpu::arm_swap(uint32_t opcode)
 
 // <--- double check this code as its the most likely error source
 // need timings double checked on this
+template<const bool S, const bool P, const bool U, const bool W, const bool L>
 void Cpu::arm_block_data_transfer(uint32_t opcode)
 {
-    bool p = is_set(opcode,24);
-    const bool u = is_set(opcode,23);
-    const bool s = is_set(opcode,22); // psr or force user mode
-    bool w = is_set(opcode,21);
-    const bool l = is_set(opcode,20);
     const auto rn = (opcode >> 16) & 0xf;
     const auto rlist = opcode & 0xffff;
 
@@ -251,6 +243,7 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
     uint32_t addr = regs[rn];
     uint32_t old_base = regs[rn];
 
+    bool base_writeback_hit = false;
 
    
     unsigned int first = 0;
@@ -263,14 +256,14 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
         if(is_set(rlist,i))
         {
             first = i;
-            if(!u)
+            if(!U)
             {
                 addr -= ARM_WORD_SIZE;
             }
         }
     }
 #else
-    if(!u)
+    if(!U)
     {
         addr -= __builtin_popcount(rlist) * ARM_WORD_SIZE;
     }
@@ -281,9 +274,9 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
 
     // allways adding on address so if  we are in "down mode"
     // we need to precalc the buttom1
-    if(!u) 
+    if constexpr(!U) 
     {
-        if(w)
+        if constexpr(W)
         {
             regs[rn] = addr;
 
@@ -291,31 +284,23 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
             {
                 write_pc(regs[PC]);
             }
-
-
-            w = false;
+            base_writeback_hit = true;
         }
-        // invert the pre/post
-        // as predoing the addr has messed with the meaning
-        p = !p;  
     }
 
 
     cpu_mode old_mode = arm_mode;
     bool changed_mode = false;
-    if(s)
+    if constexpr(S)
     {
         // no r15 or load uses different mode
         // dont bother switching if are in user mode
-        if((!has_pc || !l) && arm_mode != cpu_mode::user)
+        if((!has_pc || !L) && arm_mode != cpu_mode::user)
         {
             changed_mode = true;
             switch_mode(cpu_mode::user);
         }
     }
-
-
-
 
 
     for(unsigned int i = first; i < 16; i++)
@@ -325,18 +310,18 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
             continue;
         }
 
-        if(p) 
+        if constexpr(P) 
         {
             addr += ARM_WORD_SIZE;
         }
 
 
-        if(l) // load
+        if constexpr(L) // load
         {
             // no writeback if base
             if(i == rn)
             {
-               w = false;
+               base_writeback_hit = true;
             }
 
             if(i == PC)
@@ -351,7 +336,7 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
 
 
             // if pc is in list and s bit set  cpsr = spsr
-            if(i == PC && s)
+            if(i == PC && S)
             {
                 const auto idx = static_cast<int>(arm_mode);
                 // not in user or system mode
@@ -387,13 +372,13 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
             }
         }
 
-        if(!p)
+        if constexpr(!P)
         {
             addr += ARM_WORD_SIZE;
         }
     }
 
-    if(l)
+    if constexpr(L)
     {
         // internal cycle for last reg writeback
         internal_cycle();
@@ -401,13 +386,15 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
 
     //writeback higher address if it went up
     // does this have a timing implication!?
-    if(w)
+    if constexpr(W)
     {
-        regs[rn] = addr;
-
-        if(rn == PC)
+        if(!base_writeback_hit)
         {
-            write_pc(regs[rn]);
+            regs[rn] = addr;
+            if(rn == PC)
+            {
+                write_pc(regs[rn]);
+            }
         }
     }
 
@@ -421,7 +408,7 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
 
 
 // need to handle instr variants and timings on these
-
+template<const bool L>
 void Cpu::arm_branch(uint32_t opcode)
 {
     //1st cycle calc branch addr (this is overlayed with the initial pipeline)
@@ -430,7 +417,7 @@ void Cpu::arm_branch(uint32_t opcode)
 
     // 2nd & 3rd are tken up by a pipeline refill from branch target
     // here if the link bit is set pc is also saved into lr
-    if(is_set(opcode,24))
+    if constexpr(L)
     {
         // save addr of next instr
         regs[LR] = (pc_actual) & ~3; // bottom bits deset
@@ -452,14 +439,11 @@ void Cpu::arm_branch(uint32_t opcode)
 // psr transfer
 // TODO handle effects of directly writing the thumb bit 
 // double checking timings
+template<const bool MSR, const bool SPSR, const bool I>
 void Cpu::arm_psr(uint32_t opcode)
 {
-    const bool is_msr = is_set(opcode,21); // 21 set msr else mrs
-    const bool spsr = is_set(opcode,22); // to cpsr or spsr?
-    const bool is_imm = is_set(opcode,25);
-
     // msr
-    if(is_msr)
+    if constexpr(MSR)
     {
         // msr mask
         uint32_t mask = 0;
@@ -477,14 +461,14 @@ void Cpu::arm_psr(uint32_t opcode)
 
 
         // either rotr imm or reg rm
-        auto v = is_imm? get_arm_operand2_imm(opcode) : regs[opcode & 0xf];
+        auto v = I? get_arm_operand2_imm(opcode) : regs[opcode & 0xf];
 
         // only write specifed bits
         v &= mask;
         
         // all bits in mask should be deset
         // and then the value ored
-        if(!spsr) // cpsr
+        if constexpr(!SPSR) // cpsr
         {
             const auto psr = get_cpsr();
             set_cpsr((psr & ~mask) | v);
@@ -510,7 +494,7 @@ void Cpu::arm_psr(uint32_t opcode)
     {
         const auto rd = (opcode >> 12) & 0xf;
 
-        if(spsr)
+        if constexpr(SPSR)
         {
             
             if(arm_mode < cpu_mode::user)
@@ -540,6 +524,7 @@ void Cpu::arm_psr(uint32_t opcode)
 }
 
 // look what the internal cycles are here
+template<const bool S,const bool I, const int OP>
 void Cpu::arm_data_processing(uint32_t opcode)
 {
     // 1st cycle is handled due to pipeline
@@ -550,10 +535,6 @@ void Cpu::arm_data_processing(uint32_t opcode)
     const auto rd = (opcode >> 12) & 0xf;
     const auto rn = (opcode >> 16) & 0xf;
 
-
-    // if s bit is set update flags
-    bool update_flags = is_set(opcode,20);
-
     // default to preserve the carry
     // incase of a zero shift
     bool shift_carry = flag_c;
@@ -562,7 +543,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
     uint32_t op2;
 
     // ror shifted immediate in increments of two
-    if(is_set(opcode,25)) 
+    if constexpr(I)
     {
         // how to calc the carry?
         const auto imm = opcode & 0xff;
@@ -623,129 +604,73 @@ void Cpu::arm_data_processing(uint32_t opcode)
     }
 
 
-    if(update_flags && rd == PC)
-    {
-        // ignored by real hardware but probably indicates a error
-        if(arm_mode >= cpu_mode::user)
-        {
-
-        }
-        
-        else
-        {
-            set_cpsr(status_banked[static_cast<int>(arm_mode)]);
-        }
-
-        update_flags = false;
-    }
-    
-
     const bool rd_pc = rd == PC;
 
     // switch on the opcode to decide what to do
-    switch((opcode >> 21) & 0xf)
+    //switch((opcode >> 21) & 0xf)
+    switch(OP)
     {
         case 0x0: //and
         {
-            regs[rd] = logical_and(op1,op2,update_flags);
-            if(update_flags)
+            regs[rd] = logical_and(op1,op2,S);
+            if(S)
             {
                 flag_c = shift_carry;
-            }
-
-            if(rd_pc)
-            {
-                write_pc(regs[rd]);
             }
             break;
         }
 
         case 0x1: // eor
         {
-            regs[rd] = logical_eor(op1,op2,update_flags);
-            if(update_flags)
+            regs[rd] = logical_eor(op1,op2,S);
+            if(S)
             {
                 flag_c = shift_carry;
-            }
-
-            if(rd_pc)
-            {
-                write_pc(regs[rd]);
             }
             break;            
         }
 
         case 0x2: // sub
         {
-            regs[rd] = sub(op1,op2,update_flags);
-
-            if(rd_pc)
-            {
-                write_pc(regs[rd]);
-            }
+            regs[rd] = sub(op1,op2,S);
             break;
         }
 
         case 0x3: // rsb
         {
-            regs[rd] = sub(op2,op1,update_flags);
-
-            if(rd_pc)
-            {
-                write_pc(regs[rd]);
-            }
+            regs[rd] = sub(op2,op1,S);
             break;
         }
 
         case 0x4: // add
         {
-            regs[rd] = add(op1,op2,update_flags);
-
-            if(rd_pc)
-            {
-                write_pc(regs[rd]);
-            }
+            regs[rd] = add(op1,op2,S);
             break;
         }
 
 
         case 0x5: // adc
         {
-            regs[rd] = adc(op1,op2,update_flags);
-
-            if(rd_pc)
-            {
-                write_pc(regs[rd]);
-            }
+            regs[rd] = adc(op1,op2,S);
             break;           
         }
 
         case 0x6: // sbc
         {
-            regs[rd] = sbc(op1,op2,update_flags);
-
-            if(rd_pc)
-            {
-                write_pc(regs[rd]);
-            }
+            regs[rd] = sbc(op1,op2,S);
             break;
         }
 
         case 0x7: // rsc
         {
-            regs[rd] = sbc(op2,op1,update_flags);
-
-            if(rd_pc)
-            {
-                write_pc(regs[rd]);
-            }
+            regs[rd] = sbc(op2,op1,S);
             break;
         }
 
         case 0x8: // tst (and without writeback)
         {
-            logical_and(op1,op2,update_flags);
-            if(update_flags)
+            logical_and(op1,op2,S);
+            if(S)
             {
                 flag_c = shift_carry;
             }             
@@ -755,8 +680,8 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
         case 0x9: // teq
         {
-            logical_eor(op1,op2,update_flags);
-            if(update_flags)
+            logical_eor(op1,op2,S);
+            if(S)
             {
                 flag_c = shift_carry;
             }            
@@ -765,28 +690,23 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
         case 0xa: // cmp
         {
-            sub(op1,op2,update_flags);
+            sub(op1,op2,S);
             break;
         }
 
         case 0xb: // cmn
         {
-            add(op1,op2,update_flags);
+            add(op1,op2,S);
             break;            
         }
 
         case 0xc: //orr
         {
-            regs[rd] = logical_or(op1,op2,update_flags);
-            if(update_flags)
+            regs[rd] = logical_or(op1,op2,S);
+            if(S)
             {
                 flag_c = shift_carry;
-            }
-
-            if(rd_pc)
-            {
-                write_pc(regs[rd]);
-            }                       
+            }                   
             break;
         }
 
@@ -794,16 +714,11 @@ void Cpu::arm_data_processing(uint32_t opcode)
         {
             regs[rd] = op2;
             // V preserved
-            if(update_flags) // if the set cond bit is on
+            if(S) // if the set cond bit is on
             {
                 set_nz_flag(regs[rd]);
                 // carry is that of the shift oper
                 flag_c = shift_carry;                 
-            }
-
-            if(rd_pc)
-            {
-                write_pc(regs[rd]);
             }
             break;
         }
@@ -811,15 +726,10 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
         case 0xe: // bic
         {
-            regs[rd] = bic(op1,op2,update_flags);
-            if(update_flags)
+            regs[rd] = bic(op1,op2,S);
+            if(S)
             {
                 flag_c = shift_carry;
-            }
-
-            if(rd_pc)
-            {
-                write_pc(regs[rd]);
             }
             break;
         }
@@ -828,20 +738,40 @@ void Cpu::arm_data_processing(uint32_t opcode)
         {
             regs[rd] = ~op2;
             // V preserved
-            if(update_flags) // if the set cond bit is on
+            if(S) // if the set cond bit is on
             {
                 set_nz_flag(regs[rd]);
                 // carry is that of the shift oper
                 flag_c = shift_carry;                 
             }
-
-            if(rd_pc)
-            {
-                write_pc(regs[rd]);
-            }
             break;
         }
     }
+
+    if(rd_pc)
+    {
+
+        if constexpr(S)
+        {
+            // ignored by real hardware but probably indicates a error
+            if(arm_mode >= cpu_mode::user)
+            {
+
+            }
+            
+            else
+            {
+                set_cpsr(status_banked[static_cast<int>(arm_mode)]);
+            }
+        }
+
+        if constexpr(!(OP >= 0x8 && OP <= 0xb))
+        {
+            write_pc(regs[rd]);
+        }
+    }
+    
+
 }
 
 
@@ -863,16 +793,13 @@ void Cpu::arm_branch_and_exchange(uint32_t opcode)
 
 // halfword doubleword signed data transfer
 // <-- handle instr timings
+template<const bool P, const bool U, const bool I, const bool L, const bool W>
 void Cpu::arm_hds_data_transfer(uint32_t opcode)
 {
-    const bool p = is_set(opcode,24);
-    const bool u = is_set(opcode,23);
-    const bool i = is_set(opcode,22);
-    const bool l = is_set(opcode,20);
     const auto rn = (opcode >> 16) & 0xf;
     const auto rd = (opcode >> 12) & 0xf;
     const auto op = (opcode >> 5) & 0x3;
-    const bool w = is_set(opcode,21);
+    
 
 
 
@@ -880,7 +807,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
     uint32_t offset;
 
-    if(!i) // just this?
+    if constexpr(!I) 
     {
         const auto rm = opcode & 0xf;
         offset = regs[rm];
@@ -895,15 +822,15 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
 
 
-    if(p) // pre
+    if constexpr(P) // pre
     {
-        addr += u? offset : -offset;
+        addr += U? offset : -offset;
     }
 
 
     // now we choose between load and store
     // and just switch on the opcode
-    if(l) // load
+    if constexpr(L) // load
     {
         const bool is_pc = rd == PC;
 
@@ -997,9 +924,9 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
     // arm says we cant use the same rd and base with a writeback
     if(rn != rd) 
     {
-        if(!p) // post allways do a writeback
+        if constexpr(!P) // post allways do a writeback
         {
-            regs[rn] += u? offset : -offset;
+            regs[rn] += U? offset : -offset;
 
             if(rn == PC)
             {
@@ -1007,7 +934,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
             }
         }
 
-        else if(w) // writeback
+        else if constexpr(W) // writeback
         {
             regs[rn] = addr;
 
@@ -1020,14 +947,11 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 }
 
 // ldr , str
+template<const bool L, const bool W, const bool P, const bool I>
 void Cpu::arm_single_data_transfer(uint32_t opcode)
 {
 
     // 1st cycle is address calc (overlayed with pipeline)
-
-    const bool load = is_set(opcode,20);
-    const bool w = is_set(opcode,21); // write back
-    const bool p = is_set(opcode,24); // pre index
 
     // does not do this on gba?
     // does it do this on something like the ds (look at arm manuals)
@@ -1040,7 +964,7 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 
     uint32_t offset;
 
-    if(is_set(opcode,25))
+    if constexpr(I)
     {
         const auto type = static_cast<shift_type>((opcode >> 5 ) & 0x3);
 
@@ -1076,7 +1000,7 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 
     // up / down bit decides wether to add or subtract
     // the offset
-    if(p)
+    if constexpr(P)
     {
         addr += u? offset : -offset;
     }
@@ -1084,7 +1008,7 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 
 
     // perform the specifed memory access
-    if(load) // ldr
+    if constexpr(L) // ldr
     {
         // ldrb
         if(is_byte)
@@ -1136,7 +1060,7 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
     // but i dont know what it is
     if(rn != rd) 
     {
-        if(!p) // post allways do a writeback
+        if constexpr(!P) // post allways do a writeback
         {
             regs[rn] += u? offset : -offset;
 
@@ -1146,7 +1070,7 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
             }
         }
 
-        else if(w) // writeback
+        else if constexpr(W) // writeback
         {
             regs[rn] = addr;
 

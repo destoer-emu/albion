@@ -76,6 +76,11 @@ constexpr bool cond_lut_helper(uint32_t cond, uint32_t flags)
     return true; // shoud not be reached
 }
 
+
+
+using ARM_OPCODE_FPTR = void (Cpu::*)(uint32_t opcode);
+using ARM_OPCODE_LUT = std::array<ARM_OPCODE_FPTR,4096>;
+
 class Cpu
 {
 public:
@@ -178,12 +183,9 @@ public:
     CpuIo cpu_io;
 private:
 
-    using ARM_OPCODE_FPTR = void (Cpu::*)(uint32_t opcode);
+
     using THUMB_OPCODE_FPTR = void (Cpu::*)(uint16_t opcode);
-    std::vector<ARM_OPCODE_FPTR> arm_opcode_table;
     std::vector<THUMB_OPCODE_FPTR> thumb_opcode_table;
-    void init_opcode_table();
-    void init_arm_opcode_table();
     void init_thumb_opcode_table();
     
 
@@ -201,20 +203,44 @@ private:
 
 
     void internal_cycle();
+public:
 
     //arm cpu instructions
     void arm_unknown(uint32_t opcode);
+    
+    template<const bool L>
     void arm_branch(uint32_t opcode);
+
+    template<const bool S,const bool I, const int OP>
     void arm_data_processing(uint32_t opcode);
+
+    template<const bool MSR, const bool SPSR, const bool I>
     void arm_psr(uint32_t opcode);
+
+    template<const bool L, const bool W, const bool P, const bool I>
     void arm_single_data_transfer(uint32_t opcode);
+
+
     void arm_branch_and_exchange(uint32_t opcode);
+
+    template<const bool P, const bool U, const bool I, const bool L, const bool W>
     void arm_hds_data_transfer(uint32_t opcode);
+
+    template<const bool S, const bool P, const bool U, const bool W, const bool L>
     void arm_block_data_transfer(uint32_t opcode);
+
+    template<const bool B>
     void arm_swap(uint32_t opcode);
+
+    template<const bool S, const bool A>
     void arm_mul(uint32_t opcode);
+
+    template<bool S, bool A, bool U>
     void arm_mull(uint32_t opcode);
+
     void arm_swi(uint32_t opcode);
+
+private:
 
     // thumb cpu instructions
     void thumb_unknown(uint16_t opcode);
