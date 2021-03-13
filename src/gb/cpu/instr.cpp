@@ -1,5 +1,5 @@
 #include<gb/gb.h>
- 
+
 namespace gameboy
 {
 

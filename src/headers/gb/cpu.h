@@ -100,10 +100,65 @@ public:
 
     uint16_t read_pc() const noexcept { return pc; }
     uint16_t read_sp() const noexcept { return sp; }
-    uint16_t read_af() const noexcept;
-    uint16_t read_de() const noexcept;
-    uint16_t read_bc() const noexcept;
-    uint16_t read_hl() const noexcept;
+
+
+    // register getters and setters
+    void write_bc(uint16_t data) noexcept
+    {
+        b = (data & 0xff00) >> 8;
+        c = data & 0x00ff;
+    }
+
+
+    uint16_t read_bc() const noexcept
+    {
+        return (b << 8) | c;
+    }
+
+
+    uint16_t read_af() const noexcept
+    {
+        return (a << 8) | carry << C | half << H
+            | zero << Z | negative << N;
+    }
+
+
+
+    void write_af(uint16_t v) noexcept 
+    {
+        a = (v & 0xff00) >> 8;
+        carry = is_set(v,C);
+        half = is_set(v,H);
+        zero = is_set(v,Z);
+        negative = is_set(v,N);
+    }
+
+    uint16_t read_de() const noexcept 
+    {
+        return (d << 8) | e;
+    }
+
+
+    void write_de(uint16_t v) noexcept
+    {
+        d = (v & 0xff00) >> 8;
+        e = v & 0x00ff;
+    }
+
+
+    uint16_t read_hl() const noexcept
+    {
+        return (h << 8) | l;
+    }
+
+
+    void write_hl(uint16_t v) noexcept
+    {
+        h = (v & 0xff00) >> 8;
+        l = v & 0x00ff;
+    }
+
+
     uint8_t read_h() const noexcept { return h; }
     uint8_t read_l() const noexcept { return l; }
     uint8_t read_a() const noexcept { return a; }
@@ -182,10 +237,6 @@ private:
     bool is_cgb = false;
     bool is_double = false;
 
-    void write_af(uint16_t data) noexcept;
-    void write_bc(uint16_t data) noexcept;
-    void write_de(uint16_t data) noexcept;
-    void write_hl(uint16_t data) noexcept;
 
 
     void exec_cb(uint8_t cbop);

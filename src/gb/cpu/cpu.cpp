@@ -591,65 +591,6 @@ void Cpu::do_interrupts() noexcept
 
 
 
-// util for opcodes
-
-// register getters and setters
-void Cpu::write_bc(uint16_t data) noexcept
-{
-    b = (data & 0xff00) >> 8;
-    c = data & 0x00ff;
-}
-
-
-uint16_t Cpu::read_bc(void) const noexcept
-{
-    return (b << 8) | c;
-}
-
-
-uint16_t Cpu::read_af(void) const noexcept
-{
-    return (a << 8) | carry << C | half << H
-		| zero << Z | negative << N;
-}
-
-
-
-void Cpu::write_af(uint16_t v) noexcept 
-{
-    a = (v & 0xff00) >> 8;
-    carry = is_set(v,C);
-	half = is_set(v,H);
-	zero = is_set(v,Z);
-	negative = is_set(v,N);
-}
-
-uint16_t Cpu::read_de(void) const noexcept 
-{
-    return (d << 8) | e;
-}
-
-
-void Cpu::write_de(uint16_t v) noexcept
-{
-    d = (v & 0xff00) >> 8;
-    e = v & 0x00ff;
-}
-
-
-uint16_t Cpu::read_hl(void) const noexcept
-{
-    return (h << 8) | l;
-}
-
-
-void Cpu::write_hl(uint16_t v) noexcept
-{
-    h = (v & 0xff00) >> 8;
-    l = v & 0x00ff;
-}
-
-
 void Cpu::write_stackt(uint8_t v) noexcept
 {
 	oam_bug_write(sp);

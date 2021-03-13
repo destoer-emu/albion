@@ -7,7 +7,7 @@ namespace gameboyadvance
 Cpu::Cpu(GBA &gba) : disp(gba.disp), mem(gba.mem), debug(gba.debug), 
     disass(gba.disass), apu(gba.apu), scheduler(gba.scheduler)
 {
-    init_thumb_opcode_table();
+
 }   
 
 void Cpu::init()

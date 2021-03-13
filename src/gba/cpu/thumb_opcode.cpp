@@ -1,4 +1,5 @@
 #include <gba/gba.h>
+#include <gba/thumb_lut.h>
 
 
 // i need to properly handle pipeline effects
@@ -6,148 +7,6 @@
 
 namespace gameboyadvance
 {
-
-void Cpu::init_thumb_opcode_table()
-{
-    thumb_opcode_table.resize(256);
-
-    for(int i = 0; i < 256; i++)
-    {
-        thumb_opcode_table[i] = &Cpu::thumb_unknown;
-
-        // THUMB.1: move shifted register
-        // top 3 bits unset
-        if(((i >> 5) & 0b111) == 0b000 && ((i >> 3) & 0b11) != 0b11)
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_mov_reg_shift;
-        }
-
-        // THUMB.2: add/subtract
-        else if(((i >> 3) & 0b11111) == 0b00011)
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_add_sub;
-        }
-
-
-
-        // THUMB.3: move/compare/add/subtract immediate
-        else if(((i >> 5) & 0b111) == 0b001)
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_mcas_imm;
-        }
-
-
-        // THUMB.4: ALU operations
-        else if(((i >> 2) & 0b111111) == 0b010000)
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_alu;
-        }
-
-        // THUMB.5: Hi register operations/branch exchange
-        else if(((i >> 2) & 0b111111) == 0b010001)
-        {
-           thumb_opcode_table[i] = &Cpu::thumb_hi_reg_ops;
-        }
-
-        // THUMB.6: load PC-relative
-        else if(((i >> 3) & 0b11111) ==  0b01001)
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_ldr_pc;
-        }
-
-
-        // THUMB.7: load/store with register offset
-        else if(((i >> 4) & 0b1111) == 0b0101 && !is_set(i,1))
-        {
-           thumb_opcode_table[i] = &Cpu::thumb_load_store_reg;
-        }
-
-        // THUMB.8: load/store sign-extended byte/halfword
-        else if(((i >> 4) & 0b1111) == 0b0101 && is_set(i,1))
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_load_store_sbh;
-        }
-
-        // THUMB.9: load/store with immediate offset
-        else if(((i>>5) & 0b111) == 0b011)
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_ldst_imm;
-        }
-
-
-
-        //THUMB.10: load/store halfword
-        else if(((i >> 4) & 0b1111) == 0b1000)
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_load_store_half;
-        }
-
-        // THUMB.11: load/store SP-relative
-        else if(((i >> 4) & 0b1111) == 0b1001)
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_load_store_sp;
-        }
-
-        // THUMB.12: get relative address
-        else if(((i >> 4) & 0b1111) == 0b1010)
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_get_rel_addr;
-        }
-        
-
-
-        // THUMB.13: add offset to stack pointer
-        else if(i == 0b10110000)
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_sp_add;
-        }
-
-
-
-        //THUMB.14: push/pop registers
-        else if(((i >> 4) & 0b1111) == 0b1011 
-            && ((i >> 1) & 0b11) == 0b10)
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_push_pop;
-        }
-
-        //  THUMB.15: multiple load/store
-        else if(((i >> 4) & 0b1111) == 0b1100)
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_multiple_load_store;
-        }
-
-        // THUMB.16: conditional branch
-        else if(((i >> 4)  & 0b1111) == 0b1101 && (i & 0xf) != 0xf)
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_cond_branch;
-        }
-
-        // THUMB.17: software interrupt and breakpoint
-        else if(i == 0b11011111)
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_swi;
-        }
-
-
-        // THUMB.18: unconditional branch
-        else if(((i >> 3) & 0b11111) == 0b11100)
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_branch;
-        }
- 
-        // THUMB.19: long branch with link
-        else if(((i >> 4) & 0b1111) == 0b1111)
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_long_bl;
-        }
-
-        else 
-        {
-            thumb_opcode_table[i] = &Cpu::thumb_unknown;
-        }                 
-    }
-}
 
 
 // todo remove preftech hacks
@@ -200,25 +59,22 @@ void Cpu::thumb_unknown(uint16_t opcode)
     throw std::runtime_error(err);
 }
 
-
+template<const int RD, const bool L>
 void Cpu::thumb_load_store_sp(uint16_t opcode)
 {
     const uint32_t nn = (opcode & 0xff) * 4;
-    const auto rd = (opcode >> 8) & 0x7;
-    const bool l = is_set(opcode,11);
-
     const auto addr = regs[SP] + nn;
 
-    if(l)
+    if constexpr(L)
     {
-        regs[rd] = mem.read_memt<uint32_t>(addr);
-        regs[rd] = rotr(regs[rd],(addr&3)*8);
+        regs[RD] = mem.read_memt<uint32_t>(addr);
+        regs[RD] = rotr(regs[RD],(addr&3)*8);
         internal_cycle(); // internal for writeback       
     }
 
     else
     {
-        mem.write_memt<uint32_t>(addr,regs[rd]);
+        mem.write_memt<uint32_t>(addr,regs[RD]);
     } 
 }
 
@@ -259,33 +115,32 @@ void Cpu::thumb_swi(uint16_t opcode)
     write_pc(0x8);
 }
 
+template<const int RD, const bool IS_PC>
 void Cpu::thumb_get_rel_addr(uint16_t opcode)
 {
     const uint32_t offset = (opcode & 0xff) * 4;
-    const auto rd = (opcode >> 8) & 0x7;
-    const bool pc = !is_set(opcode,11);
 
-    if(pc)
+    if constexpr(IS_PC)
     {
-        regs[rd] = (regs[PC] & ~2) + offset;
+        regs[RD] = (regs[PC] & ~2) + offset;
     }
 
     else
     {
-        regs[rd] = regs[SP] + offset;
+        regs[RD] = regs[SP] + offset;
     }
 }
 
+template<const int OP>
 void Cpu::thumb_load_store_sbh(uint16_t opcode)
 {
     const auto ro = (opcode >> 6) & 0x7;
     const auto rb = (opcode >> 3) & 0x7;
     const auto rd = opcode & 0x7;
-    const auto op = (opcode >> 10) & 0x3;
 
     const auto addr = regs[rb] + regs[ro];
 
-    switch(op)
+    switch(OP)
     {
         case 0: // strh
         {
@@ -326,16 +181,16 @@ void Cpu::thumb_load_store_sbh(uint16_t opcode)
     }
 }
 
+template<const int OP>
 void Cpu::thumb_load_store_reg(uint16_t opcode)
 {
-    const auto op = (opcode >> 10) & 0x3;
     const auto ro = (opcode >> 6) & 0x7;
     const auto rb = (opcode >> 3) & 0x7;
     const auto rd = opcode & 0x7;
 
     const auto addr = regs[rb] + regs[ro];
 
-    switch(op)
+    switch(OP)
     {
         case 0: // str
         {
@@ -381,14 +236,14 @@ void Cpu::thumb_branch(uint16_t opcode)
     }
 }
 
+template<const int L>
 void Cpu::thumb_load_store_half(uint16_t opcode)
 {
     const auto nn = ((opcode >> 6) & 0x1f) * 2;
     const auto rb = (opcode >> 3) & 0x7;
     const auto rd = opcode & 0x7;
-    const bool load = is_set(opcode,11);
 
-    if(load) // ldrh
+    if constexpr(L) // ldrh
     {
         const auto addr = regs[rb] + nn;
         regs[rd] = mem.read_memt<uint16_t>(addr);
@@ -403,15 +258,13 @@ void Cpu::thumb_load_store_half(uint16_t opcode)
     } 
 }
 
+template<const bool POP, const bool IS_LR>
 void Cpu::thumb_push_pop(uint16_t opcode)
 {
-    const bool pop = is_set(opcode,11);
-    const bool lr = is_set(opcode,8);
     const uint8_t reg_range = opcode & 0xff;
 
-
     // todo (emtpy r list timings here)
-    if(pop)
+    if constexpr(POP)
     {
         for(int i = 0; i < 8; i++)
         {
@@ -426,7 +279,7 @@ void Cpu::thumb_push_pop(uint16_t opcode)
         internal_cycle();
 
         // nS +1N +1I (pop) | (n+1)S +2N +1I(pop pc)
-        if(lr)
+        if constexpr(IS_LR)
         {
             write_pc(mem.read_memt<uint32_t>(regs[SP]));
             regs[SP] += ARM_WORD_SIZE;
@@ -448,7 +301,7 @@ void Cpu::thumb_push_pop(uint16_t opcode)
         }
 
 
-        if(lr) 
+        if constexpr(IS_LR) 
         {
             regs[SP] -= ARM_WORD_SIZE;
         }
@@ -463,7 +316,7 @@ void Cpu::thumb_push_pop(uint16_t opcode)
             }
         }
 
-        if(lr)
+        if constexpr(IS_LR)
         {
             mem.write_memt<uint32_t>(addr,regs[LR]);
         }
@@ -471,11 +324,11 @@ void Cpu::thumb_push_pop(uint16_t opcode)
 
 }
 
+template<const int OP>
 void Cpu::thumb_hi_reg_ops(uint16_t opcode)
 {
     auto rd = opcode & 0x7;
     auto rs = (opcode >> 3) & 0x7;
-    const auto op = (opcode >> 8) & 0x3;
 
     // can be used as bl/blx flag (not revlant for gba?)
     const bool msbd = is_set(opcode,7);
@@ -488,7 +341,7 @@ void Cpu::thumb_hi_reg_ops(uint16_t opcode)
     const auto rd_val = regs[rd];
 
     // only cmp sets flags here!
-    switch(op)
+    switch(OP)
     {
         case 0b00: // add
         {
@@ -657,11 +510,9 @@ void Cpu::thumb_alu(uint16_t opcode)
     }
 }
 
-
+template<const int RB, const bool L>
 void Cpu::thumb_multiple_load_store(uint16_t opcode)
 {
-    const auto rb = (opcode >> 8) & 0x7;
-    const bool load = is_set(opcode,11);
     const auto reg_range = opcode & 0xff;
 
 
@@ -669,9 +520,9 @@ void Cpu::thumb_multiple_load_store(uint16_t opcode)
     if(reg_range == 0)
     {
         // ldmia
-        if(load)
+        if constexpr(L)
         {
-            const auto v = mem.read_memt<uint32_t>(regs[rb]);
+            const auto v = mem.read_memt<uint32_t>(regs[RB]);
             internal_cycle();
             write_pc(v);
         }
@@ -679,10 +530,10 @@ void Cpu::thumb_multiple_load_store(uint16_t opcode)
         //stmia
         else
         {
-            mem.write_memt<uint32_t>(regs[rb],regs[PC]);
+            mem.write_memt<uint32_t>(regs[RB],regs[PC]);
         }
 
-        regs[rb] += 0x40;        
+        regs[RB] += 0x40;        
     }   
 
     else
@@ -692,39 +543,38 @@ void Cpu::thumb_multiple_load_store(uint16_t opcode)
             if(is_set(reg_range,i))
             {
                 // ldmia
-                if(load)
+                if constexpr(L)
                 {
-                    regs[i] = mem.read_memt<uint32_t>(regs[rb]);
+                    regs[i] = mem.read_memt<uint32_t>(regs[RB]);
                 }
                 //stmia
                 else
                 {
-                    mem.write_memt<uint32_t>(regs[rb],regs[i]);
+                    mem.write_memt<uint32_t>(regs[RB],regs[i]);
                 }
-                regs[rb] += ARM_WORD_SIZE;
+                regs[RB] += ARM_WORD_SIZE;
             }
         }
     }
 
     
     // one final internal cycle for loads
-    if(load)
+    if constexpr(L)
     {
         internal_cycle();
     }
 }
 
-
+template<const int OP>
 void Cpu::thumb_ldst_imm(uint16_t opcode)
 {
-    const auto op = (opcode >> 11) & 3;
     const auto imm = (opcode >> 6) & 0x1f;
     const auto rb = (opcode >> 3) & 0x7;
     const auto rd = opcode & 0x7;
 
     // 1s + 1n + 1i for ldr
     // 2n for str
-    switch(op)
+    switch(OP)
     {
         case 0b00: // str
         {  
@@ -756,14 +606,14 @@ void Cpu::thumb_ldst_imm(uint16_t opcode)
     }
 }
 
+template<const int OP>
 void Cpu::thumb_add_sub(uint16_t opcode)
 {    
     const auto rd = opcode & 0x7;
     const auto rs = (opcode >> 3) & 0x7;
     const auto rn = (opcode >> 6) & 0x7; // can also be 3 bit imm
-    const auto op = (opcode >> 9) & 0x3;
 
-    switch(op)
+    switch(OP)
     {
         case 0b00: // add reg
         { 
@@ -788,13 +638,12 @@ void Cpu::thumb_add_sub(uint16_t opcode)
     }
 }
 
+template<const bool FIRST>
 void Cpu::thumb_long_bl(uint16_t opcode)
 {
-    const bool first = !is_set(opcode,11);
-
     int32_t offset = opcode & 0x7ff; // offset is 11 bits
 
-    if(first)
+    if constexpr(FIRST)
     {
         // sign extend offset shifted by 12
         // add to pc plus 4 store in lr
@@ -816,72 +665,70 @@ void Cpu::thumb_long_bl(uint16_t opcode)
     }
 }
 
+template<const int TYPE>
 void Cpu::thumb_mov_reg_shift(uint16_t opcode)
 {
     const auto rd = opcode & 0x7;
     const auto rs = (opcode >> 3) & 0x7;
     const auto n = (opcode >> 6) & 0x1f;
 
-    const auto type = static_cast<shift_type>((opcode >> 11) & 0x3);
+    const auto type = static_cast<shift_type>(TYPE);
 
     regs[rd] = barrel_shift(type,regs[rs],n,flag_c,true);
 
     set_nz_flag(regs[rd]);
 }
 
+template<const int OP, const int RD>
 void Cpu::thumb_mcas_imm(uint16_t opcode)
 {
-    const auto op = (opcode >> 11) & 0x3;
-    const auto rd = (opcode >> 8) & 0x7;
     const uint8_t imm = opcode & 0xff;
 
-    switch(op)
+    switch(OP)
     {
         case 0b00: // mov
         {
-            regs[rd] = imm;
-            set_nz_flag(regs[rd]);            
+            regs[RD] = imm;
+            set_nz_flag(regs[RD]);            
             break;
         }
 
         case 0b01: //cmp
         {
-            sub(regs[rd],imm,true);
+            sub(regs[RD],imm,true);
             break;
         }
 
         case 0b10: // add
         {
-            regs[rd] = add(regs[rd],imm,true);
+            regs[RD] = add(regs[RD],imm,true);
             break;
         }
 
         case 0b11: // sub
         {
-            regs[rd] = sub(regs[rd],imm,true);
+            regs[RD] = sub(regs[RD],imm,true);
             break;
         }
     }
 }
 
-
+template<const int COND>
 void Cpu::thumb_cond_branch(uint16_t opcode)
 {
     // 1st cycle is branch calc overlayed with pipeline
     const int8_t offset = opcode & 0xff;
     const uint32_t addr = regs[PC] + offset*2;
-    const auto cond = (opcode >> 8) & 0xf;
 
-    if(cond_met(cond))
+    if(cond_met(COND))
     {
         write_pc(addr);  
     }
 }
 
+template<const int RD>
 void Cpu::thumb_ldr_pc(uint16_t opcode)
 {
-    const auto rd = (opcode >> 8) & 0x7;
-
     // 0 - 1020 in offsets of 4
     const uint32_t offset = (opcode & 0xff) * 4;
 
@@ -889,7 +736,7 @@ void Cpu::thumb_ldr_pc(uint16_t opcode)
     // pc is + 4 ahead of current instr
     const uint32_t addr = (regs[PC] & ~2) + offset;
 
-    regs[rd] = mem.read_memt<uint32_t>(addr);
+    regs[RD] = mem.read_memt<uint32_t>(addr);
 
     // internal cycle for load writeback
     internal_cycle();

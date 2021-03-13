@@ -81,6 +81,9 @@ constexpr bool cond_lut_helper(uint32_t cond, uint32_t flags)
 using ARM_OPCODE_FPTR = void (Cpu::*)(uint32_t opcode);
 using ARM_OPCODE_LUT = std::array<ARM_OPCODE_FPTR,4096>;
 
+using THUMB_OPCODE_FPTR = void (Cpu::*)(uint16_t opcode);
+using THUMB_OPCODE_LUT = std::array<THUMB_OPCODE_FPTR,256>;
+
 class Cpu
 {
 public:
@@ -184,11 +187,6 @@ public:
 private:
 
 
-    using THUMB_OPCODE_FPTR = void (Cpu::*)(uint16_t opcode);
-    std::vector<THUMB_OPCODE_FPTR> thumb_opcode_table;
-    void init_thumb_opcode_table();
-    
-
     void exec_thumb();
     void exec_arm();
 
@@ -240,29 +238,65 @@ public:
 
     void arm_swi(uint32_t opcode);
 
-private:
+
 
     // thumb cpu instructions
     void thumb_unknown(uint16_t opcode);
+
+    template<const int RD>
     void thumb_ldr_pc(uint16_t opcode);
+
+    template<const int TYPE>
     void thumb_mov_reg_shift(uint16_t opcode);
+
+    template<const int COND>
     void thumb_cond_branch(uint16_t opcode);
+
+    template<const int OP, const int RD>
     void thumb_mcas_imm(uint16_t opcode);
+
+    template<const bool FIRST>
     void thumb_long_bl(uint16_t opcode);
+
     void thumb_alu(uint16_t opcode);
+
+    template<const int OP>
     void thumb_add_sub(uint16_t opcode);
+
+    template<const int RB, const bool L>
     void thumb_multiple_load_store(uint16_t opcode);
+
+    template<const int OP>
     void thumb_hi_reg_ops(uint16_t opcode);
+
+    template<const int OP>
     void thumb_ldst_imm(uint16_t opcode);
+
+    template<const bool POP, const bool IS_LR>
     void thumb_push_pop(uint16_t opcode);
+
+    template<const int L>
     void thumb_load_store_half(uint16_t opcode);
+
     void thumb_branch(uint16_t opcode);
+
+    template<const int RD, const bool IS_PC>
     void thumb_get_rel_addr(uint16_t opcode);
+
+    template<const int OP>
     void thumb_load_store_reg(uint16_t opcode);
+
+    template<const int OP>
     void thumb_load_store_sbh(uint16_t opcode);
+
     void thumb_swi(uint16_t opcode);
+
     void thumb_sp_add(uint16_t opcode);
+
+    template<const int RD, const bool L>
     void thumb_load_store_sp(uint16_t opcode);
+
+private:
 
     // cpu operations eg adds
     uint32_t add(uint32_t v1, uint32_t v2, bool s);
