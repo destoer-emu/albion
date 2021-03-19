@@ -58,6 +58,7 @@ void Cpu::arm_unknown(uint32_t opcode)
 {
     const auto op = ((opcode >> 4) & 0xf) | ((opcode >> 16) & 0xff0);
     const auto err = fmt::format("[cpu-arm {:08x}] unknown opcode {:08x}:{:08x}\n{}\n",pc_actual,opcode,op,disass.disass_arm(get_pc()));
+    trace.print();
     throw std::runtime_error(err);
 }
 
@@ -273,7 +274,7 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
     const bool has_pc = is_set(rlist,PC);
 
     // allways adding on address so if  we are in "down mode"
-    // we need to precalc the buttom1
+    // we need to precalc the bottom
     if constexpr(!U) 
     {
         if constexpr(W)

@@ -118,13 +118,6 @@ private:
     template<typename access_type>
     access_type read_oam(uint32_t addr);
 
-    template<typename access_type>
-    access_type read_flash(uint32_t addr);
-
-
-    template<typename access_type>
-    access_type read_sram(uint32_t addr);
-
     uint8_t read_eeprom();
 
     template<typename access_type>
@@ -153,16 +146,10 @@ private:
     void write_oam(uint32_t addr,access_type v);
 
 
-    // dont know how these work
-    template<typename access_type>
-    void write_flash(uint32_t addr,access_type v);
 
     void write_eeprom(uint8_t v);
 
     bool is_eeprom(uint32_t addr) const;
-
-    template<typename access_type>
-    void write_sram(uint32_t addr,access_type v);
 
     void update_wait_states();
 

@@ -1665,21 +1665,24 @@ void Mem::update_wait_states()
         }
     }
 
-    const auto wait_first0 = wait_first_table[wait_cnt.wait01];
-    const auto wait_second0 = wait_cnt.wait02? 2 : 1;
-    set_wait(&rom_wait_states[0][0][0],wait_first0);
-    set_wait(&rom_wait_states[0][1][0],wait_second0);
+    else
+    {
+        const auto wait_first0 = wait_first_table[wait_cnt.wait01];
+        const auto wait_second0 = wait_cnt.wait02? 2 : 1;
+        set_wait(&rom_wait_states[0][0][0],wait_first0);
+        set_wait(&rom_wait_states[0][1][0],wait_second0);
 
-    const auto wait_first1 = wait_first_table[wait_cnt.wait11];
-    const auto wait_second1 = wait_cnt.wait12? 4 : 1;
-    set_wait(&rom_wait_states[1][0][0],wait_first1);
-    set_wait(&rom_wait_states[1][1][0],wait_second1);
+        const auto wait_first1 = wait_first_table[wait_cnt.wait11];
+        const auto wait_second1 = wait_cnt.wait12? 4 : 1;
+        set_wait(&rom_wait_states[1][0][0],wait_first1);
+        set_wait(&rom_wait_states[1][1][0],wait_second1);
 
 
-    const auto wait_first2 = wait_first_table[wait_cnt.wait21];
-    const auto wait_second2 = wait_cnt.wait22? 8 : 1;
-    set_wait(&rom_wait_states[2][0][0],wait_first2);
-    set_wait(&rom_wait_states[2][1][0],wait_second2);
+        const auto wait_first2 = wait_first_table[wait_cnt.wait21];
+        const auto wait_second2 = wait_cnt.wait22? 8 : 1;
+        set_wait(&rom_wait_states[2][0][0],wait_first2);
+        set_wait(&rom_wait_states[2][1][0],wait_second2);
+    }
 
     const auto sram_wait = wait_first_table[wait_cnt.sram_cnt];
     set_wait(&wait_states[static_cast<size_t>(memory_region::cart_backup)][0],sram_wait);
@@ -1704,20 +1707,11 @@ uint32_t Mem::get_waitstates(uint32_t addr) const
             return 1;
         }
 
-        // need to lookup waitstaates in seperate table for rom
-        // TODO: this is very hacky to get around our shoddy timings atm
+        // TODO: emulate N and S cycles
         case memory_region::rom:
         {
-            // approximation
-            if constexpr(sizeof(access_type) == 4)
-            {
-                return 2;
-            }
-
-            return 1;
-            // bugs out in metroid fusion final boss why?
             // hardcode to sequential access!
-            //return rom_wait_states[(region - 8) / 2][1][sizeof(access_type) >> 1];
+            return rom_wait_states[(region - 8) / 2][1][sizeof(access_type) >> 1];
         }
 
         // should unmapped addresses still tick a cycle?
@@ -1736,9 +1730,6 @@ uint32_t Mem::get_waitstates(uint32_t addr) const
 template<typename access_type>
 void Mem::tick_mem_access(uint32_t addr)
 {
-    //cpu.cycle_tick(1);
-
-
     // only allow up to 32bit
     static_assert(sizeof(access_type) <= 4);
     cpu.cycle_tick(get_waitstates<access_type>(addr));
@@ -1756,22 +1747,6 @@ access_type Mem::read_rom(uint32_t addr)
     //return rom[addr - <whatever page start>];
     return handle_read<access_type>(rom,addr&0x1FFFFFF);        
 }
-
-// dont know how these work yet!
-template<typename access_type>
-access_type Mem::read_flash(uint32_t addr)
-{
-    UNUSED(addr);
-    return 0;
-}
-
-template<typename access_type>
-access_type Mem::read_sram(uint32_t addr)
-{
-    UNUSED(addr);
-    return 0;
-}
-
 
 template<>
 uint8_t Mem::read_io<uint8_t>(uint32_t addr)
@@ -1846,25 +1821,6 @@ access_type Mem::read_bios(uint32_t addr)
     return handle_read<access_type>(bios_rom,addr&0x3fff);
 }
 
-// dont know how these work
-template<typename access_type>
-void Mem::write_flash(uint32_t addr,access_type v)
-{
-    UNUSED(addr); UNUSED(v);
-}
-
-
-
-template<typename access_type>
-void Mem::write_sram(uint32_t addr,access_type v)
-{
-
-    UNUSED(addr); UNUSED(v);
-}
-
-        
-
-// should probably handle our "waitstate" timings for io by here
 
 // as io has side effects we need to write to it byte by byte
 template<>

@@ -7,10 +7,6 @@ namespace gameboyadvance
     mosiac,unstub the memory writes
 */
 
-
-// see 8 bit writes to video memory for doom bug
-
-
 Display::Display(GBA &gba) : mem(gba.mem), cpu(gba.cpu), scheduler(gba.scheduler)
 {
     screen.resize(SCREEN_WIDTH*SCREEN_HEIGHT);
@@ -221,12 +217,11 @@ void Display::tick(int cycles)
                 advance_line();
             }
             
-            else if(cyc_cnt >= 1006 && !disp_io.disp_stat.hblank) 
+            else if(cyc_cnt >= 1006) 
             {
                 // enter hblank (dont set the internal mode here)
                 disp_io.disp_stat.hblank = true;
 
-                // should the irq be delayed as well?
                 if(disp_io.disp_stat.hblank_irq_enable)
                 {
                     cpu.request_interrupt(interrupt::hblank);
