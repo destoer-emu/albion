@@ -138,14 +138,6 @@ uint8_t Cpu::fetch_opcode() noexcept
 	
 }
 
-// cycles that dont need to be ticked yet
-// as there is no memory access involed
-// takes t cycles
-void Cpu::cycle_delay(uint32_t cycles) noexcept
-{
-	pending_cycles += cycles;
-}
-
 void Cpu::tick_pending_cycles() noexcept
 {
 	if(pending_cycles > 0)
@@ -155,12 +147,24 @@ void Cpu::tick_pending_cycles() noexcept
 }
 
 
+
 // m cycle tick
 void Cpu::cycle_tick(uint32_t cycles) noexcept
 {
 	//  convert to t cycles and tick
 	cycle_tick_t(cycles * 4);
 }
+
+
+
+// cycles that dont need to be ticked yet
+// as there is no memory access involed
+// takes t cycles
+void Cpu::cycle_delay(uint32_t cycles) noexcept
+{
+	pending_cycles += cycles;
+}
+
 
 // t cycle tick
 void Cpu::cycle_tick_t(uint32_t cycles) noexcept

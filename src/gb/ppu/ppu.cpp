@@ -856,6 +856,8 @@ void Ppu::draw_scanline(uint32_t cycles) noexcept
 		// ignore sprite timings for now
 		// sprites are fetched instantly into the fifo
 		// and not into the fetcher as they should be
+		// we need to wait for the fetcher to be empty for this to happen 
+		// on actual hardware
 		if(obj_enabled)
 		{
 			sprite_fetch(obj_fifo.fifo);

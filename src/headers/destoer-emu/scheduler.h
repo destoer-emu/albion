@@ -66,6 +66,27 @@ void Scheduler<SIZE,event_type>::tick(uint32_t cycles)
 {
     timestamp += cycles;
 
+    // if the timestamp is greater than the event fire
+    // handle the event and remove it
+    // as the list is sorted the next event is first
+    // any subsequent events aernt going to fire so we can return early
+    while(event_list.size() && timestamp >= min_timestamp)
+    {
+            // remove min event
+            const auto event = event_list.peek();
+            event_list.pop();
+            min_timestamp = event_list.peek().end;
+            service_event(event);
+    }
+}
+
+template<size_t SIZE,typename event_type>
+void Scheduler<SIZE,event_type>::insert(const EventNode<event_type> &node,bool tick_old)
+{
+    remove(node.type,tick_old);
+    event_list.insert(node);
+    min_timestamp = event_list.peek().end;
+    
     if(is_set(timestamp,31))
     {
         uint32_t min = 0xffffffff;
@@ -89,35 +110,6 @@ void Scheduler<SIZE,event_type>::tick(uint32_t cycles)
         timestamp -= min;
         min_timestamp -= min;
     }
-
-    while(event_list.size())
-    {
-        // if the timestamp is greater than the event fire
-        // handle the event and remove it
-        if(timestamp >= min_timestamp)
-        {
-            // remove min event
-            const auto event = event_list.peek();
-            event_list.pop();
-            min_timestamp = event_list.peek().end;
-            service_event(event);
-        }
-
-        // as the list is sorted the next event is first
-        // any subsequent events aernt going to fire so return early
-        else
-        {
-            break;
-        }
-    }
-}
-
-template<size_t SIZE,typename event_type>
-void Scheduler<SIZE,event_type>::insert(const EventNode<event_type> &node,bool tick_old)
-{
-    remove(node.type,tick_old);
-    event_list.insert(node);
-    min_timestamp = event_list.peek().end;
 }
 
 template<size_t SIZE,typename event_type>

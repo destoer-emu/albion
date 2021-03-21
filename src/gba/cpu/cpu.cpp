@@ -58,6 +58,10 @@ void Cpu::init()
     trace.clear();
 }
 
+void Cpu::internal_cycle()
+{
+    cycle_tick(1);
+}
 
 void Cpu::cycle_tick(int cycles)
 {
@@ -72,14 +76,6 @@ void Cpu::cycle_tick(int cycles)
 */
     scheduler.tick(cycles);
 }
-
-
-// prefetch buffer stuff should happen in here
-void Cpu::internal_cycle()
-{
-    cycle_tick(1);
-}
-
 
 void Cpu::insert_new_timer_event(int timer)
 {

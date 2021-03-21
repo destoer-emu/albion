@@ -20,8 +20,6 @@ void GBAScheduler::skip_to_event()
 // better way to handle this? std::function is slow
 void GBAScheduler::service_event(const EventNode<gba_event> &node)
 {
-    // if its double speed we need to push half the cycles
-    // through the function even though we delay for double
     const auto cycles_to_tick = timestamp - node.start;
 
     switch(node.type)

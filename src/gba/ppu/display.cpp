@@ -12,8 +12,6 @@ Display::Display(GBA &gba) : mem(gba.mem), cpu(gba.cpu), scheduler(gba.scheduler
     screen.resize(SCREEN_WIDTH*SCREEN_HEIGHT);
     for(auto &x: scanline)
     {
-        // two tile lee weigh so we can just draw extra
-        // and scroll into it
         x.resize(SCREEN_WIDTH);
     }
     sprite_line.resize(SCREEN_WIDTH);

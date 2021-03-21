@@ -1449,7 +1449,7 @@ void Mem::write_eeprom(uint8_t v)
                 const auto command = (eeprom_command & 3);
                 if(command == 0b11)
                 {
-                    //puts("read setup"); // why are we gettigng a 2nd read command?
+                    //puts("read setup");
                     state = eeprom_state::read_setup;
                 }
 
@@ -1856,12 +1856,7 @@ template<typename access_type>
 void Mem::write_oam(uint32_t addr,access_type v)
 {
     // 8bit write restricted
-    if constexpr(std::is_same<access_type,uint8_t>())
-    {
-
-    }
-
-    else
+    if constexpr(!std::is_same<access_type,uint8_t>())
     {
         //oam[addr & 0x3ff] = v;
         handle_write<access_type>(oam,addr&0x3ff,v);

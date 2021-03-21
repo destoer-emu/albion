@@ -249,9 +249,6 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
    
     unsigned int first = 0;
 #ifdef _MSC_VER
-    // do in reverse order so we can pull
-    // the first item without doing something jank
-    // TODO improve this with clz & popcnt builtin
     for(int i = 15; i >= 0; i--)
     {
         if(is_set(rlist,i))
@@ -608,7 +605,6 @@ void Cpu::arm_data_processing(uint32_t opcode)
     const bool rd_pc = rd == PC;
 
     // switch on the opcode to decide what to do
-    //switch((opcode >> 21) & 0xf)
     switch(OP)
     {
         case 0x0: //and

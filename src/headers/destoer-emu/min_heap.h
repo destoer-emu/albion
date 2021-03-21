@@ -194,7 +194,7 @@ void MinHeap<SIZE,event_type>::insert(EventNode<event_type> event)
 		idx = parent_idx;
 	}
 
-//    verify();
+    //verify();
 }
 
 // verify min heap property is not violated used for debugging
@@ -322,7 +322,7 @@ EventNode<event_type> MinHeap<SIZE,event_type>::remove(size_t idx)
 	// ensure we have a valid heap after the swap
 	heapify(idx);
 
-//    verify();
+    //verify();
 
 	return v;
 }
