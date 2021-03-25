@@ -4,28 +4,6 @@ using namespace gameboy;
 
 #ifdef CONTROLLER_SDL
 
-void GbControllerInput::init()
-{
-    // pick first valid controller
-	for(int i = 0; i < SDL_NumJoysticks(); i++)
-	{
-		if(SDL_IsGameController(i))
-		{
-			controller = SDL_GameControllerOpen(i);
-		}
-
-		if(controller == NULL)
-		{
-			throw std::runtime_error("could not open controller!");
-		}
-
-        else
-        {
-            controller_connected = true;
-            break;  
-        }
-	}  
-}
 
 void GbControllerInput::update(gameboy::GB &gb)
 {
@@ -172,16 +150,6 @@ void GbControllerInput::update(gameboy::GB &gb)
         prev_dpad[DOWN] = d;
     }
     
-}
-
-GbControllerInput::~GbControllerInput()
-{
-    if(controller_connected && controller != NULL)
-    {
-        // this is apparently buggy...
-        //SDL_GameControllerClose(controller);
-        controller = NULL;
-    }
 }
 
 #endif

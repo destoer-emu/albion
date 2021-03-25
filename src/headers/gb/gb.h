@@ -6,7 +6,7 @@
 #include <gb/scheduler.h>
 #include <gb/disass.h>
 #include <destoer-emu/lib.h>
-#include <destoer-emu/debug.h>
+#include <gb/debug.h>
 
 namespace gameboy
 {
@@ -47,7 +47,7 @@ public:
     Apu apu{*this};
     Disass disass{*this};
     GameboyScheduler scheduler{*this};
-    Debug debug;
+    GBDebug debug{*this};
 
 
     std::atomic_bool quit = false;

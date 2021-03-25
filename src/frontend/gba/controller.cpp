@@ -4,30 +4,6 @@ using namespace gameboyadvance;
 
 #ifdef CONTROLLER_SDL
 
-// todo rewrite input system for when we do n64
-void GbaControllerInput::init()
-{
-    // pick first valid controller
-	for(int i = 0; i < SDL_NumJoysticks(); i++)
-	{
-		if(SDL_IsGameController(i))
-		{
-			controller = SDL_GameControllerOpen(i);
-		}
-
-		if(controller == NULL)
-		{
-			throw std::runtime_error("could not open controller!");
-		}
-
-        else
-        {
-            controller_connected = true;
-            break;  
-        }
-	}  
-}
-
 void GbaControllerInput::update(gameboyadvance::GBA &gba)
 {
     // no controller we dont care
@@ -199,16 +175,6 @@ void GbaControllerInput::update(gameboyadvance::GBA &gba)
         trig_r_prev = trig_r_cur;
     }
 
-}
-
-GbaControllerInput::~GbaControllerInput()
-{
-    if(controller_connected && controller != NULL)
-    {
-        // this is apparently buggy...
-        //SDL_GameControllerClose(controller);
-        controller = NULL;
-    }
 }
 
 #endif

@@ -1,7 +1,5 @@
 #ifdef FRONTEND_SDL
 #include <frontend/sdl/sdl_window.h>
-#include <frontend/gb/controller.h>
-#include <frontend/gba/controller.h>
 #include <destoer-emu/destoer-emu.h>
 
 
@@ -64,7 +62,7 @@ void SDLMainWindow::gameboy_main(std::string filename)
     {
 		fps_counter.reading_start();
 
-        gameboy_handle_input();
+        gameboy_handle_input(controller);
 
 		controller.update(gb);
 
@@ -90,10 +88,16 @@ void SDLMainWindow::gameboy_main(std::string filename)
 		SDL_SetWindowTitle(window,fmt::format("destoer-emu: {}",fps_counter.get_fps()).c_str());
 
 		//next_time = current_time() + screen_ticks_per_frame;
+		
+		// we hit a breakpoint go back to the prompt
+		if(gb.debug.is_halted())
+		{
+			gb.debug.debug_input();
+		}
     }	
 }
 
-void SDLMainWindow::gameboy_handle_input()
+void SDLMainWindow::gameboy_handle_input(GbControllerInput &controller)
 {
 	SDL_Event event;
 	
@@ -114,7 +118,15 @@ void SDLMainWindow::gameboy_handle_input()
 
 			case SDL_KEYDOWN:
 			{
-				gb.key_input(event.key.keysym.sym,true);
+				if(event.key.keysym.sym == SDLK_p)
+				{
+					gb.debug.debug_input();
+				}
+
+				else
+				{
+					gb.key_input(event.key.keysym.sym,true);
+				}
 				break;
 			}
 			
@@ -124,7 +136,9 @@ void SDLMainWindow::gameboy_handle_input()
 				break;
 			}
 
-	
+			case SDL_CONTROLLERDEVICEADDED: controller.connected(event.cdevice.which); break;
+			case SDL_CONTROLLERDEVICEREMOVED: controller.disconnected(event.cdevice.which); break;
+
 			case SDL_QUIT:
 			{
 				gb.mem.save_cart_ram();
@@ -170,7 +184,7 @@ void SDLMainWindow::gba_render()
     SDL_RenderPresent(renderer);    
 }
 
-void SDLMainWindow::gba_handle_input()
+void SDLMainWindow::gba_handle_input(GbaControllerInput &controller)
 {
 	SDL_Event event;
 	
@@ -208,6 +222,10 @@ void SDLMainWindow::gba_handle_input()
                 break;
 			}
 
+			case SDL_CONTROLLERDEVICEADDED: controller.connected(event.cdevice.which); break;
+			case SDL_CONTROLLERDEVICEREMOVED: controller.disconnected(event.cdevice.which); break;
+
+
             default:
             {
                 break;
@@ -236,7 +254,7 @@ void SDLMainWindow::gba_main(std::string filename)
 	{
 		fps_counter.reading_start();
 
-		gba_handle_input();
+		gba_handle_input(controller);
 
 		controller.update(gba);
 

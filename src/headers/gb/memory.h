@@ -1,7 +1,7 @@
 #pragma once
 #include <gb/forward_def.h>
 #include <destoer-emu/lib.h>
-#include <destoer-emu/debug.h>
+#include <gb/debug.h>
 #include <destoer-emu/emulator.h>
 #include <gb/scheduler.h>
 #include <gb/rom.h>
@@ -172,7 +172,7 @@ private:
     Ppu &ppu;
     Apu &apu;
     GameboyScheduler &scheduler;
-    Debug &debug;
+    GBDebug &debug;
 
 #ifdef DEBUG
     uint8_t read_mem_debug(uint16_t addr) const noexcept;

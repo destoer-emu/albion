@@ -58,7 +58,7 @@ void Cpu::arm_unknown(uint32_t opcode)
 {
     const auto op = ((opcode >> 4) & 0xf) | ((opcode >> 16) & 0xff0);
     const auto err = fmt::format("[cpu-arm {:08x}] unknown opcode {:08x}:{:08x}\n{}\n",pc_actual,opcode,op,disass.disass_arm(get_pc()));
-    trace.print();
+    debug.trace.print();
     throw std::runtime_error(err);
 }
 

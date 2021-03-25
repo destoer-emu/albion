@@ -6,16 +6,6 @@
 namespace gameboy
 {
 
-
-void Cpu::check_rst_loop(uint16_t addr, uint8_t op)
-{
-	if(mem.read_mem(addr) == op)
-	{
-		write_log(debug,"[ERROR] rst infinite loop at {:x}->{:x}",pc,addr);
-		throw std::runtime_error("infinite rst lockup");
-	}
-}
-
 #ifdef DEBUG
 void Cpu::exec_instr_debug()
 {
@@ -968,10 +958,13 @@ void Cpu::exec_instr_no_debug()
         }
 
 		case 0xc3: // jump
+		{
+			const uint16_t source = pc-1;
 			pc = mem.read_wordt(pc);
 			cycle_delay(4); // internal
+			debug.trace.add(source,pc);
 			break;
-		
+		}
 		
 		case 0xc4: // call nz
         {
@@ -990,10 +983,7 @@ void Cpu::exec_instr_no_debug()
 			break;
 		
 		case 0xc7: // rst 00
-			check_rst_loop(0x00,0xc7);
-			cycle_delay(4); // internal
-			write_stackwt(pc);
-			pc = 0;
+			instr_rst(0x00,0xc7);
 			break;
 		
 		case 0xc8: // ret z
@@ -1003,9 +993,13 @@ void Cpu::exec_instr_no_debug()
         }
 
 		case 0xc9: // ret 
+		{
+			const uint16_t source = pc-1;
 			pc = read_stackwt();	
 			cycle_delay(4); // internal
+			debug.trace.add(source,pc);
 			break;
+		}
 		
 		case 0xca: // jp z, nnnn
         {
@@ -1028,11 +1022,13 @@ void Cpu::exec_instr_no_debug()
         }
 		case 0xCD: // call nn 
         {
+			const uint16_t source = pc-1;
 			uint16_t v = mem.read_wordt(pc);
 			pc += 2;
 			cycle_delay(4); // internal
 			write_stackwt(pc);
 			pc = v;
+			debug.trace.add(source,pc);
 			break;
         }
 
@@ -1041,10 +1037,7 @@ void Cpu::exec_instr_no_debug()
 			break;
 		
 		case 0xcf: // rst 08
-			check_rst_loop(0x08,0xcf);	
-			cycle_delay(4); // internal
-			write_stackwt(pc);
-			pc = 0x8;
+			instr_rst(0x08,0xcf);
 			break;
 		
 		case 0xd0: // ret nc
@@ -1077,12 +1070,7 @@ void Cpu::exec_instr_no_debug()
 			break;
 		
 		case 0xd7: // rst 10
-			#ifdef DEBUG
-			check_rst_loop(0x10,0xd7);
-			#endif
-			cycle_delay(4); // internal
-			write_stackwt(pc);
-			pc = 0x10;
+			instr_rst(0x10,0xd7);
 			break;
 		
 		case 0xd8: // ret c
@@ -1090,12 +1078,16 @@ void Cpu::exec_instr_no_debug()
 			break;
 			
 		case 0xd9: // reti
+		{
+			const uint16_t source = pc-1;
 			pc = read_stackwt();	
 			cycle_delay(4);// internal
 			interrupt_enable = true; // re-enable interrupts
 			update_intr_fire();
+			debug.trace.add(source,pc);
 			break;
-		
+		}
+
 		case 0xda: // jp c, u16
         {
 			instr_jp_cond(true,carry);
@@ -1113,10 +1105,7 @@ void Cpu::exec_instr_no_debug()
 			break;
 
 		case 0xdf: // rst 18
-			check_rst_loop(0x18,0xdf);
-			cycle_delay(4); // internal
-			write_stackwt(pc);
-			pc = 0x18;
+			instr_rst(0x18,0xdf);
 			break;
 		
 		case 0xE0: // ld (ff00+n),a
@@ -1141,10 +1130,7 @@ void Cpu::exec_instr_no_debug()
 			break;
 		
 		case 0xe7: // rst 20
-			check_rst_loop(0x20,0xe7);
-			cycle_delay(4); // internal
-			write_stackwt(pc);
-			pc = 0x20;
+			instr_rst(0x20,0xe7);
 			break;
 		
 		case 0xe8: // add sp, i8 
@@ -1153,9 +1139,13 @@ void Cpu::exec_instr_no_debug()
 			break;
 		
 		case 0xe9: // jp hl
+		{
+			const uint16_t source = pc-1;
 			pc = read_hl();
+			debug.trace.add(source,pc);
 			break;
-		
+		}
+
 		case 0xea: // ld (nnnn), a
 			mem.write_memt(mem.read_wordt(pc),a);
 			pc += 2;
@@ -1166,10 +1156,7 @@ void Cpu::exec_instr_no_debug()
 			break;
 		
 		case 0xef: // rst 28
-			check_rst_loop(0x28,0xef);
-			cycle_delay(4); // internal
-			write_stackwt(pc);
-			pc = 0x28;
+			instr_rst(0x28,0xef);
 			break;
 		
 		case 0xF0: // ld a, (ff00+nn)
@@ -1204,10 +1191,7 @@ void Cpu::exec_instr_no_debug()
 			break;
 		
 		case 0xf7: // rst 30
-			check_rst_loop(0x30,0xf7);
-			cycle_delay(4); // internal
-			write_stackwt(pc);
-			pc = 0x30;
+			instr_rst(0x30,0xf7);
 			break;
 		
 		case 0xf8: // ld hl, sp + i8 
@@ -1254,10 +1238,7 @@ void Cpu::exec_instr_no_debug()
 			
 		
 		case 0xff: // rst 38
-			check_rst_loop(0x38,0xff);	
-			cycle_delay(4); // internal 
-			write_stackwt(pc);
-			pc = 0x38;
+			instr_rst(0x38,0xff);
 			break;   
 
 		default:

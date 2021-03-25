@@ -536,6 +536,7 @@ void Cpu::request_interrupt(int interrupt) noexcept
 
 void Cpu::do_interrupts() noexcept
 {
+	const uint16_t source = pc;
 
 	// interrupt has fired disable ime
 	interrupt_enable = false;
@@ -572,6 +573,7 @@ void Cpu::do_interrupts() noexcept
 			mem.io[IO_IF] = deset_bit(mem.io[IO_IF],i); // mark interrupt as serviced
 			update_intr_req();
 			pc = 0x40 + (i * 8); // set pc to interrupt vector
+			debug.trace.add(source,pc);
 			return;
 		}
 	}
@@ -582,6 +584,7 @@ void Cpu::do_interrupts() noexcept
 		mem.io[IO_IF] = deset_bit(mem.io[IO_IF],bit); // mark interrupt as serviced
 		update_intr_req();
 		pc = 0x40 + (bit * 8); // set pc to interrupt vector
+		debug.trace.add(source,pc);
 		return;		
 	}
 #endif
@@ -589,6 +592,7 @@ void Cpu::do_interrupts() noexcept
 	// interrupt did fire but now is no longer requested
 	// pc gets set to zero
 	pc = 0;
+	debug.trace.add(source,pc);
 }
 
 

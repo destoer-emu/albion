@@ -55,7 +55,7 @@ void Cpu::init()
 
     cpu_io.init();
     update_intr_status();
-    trace.clear();
+    debug.trace.clear();
 }
 
 void Cpu::internal_cycle()
@@ -588,7 +588,7 @@ cpu_mode Cpu::cpu_mode_from_bits(uint32_t v)
 
     // clearly no program should attempt this 
     // but is their a defined behavior for it?
-    trace.print();
+    debug.trace.print();
     auto err = fmt::format("unknown mode from bits: {:08x}:{:08x}\n",v,pc_actual);
     throw std::runtime_error(err);
 }
@@ -891,7 +891,7 @@ void Cpu::write_pc(uint32_t v)
         write_pc_arm(v);
     } 
 
-    trace.add(source,pc_actual);
+    debug.trace.add(source,pc_actual);
 }
 
 }

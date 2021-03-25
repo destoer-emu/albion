@@ -24,7 +24,7 @@ if(${FRONTEND} STREQUAL "IMGUI")
 endif()
 
 if(${FRONTEND} STREQUAL "SDL")
-	add_definitions(-DAUDIO_ENABLE -DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL)
+	add_definitions(-DAUDIO_ENABLE -DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL -DDEBUG)
 	add_definitions(-DFRONTEND_SDL)
 endif()
 
@@ -130,6 +130,7 @@ file(GLOB src_files
 	"src/frontend/gb/*.h"
 	"src/frontend/gba/*.cpp"
 	"src/frontend/gba/*.h"
+	"src/frontend/*.cpp"
 )
 
 # add some includes

@@ -1,7 +1,7 @@
 #pragma once
 #include <gb/forward_def.h>
 #include <destoer-emu/lib.h>
-#include <destoer-emu/debug.h>
+#include <gb/debug.h>
 #include <gb/scheduler.h>
 
 namespace gameboy
@@ -170,7 +170,12 @@ public:
     uint8_t read_b() const noexcept { return b; }
     uint8_t read_c() const noexcept { return c; }
     uint8_t read_d() const noexcept { return d; }
-    uint8_t read_e() const noexcept { return e ;}
+    uint8_t read_e() const noexcept { return e; }
+
+    bool read_flag_z() const noexcept { return zero; }
+    bool read_flag_n() const noexcept { return negative; }
+    bool read_flag_h() const noexcept { return half;}
+    bool read_flag_c() const noexcept { return carry;}
 
     // save states
     void save_state(std::ofstream &fp);
@@ -197,7 +202,7 @@ private:
     Apu &apu;
     Ppu &ppu;
     GameboyScheduler &scheduler;
-    Debug &debug;
+    GBDebug &debug;
     Disass &disass;
 
     // registers
@@ -279,6 +284,7 @@ private:
     void ret_cond(bool cond, bool falg) noexcept;
     uint16_t instr_incw(uint16_t v) noexcept;
     uint16_t instr_decw(uint16_t v) noexcept;
+    void instr_rst(uint16_t addr, uint8_t op);
 
     // stack helpers
     uint8_t read_stackt() noexcept;
@@ -287,8 +293,6 @@ private:
     void write_stackwt(uint16_t v) noexcept;
     void write_stackw(uint16_t v) noexcept;
     void write_stack(uint8_t v) noexcept;
-
-    void check_rst_loop(uint16_t addr, uint8_t op);
 
 
     // oam bug

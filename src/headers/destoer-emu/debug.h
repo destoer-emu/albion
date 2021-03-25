@@ -2,6 +2,44 @@
 #include <destoer-emu/lib.h>
 
 
+struct Trace
+{
+    Trace()
+    {
+        clear();
+    }
+
+    void clear()
+    {
+        idx = 0;
+        memset(history_target,0,sizeof(history_target));
+        memset(history_source,0,sizeof(history_source));
+    }
+
+    void add(uint32_t src, uint32_t dst)
+    {
+        history_source[idx] = src;
+        history_target[idx] = dst;
+        idx = (idx + 1) & 0xf;
+    }
+
+    std::string print()
+    {
+        std::string out = "pc trace:\n";
+        for(int i = 0; i < 0x10; i++)
+        {
+            const auto offset = (idx + i) & 0xf;
+            out += fmt::format("{}: {:8x} -> {:8x}\n",i,history_source[offset],history_target[offset]);
+        }
+        return out;
+    }
+
+    uint32_t idx;
+    uint32_t history_target[0x10] = {0};
+    uint32_t history_source[0x10] = {0};
+};
+
+
 enum class break_type : int
 {
     
@@ -29,6 +67,9 @@ struct Breakpoint
     uint32_t addr = 0xdeadbeef;
     int break_setting = 0;
 };
+
+
+
 
 
 class Debug
@@ -83,49 +124,13 @@ public:
     bool breakpoints_enabled = true;
     bool log_enabled = false;
     
+
+    Trace trace;
 private:
     std::ofstream log_file;
     bool log_full = false;
     // is debugged instance halted
     bool halted = false;    
-};
-
-
-
-struct Trace
-{
-    Trace()
-    {
-        clear();
-    }
-
-    void clear()
-    {
-        idx = 0;
-        memset(history_target,0,sizeof(history_target));
-        memset(history_source,0,sizeof(history_source));
-    }
-
-    void add(uint32_t src, uint32_t dst)
-    {
-        history_source[idx] = src;
-        history_target[idx] = dst;
-        idx = (idx + 1) & 0xf;
-    }
-
-    void print()
-    {
-        puts("pc trace:\n");
-        for(int i = 0; i < 0x10; i++)
-        {
-            const auto offset = (idx + i) & 0xf;
-            printf("%d: %08x -> %08x\n",i,history_source[offset],history_target[offset]);
-        }
-    }
-
-    uint32_t idx;
-    uint32_t history_target[0x10] = {0};
-    uint32_t history_source[0x10] = {0};
 };
 
 

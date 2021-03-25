@@ -2,6 +2,8 @@
 #ifdef FRONTEND_SDL
 #include <gb/gb.h>
 #include <gba/gba.h>
+#include <frontend/gb/controller.h>
+#include <frontend/gba/controller.h>
 
 #define SDL_MAIN_HANDLED
 #ifdef _WIN32
@@ -21,11 +23,11 @@ private:
     void init_sdl(int x, int y);
 
     void gameboy_render();
-    void gameboy_handle_input();
+    void gameboy_handle_input(GbControllerInput &controller);
     void gameboy_main(std::string filename);
 
     void gba_render();
-    void gba_handle_input();
+    void gba_handle_input(GbaControllerInput &controller);
     void gba_main(std::string filename);
 
     // main emu instance

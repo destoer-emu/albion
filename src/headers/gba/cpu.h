@@ -406,11 +406,6 @@ private:
 
     const COND_LUT cond_lut = gen_cond_lut();
 
-
-
-
-    Trace trace;
-
     bool in_bios;
 
     // cpu pipeline

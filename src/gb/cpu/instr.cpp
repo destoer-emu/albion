@@ -498,17 +498,20 @@ void Cpu::instr_jr_cond(bool cond, bool flag) noexcept
 
 void Cpu::instr_jp_cond(bool cond, bool flag) noexcept
 {
+	const uint16_t source = pc-1;
 	const auto v =  mem.read_wordt(pc);
 	pc += 2;
 	if(cond == flag)
 	{
 		pc = v;
 		cycle_delay(4); // internal delay
+		debug.trace.add(source,pc);
 	}	
 }
 
 void Cpu::call_cond(bool cond, bool flag) noexcept
 {
+	const uint16_t source = pc-1;
 	const auto v = mem.read_wordt(pc);
 	pc += 2;
 	if(flag == cond)
@@ -516,17 +519,20 @@ void Cpu::call_cond(bool cond, bool flag) noexcept
 		cycle_delay(4);  // internal delay
 		write_stackwt(pc);
 		pc = v;
+		debug.trace.add(source,pc);
 	}
 }
 
 
 void Cpu::ret_cond(bool cond, bool flag) noexcept
 {
+	const uint16_t source = pc-1;
 	cycle_delay(4); // internal
 	if(flag == cond)
 	{
 		pc = read_stackwt();
 		cycle_delay(4);  // internal
+		debug.trace.add(source,pc);
 	}	
 }
 
@@ -542,6 +548,20 @@ uint16_t Cpu::instr_decw(uint16_t v) noexcept
 	oam_bug_write(v);
 	cycle_delay(4); // internal
 	return v-1;		
+}
+
+void Cpu::instr_rst(uint16_t addr, uint8_t op)
+{
+	const uint16_t source = pc-1;
+	if(mem.read_mem(addr) == op)
+	{
+		write_log(debug,"[ERROR] rst infinite loop at {:x}->{:x}",pc,addr);
+		throw std::runtime_error("infinite rst lockup");
+	}
+	cycle_delay(4); // internal
+	write_stackwt(pc);
+	pc = addr;
+	debug.trace.add(source,pc);
 }
 
 }
