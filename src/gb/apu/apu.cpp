@@ -81,14 +81,8 @@ void Apu::push_samples(uint32_t cycles) noexcept
 			return; 
 		}
 
-		
-        float left = 0;
-        float right = 0;
-
-		
+	
 		// left output
-		
-
         float output[4];
         output[0] = static_cast<float>(psg.c1.get_output()) / 100;
         output[1] = static_cast<float>(psg.c2.get_output()) / 100;
@@ -99,30 +93,30 @@ void Apu::push_samples(uint32_t cycles) noexcept
         const auto nr50 = psg.read_nr50();
 
         // mix left and right channels
-        float bufferin0 = 0;
-        int volume = 20*((nr50 & 7)+1);
+        float f0 = 0;
+        int volume = 16*((nr50 & 7)+1);
         for(int i = 0; i < 4; i++)
         {
             if(is_set(sound_select,i))
             {
-                float bufferin1 = output[i];
-                playback.mix_samples(bufferin0,bufferin1,volume);
+                const float f1 = output[i];
+                playback.mix_samples(f0,f1,volume);
             }            
         }
-        left = bufferin0;
+        const float left = f0;
 
 		// right output
-		bufferin0 = 0;
-        volume = 20*(((nr50 >> 4) & 7)+1);
+		f0 = 0.0f;
+        volume = 16*(((nr50 >> 4) & 7)+1);
         for(int i = 0; i < 4; i++)
         {
             if(is_set(sound_select,i+4))
             {
-                float bufferin1 = output[i];
-                playback.mix_samples(bufferin0,bufferin1,volume);
+                const float f1 = output[i];
+                playback.mix_samples(f0,f1,volume);
             }            
         }
-        right = bufferin0;
+        const float right = f0;
 
 
         // push our samples!

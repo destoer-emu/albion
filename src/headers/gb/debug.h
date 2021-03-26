@@ -56,6 +56,12 @@ public:
     void disass(const std::vector<CommandArg> &args);
     void print_trace(const std::vector<CommandArg> &args);
     void print_mem(const std::vector<CommandArg> &args);
+    void clear_breakpoint(const std::vector<CommandArg> &args);
+    void enable_breakpoint(const std::vector<CommandArg> &args);
+    void disable_breakpoint(const std::vector<CommandArg> &args);    
+    void list_breakpoint(const std::vector<CommandArg> &args);
+    
+
 
 private:
     using COMMAND_FUNC =  void (GBDebug::*)(const std::vector<CommandArg>&);
@@ -67,7 +73,11 @@ private:
         {"step",&GBDebug::step},
         {"disass",&GBDebug::disass},
         {"trace",&GBDebug::print_trace},
-        {"mem",&GBDebug::print_mem}
+        {"mem",&GBDebug::print_mem},
+        {"break_clear",&GBDebug::clear_breakpoint},
+        {"break_enable",&GBDebug::enable_breakpoint},
+        {"break_disable",&GBDebug::disable_breakpoint},
+        {"break_list",&GBDebug::list_breakpoint}
     };
 
     GB &gb;

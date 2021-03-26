@@ -11,8 +11,9 @@
 // trace (done)
 // registers (done)
 // memory (done)
-// clear breakpoints
-// disable / enable break points
+// clear breakpoints (done)
+// list breakpoints (done)
+// disable / enable break points (done)
 // disable / enable watch points
 
 
@@ -269,8 +270,6 @@ void GBDebug::breakpoint(const std::vector<CommandArg> &args)
         return;
     }
 
-    gb.change_breakpoint_enable(true); // TODO remove this
-
     if(args[0].type != arg_type::integer)
     {
         print_console("expected int got string: {}\n",args[0].literal);
@@ -335,6 +334,7 @@ void GBDebug::breakpoint(const std::vector<CommandArg> &args)
 
     set_breakpoint(addr,r,w,x,value_enabled,value);
     print_console("breakpoint set at: {:x}\n",addr);
+    print_console("breakpoint enable: {}\n",breakpoints_enabled);
 }
 
 
@@ -484,6 +484,49 @@ void GBDebug::print_trace(const std::vector<CommandArg> &args)
 {
     UNUSED(args);
     print_console(trace.print());
+}
+
+// TODO: add optional arg to change individual settings on invidual breakpoints
+void GBDebug::clear_breakpoint(const std::vector<CommandArg> &args)
+{
+    UNUSED(args);
+    breakpoints.clear();
+    print_console("breakpoints cleared\n");
+}
+
+
+void GBDebug::enable_breakpoint(const std::vector<CommandArg> &args)
+{
+    UNUSED(args);
+    breakpoints_enabled = true;
+    gb.change_breakpoint_enable(true);
+    print_console("breakpoints enabled\n");
+}
+
+void GBDebug::disable_breakpoint(const std::vector<CommandArg> &args)
+{
+    UNUSED(args);
+    breakpoints_enabled = false;
+    gb.change_breakpoint_enable(false);
+    print_console("breakpoints disabled\n");
+}
+
+void GBDebug::list_breakpoint(const std::vector<CommandArg> &args)
+{
+    UNUSED(args);
+    for(const auto &it: breakpoints)
+    {
+        const auto b = it.second;
+        print_console(
+            "{:04x}: {}{}{} {} {:x} {}\n",b.addr,
+                b.break_setting & static_cast<int>(break_type::read)? "r" : "",
+                b.break_setting & static_cast<int>(break_type::write)? "w" : "",
+                b.break_setting & static_cast<int>(break_type::execute)? "x" : "",
+                b.break_enabled? "enabled" : "disabled",
+                b.value,
+                b.value_enabled? "enabled" : "disabled"
+        );
+    }
 }
 
 }

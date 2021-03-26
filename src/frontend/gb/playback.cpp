@@ -32,7 +32,7 @@ void GbPlayback::init(int playback_frequency,int sample_size) noexcept
 	start();
 }
 
-void GbPlayback::mix_samples(float &f1, float &f2, int volume) noexcept
+void GbPlayback::mix_samples(float &f1, const float &f2, int volume) noexcept
 {
     SDL_MixAudioFormat((Uint8*)&f1,(Uint8*)&f2,AUDIO_F32SYS,sizeof(float),volume);
 }

@@ -10,7 +10,7 @@ public:
 
     bool is_playing() const noexcept { return play_audio; }
 
-    void mix_samples(float &f1, float &f2,int volume) noexcept;
+    void mix_samples(float &f1, const float &f2,int volume) noexcept;
     void push_sample(const float &l, const float &r) noexcept;
     void start() noexcept;
     void stop() noexcept;

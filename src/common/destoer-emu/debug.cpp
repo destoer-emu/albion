@@ -35,9 +35,9 @@ bool Debug::breakpoint_hit(uint32_t addr, uint32_t value, break_type type)
         return false;
     }
 
-    Breakpoint b = breakpoints[addr];
+    auto b = breakpoints[addr];
 
-    bool hit =  b.is_hit(addr,type,value);
+    const bool hit =  b.is_hit(type,value);
 
 
     if(hit)
@@ -95,12 +95,11 @@ void Breakpoint::enable()
     break_enabled = true;
 }
 
-// breakpoints are broken
-bool Breakpoint::is_hit(uint32_t Addr,break_type type,uint32_t Value)
+bool Breakpoint::is_hit(break_type type,uint32_t value)
 {
     // if the its not enabled or the value does not match if enabled
     // then it is not hit
-    if(!break_enabled || (value_enabled && value != Value))
+    if(!break_enabled || (value_enabled && this->value != value))
     {
         return false;
     }
@@ -112,9 +111,8 @@ bool Breakpoint::is_hit(uint32_t Addr,break_type type,uint32_t Value)
         return false;
     }
 
-    // in many cases this will be checked be callee
-    // aswell can we optimise this?
-    return addr == Addr;
+
+    return true;
 }
 
 

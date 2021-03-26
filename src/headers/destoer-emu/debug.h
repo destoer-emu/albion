@@ -59,7 +59,7 @@ struct Breakpoint
 
     void enable();
 
-    bool is_hit(uint32_t Addr,break_type type,uint32_t Value);
+    bool is_hit(break_type type,uint32_t value);
 
     uint32_t value = 0xdeadbeef;
     bool value_enabled = false;

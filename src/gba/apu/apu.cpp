@@ -139,19 +139,18 @@ void Apu::push_samples(int cycles)
     // mix left and right channels
 
     // mix dma left
-    float bufferin0 = 0.0;
-    float bufferin1 = 0.0;
+    float f0 = 0.0;
 
     if(apu_io.sound_cnt.enable_left_a)
     {
-        bufferin1 = static_cast<float>(dma_a_sample) / 128.0;
-        playback.mix_samples(bufferin0,bufferin1,volume);
+        const float f1 = static_cast<float>(dma_a_sample) / 128.0;
+        playback.mix_samples(f0,f1,volume);
     }
 
     if(apu_io.sound_cnt.enable_left_b)
     {
-        bufferin1 = static_cast<float>(dma_b_sample) / 128.0;
-        playback.mix_samples(bufferin0,bufferin1,volume);
+        const float f1 = static_cast<float>(dma_b_sample) / 128.0;
+        playback.mix_samples(f0,f1,volume);
     }
     
     // mix psg left
@@ -160,38 +159,38 @@ void Apu::push_samples(int cycles)
     {
         if(is_set(sound_select,i))
         {
-            float bufferin1 = output[i];
-            playback.mix_samples(bufferin0,bufferin1,psg_volume);
+            const float f1 = output[i];
+            playback.mix_samples(f0,f1,psg_volume);
         }            
     }
-    const float left =  bufferin0;
+    const float left = f0;
 
     // mix dma right
-    bufferin0 = 0;
+    f0 = 0.0;
     
     if(apu_io.sound_cnt.enable_right_a)
     {
-        bufferin1 = static_cast<float>(dma_a_sample) / 128.0;
-        playback.mix_samples(bufferin0,bufferin1,volume);
+        const float f1 = static_cast<float>(dma_a_sample) / 128.0;
+        playback.mix_samples(f0,f1,volume);
     }
 
     if(apu_io.sound_cnt.enable_right_b)
     {
-        bufferin1 = static_cast<float>(dma_b_sample) / 128.0;
-        playback.mix_samples(bufferin0,bufferin1,volume);
+        const float f1 = static_cast<float>(dma_b_sample) / 128.0;
+        playback.mix_samples(f0,f1,volume);
     }
 
     // mix psg right
-    psg_volume = 20*(((nr50 >> 4) & 7)+1);
+    psg_volume = 16*(((nr50 >> 4) & 7)+1);
     for(int i = 0; i < 4; i++)
     {
         if(is_set(sound_select,i+4))
         {
-            float bufferin1 = output[i];
-            playback.mix_samples(bufferin0,bufferin1,psg_volume);
+            const float f1 = output[i];
+            playback.mix_samples(f0,f1,psg_volume);
         }            
     } 
-    const float right =  bufferin0;
+    const float right = f0;
 
     playback.push_sample(left,right);
 }
