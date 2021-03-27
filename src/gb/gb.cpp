@@ -37,7 +37,6 @@ void GB::reset(std::string rom_name, bool with_rom, bool use_bios)
 #ifdef DEBUG
 void GB::change_breakpoint_enable(bool enabled)
 {
-	debug.breakpoints_enabled = enabled;
 	mem.change_breakpoint_enable(enabled);
 	cpu.change_breakpoint_enable(enabled);
 }

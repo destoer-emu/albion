@@ -50,6 +50,11 @@ public:
 
     // standard commands
     void breakpoint(const std::vector<CommandArg> &args);
+    void set_break_internal(const std::vector<CommandArg> &args, bool watch);
+    void watch(const std::vector<CommandArg> &args);
+    void enable_watch(const std::vector<CommandArg> &args);
+    void disable_watch(const std::vector<CommandArg> &args);
+    void list_watchpoint(const std::vector<CommandArg> &args);
     void run(const std::vector<CommandArg> &args);
     void regs(const std::vector<CommandArg> &args);
     void step(const std::vector<CommandArg> &args);
@@ -60,6 +65,7 @@ public:
     void enable_breakpoint(const std::vector<CommandArg> &args);
     void disable_breakpoint(const std::vector<CommandArg> &args);    
     void list_breakpoint(const std::vector<CommandArg> &args);
+    void print_breakpoint(const Breakpoint &b);
     
 
 
@@ -77,7 +83,11 @@ private:
         {"break_clear",&GBDebug::clear_breakpoint},
         {"break_enable",&GBDebug::enable_breakpoint},
         {"break_disable",&GBDebug::disable_breakpoint},
-        {"break_list",&GBDebug::list_breakpoint}
+        {"break_list",&GBDebug::list_breakpoint},
+        {"watch",&GBDebug::watch},
+        {"watch_enable",&GBDebug::enable_watch},
+        {"watch_disable",&GBDebug::disable_watch},
+        {"watch_list",&GBDebug::list_watchpoint}
     };
 
     GB &gb;

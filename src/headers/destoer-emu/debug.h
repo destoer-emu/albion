@@ -52,8 +52,8 @@ enum class break_type : int
 // breakpoint helper class
 struct Breakpoint
 {
-    void set(uint32_t Addr, bool R, bool W, bool X, 
-        bool Value_enabled,uint32_t Value,bool Break_enabled);
+    void set(uint32_t addr, bool r, bool w, bool x, 
+        bool value_enabled,uint32_t value,bool break_enabled, bool watch);
 
     void disable();
 
@@ -66,6 +66,7 @@ struct Breakpoint
     bool break_enabled = false;
     uint32_t addr = 0xdeadbeef;
     int break_setting = 0;
+    bool watch = false;
 };
 
 
@@ -115,13 +116,14 @@ public:
 
     bool breakpoint_hit(uint32_t addr, uint32_t value, break_type type);
 
-    void set_breakpoint(uint32_t addr,bool r, bool w, bool x, bool value_enabled=false, uint32_t value=0xdeadbeef);
+    void set_breakpoint(uint32_t addr,bool r, bool w, bool x, bool value_enabled=false, uint32_t value=0xdeadbeef,bool watch = false);
 
 
     // map to hold breakpoints (lookup by addr)
     std::unordered_map<uint32_t,Breakpoint> breakpoints;
 
-    bool breakpoints_enabled = true;
+    bool breakpoints_enabled = false;
+    bool watchpoints_enabled = false;
     bool log_enabled = false;
     
 

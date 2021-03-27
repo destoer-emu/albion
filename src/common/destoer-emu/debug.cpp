@@ -24,7 +24,7 @@ void Debug::disable_everything()
 
 bool Debug::breakpoint_hit(uint32_t addr, uint32_t value, break_type type)
 {
-    if(!breakpoints_enabled)
+    if(!breakpoints_enabled && !watchpoints_enabled)
     {
         return false;
     }
@@ -42,31 +42,44 @@ bool Debug::breakpoint_hit(uint32_t addr, uint32_t value, break_type type)
 
     if(hit)
     {
-        printf("%x breakpoint hit at %x:%x\n",static_cast<int>(type),addr,value);
+        // this is a watchpoint we just want to print to the console
+        // with some debug info
+    
+        if(watchpoints_enabled && b.watch)
+        {
+            //print_watchpoint(b);
+            printf("%x watch hit at %x:%x\n",static_cast<int>(type),addr,value);
+            return false;
+        }
+
+        else if(breakpoints_enabled && !b.watch)
+        {
+            printf("%x breakpoint hit at %x:%x\n",static_cast<int>(type),addr,value);
+        }
     }
 
-    return hit;
+    return hit && breakpoints_enabled;
 }
 
-void Debug::set_breakpoint(uint32_t addr,bool r, bool w, bool x, bool value_enabled, uint32_t value)
+void Debug::set_breakpoint(uint32_t addr,bool r, bool w, bool x, bool value_enabled, uint32_t value, bool watch)
 {
     Breakpoint b;
 
-    b.set(addr,r,w,x,value_enabled,value,true);
+    b.set(addr,r,w,x,value_enabled,value,true,watch);
 
     breakpoints[addr] = b;
 }
 
 
-void Breakpoint::set(uint32_t Addr, bool r, bool w, bool x, 
-    bool Value_enabled,uint32_t Value,bool Break_enabled)
+void Breakpoint::set(uint32_t addr, bool r, bool w, bool x, 
+    bool value_enabled,uint32_t value,bool break_enabled, bool watch)
 {
-    value = Value;
-    addr = Addr;
-    break_enabled = Break_enabled;
-    value_enabled = Value_enabled;
-
-    break_setting = 0;
+    this->value = value;
+    this->addr = addr;
+    this->break_enabled = break_enabled;
+    this->value_enabled = value_enabled;
+    this->watch = watch;
+    this->break_setting = 0;
 
     if(r)
     {

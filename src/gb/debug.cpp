@@ -1,20 +1,9 @@
 #include <gb/gb.h>
 
 
-// todo text debugger rewrite
-// determine arg type int or string (done)
-// follwing functions (base) (done)
-// disass (done)
-// step (done)
-// break (done)
-// watch 
-// trace (done)
-// registers (done)
-// memory (done)
-// clear breakpoints (done)
-// list breakpoints (done)
-// disable / enable break points (done)
-// disable / enable watch points
+// TODO: watchpoints will override breakpoints
+// do we need a seperate map (i would rather not have two lookups as they are slow)
+// do we need to roll our own address decoder to store entries?
 
 
 namespace gameboy
@@ -262,11 +251,13 @@ void GBDebug::debug_input()
         execute_command(command,args);
     }
 }
-void GBDebug::breakpoint(const std::vector<CommandArg> &args)
+
+void GBDebug::set_break_internal(const std::vector<CommandArg> &args, bool watch)
 {
+
     if(!args.size() || args.size() > 3)
     {
-        print_console("usage: break <addr> . <value> . <type> . \n",args.size());
+        print_console("usage: {} <addr> . <value> . <type> . \n",watch? "watch" : "break",args.size());
         return;
     }
 
@@ -307,7 +298,7 @@ void GBDebug::breakpoint(const std::vector<CommandArg> &args)
 
                     default:
                     {
-                        print_console("expected break type (rwx) got: {}\n",args[1].literal);
+                        print_console("expected type (rwx) got: {}\n",args[1].literal);
                         return;
                     }
                 }
@@ -332,9 +323,30 @@ void GBDebug::breakpoint(const std::vector<CommandArg> &args)
         }
     }
 
-    set_breakpoint(addr,r,w,x,value_enabled,value);
-    print_console("breakpoint set at: {:x}\n",addr);
-    print_console("breakpoint enable: {}\n",breakpoints_enabled);
+    set_breakpoint(addr,r,w,x,value_enabled,value,watch);
+
+    if(watch)
+    {
+        print_console("watchpoint set at: {:x}\n",addr);
+        print_console("watchpoint enable: {}\n",breakpoints_enabled);        
+    }
+
+    else
+    {
+        print_console("breakpoint set at: {:x}\n",addr);
+        print_console("breakpoint enable: {}\n",watchpoints_enabled);        
+    }
+}
+
+void GBDebug::breakpoint(const std::vector<CommandArg> &args)
+{
+    set_break_internal(args,false);
+}
+
+
+void GBDebug::watch(const std::vector<CommandArg> &args)
+{
+    set_break_internal(args,true);
 }
 
 
@@ -499,7 +511,10 @@ void GBDebug::enable_breakpoint(const std::vector<CommandArg> &args)
 {
     UNUSED(args);
     breakpoints_enabled = true;
-    gb.change_breakpoint_enable(true);
+    if(!watchpoints_enabled)
+    {
+        gb.change_breakpoint_enable(true);
+    }
     print_console("breakpoints enabled\n");
 }
 
@@ -507,8 +522,49 @@ void GBDebug::disable_breakpoint(const std::vector<CommandArg> &args)
 {
     UNUSED(args);
     breakpoints_enabled = false;
-    gb.change_breakpoint_enable(false);
+    // if we dont need any kind of break/watch then we can shortcut checks in the gb memory handler for perf
+    if(!watchpoints_enabled)
+    {
+        gb.change_breakpoint_enable(false);
+    }
     print_console("breakpoints disabled\n");
+}
+
+void GBDebug::enable_watch(const std::vector<CommandArg> &args)
+{
+    UNUSED(args);
+    watchpoints_enabled = true;
+    if(!breakpoints_enabled)
+    {
+        gb.change_breakpoint_enable(true);
+    }
+    print_console("watchpoints enabled\n");
+}
+
+void GBDebug::disable_watch(const std::vector<CommandArg> &args)
+{
+    UNUSED(args);
+    watchpoints_enabled = false;
+    if(!breakpoints_enabled)
+    {
+        gb.change_breakpoint_enable(false);
+    }
+    print_console("watchpoints disabled\n");
+}
+
+
+
+void GBDebug::print_breakpoint(const Breakpoint &b)
+{
+    print_console(
+        "{:04x}: {}{}{} {} {:x} {}\n",b.addr,
+            b.break_setting & static_cast<int>(break_type::read)? "r" : "",
+            b.break_setting & static_cast<int>(break_type::write)? "w" : "",
+            b.break_setting & static_cast<int>(break_type::execute)? "x" : "",
+            b.break_enabled? "enabled" : "disabled",
+            b.value,
+            b.value_enabled? "enabled" : "disabled"
+    );    
 }
 
 void GBDebug::list_breakpoint(const std::vector<CommandArg> &args)
@@ -517,15 +573,23 @@ void GBDebug::list_breakpoint(const std::vector<CommandArg> &args)
     for(const auto &it: breakpoints)
     {
         const auto b = it.second;
-        print_console(
-            "{:04x}: {}{}{} {} {:x} {}\n",b.addr,
-                b.break_setting & static_cast<int>(break_type::read)? "r" : "",
-                b.break_setting & static_cast<int>(break_type::write)? "w" : "",
-                b.break_setting & static_cast<int>(break_type::execute)? "x" : "",
-                b.break_enabled? "enabled" : "disabled",
-                b.value,
-                b.value_enabled? "enabled" : "disabled"
-        );
+        if(!b.watch)
+        {
+            print_breakpoint(b);
+        }
+    }
+}
+
+void GBDebug::list_watchpoint(const std::vector<CommandArg> &args)
+{
+    UNUSED(args);
+    for(const auto &it: breakpoints)
+    {
+        const auto b = it.second;
+        if(b.watch)
+        {
+            print_breakpoint(b);
+        }
     }
 }
 
