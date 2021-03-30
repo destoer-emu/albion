@@ -77,9 +77,6 @@ class Debug
 {
 public:
 
-
-
-    // logging function!
 #ifdef DEBUG
     Debug();
     ~Debug();
@@ -98,9 +95,61 @@ public:
             #endif
         }
     }
+
+
+    template<typename... Args>
+    void print_console(std::string x,Args... args)
+    {
+        // assume SDL for now
+        const auto str = fmt::format(x,args...);
+        std::cout << str;
+    }
+
+
 #else
     void write_logger(std::string x,...) { UNUSED(x); }
+
+    template<typename... Args>
+    void print_console(std::string x,Args... args)
+    {
+        const auto str = fmt::format(x,args...);
+        std::cout << str;
+    }
 #endif
+
+    // console public
+    enum class arg_type
+    {
+        string,
+        integer
+    };
+
+    struct CommandArg
+    {
+        CommandArg(const std::string &l,arg_type t) : literal(l), type(t)
+        {
+
+        }
+
+        std::string literal;
+        arg_type type;
+    };
+
+    void breakpoint(const std::vector<CommandArg> &args);
+    void set_break_internal(const std::vector<CommandArg> &args, bool watch);
+    void watch(const std::vector<CommandArg> &args);
+    void enable_watch(const std::vector<CommandArg> &args);
+    void disable_watch(const std::vector<CommandArg> &args);
+    void list_watchpoint(const std::vector<CommandArg> &args);
+    void run(const std::vector<CommandArg> &args);
+    void print_trace(const std::vector<CommandArg> &args);
+    void print_mem(const std::vector<CommandArg> &args);
+    void clear_breakpoint(const std::vector<CommandArg> &args);
+    void enable_breakpoint(const std::vector<CommandArg> &args);
+    void disable_breakpoint(const std::vector<CommandArg> &args);    
+    void list_breakpoint(const std::vector<CommandArg> &args);
+    void print_breakpoint(const Breakpoint &b);
+    void disass_internal(const std::vector<CommandArg> &args);
 
 
     void wake_up();
@@ -125,14 +174,25 @@ public:
     bool breakpoints_enabled = false;
     bool watchpoints_enabled = false;
     bool log_enabled = false;
-    
+
 
     Trace trace;
-private:
+protected:
+    bool process_args(const std::string &line,std::vector<CommandArg> &args, std::string &command);
+    
+#ifdef DEBUG
+    // internal overrides
+    virtual void change_breakpoint_enable(bool enable) = 0;
+    virtual uint8_t read_mem(uint32_t addr) = 0;
+    virtual std::string disass_instr(uint32_t addr) = 0;
+    virtual uint32_t get_instr_size(uint32_t addr) = 0;
+#endif
+
     std::ofstream log_file;
     bool log_full = false;
     // is debugged instance halted
     bool halted = false;    
+    bool quit;
 };
 
 

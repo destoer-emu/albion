@@ -5,6 +5,7 @@
 #include <gba/display.h>
 #include <gba/apu.h>
 #include <gba/scheduler.h>
+#include <gba/debug.h>
 #include <destoer-emu/debug.h>
 
 namespace gameboyadvance
@@ -39,7 +40,7 @@ public:
     Display disp{*this};
     Apu apu{*this};
     GBAScheduler scheduler{*this};
-    Debug debug;
+    GBADebug debug{*this};
 
    bool quit = false;
 

@@ -976,8 +976,8 @@ void Ppu::tile_fetch(Pixel_Obj *buf, bool use_window) noexcept
 	
 	else // signed tile index 0x1000 is used as base pointer relative to start of vram
 	{
-		const auto tile_num = static_cast<int8_t>(mem.vram[0][tile_address]);
-		tile_location = 0x1000 + (tile_num * 16);
+		const auto tile_num = 256 + static_cast<int8_t>(mem.vram[0][tile_address]);
+		tile_location = tile_num * 16;
 	}
 
 	int cgb_pal = -1;

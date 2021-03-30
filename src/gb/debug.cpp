@@ -5,7 +5,7 @@
 // do we need a seperate map (i would rather not have two lookups as they are slow)
 // do we need to roll our own address decoder to store entries?
 
-
+#ifdef DEBUG
 namespace gameboy
 {
 
@@ -13,205 +13,6 @@ GBDebug::GBDebug(GB &g) : gb(g)
 {
 
 }
-
-
-
-
-template<typename F>
-bool verify_immediate_internal(const std::string &line, uint32_t &i, F lambda)
-{
-    const auto len = line.size();
-
-    for(; i < len; i++)
-    {
-        // valid part of the value
-        if(lambda(line[i]))
-        {
-            continue;
-        }
-
-        // values cannot have these at the end!
-        else if(isalpha(line[i]))
-        {
-            return false;
-        }
-
-        // we have  < ; + , etc stop parsing
-        else 
-        {
-            return true;
-        }
-    }
-
-    return true;
-}
-
-
-bool verify_immediate(const std::string &line, std::string &literal)
-{
-    const auto len = line.size();
-
-    // an empty immediate aint much use to us
-    if(!len)
-    {
-        return false;
-    }
-
-    uint32_t i = 0;
-
-    const auto c = line[0];
-
-    // allow - or +
-    if(c == '-' || c == '+')
-    {
-        i = 1;
-        // no digit after the sign is of no use
-        if(len == 1)
-        {
-            return false;
-        }
-    }
-
-    bool valid = false;
-
-
-    // have prefix + one more digit at minimum
-    const auto prefix = i+2 < len?  line.substr(i,2) : "";
-
-    // verify we have a valid hex number
-    if(prefix == "0x")
-    {
-        // skip past the prefix
-        i += 2;
-        valid = verify_immediate_internal(line,i,[](const char c) 
-        {
-            return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
-        });
-    }
-
-    // verify its ones or zeros
-    else if(prefix == "0b")
-    {
-        // skip past the prefix
-        i += 2;                
-        valid = verify_immediate_internal(line,i,[](const char c) 
-        {
-            return c == '0' || c == '1';
-        });
-    }
-
-    // verify we have all digits
-    else
-    {
-        valid = verify_immediate_internal(line,i,[](const char c) 
-        {
-            return c >= '0' && c <= '9';
-        });
-    }
-    
-
-    if(valid)
-    {
-        literal = line.substr(0,i);
-    }
-
-    return valid;    
-}
-
-
-uint32_t convert_imm(const std::string &imm)
-{
-    if(imm.size() >= 3 && imm.substr(0,2) == "0b")
-    {
-        return static_cast<uint32_t>(std::stoi(imm.substr(2),0,2));
-    }
-
-    // stoi wont auto detect base for binary strings?
-    return static_cast<uint32_t>(std::stoi(imm,0,0));
-}
-
-bool decode_imm(const std::string &line, uint32_t &i,std::string &literal)
-{
-    const auto success = verify_immediate(line.substr(i),literal);
-
-    // set one back for whatever the terminating character was
-    i--;
-
-    i += literal.size();  
-
-    return success;
-}
-
-bool GBDebug::process_args(const std::string &line,std::vector<CommandArg> &args, std::string &command)
-{
-    size_t argc = 0;
-    command = "";
-    args.clear();
-    for(uint32_t i = 0; i < line.size(); i++)
-    {
-        const auto c =  line[i];
-        switch(c)
-        {
-            case ' ': break;
-            case '\n': break;
-            case '\t': break;
-            case '\r': break;
-            case '\0': break;
-
-         
-            default:
-            {   
-                arg_type type;
-                std::string literal = "";
-
-                // integer
-                if(isdigit(c))
-                {
-                    type = arg_type::integer;
-                    if(!decode_imm(line,i,literal))
-                    {
-                        return false;
-                    }
-                }
-
-                // string
-                else
-                {
-                    type = arg_type::string;
-                    for(; i < line.size(); i++)
-                    {
-                        const auto c = line[i];
-                        if(c == ' ')
-                        {
-                            break;
-                        }
-
-                        literal += c;
-                    }
-                }
-
-
-                // first arg is the command
-                if(argc == 0)
-                {
-                    command = literal;
-                }
-
-                // push as arg
-                else
-                {
-                    args.push_back(CommandArg(literal,type));
-                }
-
-
-                argc++;
-                break;
-            }
-        }
-    }
-    return true;
-}
-
 
 void GBDebug::execute_command(const std::string &command, const std::vector<CommandArg> &args)
 {
@@ -229,7 +30,7 @@ void GBDebug::execute_command(const std::string &command, const std::vector<Comm
 // for use under SDL i dont know how we want to do the one for imgui yet...
 void GBDebug::debug_input()
 {
-    printf("%04x\n",gb.cpu.read_pc());
+    print_console("{:4x}\n",gb.cpu.read_pc());
     std::string line = "";
 
 
@@ -238,126 +39,21 @@ void GBDebug::debug_input()
     quit = false;
     while(!quit)
     {
-        printf("$ ");
+        print_console("$ ");
         std::getline(std::cin,line);
 
         // lex the line and pull the command name along with the args.
         if(!process_args(line,args,command))
         {
             // TODO: provide better error reporting
-            puts("one or more args is invalid");
+            print_console("one or more args is invalid");
         }
         
         execute_command(command,args);
     }
 }
 
-void GBDebug::set_break_internal(const std::vector<CommandArg> &args, bool watch)
-{
-
-    if(!args.size() || args.size() > 3)
-    {
-        print_console("usage: {} <addr> . <value> . <type> . \n",watch? "watch" : "break",args.size());
-        return;
-    }
-
-    if(args[0].type != arg_type::integer)
-    {
-        print_console("expected int got string: {}\n",args[0].literal);
-        return;
-    }
-
-    const auto addr = convert_imm(args[0].literal);
-
-    bool r = false;
-    bool w = false;
-    bool x = true;
-    bool value_enabled = false;
-
-    auto value = 0xdeadbeef;
-
-    // for 2nd arg allow tpye or value
-    if(args.size() >= 2)
-    {
-        if(args[1].type == arg_type::integer)
-        {
-            value = convert_imm(args[1].literal);
-            value_enabled = true;
-        }
-
-        // type set
-        else
-        {
-            for(const auto c: args[1].literal)
-            {
-                switch(c)
-                {
-                    case 'r': r = true; break;
-                    case 'w': w = true; break;
-                    case 'x': x = true; break;
-
-                    default:
-                    {
-                        print_console("expected type (rwx) got: {}\n",args[1].literal);
-                        return;
-                    }
-                }
-            }
-
-            // optinal value after the type
-            if(args.size() == 3)
-            {
-                // last is value and previous was type set
-                if(args[2].type == arg_type::integer)
-                {
-                    value = convert_imm(args[1].literal);
-                    value_enabled = true;
-                }
-
-                else
-                {
-                    print_console("expected int got string: {}\n",args[0].literal);
-                    return;
-                }
-            }
-        }
-    }
-
-    set_breakpoint(addr,r,w,x,value_enabled,value,watch);
-
-    if(watch)
-    {
-        print_console("watchpoint set at: {:x}\n",addr);
-        print_console("watchpoint enable: {}\n",breakpoints_enabled);        
-    }
-
-    else
-    {
-        print_console("breakpoint set at: {:x}\n",addr);
-        print_console("breakpoint enable: {}\n",watchpoints_enabled);        
-    }
-}
-
-void GBDebug::breakpoint(const std::vector<CommandArg> &args)
-{
-    set_break_internal(args,false);
-}
-
-
-void GBDebug::watch(const std::vector<CommandArg> &args)
-{
-    set_break_internal(args,true);
-}
-
-
-void GBDebug::run(const std::vector<CommandArg> &args)
-{
-    UNUSED(args);
-    wake_up();
-    quit = true;
-    print_console("resuming execution\n");
-}
-
+// these are better off being completly overriden
 void GBDebug::regs(const std::vector<CommandArg> &args)
 {
     UNUSED(args);
@@ -376,221 +72,27 @@ void GBDebug::step(const std::vector<CommandArg> &args)
     gb.cpu.exec_instr_no_debug();
 }
 
-void GBDebug::disass(const std::vector<CommandArg> &args)
+
+std::string GBDebug::disass_instr(uint32_t addr)
 {
-    if(!args.size())
-    {
-        print_console("usage: disass <addr> . <ammount>\n");
-        return;
-    }
-
-    uint16_t addr;
-
-    if(args[0].type == arg_type::integer)
-    {
-        addr = convert_imm(args[0].literal);
-    }
-
-    else
-    {
-        print_console("usage: disass <addr> . <ammount>\n");
-        return;
-    }
-    
-
-    if(args.size() == 1)
-    {
-        print_console("{:4x}: {}\n",addr,gb.disass.disass_op(addr));
-    }
-
-    else
-    {
-        int n;
-        if(args[1].type == arg_type::integer)
-        {
-            n = convert_imm(args[1].literal);
-        }
-
-        else
-        {
-            print_console("usage: disass <addr> . <ammount>\n");
-            return;
-        }
-
-        for(int i = 0; i < n; i++)
-        {
-            print_console("{:4x}: {}\n",addr,gb.disass.disass_op(addr));
-            addr = (addr + gb.disass.get_op_sz(addr)) & 0xffff;
-        }
-    }
+    return gb.disass.disass_op(addr);    
 }
 
-
-void GBDebug::print_mem(const std::vector<CommandArg> &args)
+uint32_t GBDebug::get_instr_size(uint32_t addr)
 {
-    if(!args.size())
-    {
-        print_console("usage: mem <addr> . <ammount>\n");
-        return;
-    }
-
-    uint16_t addr;
-
-    if(args[0].type == arg_type::integer)
-    {
-        addr = convert_imm(args[0].literal);
-    }
-
-    else
-    {
-        print_console("usage: mem <addr> . <ammount>\n");
-        return;
-    }
-    
-
-    if(args.size() == 1)
-    {
-        print_console("{:2x}: {}\n",addr,gb.mem.raw_read(addr));
-    }
-
-    else
-    {
-        int n;
-        if(args[1].type == arg_type::integer)
-        {
-            n = convert_imm(args[1].literal);
-        }
-
-        else
-        {
-            print_console("usage: mem <addr> . <ammount>\n");
-            return;
-        }
-
-        print_console("    ");
-
-		for(int i = 0; i < 16; i++)
-		{
-			print_console("  {:2x}",i);
-		}
-		
-		print_console("\n\n{:4x}: {:2x} ,",addr,gb.mem.raw_read(addr));
-		for(int i = 1; i < n; i++)
-		{	
-			// makes it "slow" to format but oh well
-			if(i % 16 == 0)
-			{
-				print_console("\n{:4x}: ",addr+i);
-			}
-			
-			
-			print_console("{:2x} ,",gb.mem.raw_read(addr+i));
-			
-		}
-		
-		print_console("\n");
-    }
+    return gb.disass.get_op_sz(addr);
 }
 
-void GBDebug::print_trace(const std::vector<CommandArg> &args)
+uint8_t GBDebug::read_mem(uint32_t addr)
 {
-    UNUSED(args);
-    print_console(trace.print());
+    return gb.mem.raw_read(addr);
 }
 
-// TODO: add optional arg to change individual settings on invidual breakpoints
-void GBDebug::clear_breakpoint(const std::vector<CommandArg> &args)
+void GBDebug::change_breakpoint_enable(bool enable)
 {
-    UNUSED(args);
-    breakpoints.clear();
-    print_console("breakpoints cleared\n");
-}
-
-
-void GBDebug::enable_breakpoint(const std::vector<CommandArg> &args)
-{
-    UNUSED(args);
-    breakpoints_enabled = true;
-    if(!watchpoints_enabled)
-    {
-        gb.change_breakpoint_enable(true);
-    }
-    print_console("breakpoints enabled\n");
-}
-
-void GBDebug::disable_breakpoint(const std::vector<CommandArg> &args)
-{
-    UNUSED(args);
-    breakpoints_enabled = false;
-    // if we dont need any kind of break/watch then we can shortcut checks in the gb memory handler for perf
-    if(!watchpoints_enabled)
-    {
-        gb.change_breakpoint_enable(false);
-    }
-    print_console("breakpoints disabled\n");
-}
-
-void GBDebug::enable_watch(const std::vector<CommandArg> &args)
-{
-    UNUSED(args);
-    watchpoints_enabled = true;
-    if(!breakpoints_enabled)
-    {
-        gb.change_breakpoint_enable(true);
-    }
-    print_console("watchpoints enabled\n");
-}
-
-void GBDebug::disable_watch(const std::vector<CommandArg> &args)
-{
-    UNUSED(args);
-    watchpoints_enabled = false;
-    if(!breakpoints_enabled)
-    {
-        gb.change_breakpoint_enable(false);
-    }
-    print_console("watchpoints disabled\n");
-}
-
-
-
-void GBDebug::print_breakpoint(const Breakpoint &b)
-{
-    print_console(
-        "{:04x}: {}{}{} {} {:x} {}\n",b.addr,
-            b.break_setting & static_cast<int>(break_type::read)? "r" : "",
-            b.break_setting & static_cast<int>(break_type::write)? "w" : "",
-            b.break_setting & static_cast<int>(break_type::execute)? "x" : "",
-            b.break_enabled? "enabled" : "disabled",
-            b.value,
-            b.value_enabled? "enabled" : "disabled"
-    );    
-}
-
-void GBDebug::list_breakpoint(const std::vector<CommandArg> &args)
-{
-    UNUSED(args);
-    for(const auto &it: breakpoints)
-    {
-        const auto b = it.second;
-        if(!b.watch)
-        {
-            print_breakpoint(b);
-        }
-    }
-}
-
-void GBDebug::list_watchpoint(const std::vector<CommandArg> &args)
-{
-    UNUSED(args);
-    for(const auto &it: breakpoints)
-    {
-        const auto b = it.second;
-        if(b.watch)
-        {
-            print_breakpoint(b);
-        }
-    }
+    gb.change_breakpoint_enable(enable);
 }
 
 }
+
+#endif

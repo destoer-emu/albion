@@ -90,10 +90,12 @@ void SDLMainWindow::gameboy_main(std::string filename)
 		//next_time = current_time() + screen_ticks_per_frame;
 		
 		// we hit a breakpoint go back to the prompt
+	#ifdef DEBUG
 		if(gb.debug.is_halted())
 		{
 			gb.debug.debug_input();
 		}
+	#endif
     }	
 }
 
@@ -118,12 +120,14 @@ void SDLMainWindow::gameboy_handle_input(GbControllerInput &controller)
 
 			case SDL_KEYDOWN:
 			{
+			#ifdef DEBUG
 				if(event.key.keysym.sym == SDLK_p)
 				{
 					gb.debug.debug_input();
 				}
 
 				else
+			#endif
 				{
 					gb.key_input(event.key.keysym.sym,true);
 				}
@@ -212,7 +216,17 @@ void SDLMainWindow::gba_handle_input(GbaControllerInput &controller)
 			
 			case SDL_KEYDOWN:
 			{
-				gba.key_input(event.key.keysym.sym,true);
+			#ifdef DEBUG
+				if(event.key.keysym.sym == SDLK_p)
+				{
+					gba.debug.debug_input();
+				}
+
+				else
+			#endif
+				{
+					gba.key_input(event.key.keysym.sym,true);
+				}
                 break;
 			}
 			
@@ -279,6 +293,12 @@ void SDLMainWindow::gba_main(std::string filename)
 		SDL_SetWindowTitle(window,fmt::format("destoer-emu: {}",fps_counter.get_fps()).c_str());
 
 		//next_time = current_time() + screen_ticks_per_frame;
+	#ifdef DEBUG
+		if(gba.debug.is_halted())
+		{
+			gba.debug.debug_input();
+		}
+	#endif
 	}
 }
 

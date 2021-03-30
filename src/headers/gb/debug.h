@@ -6,70 +6,34 @@
 
 namespace gameboy
 {
-
+#ifdef DEBUG
 class GBDebug : public Debug 
 {
 public:
     GBDebug(GB &gb);
 
 
-    enum class arg_type
-    {
-        string,
-        integer
-    };
-
-    struct CommandArg
-    {
-        CommandArg(const std::string &l,arg_type t) : literal(l), type(t)
-        {
-
-        }
-
-        std::string literal;
-        arg_type type;
-    };
-
-
-
-    template<typename... Args>
-    void print_console(std::string x,Args... args)
-    {
-        // assume SDL for now
-        const auto str = fmt::format(x,args...);
-        std::cout << str;
-    }
-
-
     void debug_input();
     void execute_command(const std::string &command, const std::vector<CommandArg> &args);
 
 
-
-    bool process_args(const std::string &line,std::vector<CommandArg> &args, std::string &command);
-
     // standard commands
-    void breakpoint(const std::vector<CommandArg> &args);
-    void set_break_internal(const std::vector<CommandArg> &args, bool watch);
-    void watch(const std::vector<CommandArg> &args);
-    void enable_watch(const std::vector<CommandArg> &args);
-    void disable_watch(const std::vector<CommandArg> &args);
-    void list_watchpoint(const std::vector<CommandArg> &args);
-    void run(const std::vector<CommandArg> &args);
     void regs(const std::vector<CommandArg> &args);
     void step(const std::vector<CommandArg> &args);
-    void disass(const std::vector<CommandArg> &args);
-    void print_trace(const std::vector<CommandArg> &args);
-    void print_mem(const std::vector<CommandArg> &args);
-    void clear_breakpoint(const std::vector<CommandArg> &args);
-    void enable_breakpoint(const std::vector<CommandArg> &args);
-    void disable_breakpoint(const std::vector<CommandArg> &args);    
-    void list_breakpoint(const std::vector<CommandArg> &args);
-    void print_breakpoint(const Breakpoint &b);
-    
+    void disass(const std::vector<CommandArg> &args);    
 
+
+
+
+
+    // overrides
+    void change_breakpoint_enable(bool enable) override;
+    uint8_t read_mem(uint32_t addr) override;
+    std::string disass_instr(uint32_t addr) override;
+    uint32_t get_instr_size(uint32_t addr) override;
 
 private:
+
     using COMMAND_FUNC =  void (GBDebug::*)(const std::vector<CommandArg>&);
     std::unordered_map<std::string,COMMAND_FUNC> func_table =
     {
@@ -77,7 +41,7 @@ private:
         {"run", &GBDebug::run},
         {"regs",&GBDebug::regs},
         {"step",&GBDebug::step},
-        {"disass",&GBDebug::disass},
+        {"disass",&GBDebug::disass_internal},
         {"trace",&GBDebug::print_trace},
         {"mem",&GBDebug::print_mem},
         {"break_clear",&GBDebug::clear_breakpoint},
@@ -91,7 +55,15 @@ private:
     };
 
     GB &gb;
-    bool quit;
 };
 
+#else
+
+class GBDebug : public Debug 
+{
+public:
+    GBDebug(GB &gb) { UNUSED(gb); }
+};
+
+#endif
 }

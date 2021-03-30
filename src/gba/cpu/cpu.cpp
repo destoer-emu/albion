@@ -310,7 +310,6 @@ void Cpu::handle_power_state()
 }
 
 
-// start here
 // debug register printing
 void Cpu::print_regs()
 {
@@ -320,63 +319,63 @@ void Cpu::print_regs()
     store_registers(arm_mode);
 
 
-    printf("current mode: %s\n",mode_names[static_cast<int>(arm_mode)]);
-    printf("cpu state: %s\n", is_thumb? "thumb" : "arm");
+    debug.print_console("current mode: {}\n",mode_names[static_cast<int>(arm_mode)]);
+    debug.print_console("cpu state: {}\n", is_thumb? "thumb" : "arm");
 
-    puts("USER & SYSTEM REGS");
+    debug.print_console("USER & SYSTEM REGS\n");
 
     for(int i = 0; i < 15; i++)
     {
-        printf("%s: %08x ",user_regs_names[i],user_regs[i]);
+        debug.print_console("{}: {:08x} ",user_regs_names[i],user_regs[i]);
         if((i % 2) == 0)
         {
-            putchar('\n');
+            debug.print_console("\n");
         }
     }
 
-    printf("pc: %08x ",pc_actual);
+    debug.print_console("pc: {:08x} ",pc_actual);
 
 
-    puts("\n\nFIQ BANKED");
+    debug.print_console("\n\nFIQ BANKED\n");
 
 
     for(int i = 0; i < 5; i++)
     {
-        printf("%s: %08x ",fiq_banked_names[i],fiq_banked[i]);
+        debug.print_console("{}: {:08x} ",fiq_banked_names[i],fiq_banked[i]);
         if((i % 2) == 0)
         {
-            putchar('\n');
+            debug.print_console("\n");
         }        
     }
 
-    puts("\nHI BANKED");
+    debug.print_console("\nHI BANKED\n");
 
     for(int i = 0; i < 5; i++)
     {
-        printf("%s: %08x %s: %08x\n",hi_banked_names[i][0],hi_banked[i][0],
+        debug.print_console("{}: {:08x} {}: {:08x}\n",hi_banked_names[i][0],hi_banked[i][0],
             hi_banked_names[i][1],hi_banked[i][1]);
     }
 
-    puts("\nSTAUS BANKED");
+    debug.print_console("\nSTAUS BANKED\n");
 
     for(int i = 0; i < 5; i++)
     {
-        printf("%s: %08x ",status_banked_names[i],status_banked[i]);
+        debug.print_console("{}: {:08x} ",status_banked_names[i],status_banked[i]);
         if((i % 2) == 0)
         {
-            putchar('\n');
+            debug.print_console("\n");
         }       
     }
 
 
-    printf("\ncpsr: %08x\n",get_cpsr());
+    debug.print_console("\ncpsr: {:08x}\n",get_cpsr());
 
-    puts("FLAGS");
+    debug.print_console("FLAGS");
 
-    printf("Z: %s\n",flag_z? "true" : "false");
-    printf("C: %s\n",flag_c? "true" : "false");
-    printf("N: %s\n",flag_n? "true" : "false");
-    printf("V: %s\n",flag_v? "true" : "false");
+    debug.print_console("Z: {}\n",flag_z? "true" : "false");
+    debug.print_console("C: {}\n",flag_c? "true" : "false");
+    debug.print_console("N: {}\n",flag_n? "true" : "false");
+    debug.print_console("V: {}\n",flag_v? "true" : "false");
 
 }
 
