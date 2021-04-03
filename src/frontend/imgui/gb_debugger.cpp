@@ -205,6 +205,7 @@ void ImguiMainWindow::gameboy_draw_disassembly_child()
     if(ImGui::Button("Step"))
     {
         gb.cpu.exec_instr_no_debug();
+        gb.debug.halt();
     }
 
 
@@ -420,7 +421,7 @@ void ImguiMainWindow::gameboy_draw_breakpoints()
 		{
 			uint32_t breakpoint = strtoll(input_breakpoint, NULL, 16);
 
-            gb.debug.set_breakpoint(breakpoint,break_r,break_w,break_x);
+            gb.debug.set_breakpoint(breakpoint,break_r,break_w,break_x,false,false,false);
 
 			*input_breakpoint = '\0';
 		}

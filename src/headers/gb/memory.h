@@ -165,7 +165,7 @@ public:
 	int gekkio_fail_count = 0;
 	static constexpr int GEKKIO_FAIL_SIZE = 6;
 
-
+    RomInfo rom_info; 
 private:
 
     Cpu &cpu;
@@ -295,10 +295,7 @@ private:
     }Memory_table;
 
     // memory access function pointers
-    std::array<Memory_table,0x10> memory_table;
-
-
-    gameboy::Rom_info rom_info;    
+    std::array<Memory_table,0x10> memory_table;   
 };
 
 }

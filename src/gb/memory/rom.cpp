@@ -215,7 +215,7 @@ void convert_isx(std::vector<uint8_t> &rom)
 
 }
 
-void Rom_info::init(std::vector<uint8_t> &rom, std::string romname)
+void RomInfo::init(std::vector<uint8_t> &rom, std::string romname)
 {
 
 

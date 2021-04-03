@@ -86,19 +86,21 @@ inline bool is_valid_hex_string(char *input_str) noexcept
 void read_file(const std::string &filename, std::vector<uint8_t> &buf);
 void write_file(const std::string &filename,std::vector<uint8_t> &buf);
 
-inline std::string get_save_file_name(const std::string &filename)
+inline std::string remove_ext(const std::string &str)
 {
-	std::string save_name = filename;
+	std::string ans = str;
 
-	size_t ext_idx = filename.find_last_of("."); 
+	size_t ext_idx = ans.find_last_of("."); 
 	if(ext_idx != std::string::npos)
 	{
-		save_name = filename.substr(0, ext_idx); 	
+		ans = ans.substr(0, ext_idx); 	
 	}
+	return ans;	
+}
 
-	save_name += ".sav";
-
-	return save_name;
+inline std::string get_save_file_name(const std::string &filename)
+{
+	return remove_ext(filename) + ".sav";
 }
 
 
@@ -260,3 +262,27 @@ access_type handle_read(std::vector<uint8_t> &buf,uint32_t addr)
 	memcpy(&v,buf.data()+addr,sizeof(access_type));  
 	return v;
 }
+
+
+enum class token_type
+{
+	string,
+	integer
+};
+
+struct Token
+{
+	Token(const std::string &l,token_type t) : literal(l), type(t)
+	{
+
+	}
+
+	std::string literal;
+	token_type type;
+};
+
+// basic tokenizer
+bool tokenize(const std::string &line,std::vector<Token> &args);
+uint32_t convert_imm(const std::string &imm);
+
+void print_tokens(const std::vector<Token> &tokens);

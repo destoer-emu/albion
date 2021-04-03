@@ -17,6 +17,16 @@ public:
 private:
     Memory &mem;
 
+
+    void load_sym_file(const std::string name);
+    bool get_symbol(uint16_t addr, std::string &sym);
+
+    std::vector<std::unordered_map<uint16_t,std::string>> rom_sym_table;
+    std::unordered_map<uint16_t,std::string> mem_sym_table;
+    bool sym_file_loaded;
+
+
+
 };
 
 }

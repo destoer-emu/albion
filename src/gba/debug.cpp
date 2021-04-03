@@ -14,8 +14,15 @@ GBADebug::GBADebug(GBA &g) : gba(g)
 
 }
 
-void GBADebug::execute_command(const std::string &command, const std::vector<CommandArg> &args)
+void GBADebug::execute_command(const std::vector<Token> &args)
 {
+    if(!args.size())
+    {
+        print_console("empty command\n");
+        return;
+    }
+
+    const auto command = args[0].literal;
     if(!func_table.count(command))
     {
         print_console("unknown command: '{}'\n",command);
@@ -34,8 +41,7 @@ void GBADebug::debug_input()
     std::string line = "";
 
 
-    std::vector<CommandArg> args;
-    std::string command = "";
+    std::vector<Token> args;
     quit = false;
     while(!quit)
     {
@@ -43,24 +49,25 @@ void GBADebug::debug_input()
         std::getline(std::cin,line);
 
         // lex the line and pull the command name along with the args.
-        if(!process_args(line,args,command))
+        if(!tokenize(line,args))
         {
             // TODO: provide better error reporting
             print_console("one or more args is invalid");
         }
         
-        execute_command(command,args);
+        execute_command(args);
+        std::cin.clear();
     }
 }
 
 // these are better off being completly overriden
-void GBADebug::regs(const std::vector<CommandArg> &args)
+void GBADebug::regs(const std::vector<Token> &args)
 {
     UNUSED(args);
     gba.cpu.print_regs();
 }
 
-void GBADebug::step(const std::vector<CommandArg> &args)
+void GBADebug::step(const std::vector<Token> &args)
 {
     UNUSED(args);
     const auto pc = gba.cpu.get_pc();
@@ -75,14 +82,14 @@ std::string GBADebug::disass_instr(uint32_t addr)
 }
 
 
-void GBADebug::disassemble_arm(const std::vector<CommandArg> &args)
+void GBADebug::disassemble_arm(const std::vector<Token> &args)
 {
     UNUSED(args);
     disass_thumb = false;
     disass_internal(args);
 }  
 
-void GBADebug::disassemble_thumb(const std::vector<CommandArg> &args)
+void GBADebug::disassemble_thumb(const std::vector<Token> &args)
 {
     UNUSED(args);
     disass_thumb = true;

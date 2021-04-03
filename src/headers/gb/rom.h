@@ -9,7 +9,7 @@ enum class rom_type
     mbc1,mbc2,mbc3,mbc5,rom_only
 };
 
-struct Rom_info
+struct RomInfo
 {
     void init(std::vector<uint8_t> &rom, std::string romname);
 

@@ -14,14 +14,14 @@ public:
 
 
     void debug_input();
-    void execute_command(const std::string &command, const std::vector<CommandArg> &args);
+    void execute_command(const std::vector<Token> &args);
 
 
     // standard commands
-    void regs(const std::vector<CommandArg> &args);
-    void step(const std::vector<CommandArg> &args);
-    void disassemble_arm(const std::vector<CommandArg> &args);    
-    void disassemble_thumb(const std::vector<CommandArg> &args);   
+    void regs(const std::vector<Token> &args);
+    void step(const std::vector<Token> &args);
+    void disassemble_arm(const std::vector<Token> &args);    
+    void disassemble_thumb(const std::vector<Token> &args);   
 
 
 
@@ -35,7 +35,7 @@ public:
 
 private:
 
-    using COMMAND_FUNC =  void (GBADebug::*)(const std::vector<CommandArg>&);
+    using COMMAND_FUNC =  void (GBADebug::*)(const std::vector<Token>&);
     std::unordered_map<std::string,COMMAND_FUNC> func_table =
     {
         {"break",&GBADebug::breakpoint},

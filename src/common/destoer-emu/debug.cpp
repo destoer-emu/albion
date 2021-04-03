@@ -2,6 +2,7 @@
 
 #ifdef DEBUG
 
+// TODO: add memory searching
 
 // wake the instance up
 void Debug::wake_up()
@@ -150,204 +151,9 @@ Debug::~Debug()
 // console impl
 
 
-template<typename F>
-bool verify_immediate_internal(const std::string &line, uint32_t &i, F lambda)
+void Debug::print_mem(const std::vector<Token> &args)
 {
-    const auto len = line.size();
-
-    for(; i < len; i++)
-    {
-        // valid part of the value
-        if(lambda(line[i]))
-        {
-            continue;
-        }
-
-        // values cannot have these at the end!
-        else if(isalpha(line[i]))
-        {
-            return false;
-        }
-
-        // we have  < ; + , etc stop parsing
-        else 
-        {
-            return true;
-        }
-    }
-
-    return true;
-}
-
-
-bool verify_immediate(const std::string &line, std::string &literal)
-{
-    const auto len = line.size();
-
-    // an empty immediate aint much use to us
-    if(!len)
-    {
-        return false;
-    }
-
-    uint32_t i = 0;
-
-    const auto c = line[0];
-
-    // allow - or +
-    if(c == '-' || c == '+')
-    {
-        i = 1;
-        // no digit after the sign is of no use
-        if(len == 1)
-        {
-            return false;
-        }
-    }
-
-    bool valid = false;
-
-
-    // have prefix + one more digit at minimum
-    const auto prefix = i+2 < len?  line.substr(i,2) : "";
-
-    // verify we have a valid hex number
-    if(prefix == "0x")
-    {
-        // skip past the prefix
-        i += 2;
-        valid = verify_immediate_internal(line,i,[](const char c) 
-        {
-            return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
-        });
-    }
-
-    // verify its ones or zeros
-    else if(prefix == "0b")
-    {
-        // skip past the prefix
-        i += 2;                
-        valid = verify_immediate_internal(line,i,[](const char c) 
-        {
-            return c == '0' || c == '1';
-        });
-    }
-
-    // verify we have all digits
-    else
-    {
-        valid = verify_immediate_internal(line,i,[](const char c) 
-        {
-            return c >= '0' && c <= '9';
-        });
-    }
-    
-
-    if(valid)
-    {
-        literal = line.substr(0,i);
-    }
-
-    return valid;    
-}
-
-
-uint32_t convert_imm(const std::string &imm)
-{
-    if(imm.size() >= 3 && imm.substr(0,2) == "0b")
-    {
-        return static_cast<uint32_t>(std::stoi(imm.substr(2),0,2));
-    }
-
-    // stoi wont auto detect base for binary strings?
-    return static_cast<uint32_t>(std::stoi(imm,0,0));
-}
-
-bool decode_imm(const std::string &line, uint32_t &i,std::string &literal)
-{
-    const auto success = verify_immediate(line.substr(i),literal);
-
-    // set one back for whatever the terminating character was
-    i--;
-
-    i += literal.size();  
-
-    return success;
-}
-
-bool Debug::process_args(const std::string &line,std::vector<CommandArg> &args, std::string &command)
-{
-    size_t argc = 0;
-    command = "";
-    args.clear();
-    for(uint32_t i = 0; i < line.size(); i++)
-    {
-        const auto c =  line[i];
-        switch(c)
-        {
-            case ' ': break;
-            case '\n': break;
-            case '\t': break;
-            case '\r': break;
-            case '\0': break;
-
-         
-            default:
-            {   
-                arg_type type;
-                std::string literal = "";
-
-                // integer
-                if(isdigit(c))
-                {
-                    type = arg_type::integer;
-                    if(!decode_imm(line,i,literal))
-                    {
-                        return false;
-                    }
-                }
-
-                // string
-                else
-                {
-                    type = arg_type::string;
-                    for(; i < line.size(); i++)
-                    {
-                        const auto c = line[i];
-                        if(c == ' ')
-                        {
-                            break;
-                        }
-
-                        literal += c;
-                    }
-                }
-
-
-                // first arg is the command
-                if(argc == 0)
-                {
-                    command = literal;
-                }
-
-                // push as arg
-                else
-                {
-                    args.push_back(CommandArg(literal,type));
-                }
-
-
-                argc++;
-                break;
-            }
-        }
-    }
-    return true;
-}
-
-void Debug::print_mem(const std::vector<CommandArg> &args)
-{
-    if(!args.size())
+    if(args.size() <= 1)
     {
         print_console("usage: mem <addr> . <ammount>\n");
         return;
@@ -355,9 +161,9 @@ void Debug::print_mem(const std::vector<CommandArg> &args)
 
     uint16_t addr;
 
-    if(args[0].type == arg_type::integer)
+    if(args[1].type == token_type::integer)
     {
-        addr = convert_imm(args[0].literal);
+        addr = convert_imm(args[1].literal);
     }
 
     else
@@ -367,7 +173,7 @@ void Debug::print_mem(const std::vector<CommandArg> &args)
     }
     
 
-    if(args.size() == 1)
+    if(args.size() == 2)
     {
         print_console("{:2x}: {}\n",addr,read_mem(addr));
     }
@@ -375,9 +181,9 @@ void Debug::print_mem(const std::vector<CommandArg> &args)
     else
     {
         int n;
-        if(args[1].type == arg_type::integer)
+        if(args[2].type == token_type::integer)
         {
-            n = convert_imm(args[1].literal);
+            n = convert_imm(args[2].literal);
         }
 
         else
@@ -411,14 +217,14 @@ void Debug::print_mem(const std::vector<CommandArg> &args)
     }
 }
 
-void Debug::print_trace(const std::vector<CommandArg> &args)
+void Debug::print_trace(const std::vector<Token> &args)
 {
     UNUSED(args);
     print_console(trace.print());
 }
 
 // TODO: add optional arg to change individual settings on invidual breakpoints
-void Debug::clear_breakpoint(const std::vector<CommandArg> &args)
+void Debug::clear_breakpoint(const std::vector<Token> &args)
 {
     UNUSED(args);
     breakpoints.clear();
@@ -426,7 +232,7 @@ void Debug::clear_breakpoint(const std::vector<CommandArg> &args)
 }
 
 
-void Debug::enable_breakpoint(const std::vector<CommandArg> &args)
+void Debug::enable_breakpoint(const std::vector<Token> &args)
 {
     UNUSED(args);
     breakpoints_enabled = true;
@@ -437,7 +243,7 @@ void Debug::enable_breakpoint(const std::vector<CommandArg> &args)
     print_console("breakpoints enabled\n");
 }
 
-void Debug::disable_breakpoint(const std::vector<CommandArg> &args)
+void Debug::disable_breakpoint(const std::vector<Token> &args)
 {
     UNUSED(args);
     breakpoints_enabled = false;
@@ -449,7 +255,7 @@ void Debug::disable_breakpoint(const std::vector<CommandArg> &args)
     print_console("breakpoints disabled\n");
 }
 
-void Debug::enable_watch(const std::vector<CommandArg> &args)
+void Debug::enable_watch(const std::vector<Token> &args)
 {
     UNUSED(args);
     watchpoints_enabled = true;
@@ -460,7 +266,7 @@ void Debug::enable_watch(const std::vector<CommandArg> &args)
     print_console("watchpoints enabled\n");
 }
 
-void Debug::disable_watch(const std::vector<CommandArg> &args)
+void Debug::disable_watch(const std::vector<Token> &args)
 {
     UNUSED(args);
     watchpoints_enabled = false;
@@ -486,7 +292,7 @@ void Debug::print_breakpoint(const Breakpoint &b)
     );    
 }
 
-void Debug::list_breakpoint(const std::vector<CommandArg> &args)
+void Debug::list_breakpoint(const std::vector<Token> &args)
 {
     UNUSED(args);
     for(const auto &it: breakpoints)
@@ -499,7 +305,7 @@ void Debug::list_breakpoint(const std::vector<CommandArg> &args)
     }
 }
 
-void Debug::list_watchpoint(const std::vector<CommandArg> &args)
+void Debug::list_watchpoint(const std::vector<Token> &args)
 {
     UNUSED(args);
     for(const auto &it: breakpoints)
@@ -513,9 +319,9 @@ void Debug::list_watchpoint(const std::vector<CommandArg> &args)
 }
 
 
-void Debug::disass_internal(const std::vector<CommandArg> &args)
+void Debug::disass_internal(const std::vector<Token> &args)
 {
-    if(!args.size())
+    if(args.size() <= 1)
     {
         print_console("usage: disass <addr> . <ammount>\n");
         return;
@@ -523,9 +329,9 @@ void Debug::disass_internal(const std::vector<CommandArg> &args)
 
     uint32_t addr;
 
-    if(args[0].type == arg_type::integer)
+    if(args[1].type == token_type::integer)
     {
-        addr = convert_imm(args[0].literal);
+        addr = convert_imm(args[1].literal);
     }
 
     else
@@ -535,7 +341,7 @@ void Debug::disass_internal(const std::vector<CommandArg> &args)
     }
     
 
-    if(args.size() == 1)
+    if(args.size() == 2)
     {
         print_console("{:x}: {}\n",addr,disass_instr(addr));
     }
@@ -543,9 +349,9 @@ void Debug::disass_internal(const std::vector<CommandArg> &args)
     else
     {
         int n;
-        if(args[1].type == arg_type::integer)
+        if(args[2].type == token_type::integer)
         {
-            n = convert_imm(args[1].literal);
+            n = convert_imm(args[2].literal);
         }
 
         else
@@ -563,22 +369,22 @@ void Debug::disass_internal(const std::vector<CommandArg> &args)
 }
 
 
-void Debug::set_break_internal(const std::vector<CommandArg> &args, bool watch)
+void Debug::set_break_internal(const std::vector<Token> &args, bool watch)
 {
 
-    if(!args.size() || args.size() > 3)
+    if(args.size() <= 1 || args.size() > 4)
     {
         print_console("usage: {} <addr> . <value> . <type> . \n",watch? "watch" : "break",args.size());
         return;
     }
 
-    if(args[0].type != arg_type::integer)
+    if(args[1].type != token_type::integer)
     {
-        print_console("expected int got string: {}\n",args[0].literal);
+        print_console("expected int got string: {}\n",args[1].literal);
         return;
     }
 
-    const auto addr = convert_imm(args[0].literal);
+    const auto addr = convert_imm(args[1].literal);
 
     bool r = false;
     bool w = false;
@@ -588,18 +394,18 @@ void Debug::set_break_internal(const std::vector<CommandArg> &args, bool watch)
     auto value = 0xdeadbeef;
 
     // for 2nd arg allow tpye or value
-    if(args.size() >= 2)
+    if(args.size() >= 3)
     {
-        if(args[1].type == arg_type::integer)
+        if(args[2].type == token_type::integer)
         {
-            value = convert_imm(args[1].literal);
+            value = convert_imm(args[2].literal);
             value_enabled = true;
         }
 
         // type set
         else
         {
-            for(const auto c: args[1].literal)
+            for(const auto c: args[2].literal)
             {
                 switch(c)
                 {
@@ -609,25 +415,25 @@ void Debug::set_break_internal(const std::vector<CommandArg> &args, bool watch)
 
                     default:
                     {
-                        print_console("expected type (rwx) got: {}\n",args[1].literal);
+                        print_console("expected type (rwx) got: {}\n",args[2].literal);
                         return;
                     }
                 }
             }
 
             // optinal value after the type
-            if(args.size() == 3)
+            if(args.size() == 4)
             {
                 // last is value and previous was type set
-                if(args[2].type == arg_type::integer)
+                if(args[3].type == token_type::integer)
                 {
-                    value = convert_imm(args[1].literal);
+                    value = convert_imm(args[3].literal);
                     value_enabled = true;
                 }
 
                 else
                 {
-                    print_console("expected int got string: {}\n",args[0].literal);
+                    print_console("expected int got string: {}\n",args[3].literal);
                     return;
                 }
             }
@@ -649,19 +455,19 @@ void Debug::set_break_internal(const std::vector<CommandArg> &args, bool watch)
     }
 }
 
-void Debug::breakpoint(const std::vector<CommandArg> &args)
+void Debug::breakpoint(const std::vector<Token> &args)
 {
     set_break_internal(args,false);
 }
 
 
-void Debug::watch(const std::vector<CommandArg> &args)
+void Debug::watch(const std::vector<Token> &args)
 {
     set_break_internal(args,true);
 }
 
 
-void Debug::run(const std::vector<CommandArg> &args)
+void Debug::run(const std::vector<Token> &args)
 {
     UNUSED(args);
     wake_up();

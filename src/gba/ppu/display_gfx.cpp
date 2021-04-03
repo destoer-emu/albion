@@ -57,15 +57,11 @@ void Display::read_tile(TileData *tile,unsigned int bg,bool col_256,uint32_t bas
         {
             
             const auto tile_data = mem.vram[addr+x_pix];
+            tile[x] = DEAD_TILE;
             if(tile_data)
             {
                 tile[x].color = read_bg_palette(0,tile_data);
                 tile[x].source = static_cast<pixel_source>(bg);
-            }
-
-            else
-            {
-                tile[x] = DEAD_TILE;
             }
         }
 
@@ -89,7 +85,8 @@ void Display::read_tile(TileData *tile,unsigned int bg,bool col_256,uint32_t bas
         // as we are reading it backwards
         const int shift_one = x_flip << 2;
         const int shift_two = !x_flip << 2;
-
+        
+        const auto source = static_cast<pixel_source>(bg);
         for(int x = 0; x < 8; x += 2, x_pix += x_step)
         {
             // read out the color indexs from the tile
@@ -97,27 +94,19 @@ void Display::read_tile(TileData *tile,unsigned int bg,bool col_256,uint32_t bas
 
             const uint32_t idx1 = (tile_data >> shift_one) & 0xf;
             const uint32_t idx2 = (tile_data >> shift_two) & 0xf;
+
+            tile[x] = DEAD_TILE;
             if(idx1)
             {
                 tile[x].color = read_bg_palette(pal_num,idx1);
-                tile[x].source = static_cast<pixel_source>(bg);
+                tile[x].source = source;
             }
 
-            else
-            {
-                tile[x] = DEAD_TILE;
-            }
-
-
+            tile[x+1] = DEAD_TILE;
             if(idx2)
             {
                 tile[x+1].color = read_bg_palette(pal_num,idx2);
-                tile[x+1].source = static_cast<pixel_source>(bg);
-            }
-
-            else
-            {
-                tile[x+1] = DEAD_TILE;
+                tile[x+1].source = source;
             }
         }
     }

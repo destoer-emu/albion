@@ -117,39 +117,21 @@ public:
     }
 #endif
 
-    // console public
-    enum class arg_type
-    {
-        string,
-        integer
-    };
-
-    struct CommandArg
-    {
-        CommandArg(const std::string &l,arg_type t) : literal(l), type(t)
-        {
-
-        }
-
-        std::string literal;
-        arg_type type;
-    };
-
-    void breakpoint(const std::vector<CommandArg> &args);
-    void set_break_internal(const std::vector<CommandArg> &args, bool watch);
-    void watch(const std::vector<CommandArg> &args);
-    void enable_watch(const std::vector<CommandArg> &args);
-    void disable_watch(const std::vector<CommandArg> &args);
-    void list_watchpoint(const std::vector<CommandArg> &args);
-    void run(const std::vector<CommandArg> &args);
-    void print_trace(const std::vector<CommandArg> &args);
-    void print_mem(const std::vector<CommandArg> &args);
-    void clear_breakpoint(const std::vector<CommandArg> &args);
-    void enable_breakpoint(const std::vector<CommandArg> &args);
-    void disable_breakpoint(const std::vector<CommandArg> &args);    
-    void list_breakpoint(const std::vector<CommandArg> &args);
+    void breakpoint(const std::vector<Token> &args);
+    void set_break_internal(const std::vector<Token> &args, bool watch);
+    void watch(const std::vector<Token> &args);
+    void enable_watch(const std::vector<Token> &args);
+    void disable_watch(const std::vector<Token> &args);
+    void list_watchpoint(const std::vector<Token> &args);
+    void run(const std::vector<Token> &args);
+    void print_trace(const std::vector<Token> &args);
+    void print_mem(const std::vector<Token> &args);
+    void clear_breakpoint(const std::vector<Token> &args);
+    void enable_breakpoint(const std::vector<Token> &args);
+    void disable_breakpoint(const std::vector<Token> &args);    
+    void list_breakpoint(const std::vector<Token> &args);
     void print_breakpoint(const Breakpoint &b);
-    void disass_internal(const std::vector<CommandArg> &args);
+    void disass_internal(const std::vector<Token> &args);
 
 
     void wake_up();
@@ -177,9 +159,8 @@ public:
 
 
     Trace trace;
+
 protected:
-    bool process_args(const std::string &line,std::vector<CommandArg> &args, std::string &command);
-    
 #ifdef DEBUG
     // internal overrides
     virtual void change_breakpoint_enable(bool enable) = 0;

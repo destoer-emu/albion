@@ -14,8 +14,15 @@ GBDebug::GBDebug(GB &g) : gb(g)
 
 }
 
-void GBDebug::execute_command(const std::string &command, const std::vector<CommandArg> &args)
+void GBDebug::execute_command(const std::vector<Token> &args)
 {
+    if(!args.size())
+    {
+        print_console("empty command\n");
+        return;
+    }
+
+    const auto command = args[0].literal;
     if(!func_table.count(command))
     {
         print_console("unknown command: '{}'\n",command);
@@ -34,8 +41,7 @@ void GBDebug::debug_input()
     std::string line = "";
 
 
-    std::vector<CommandArg> args;
-    std::string command = "";
+    std::vector<Token> args;
     quit = false;
     while(!quit)
     {
@@ -43,18 +49,19 @@ void GBDebug::debug_input()
         std::getline(std::cin,line);
 
         // lex the line and pull the command name along with the args.
-        if(!process_args(line,args,command))
+        if(!tokenize(line,args))
         {
             // TODO: provide better error reporting
             print_console("one or more args is invalid");
         }
         
-        execute_command(command,args);
+        execute_command(args);
+        std::cin.clear();
     }
 }
 
 // these are better off being completly overriden
-void GBDebug::regs(const std::vector<CommandArg> &args)
+void GBDebug::regs(const std::vector<Token> &args)
 {
     UNUSED(args);
     auto &cpu = gb.cpu;
@@ -65,7 +72,7 @@ void GBDebug::regs(const std::vector<CommandArg> &args)
         ,cpu.read_flag_c(),cpu.read_flag_h(),cpu.read_flag_n(),cpu. read_flag_z());
 }
 
-void GBDebug::step(const std::vector<CommandArg> &args)
+void GBDebug::step(const std::vector<Token> &args)
 {
     UNUSED(args);
     print_console("{:4x}: {}\n",gb.cpu.read_pc(),gb.disass.disass_op(gb.cpu.read_pc()));

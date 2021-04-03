@@ -39,6 +39,7 @@ void GB::change_breakpoint_enable(bool enabled)
 {
 	mem.change_breakpoint_enable(enabled);
 	cpu.change_breakpoint_enable(enabled);
+	debug.breakpoints_enabled = enabled;
 }
 #endif
 

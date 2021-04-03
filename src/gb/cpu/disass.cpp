@@ -7,12 +7,14 @@ namespace gameboy
 
 Disass::Disass(GB &gb) : mem(gb.mem)
 {
-
+    rom_sym_table.clear();
+    mem_sym_table.clear();
+    sym_file_loaded = false;
 }
 
 void Disass::init() noexcept
 {
-    
+    load_sym_file(remove_ext(mem.rom_info.filename) + ".sym");
 }
 
 
@@ -37,72 +39,78 @@ struct Disass_entry
     disass_type type;
 };
 
+
+// need to swap {} specifier 
+// over to {}
+// and manually hex convert it 
+// so we can pass symbols in easily :D
+
 // tables auto generated with a script
 constexpr Disass_entry opcode_table[256] = 
 {
     {"nop",disass_type::op_none},
-    {"ld bc,{:x}",disass_type::op_u16},
+    {"ld bc,{}",disass_type::op_u16},
     {"ld (bc),a",disass_type::op_none},
     {"inc bc",disass_type::op_none},
     {"inc b",disass_type::op_none},
     {"dec b",disass_type::op_none},
-    {"ld b,{:x}",disass_type::op_u8},
+    {"ld b,{}",disass_type::op_u8},
     {"rlca",disass_type::op_none},
-    {"ld ({:x}),sp",disass_type::op_u16},
+    {"ld ({}),sp",disass_type::op_u16},
     {"add hl,bc",disass_type::op_none},
     {"ld a,(bc)",disass_type::op_none},
     {"dec bc",disass_type::op_none},
     {"inc c",disass_type::op_none},
     {"dec c",disass_type::op_none},
-    {"ld c,{:x}",disass_type::op_u8},
+    {"ld c,{}",disass_type::op_u8},
     {"rrca",disass_type::op_none},
     {"stop",disass_type::op_none},
-    {"ld de,{:x}",disass_type::op_u16},
+    {"ld de,{}",disass_type::op_u16},
     {"ld (de),a",disass_type::op_none},
     {"inc de",disass_type::op_none},
     {"inc d",disass_type::op_none},
     {"dec d",disass_type::op_none},
-    {"ld d,{:x}",disass_type::op_u8},
+    {"ld d,{}",disass_type::op_u8},
     {"rla",disass_type::op_none},
-    {"jr {:x}",disass_type::op_i8},
+    {"jr {}",disass_type::op_i8},
     {"add hl,de",disass_type::op_none},
     {"ld a,(de)",disass_type::op_none},
     {"dec de",disass_type::op_none},
     {"inc e",disass_type::op_none},
     {"dec e",disass_type::op_none},
-    {"ld e,{:x}",disass_type::op_u8},
+    {"ld e,{}",disass_type::op_u8},
     {"rra",disass_type::op_none},
-    {"jr nz,{:x}",disass_type::op_i8},
-    {"ld hl,{:x}",disass_type::op_u16},
+    {"jr nz,{}",disass_type::op_i8},
+    {"ld hl,{}",disass_type::op_u16},
     {"ld (hl+),a",disass_type::op_none},
     {"inc hl",disass_type::op_none},
     {"inc h",disass_type::op_none},
     {"dec h",disass_type::op_none},
-    {"ld h,{:x}",disass_type::op_u8},
+    {"ld h,{}",disass_type::op_u8},
     {"daa",disass_type::op_none},
-    {"jr z,{:x}",disass_type::op_i8},
+    {"jr z,{}",disass_type::op_i8},
     {"add hl,hl",disass_type::op_none},
     {"ld a,(hl+)",disass_type::op_none},
     {"dec hl",disass_type::op_none},
     {"inc l",disass_type::op_none},
     {"dec l",disass_type::op_none},
-    {"ld l,{:x}",disass_type::op_u8},
+    {"ld l,{}",disass_type::op_u8},
     {"cpl",disass_type::op_none},
-    {"jr nc,{:x}",disass_type::op_i8},
-    {"ld sp,{:x}",disass_type::op_u16},
+    {"jr nc,{}",disass_type::op_i8},
+    {"ld sp,{}",disass_type::op_u16},
     {"ld (hl-),a",disass_type::op_none},
     {"inc sp",disass_type::op_none},
     {"inc (hl)",disass_type::op_none},
     {"dec (hl)",disass_type::op_none},
-    {"ld (hl),{:x}",disass_type::op_u8},
+    {"ld (hl),{}",disass_type::op_u8},
     {"scf",disass_type::op_none},
-    {"jr c,{:x}",disass_type::op_i8},
+    {"jr c,{}",disass_type::op_i8},
     {"add hl,sp",disass_type::op_none},
     {"ld a,(hl-)",disass_type::op_none},
     {"dec sp",disass_type::op_none},
     {"inc a",disass_type::op_none},
     {"dec a",disass_type::op_none},
-    {"ld a,{:x}",disass_type::op_u8},
+    {"ld a,{}",disass_type::op_u8},
     {"ccf",disass_type::op_none},
     {"ld b,b",disass_type::op_none},
     {"ld b,c",disass_type::op_none},
@@ -234,67 +242,67 @@ constexpr Disass_entry opcode_table[256] =
     {"cp a,a",disass_type::op_none},
     {"ret nz",disass_type::op_none},
     {"pop bc",disass_type::op_none},
-    {"jp nz,{:x}",disass_type::op_u16},
-    {"jp {:x}",disass_type::op_u16},
-    {"call nz,{:x}",disass_type::op_u16},
+    {"jp nz,{}",disass_type::op_u16},
+    {"jp {}",disass_type::op_u16},
+    {"call nz,{}",disass_type::op_u16},
     {"push bc",disass_type::op_none},
-    {"add a,{:x}",disass_type::op_u8},
+    {"add a,{}",disass_type::op_u8},
     {"rst 00h",disass_type::op_none},
     {"ret z",disass_type::op_none},
     {"ret",disass_type::op_none},
-    {"jp z,{:x}",disass_type::op_u16},
+    {"jp z,{}",disass_type::op_u16},
     {"prefix cb",disass_type::op_none},
-    {"call z,{:x}",disass_type::op_u16},
-    {"call {:x}",disass_type::op_u16},
-    {"adc a,{:x}",disass_type::op_u8},
+    {"call z,{}",disass_type::op_u16},
+    {"call {}",disass_type::op_u16},
+    {"adc a,{}",disass_type::op_u8},
     {"rst 08h",disass_type::op_none},
     {"ret nc",disass_type::op_none},
     {"pop de",disass_type::op_none},
-    {"jp nc,{:x}",disass_type::op_u16},
+    {"jp nc,{}",disass_type::op_u16},
     {"unknown opcode",disass_type::op_none},
-    {"call nc,{:x}",disass_type::op_u16},
+    {"call nc,{}",disass_type::op_u16},
     {"push de",disass_type::op_none},
-    {"sub a,{:x}",disass_type::op_u8},
+    {"sub a,{}",disass_type::op_u8},
     {"rst 10h",disass_type::op_none},
     {"ret c",disass_type::op_none},
     {"reti",disass_type::op_none},
-    {"jp c,{:x}",disass_type::op_u16},
+    {"jp c,{}",disass_type::op_u16},
     {"unknown opcode",disass_type::op_none},
-    {"call c,{:x}",disass_type::op_u16},
+    {"call c,{}",disass_type::op_u16},
     {"unknown opcode",disass_type::op_none},
-    {"sbc a,{:x}",disass_type::op_u8},
+    {"sbc a,{}",disass_type::op_u8},
     {"rst 18h",disass_type::op_none},
-    {"ld (ff00+{:x}),a",disass_type::op_u8},
+    {"ld (ff00+{}),a",disass_type::op_u8},
     {"pop hl",disass_type::op_none},
     {"ld (ff00+c),a",disass_type::op_none},
     {"unknown opcode",disass_type::op_none},
     {"unknown opcode",disass_type::op_none},
     {"push hl",disass_type::op_none},
-    {"and a,{:x}",disass_type::op_u8},
+    {"and a,{}",disass_type::op_u8},
     {"rst 20h",disass_type::op_none},
-    {"add sp,{:x}",disass_type::op_i8},
+    {"add sp,{}",disass_type::op_i8},
     {"jp hl",disass_type::op_none},
-    {"ld ({:x}),a",disass_type::op_u16},
+    {"ld ({}),a",disass_type::op_u16},
     {"unknown opcode",disass_type::op_none},
     {"unknown opcode",disass_type::op_none},
     {"unknown opcode",disass_type::op_none},
-    {"xor a,{:x}",disass_type::op_u8},
+    {"xor a,{}",disass_type::op_u8},
     {"rst 28h",disass_type::op_none},
-    {"ld a,(ff00+{:x})",disass_type::op_u8},
+    {"ld a,(ff00+{})",disass_type::op_u8},
     {"pop af",disass_type::op_none},
     {"ld a,(ff00+c)",disass_type::op_none},
     {"di",disass_type::op_none},
     {"unknown opcode",disass_type::op_none},
     {"push af",disass_type::op_none},
-    {"or a,{:x}",disass_type::op_u8},
+    {"or a,{}",disass_type::op_u8},
     {"rst 30h",disass_type::op_none},
-    {"ld hl,sp+{:x}",disass_type::op_i8},
+    {"ld hl,sp+{}",disass_type::op_i8},
     {"ld sp,hl",disass_type::op_none},
-    {"ld a,({:x})",disass_type::op_u16},
+    {"ld a,({})",disass_type::op_u16},
     {"ei",disass_type::op_none},
     {"unknown opcode",disass_type::op_none},
     {"unknown opcode",disass_type::op_none},
-    {"cp a,{:x}",disass_type::op_u8},
+    {"cp a,{}",disass_type::op_u8},
     {"rst 38h",disass_type::op_none}
 };
 
@@ -559,6 +567,137 @@ constexpr Disass_entry cb_opcode_table[256] =
     {"set 7,a",disass_type::op_none}    
 };
 
+
+
+bool is_hex_literal(const std::string &str)
+{
+    for(const auto &c: str)
+    {
+        if( !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) )
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+void Disass::load_sym_file(const std::string name)
+{
+    // for rom
+    // vector of bank size of maps
+    // addr -> string name
+
+    // everywhere else
+    // TODO: handle other banked areas eg sram
+    sym_file_loaded = false;
+
+    std::ifstream fp{name};
+    if(!fp)
+    {
+        return;
+    }
+
+    // resize our vector to house all our rom banks
+    rom_sym_table.resize(mem.rom_info.no_rom_banks);
+
+    std::string line;
+    while(std::getline(fp,line))
+    {
+        // empty line (we dont care)
+        if(!line.size())
+        {
+            continue;
+        }
+    
+        // comment in file we dont care
+        if(line[0] == ';')
+        {
+            continue;
+        }
+
+        if(line.size() < 8)
+        {
+            printf("sym file line is not long enough: %s\n",line.c_str());
+            return;
+        }
+
+        // ok now just parse out the hard coded fields
+        const auto bank_str = line.substr(0,2);
+        if(!is_hex_literal(bank_str))
+        {
+            printf("sym file invalid bank: %s\n",bank_str.c_str());
+            return;
+        }
+
+        const auto addr_str = line.substr(3,4);
+        if(!is_hex_literal(addr_str))
+        {
+            printf("sym file invalid addr: %s\n",addr_str.c_str());
+            return;
+        }
+
+        const auto sym = line.substr(8);
+        const auto bank = std::stoi(bank_str,0,16);
+        const auto addr = std::stoi(addr_str,0,16);
+
+        // rom_access
+        if(addr < 0x8000)
+        {
+            auto &m = rom_sym_table[bank];
+            m[addr] = sym;
+        }
+
+        else
+        {
+            // TODO: support sram, vram, wram memory banks
+            mem_sym_table[addr] = sym;
+        }
+    }
+
+    sym_file_loaded = true;
+}
+
+
+bool Disass::get_symbol(uint16_t addr,std::string &sym)
+{
+    if(!sym_file_loaded)
+    {
+        return false;
+    }
+
+    if(addr < 0x8000)
+    {
+        // TODO: handle mbc1 funny banking
+        const auto bank = addr < 0x4000 ? 0 : mem.get_bank();
+        auto &m = rom_sym_table[bank]; 
+        if(m.count(addr))
+        {
+            sym =  m[addr];
+            return true;
+        }
+
+        else
+        {
+            return false;
+        }
+    }
+
+    else
+    {
+        if(mem_sym_table.count(addr))
+        {
+            sym = mem_sym_table[addr];
+            return true;
+        }
+
+        else
+        {
+            return false;
+        }
+    }
+}
+
+
 // not sure if its worth just adding a size field
 // and having a bunch of extra bytes in the exe
 uint32_t Disass::get_op_sz(uint16_t addr) noexcept
@@ -575,6 +714,10 @@ uint32_t Disass::get_op_sz(uint16_t addr) noexcept
 }
 
 
+
+// TODO:
+// add symbol parsing so we can resolve
+// op16 addresses and then spit out a marked disassembly out of sram to start annotating
 
 std::string Disass::disass_op(uint16_t addr) noexcept
 {
@@ -599,20 +742,32 @@ std::string Disass::disass_op(uint16_t addr) noexcept
             // eg jp
             case disass_type::op_u16:
             {
-                return fmt::format(entry.fmt_str,mem.read_word(addr));
+                const auto v = mem.read_word(addr);
+                std::string symbol = "";
+
+                if(get_symbol(v,symbol))
+                {
+                    const auto str = fmt::format(entry.fmt_str,symbol);
+                    return fmt::format("{} ; {:x}",str,v);               
+                }
+
+                else
+                {
+                    return fmt::format(entry.fmt_str,fmt::format("{:x}",v));
+                }
             }
 
             // eg ld a, 0xff
             case disass_type::op_u8:
             {
-                return fmt::format(entry.fmt_str,mem.read_mem(addr));
+                return fmt::format(entry.fmt_str,fmt::format("{:x}",mem.read_mem(addr)));
             }
 
             // eg jr
             case disass_type::op_i8:
             {
                 int8_t operand = mem.read_mem(addr++);
-                return fmt::format(entry.fmt_str,addr+operand);
+                return fmt::format(entry.fmt_str,fmt::format("{:x}",addr+operand));
             }
 
             // eg ld a, b
