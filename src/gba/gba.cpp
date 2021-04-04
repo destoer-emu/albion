@@ -52,7 +52,7 @@ void GBA::run()
         cpu.exec_instr();
 	}
 #endif
-	if(disp.new_vblank)
+	if(disp.new_vblank && throttle_emu)
 	{
 		mem.frame_end();
 	}

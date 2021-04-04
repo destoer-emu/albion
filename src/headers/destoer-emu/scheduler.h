@@ -166,6 +166,7 @@ EventNode<event_type> Scheduler<SIZE,event_type>::create_event(uint32_t duration
 template<size_t SIZE,typename event_type>
 void Scheduler<SIZE,event_type>::save_state(std::ofstream &fp)
 {
+    file_write_var(fp,min_timestamp);
     file_write_var(fp,timestamp);
     event_list.save_state(fp);
 }
@@ -173,6 +174,7 @@ void Scheduler<SIZE,event_type>::save_state(std::ofstream &fp)
 template<size_t SIZE,typename event_type>
 void Scheduler<SIZE,event_type>::load_state(std::ifstream &fp)
 {
+    file_read_var(fp,min_timestamp);
     file_read_var(fp,timestamp);
     event_list.load_state(fp);
 }

@@ -226,7 +226,11 @@ void GB::run()
         cpu.exec_instr();
 	}
 #endif
-	mem.frame_end();
+
+	if(throttle_emu && ppu.new_vblank)
+	{
+		mem.frame_end();
+	}
 }
 
 }

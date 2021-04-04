@@ -609,8 +609,8 @@ void Disass::load_sym_file(const std::string name)
             continue;
         }
     
-        // comment in file we dont care
-        if(line[0] == ';')
+        // comment or section in file we dont care
+        if(line[0] == ';' || line[0] == '[')
         {
             continue;
         }
@@ -766,8 +766,19 @@ std::string Disass::disass_op(uint16_t addr) noexcept
             // eg jr
             case disass_type::op_i8:
             {
-                int8_t operand = mem.read_mem(addr++);
-                return fmt::format(entry.fmt_str,fmt::format("{:x}",addr+operand));
+                const auto operand = static_cast<int8_t>(mem.read_mem(addr++));
+                const uint16_t v = addr+operand;
+                std::string symbol = "";
+                if(get_symbol(v,symbol))
+                {
+                    const auto str = fmt::format(entry.fmt_str,symbol);
+                    return fmt::format("{} ; {:x}",str,v);               
+                }
+
+                else
+                {
+                    return fmt::format(entry.fmt_str,fmt::format("{:x}",v));
+                }
             }
 
             // eg ld a, b
