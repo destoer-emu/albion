@@ -9,8 +9,8 @@ namespace gameboyadvance
 {
 
 
-// todo remove preftech hacks
-void Cpu::thumb_fill_pipeline() // need to verify this...
+// TODO: remove preftech hacks
+void Cpu::thumb_fill_pipeline()
 {
     pipeline[0] = mem.read_memt<uint16_t>(regs[PC]);
     regs[PC] += ARM_HALF_SIZE;

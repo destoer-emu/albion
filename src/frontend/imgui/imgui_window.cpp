@@ -318,45 +318,41 @@ void ImguiMainWindow::save_state(std::string filename)
     }
 }
 
-void ImguiMainWindow::file_browser()
+std::string pad_string(const std::string &str)
 {
-    static std::string file_path = std::filesystem::current_path().string(); 
-    static int selected = -1;
-    static std::string selected_file = "";
-    static std::vector<std::string> dir_list = read_sorted_directory(file_path);
-    static char input_path[128] = "";
-    static bool use_bios = false;
+    auto copy = str;
+    copy.resize(128);
+    return copy;
+}
 
-
-    ImGui::Begin("file browser");
-
-
-    ImGui::Text("Current dir: %s",file_path.c_str());
-
-    if(ImGui::Button("load rom"))
+void ImguiMainWindow::do_file_option(file_option option, const std::string &filename, bool use_bios)
+{
+    switch(option)
     {
-        if(selected != -1)
+        case file_option::load_rom:
         {
-            if(std::filesystem::is_regular_file(selected_file))
+            if(!std::filesystem::is_regular_file(filename))
             {
-                new_instance(selected_file,use_bios);
-                selected_window = current_window::screen;
-            }
+                return;
+            }   
+            printf("load rom: %s\n",filename.c_str());
+            new_instance(filename,use_bios);
+            selected_window = current_window::screen;
+            break;
         }
-    }
 
-    ImGui::SameLine();
-
-
-    if(ImGui::Button("load state"))
-    {
-        if(*input_path != '\0')
+        case file_option::load_state:
         {
-            stop_instance();
-            std::string loc = file_path + path_separator + std::string(input_path);
-            try
+            if(!std::filesystem::is_regular_file(filename))
             {
-                load_state(loc);
+                return;
+            }   
+            stop_instance();
+            
+            try
+            {  
+                load_state(filename);
+                selected_window = current_window::screen;
             }
 
             catch(std::exception &ex)
@@ -364,95 +360,67 @@ void ImguiMainWindow::file_browser()
                 std::cout << ex.what() << "\n";
                 stop_instance();
             }
-            start_instance();
+            start_instance();      
+            break;
         }
 
-        else if(selected != -1)
+        case file_option::save_state:
         {
-            if(std::filesystem::is_regular_file(selected_file))
+            stop_instance();
+            try
             {
-                stop_instance();
-
-                try
-                {  
-                    load_state(selected_file);
-                }
-
-                
-
-                catch(std::exception &ex)
-                {
-                    std::cout << ex.what() << "\n";
-                    stop_instance();
-                }
-                start_instance();                
+                printf("save state: %s\n",filename.c_str());
+                save_state(filename);
+                selected_window = current_window::screen;
             }
+
+            catch(std::exception &ex)
+            {
+                std::cout << ex.what() << "\n";
+            }
+            start_instance();
+            break;
         }
     }
+    
+}
 
-    ImGui::SameLine();
-
-
-    if(ImGui::Button("save state") && *input_path != '\0')
+void ImguiMainWindow::file_browser(file_option option, const char *title)
+{
+    static std::string file_path = std::filesystem::current_path().string();
+    static char input_path[128] = {'\0'};
+    if(!input_path)
     {
-        stop_instance();
-        std::string loc = file_path + path_separator + std::string(input_path);
-        try
-        {
-           save_state(loc);
-        }
-
-        catch(std::exception &ex)
-        {
-            std::cout << ex.what() << "\n";
-        }
-        dir_list = read_sorted_directory(file_path);
-        *input_path = '\0'; 
-        start_instance();
+        strncpy(input_path,file_path.c_str(),sizeof(input_path)-1);
     }
+    static int selected = -1;
+    static std::string selected_file = "";
+    static std::vector<std::string> dir_list = read_sorted_directory(file_path);
+
+    // TODO: make this a setting in a config file
+    const bool use_bios = false;
+
+
+    ImGui::Begin(title);
 
     ImGui::SameLine();
 
-	if (ImGui::Button("../"))
-	{  
-
-        selected = -1;
-        selected_file = "";
-
-        std::filesystem::path p(file_path);
-        file_path = p.parent_path().string();
-        dir_list = read_sorted_directory(file_path);
-	}
-
-
+    ImGui::Text("Current dir: ");
     ImGui::SameLine();
-
-    ImGui::Checkbox("use bios",&use_bios);
-
-
-	
-	if (ImGui::Button("change dir"))
-	{  
+    if(ImGui::InputText("", input_path, IM_ARRAYSIZE(input_path),ImGuiInputTextFlags_EnterReturnsTrue))
+    {
         if(std::filesystem::is_directory(input_path))
         {
             selected = -1;
             selected_file = "";
             file_path = input_path;
-            *input_path = '\0';
             dir_list = read_sorted_directory(file_path);
-        }
-	}
-
-    ImGui::SameLine();
-
-    ImGui::InputText("", input_path, IM_ARRAYSIZE(input_path));
+        }        
+    }
 
 
+    ImGui::BeginChild("file view",ImVec2(0, 300), true);
 
-    ImGui::BeginChild("file view");
-
-
-    
     for(size_t i = 0; i < dir_list.size(); i++)
     {
         // display only the file name
@@ -465,25 +433,41 @@ void ImguiMainWindow::file_browser()
             selected_file = dir_list[i];
             if (ImGui::IsMouseDoubleClicked(0))
             {
-                if(std::filesystem::is_directory(dir_list[i]))
+                // traverse dir
+                if(std::filesystem::is_directory(selected_file))
                 {
-                    selected = -1;
-                    selected_file = "";
-                    file_path = dir_list[i];
+                    file_path = selected_file;
                     dir_list = read_sorted_directory(file_path);
-					break;
+                    strncpy(input_path,file_path.c_str(),sizeof(input_path)-1);
+                    break;
                 }
 
-                else if(std::filesystem::is_regular_file(dir_list[i]))
+                else 
                 {
-                    new_instance(dir_list[i],use_bios);
-                    selected_window = current_window::screen;
+                    do_file_option(option,selected_file,use_bios);
+                    break;
                 }
+                selected = -1;
+                selected_file = "";
             }   
         }
     }
 
     ImGui::EndChild();
+
+    static char input_file[128];
+
+    ImGui::InputText("  ", input_file, IM_ARRAYSIZE(input_file));
+
+    ImGui::SameLine();
+
+    // how can we have this on the bottom?
+    if(ImGui::Button("Go"))
+    {
+        const auto full_filename = file_path + path_separator + input_file;
+        do_file_option(option,full_filename,use_bios);
+        *input_file = '\0';
+    }
 
     ImGui::End();
 }
@@ -619,7 +603,22 @@ void ImguiMainWindow::menu_bar(Debug &debug)
 
         if(ImGui::BeginMenu("File"))
         {
-            selected_window = current_window::file;
+            if (ImGui::MenuItem("Load rom"))
+            {
+                selected_window = current_window::load_rom;
+            }
+
+            if (ImGui::MenuItem("Load state")) 
+            {
+                selected_window = current_window::load_state;
+            }
+
+            if(ImGui::MenuItem("Save state")) 
+            {
+                selected_window = current_window::save_state;
+            }
+            
+
             ImGui::EndMenu();
         }
 
@@ -781,11 +780,9 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
 
                     switch(selected_window)
                     {
-                        case current_window::file:
-                        {
-                            file_browser();
-                            break;
-                        }
+                        case current_window::load_rom: file_browser(file_option::load_rom,"load rom"); break;
+                        case current_window::load_state: file_browser(file_option::load_state,"load state"); break;
+                        case current_window::save_state: file_browser(file_option::save_state,"save state"); break;
 
                         case current_window::cpu:
                         {
@@ -796,14 +793,14 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
 
                         case current_window::breakpoint:
                         {
-                            gameboy_draw_breakpoints();
+                            draw_breakpoints();
                             break;
                         }
 
 
                         case current_window::memory:
                         {
-                            gameboy_draw_memory();
+                            draw_memory();
                             break;
                         }
 
@@ -835,11 +832,9 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
 
                     switch(selected_window)
                     {
-                        case current_window::file:
-                        {
-                            file_browser();
-                            break;
-                        }
+                        case current_window::load_rom: file_browser(file_option::load_rom,"load rom"); break;
+                        case current_window::load_state: file_browser(file_option::load_state,"load state"); break;
+                        case current_window::save_state: file_browser(file_option::save_state,"save state"); break;
 
                         case current_window::cpu:
                         {
@@ -850,14 +845,14 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
 
                         case current_window::breakpoint:
                         {
-                            gba_draw_breakpoints();
+                            draw_breakpoints();
                             break;
                         }
 
 
                         case current_window::memory:
                         {
-                            gba_draw_memory();
+                            draw_memory();
                             break;
                         }
 
@@ -881,9 +876,9 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
                     break;
                 }
 
-                default:
+                case emu_type::none:
                 {
-                    file_browser();
+                    file_browser(file_option::load_rom,"load rom");
                     break;
                 }
             }

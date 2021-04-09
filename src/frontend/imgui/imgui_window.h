@@ -135,8 +135,23 @@ private:
     void save_state(std::string filename);
 
 
-    void file_browser();
+    enum class file_option
+    {
+        load_rom,
+        load_state,
+        save_state
+    };
+
+    void do_file_option(file_option option, const std::string &filename, bool use_bios);
+    void file_browser(file_option option, const char *title);
     void menu_bar(Debug &debug);
+
+    std::unordered_map<uint32_t,Breakpoint> &get_breakpoint_ref();
+    void draw_breakpoints();
+
+    void write_mem(uint32_t addr,uint8_t v);
+    uint8_t read_mem(uint32_t addr);
+    void draw_memory();
 
     // Gameboy
 
@@ -154,7 +169,6 @@ private:
 
     void gameboy_draw_regs_child();
     void gameboy_draw_disassembly_child();
-    void gameboy_draw_breakpoints();
     void gameboy_draw_memory();
     void gameboy_draw_cpu_info();
 
@@ -170,7 +184,6 @@ private:
     void gba_draw_disassembly_child();
     void gba_draw_registers_child(); 
     void gba_draw_cpu_info();
-    void gba_draw_breakpoints();
     void gba_draw_memory();
 
 
@@ -190,13 +203,15 @@ private:
         display_viewer,
         cpu,
         memory,
-        file,
+        load_rom,
+        load_state,
+        save_state,
         breakpoint,
         full_debugger
     };
 
 
-    current_window selected_window = current_window::file;
+    current_window selected_window = current_window::load_rom;
     
     SDL_Window* window;
     SDL_GLContext gl_context;

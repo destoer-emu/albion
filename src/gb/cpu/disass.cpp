@@ -40,11 +40,6 @@ struct Disass_entry
 };
 
 
-// need to swap {} specifier 
-// over to {}
-// and manually hex convert it 
-// so we can pass symbols in easily :D
-
 // tables auto generated with a script
 constexpr Disass_entry opcode_table[256] = 
 {
@@ -715,10 +710,6 @@ uint32_t Disass::get_op_sz(uint16_t addr) noexcept
 
 
 
-// TODO:
-// add symbol parsing so we can resolve
-// op16 addresses and then spit out a marked disassembly out of sram to start annotating
-
 std::string Disass::disass_op(uint16_t addr) noexcept
 {
 
@@ -788,6 +779,7 @@ std::string Disass::disass_op(uint16_t addr) noexcept
             }
         }
     }
+    assert(false);
     return "disass_failed!?"; // should not be  reached
 }
 
