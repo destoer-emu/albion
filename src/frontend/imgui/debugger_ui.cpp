@@ -159,122 +159,156 @@ void ImguiMainWindow::write_mem(uint32_t addr,uint8_t v)
         case emu_type::gameboy: gb.mem.raw_write(addr,v); break;
         case emu_type::none: break;
     }
-    assert(false);
 }
 
-// TODO: impl predefined ranges on this
+struct MemRegion
+{
+    MemRegion(const char *n,uint32_t o, uint32_t s) : name(n), offset(o), size(s)
+    {}
+
+    const char *name;
+    const uint32_t offset;
+    const uint32_t size;
+};
+
+
+const uint32_t GAMEBOY_MEM_REGION_SIZE = 7;
+
+MemRegion GAMEBOY_MEM_REGION_TABLE[GAMEBOY_MEM_REGION_SIZE] =
+{
+    {"rom 0000-7fff",0,0x8000},
+    {"vram 8000-9fff",0x8000,0x2000},
+    {"sram a000-bfff",0xa000,0x2000},
+    {"wram c000-dfff",0xc000,0x2000},
+    {"echo ram e000-fdff",0xe000,0x1e00},
+    {"oam fe00-fe9f",0xfe00,0xa0},
+    {"io ff00-ffff",0xff00,0x100},
+};
+
+
+const uint32_t GBA_MEM_REGION_SIZE = 9;
+
+MemRegion GBA_MEM_REGION_TABLE[GBA_MEM_REGION_SIZE] =
+{
+    {"bios 00000000-00003fff",0,0x4000},
+    {"onboard wram 02000000-0203ffff",0x02000000,0x40000},
+    {"onchip wram 03000000-03007fff",0x03000000,0x8000},
+    {"io 04000000-040003ff",0x43000000,0x400},
+    {"obj ram 05000000-050003ff",0x05000000,0x400},
+    {"vram 06000000-060017fff",0x06000000,0x18000},
+    {"oam 07000000-070003ff",0x07000000,0x400},
+    {"rom 08000000-09ffffff",0x08000000,32*1024*1024},
+    {"sram 0e000000-0e00ffff",0x0e000000,0x10000},
+};
+
+
+// TODO: okay now we just figure out how to take the key input and this works perfectly
 void ImguiMainWindow::draw_memory()
 {
-    static uint32_t addr = 0x0;
-    static uint32_t base_addr = 0;
-    static uint32_t edit_addr = 0;
-    static uint32_t edit_value = 0;
-    static bool update = true;
-    static const uint32_t CLIPPER_COUNT_TABLE[] = { 0x10000 / 0x10, 1024 * 1024, 0};
-    static const uint32_t MAX_ADDR_TABLE[] = {0xffff,0x0E010000,0xdeadbeef};
+    if(running_type == emu_type::none)
+    {
+        return;
+    }
+
     ImGui::Begin("memory-editor");
 
-    const uint32_t MAX_ADDR = MAX_ADDR_TABLE[static_cast<int>(running_type)];
-    const uint32_t CLIPPER_COUNT =  CLIPPER_COUNT_TABLE[static_cast<int>(running_type)];
 
-	static char input_mem[12] = "";
-	if (ImGui::Button("Goto"))
-	{
-		if (is_valid_hex_string(input_mem))
-		{
-            const uint32_t CLIPPER_ADDR_OFFSET = (CLIPPER_COUNT * 0x10) / 2;
-			addr = strtoll(input_mem, NULL, 16) % MAX_ADDR;
-            addr &= 0xfffffff0; // round to nearest section
 
-            // if addr underflows set to 0
-            if (addr - CLIPPER_ADDR_OFFSET > addr)
+    static uint32_t region_idx_table[2] = {0};
+    static const uint32_t SIZE_TABLE[2] = {GAMEBOY_MEM_REGION_SIZE,GBA_MEM_REGION_SIZE};
+    static const MemRegion *MEM_REGION_PTR_TABLE[2] = {GAMEBOY_MEM_REGION_TABLE,GBA_MEM_REGION_TABLE};
+
+    const auto type_idx = static_cast<uint32_t>(running_type);
+    const auto region_ptr =  MEM_REGION_PTR_TABLE[type_idx];
+    const auto size = SIZE_TABLE[type_idx];
+    auto region_idx = region_idx_table[type_idx];
+
+    const uint32_t base_addr = region_ptr[region_idx].offset;
+    const uint32_t clipper_count = region_ptr[region_idx].size / 0x10;
+
+    static int y = -1;
+    static int x = -1;
+
+    // combo box to select view type
+    if(ImGui::BeginCombo("",region_ptr[region_idx].name))
+    {
+        for(uint32_t i = 0; i < size; i++)
+        {
+            if(ImGui::Selectable(region_ptr[i].name,region_idx == i))
             {
-                base_addr = 0;
+                region_idx = i;
+                region_idx_table[type_idx] = i;
+                // we have just changed reset to the top of the memory viewer
+                ImGui::SetScrollY(0.0);
+                x = -1;
+                y = -1;
             }
+        }
+        ImGui::EndCombo();
+    }
 
-            
-            else
+    ImGui::SameLine();
+    ImGui::Text("edit: %x",base_addr + (y * 0x10) + x); ImGui::SameLine();
+    static char input[3] = {0};
+    ImGui::PushItemWidth(20.0);
+    if(ImGui::InputText(" ", input, IM_ARRAYSIZE(input),ImGuiInputTextFlags_EnterReturnsTrue | 
+        ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase))
+    {
+        if(x != -1 && y != -1)
+        {
+            write_mem(base_addr + (y * 0x10) + x,strtol(input,NULL,16));
+            *input = '\0';
+            x += 1;
+            if(x == 0x10)
             {
-                base_addr = addr - CLIPPER_ADDR_OFFSET;
-            }            
-
-
-            printf("goto %x\n",base_addr);
-
-            update = true;
-			*input_mem = '\0';
-		}  
-	}
-
-    ImGui::SameLine();
-
-    ImGui::InputText("addr", input_mem, IM_ARRAYSIZE(input_mem));
-
-
-
-	static char input_edit[12] = "";
-	if (ImGui::Button("edit"))
-	{
-		if (is_valid_hex_string(input_mem) && is_valid_hex_string(input_edit))
-		{
-			edit_addr = strtoll(input_mem, NULL, 16);
-            edit_value = strtoll(input_edit,NULL,16) & 0xff;
-            *input_edit = '\0';
-			*input_mem = '\0';
-            write_mem(edit_addr,edit_value);
-		}  
-	}
-
-    ImGui::SameLine();
-
-    ImGui::InputText("value", input_edit, IM_ARRAYSIZE(input_edit));
-
-    
-
-    // padding
-    ImGui::Text("          "); ImGui::SameLine();
+                y++;
+                x = 0;
+            }
+            // keep in text box after input
+            ImGui::SetKeyboardFocusHere(-1);
+        }
+    }
+    ImGui::PopItemWidth();
 
     // draw col
+    ImGui::Text("          "); ImGui::SameLine();
+
+    ImGui::BeginTable("offsets",0x10, ImGuiTableFlags_SizingFixedFit);
     for(int i = 0; i < 0x10; i++)
     {
+        ImGui::TableNextColumn();
         ImGui::Text("%02x ",i);
-        ImGui::SameLine();
     }
-
-    ImGui::Text("\n");
+    ImGui::EndTable();
     ImGui::Separator();
 
-
     ImGui::BeginChild("Memory View");
-    ImGuiListClipper clipper(CLIPPER_COUNT); 
+    ImGuiListClipper clipper(clipper_count); 
 
-    float line_size = ImGui::GetTextLineHeightWithSpacing();
-
-    if(update)
-    {
-        printf("update: %f\n",((addr-base_addr) / 0x10) * line_size);
-        update = false;
-        ImGui::SetScrollY(((addr-base_addr) / 0x10) * line_size);
-    }
 
     while (clipper.Step())
     {
         for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
         {
-            
-            ImGui::Text("%08x: ",(base_addr+i*0x10) % MAX_ADDR);
-            ImGui::SameLine();
-
+            ImGui::BeginTable("offsets",0x11, ImGuiTableFlags_SizingFixedFit);
+            ImGui::TableNextColumn();
+            ImGui::Text("%08x: ",(base_addr+i*0x10)); 
+        
 
             for(int j = 0; j < 0x10; j++)
             {
-                uint32_t dest = (base_addr+j+(i*0x10) % MAX_ADDR);
-                ImGui::Text("%02x ",read_mem(dest));
-                ImGui::SameLine();
+                ImGui::TableNextColumn();
+                uint32_t dest = (base_addr+j+(i*0x10));
+                if(ImGui::Selectable(fmt::format("{:02x} ",read_mem(dest)).c_str(),i == y && j == x,ImGuiSelectableFlags_AllowDoubleClick))
+                {
+                    y = i;
+                    x = j;
+                }
             }
-            ImGui::Text("\n");
+            ImGui::EndTable();
         }
     }
+
 
     ImGui::EndChild();
     ImGui::End();

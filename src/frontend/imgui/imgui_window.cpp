@@ -389,7 +389,7 @@ void ImguiMainWindow::file_browser(file_option option, const char *title)
 {
     static std::string file_path = std::filesystem::current_path().string();
     static char input_path[128] = {'\0'};
-    if(!input_path)
+    if(!*input_path)
     {
         strncpy(input_path,file_path.c_str(),sizeof(input_path)-1);
     }
@@ -403,10 +403,6 @@ void ImguiMainWindow::file_browser(file_option option, const char *title)
 
     ImGui::Begin(title);
 
-    ImGui::SameLine();
-
-    ImGui::Text("Current dir: ");
-    ImGui::SameLine();
     if(ImGui::InputText("", input_path, IM_ARRAYSIZE(input_path),ImGuiInputTextFlags_EnterReturnsTrue))
     {
         if(std::filesystem::is_directory(input_path))
@@ -457,12 +453,12 @@ void ImguiMainWindow::file_browser(file_option option, const char *title)
 
     static char input_file[128];
 
-    ImGui::InputText("  ", input_file, IM_ARRAYSIZE(input_file));
+    const bool enter = ImGui::InputText("  ", input_file, IM_ARRAYSIZE(input_file),ImGuiInputTextFlags_EnterReturnsTrue);
 
     ImGui::SameLine();
 
     // how can we have this on the bottom?
-    if(ImGui::Button("Go"))
+    if(ImGui::Button("Go") || enter)
     {
         const auto full_filename = file_path + path_separator + input_file;
         do_file_option(option,full_filename,use_bios);
