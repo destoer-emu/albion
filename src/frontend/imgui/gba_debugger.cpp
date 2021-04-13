@@ -267,7 +267,7 @@ void ImguiMainWindow::gba_draw_disassembly_child()
 	if (ImGui::Button("Step"))
 	{
         gba.cpu.exec_instr_no_debug();
-        gb.debug.halt();
+        gba.debug.halt();
 	}
 	ImGui::SameLine();
 
