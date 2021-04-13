@@ -43,15 +43,15 @@ void ImguiMainWindow::draw_breakpoints()
     {
         switch(running_type)
         {
-            case emu_type::gameboy: gb.change_breakpoint_enable(enabled); break;
-            case emu_type::gba: gba.change_breakpoint_enable(enabled); break;
+            case emu_type::gameboy: gb.change_breakpoint_enable(enabled[type_idx]); break;
+            case emu_type::gba: gba.change_breakpoint_enable(enabled[type_idx]); break;
             case emu_type::none: break;
         }
     }
     
 
 
-	ImGui::InputText("", input_breakpoint, IM_ARRAYSIZE(input_breakpoint));
+	ImGui::InputText("", input_breakpoint, IM_ARRAYSIZE(input_breakpoint),ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase);
 
 
 	// set breakpoints

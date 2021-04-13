@@ -751,7 +751,25 @@ std::string Disass::disass_op(uint16_t addr) noexcept
             // eg ld a, 0xff
             case disass_type::op_u8:
             {
-                return fmt::format(entry.fmt_str,fmt::format("{:x}",mem.read_mem(addr)));
+                std::string symbol = "";
+                const auto v = mem.read_mem(addr);
+
+                //  ld a, (ff00+xx)
+                if(opcode == 0xf0 && get_symbol(0xff00+v,symbol)) 
+                {
+                    return fmt::format("ld a, ({}) ; (ff00+{:x})",symbol,v);
+                }
+
+                // ld (0xff00+xx), a
+                else if(opcode == 0xe0 && get_symbol(0xff00+v,symbol))
+                {
+                    return fmt::format("ld ({}), a ; (ff00+{:x})",symbol,v);
+                }
+
+                else
+                {
+                    return fmt::format(entry.fmt_str,fmt::format("{:x}",v));
+                }
             }
 
             // eg jr

@@ -457,7 +457,6 @@ void ImguiMainWindow::file_browser(file_option option, const char *title)
 
     ImGui::SameLine();
 
-    // how can we have this on the bottom?
     if(ImGui::Button("Go") || enter)
     {
         const auto full_filename = file_path + path_separator + input_file;
