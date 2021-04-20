@@ -243,6 +243,7 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
 
     uint32_t addr = regs[rn];
     uint32_t old_base = regs[rn];
+    UNUSED(old_base);
 
     bool base_writeback_hit = false;
 

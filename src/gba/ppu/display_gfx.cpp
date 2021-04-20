@@ -544,8 +544,8 @@ void Display::merge_layers()
             auto &b1 = scanline[0][x];
 
             // lower priority is higher, sprite wins even if its equal
-            const bool obj_win1 = b1.source == pixel_source::bd || s.source != pixel_source::bd && sprite_enable &&
-                (sprite_priority[x] <= disp_io.bg_cnt[static_cast<uint32_t>(b1.source)].priority);
+            const bool obj_win1 = b1.source == pixel_source::bd || (s.source != pixel_source::bd && sprite_enable &&
+                (sprite_priority[x] <= disp_io.bg_cnt[static_cast<uint32_t>(b1.source)].priority) );
 
             auto &p1 = obj_win1? s : b1;
 
@@ -566,8 +566,8 @@ void Display::merge_layers()
 
             // lower priority is higher, sprite wins even if its equal
             // if obj has allready won then we dont care
-            const bool obj_win2 = b2.source == pixel_source::bd || !obj_win1 && s.source != pixel_source::bd && sprite_enable && 
-                (sprite_priority[x] <= disp_io.bg_cnt[static_cast<uint32_t>(b2.source)].priority);
+            const bool obj_win2 = b2.source == pixel_source::bd || (!obj_win1 && s.source != pixel_source::bd && sprite_enable && 
+                (sprite_priority[x] <= disp_io.bg_cnt[static_cast<uint32_t>(b2.source)].priority) );
 
             auto &p2 = obj_win2? s : b2;
 
@@ -896,8 +896,6 @@ void Display::render()
 
         case 0x3: // bg mode 3 
         { 
-            BgPriority bg_priority[4];
-            int lim = get_lim(bg_priority,disp_io);
             // bg 2 enable for this
             if(!disp_io.disp_cnt.bg_enable[2])
             {

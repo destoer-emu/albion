@@ -2,6 +2,8 @@
 #include <frontend/sdl/sdl_window.h>
 #include <frontend/imgui/imgui_window.h>
 #include <destoer-emu/lib.h>
+#include <gba/gba.h>
+#include <gb/gb.h>
 
 #ifdef SDL_REQUIRED
 #define SDL_MAIN_HANDLED

@@ -1,4 +1,5 @@
 #pragma once
+#include <destoer-emu/lib.h>
 #ifdef CONTROLLER_SDL
 
 #define SDL_MAIN_HANDLED
@@ -27,8 +28,8 @@ protected:
 class Controller
 {
     void init() {}
-    void connected(int id) {}
-    void disconnected(int id) {}
+    void connected(int id) { UNUSED(id); }
+    void disconnected(int id) { UNUSED(id); }
     ~Controller() {}
 };
 

@@ -76,7 +76,12 @@ if(WIN32)
 	#endif()
 else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -pthread -Ofast -fomit-frame-pointer")
+if(${FRONTEND} STREQUAL "HEADLESS")
+
+else ()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lSDL2")
+endif()
+
 	if(${FRONTEND} STREQUAL "IMGUI") 
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lGL -lGLEW")
 	endif()

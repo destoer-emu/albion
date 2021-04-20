@@ -1875,6 +1875,7 @@ void Mem::write_io<uint32_t>(uint32_t addr,uint32_t v)
 template<typename access_type>
 void Mem::write_oam(uint32_t addr,access_type v)
 {
+    UNUSED(v);
     // 8bit write restricted
     if constexpr(!std::is_same<access_type,uint8_t>())
     {

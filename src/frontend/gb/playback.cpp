@@ -107,7 +107,7 @@ void GbPlayback::init(int playback_frequency,int sample_size) noexcept
     UNUSED(playback_frequency); UNUSED(sample_size);
 }
 
-void GbPlayback::mix_samples(float &f1, float &f2,int volume) noexcept
+void GbPlayback::mix_samples(float &f1, const float &f2,int volume) noexcept
 {
     UNUSED(f1); UNUSED(f2); UNUSED(volume);
 }

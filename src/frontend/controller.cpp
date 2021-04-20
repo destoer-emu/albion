@@ -1,7 +1,7 @@
 #include <frontend/controller.h>
 #include <destoer-emu/lib.h>
 
-
+#ifdef CONTROLLER_SDL
 void Controller::init()
 {
     // pick first valid controller
@@ -55,3 +55,4 @@ Controller::~Controller()
         controller = NULL;
     }
 }
+#endif
