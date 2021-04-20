@@ -154,6 +154,8 @@ void ImguiMainWindow::gameboy_draw_cpu_info()
     ImGui::BeginChild("right pane");
     gameboy_draw_disassembly_child();
     ImGui::EndChild();
+    
+    gb.debug.draw_console();
     ImGui::End();
 }
 

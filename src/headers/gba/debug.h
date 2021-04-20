@@ -14,7 +14,6 @@ public:
 
 
     void debug_input();
-    void execute_command(const std::vector<Token> &args);
 
 
     // standard commands
@@ -32,6 +31,7 @@ public:
     uint8_t read_mem(uint32_t addr) override;
     std::string disass_instr(uint32_t addr) override;
     uint32_t get_instr_size(uint32_t addr) override;
+    void execute_command(const std::vector<Token> &args) override;
 
 private:
 

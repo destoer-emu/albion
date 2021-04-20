@@ -126,6 +126,8 @@ void ImguiMainWindow::gba_draw_cpu_info()
     gba_draw_disassembly_child();
     ImGui::EndChild();
 
+    gba.debug.draw_console();
+
     ImGui::End();   
 }
 

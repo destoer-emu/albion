@@ -1534,6 +1534,10 @@ template<typename access_type>
 void Mem::write_mem(uint32_t addr,access_type v)
 {
     addr = align_addr<access_type>(addr);
+    // 0x080002a2 read from the tile data is bugged to hell 
+    // copy out of 0x0300004d is wrong?
+    // written somewhere from the bios?
+    if(addr == 0x0601003c) { puts( "hey"); }
 
     const auto mem_region = memory_region_table[(addr >> 24) & 0xf];
 #ifdef DEBUG

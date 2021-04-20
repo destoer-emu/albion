@@ -102,8 +102,19 @@ public:
     {
         // assume SDL for now
         const auto str = fmt::format(x,args...);
+#ifdef FROTNED_SDL
         std::cout << str;
+#endif 
+
+#ifdef FRONTEND_IMGUI
+        console[console_idx] = str;
+        console_idx = (console_idx + 1) % console.size();
+#endif
     }
+
+#ifdef FRONTEND_IMGUI
+    void draw_console();
+#endif
 
 
 #else
@@ -160,6 +171,11 @@ public:
 
     Trace trace;
 
+#ifdef FRONTEND_IMGUI
+    std::vector<std::string> console;
+    size_t console_idx = 0;
+#endif
+
 protected:
 #ifdef DEBUG
     // internal overrides
@@ -167,6 +183,7 @@ protected:
     virtual uint8_t read_mem(uint32_t addr) = 0;
     virtual std::string disass_instr(uint32_t addr) = 0;
     virtual uint32_t get_instr_size(uint32_t addr) = 0;
+    virtual void execute_command(const std::vector<Token> &args) = 0;
 #endif
 
     std::ofstream log_file;

@@ -46,7 +46,7 @@ bool Debug::breakpoint_hit(uint32_t addr, uint32_t value, break_type type)
 
         if(breakpoints_enabled && !b.watch)
         {
-            printf("%x breakpoint hit at %x:%x\n",static_cast<int>(type),addr,value);
+            print_console("{} breakpoint hit at {:x}:{:x}\n",static_cast<int>(type),addr,value);
         }
 
         // this is a watchpoint we just want to print to the console
@@ -54,7 +54,7 @@ bool Debug::breakpoint_hit(uint32_t addr, uint32_t value, break_type type)
         else if(watchpoints_enabled && b.watch)
         {
             //print_watchpoint(b);
-            printf("%x watch hit at %x:%x\n",static_cast<int>(type),addr,value);
+            print_console("{} watch hit at {:x}:{:x}\n",static_cast<int>(type),addr,value);
             return false;
         }
     }
@@ -139,6 +139,10 @@ Debug::Debug()
         exit(1);
     }
     disable_everything();
+
+#ifdef FRONTEND_IMGUI
+    console.resize(80);
+#endif
 }
 
 Debug::~Debug()
@@ -146,7 +150,61 @@ Debug::~Debug()
     log_file.close();
 }
 
+#ifdef FRONTEND_IMGUI
+#include <frontend/imgui/imgui_window.h>
+void Debug::draw_console()
+{
+    ImGui::Begin("console");
 
+    ImGui::BeginChild("console_child",ImVec2(0, 300), true);
+
+    static bool update = false;
+
+    for (int i = 0; i < console.size(); i++)
+    {         
+        const auto str = console[(i+console_idx) % console.size()];
+        ImGui::Text(str.c_str());
+    }
+    
+    if(update)
+    {
+        update = false;
+        ImGui::SetScrollHereY(1.0f);
+    }
+
+
+
+    ImGui::EndChild();
+
+    static char input[128] = "";
+
+    if(ImGui::InputText("", input, IM_ARRAYSIZE(input),ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        if(*input)
+        {
+            print_console("$ {}\n",input);
+            std::vector<Token> args;
+            if(!tokenize(input,args))
+            {
+                // TODO: provide better error reporting
+                print_console("one or more args is invalid");
+            }
+            
+            execute_command(args);
+            *input = '\0';
+        }
+        // keep in text box after input
+        ImGui::SetKeyboardFocusHere(-1);
+
+        // scroll to bottom after command
+        update = true;
+    }    
+
+
+    ImGui::End();
+}
+
+#endif
 
 // console impl
 

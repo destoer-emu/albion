@@ -28,7 +28,7 @@ if(${FRONTEND} STREQUAL "SDL")
 	add_definitions(-DFRONTEND_SDL)
 endif()
 
-if(${FRONTEND} STREQUAL "QT") # not supported yet come back to this
+if(${FRONTEND} STREQUAL "QT") 
 	add_definitions(-DAUDIO_ENABLE -DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL -DDEBUG)
 	add_definitions(-DFRONTEND_QT)
 endif()
