@@ -12,6 +12,9 @@ template uint8_t Mem::read_memt<uint8_t>(uint32_t addr);
 template uint16_t Mem::read_memt<uint16_t>(uint32_t addr);
 template uint32_t Mem::read_memt<uint32_t>(uint32_t addr);
 
+template uint8_t Mem::read_memt_no_debug<uint8_t>(uint32_t addr);
+template uint16_t Mem::read_memt_no_debug<uint16_t>(uint32_t addr);
+template uint32_t Mem::read_memt_no_debug<uint32_t>(uint32_t addr);
 
 
 template void Mem::write_mem<uint8_t>(uint32_t addr, uint8_t v);
@@ -21,6 +24,10 @@ template void Mem::write_mem<uint32_t>(uint32_t addr, uint32_t v);
 template void Mem::write_memt<uint8_t>(uint32_t addr, uint8_t v);
 template void Mem::write_memt<uint16_t>(uint32_t addr, uint16_t v);
 template void Mem::write_memt<uint32_t>(uint32_t addr, uint32_t v);
+
+template void Mem::write_memt_no_debug<uint8_t>(uint32_t addr, uint8_t v);
+template void Mem::write_memt_no_debug<uint16_t>(uint32_t addr, uint16_t v);
+template void Mem::write_memt_no_debug<uint32_t>(uint32_t addr, uint32_t v);
 
 template bool Mem::fast_memcpy<uint16_t>(uint32_t src, uint32_t dst, uint32_t n);
 template bool Mem::fast_memcpy<uint32_t>(uint32_t src, uint32_t dst, uint32_t n);
@@ -1342,25 +1349,28 @@ access_type Mem::read_mem_handler(uint32_t addr)
 template<typename access_type>
 access_type Mem::read_mem(uint32_t addr)
 {
-    addr = align_addr<access_type>(addr);
+    addr = align_addr<access_type>(addr);   
+    return read_mem_handler<access_type>(addr);
+}
 
+
+template<typename access_type>
+access_type Mem::read_memt(uint32_t addr)
+{
+    const auto v = read_memt_no_debug<access_type>(addr);
 #ifdef DEBUG
-    const auto v = read_mem_handler<access_type>(addr);
     if(debug.breakpoint_hit(addr,v,break_type::read))
     {
         write_log(debug,"read breakpoint hit at {:08x}:{:08x}:{:08x}",addr,v,cpu.get_pc());
         debug.halt();
     }
-    return v;
-#else    
-    return read_mem_handler<access_type>(addr);    
 #endif
+    return v;
 }
-
 
 // timed memory access
 template<typename access_type>
-access_type Mem::read_memt(uint32_t addr)
+access_type Mem::read_memt_no_debug(uint32_t addr)
 {
     const auto v = read_mem<access_type>(addr);
     tick_mem_access<access_type>(addr);
@@ -1528,25 +1538,16 @@ void Mem::write_eeprom(uint8_t v)
     }    
 }
 
+
+
 // write mem
  // write mem unticked
 template<typename access_type>
 void Mem::write_mem(uint32_t addr,access_type v)
 {
     addr = align_addr<access_type>(addr);
-    // 0x080002a2 read from the tile data is bugged to hell 
-    // copy out of 0x0300004d is wrong?
-    // written somewhere from the bios?
-    if(addr == 0x0601003c) { puts( "hey"); }
 
     const auto mem_region = memory_region_table[(addr >> 24) & 0xf];
-#ifdef DEBUG
-    if(debug.breakpoint_hit(addr,v,break_type::write))
-    {
-        write_log(debug,"write breakpoint hit at {:08x}:{:08x}:{:08x}",addr,v,cpu.get_pc());
-        debug.halt();
-    }   
-#endif
 
     switch(mem_region)
     {
@@ -1627,12 +1628,27 @@ void Mem::write_mem(uint32_t addr,access_type v)
 
 }
 
+
+template<typename access_type>
+void Mem::write_memt_no_debug(uint32_t addr, access_type v)
+{
+    write_mem<access_type>(addr,v);
+    tick_mem_access<access_type>(addr);    
+}
+
+
 // ticked access
 template<typename access_type>
 void Mem::write_memt(uint32_t addr,access_type v)
 {
-    write_mem<access_type>(addr,v);
-    tick_mem_access<access_type>(addr);
+#ifdef DEBUG
+    if(debug.breakpoint_hit(addr,v,break_type::write))
+    {
+        write_log(debug,"write breakpoint hit at {:08x}:{:08x}:{:08x}",addr,v,cpu.get_pc());
+        debug.halt();
+    }   
+#endif
+    write_memt_no_debug(addr,v);
 }
 
 

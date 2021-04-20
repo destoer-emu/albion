@@ -145,14 +145,14 @@ private:
     void do_file_option(file_option option, const std::string &filename, bool use_bios);
     void file_browser(file_option option, const char *title);
     void menu_bar(Debug &debug);
-
+#ifdef DEBUG
     std::unordered_map<uint32_t,Breakpoint> &get_breakpoint_ref();
     void draw_breakpoints();
 
     void write_mem(uint32_t addr,uint8_t v);
     uint8_t read_mem(uint32_t addr);
     void draw_memory();
-
+#endif
     // Gameboy
 
     // emulator managment
@@ -161,7 +161,7 @@ private:
     void gameboy_new_instance(std::string filename, bool use_bios);
     void gameboy_reset_instance(std::string filename, bool use_bios);
     void gameboy_run_frame();
-
+#ifdef DEBUG
     // frontend drawing
     void gameboy_draw_screen(); // unused now we just render to back of window
 
@@ -171,21 +171,21 @@ private:
     void gameboy_draw_disassembly_child();
     void gameboy_draw_memory();
     void gameboy_draw_cpu_info();
-
+#endif
     // gba
     void gba_stop_instance();
     void gba_start_instance();
     void gba_new_instance(std::string filename);
     void gba_reset_instance(std::string filename);
     void gba_run_frame();
-
+#ifdef DEBUG
     // frotend drawing
     //void gba_draw_screen();
     void gba_draw_disassembly_child();
     void gba_draw_registers_child(); 
     void gba_draw_cpu_info();
     void gba_draw_memory();
-
+#endif
 
     ImVec2 menubar_size;
 
@@ -200,14 +200,15 @@ private:
     enum class current_window
     {
         screen,
-        display_viewer,
-        cpu,
-        memory,
         load_rom,
         load_state,
         save_state,
+    #ifdef DEBUG
+        display_viewer,
+        cpu,
+        memory,
         breakpoint,
-        full_debugger
+    #endif
     };
 
 
@@ -219,8 +220,10 @@ private:
     emu_type running_type = emu_type::none;
 
     Texture screen;
+#ifdef DEBUG
     GameboyDisplayViewer gb_display_viewer;
     GBADisplayViewer gba_display_viewer;
+#endif
 };
 
 #endif

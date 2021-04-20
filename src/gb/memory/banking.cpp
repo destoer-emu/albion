@@ -287,7 +287,7 @@ void Memory::update_page_table_bank()
 
 	for(int i = 0x4; i < 0x8; i++)
 	{
-		page_table[i] = &rom[cart_rom_bank * 0x4000 + ((i-4) * 0x1000)];
+		page_table[i] = &rom[(cart_rom_bank * 0x4000) + ((i-4) * 0x1000)];
 	}
 }
 

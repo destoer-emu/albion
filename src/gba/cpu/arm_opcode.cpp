@@ -8,9 +8,9 @@ namespace gameboyadvance
 // TODO remove prefetch hacks
 void Cpu::arm_fill_pipeline() // need to verify this...
 {
-    pipeline[0] = mem.read_memt<uint32_t>(regs[PC]);
+    pipeline[0] = mem.read_u32(regs[PC]);
     regs[PC] += ARM_WORD_SIZE;
-    pipeline[1] = mem.read_memt<uint32_t>(regs[PC]);
+    pipeline[1] = mem.read_u32(regs[PC]);
 }
 
 void Cpu::write_pc_arm(uint32_t v)
@@ -26,7 +26,7 @@ uint32_t Cpu::fetch_arm_opcode()
     pipeline[0] = pipeline[1];
     regs[PC] += ARM_WORD_SIZE; 
     pc_actual += ARM_WORD_SIZE;
-    pipeline[1] = mem.read_memt<uint32_t>(regs[PC]);
+    pipeline[1] = mem.read_u32(regs[PC]);
     return opcode;
 }
 
@@ -215,15 +215,15 @@ void Cpu::arm_swap(uint32_t opcode)
     // rd = [rn], [rn] = rm
     if constexpr(B)
     {
-        tmp = mem.read_memt<uint8_t>(regs[rn]);
-        mem.write_memt<uint8_t>(regs[rn],regs[rm]);
+        tmp = mem.read_u8(regs[rn]);
+        mem.write_u8(regs[rn],regs[rm]);
     }
 
     else
     {
-        tmp = mem.read_memt<uint32_t>(regs[rn]);
+        tmp = mem.read_u32(regs[rn]);
         regs[rd] = rotr(regs[rd],(regs[rn]&3)*8);
-        mem.write_memt<uint32_t>(regs[rn],regs[rm]);
+        mem.write_u32(regs[rn],regs[rm]);
     }
 
 
@@ -324,12 +324,12 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
 
             if(i == PC)
             {
-                write_pc(mem.read_memt<uint32_t>(addr));
+                write_pc(mem.read_u32(addr));
             }
 
             else
             {
-                regs[i] = mem.read_memt<uint32_t>(addr);
+                regs[i] = mem.read_u32(addr);
             }
 
 
@@ -361,12 +361,12 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
             // store old base
             if(rn == i && i == first)
             {
-                mem.write_memt<uint32_t>(addr,old_base);
+                mem.write_u32(addr,old_base);
             }
 
             else
             {
-                mem.write_memt<uint32_t>(addr,regs[i]);
+                mem.write_u32(addr,regs[i]);
             }
         }
 
@@ -842,7 +842,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
             case 1: // ldrh
             {
-                regs[rd] = mem.read_memt<uint16_t>(addr);
+                regs[rd] = mem.read_u16(addr);
                 // result rotated right by 8 on arm7 if unaligned 
                 regs[rd] = rotr(regs[rd],8*(addr&1)); 
                 internal_cycle(); // internal cycle for writeback
@@ -855,7 +855,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
             case 2: // ldrsb
             {
-                regs[rd] = sign_extend<uint32_t>(mem.read_memt<uint8_t>(addr),8);
+                regs[rd] = sign_extend<uint32_t>(mem.read_u8(addr),8);
                 internal_cycle(); // internal cycle for writeback
                 if(is_pc)
                 {
@@ -869,13 +869,13 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
                 if(!(addr & 1))
                 {
-                    regs[rd] = sign_extend<uint32_t>(mem.read_memt<uint16_t>(addr),16);
+                    regs[rd] = sign_extend<uint32_t>(mem.read_u16(addr),16);
                 }
 
                 // unaligned
                 else
                 {
-                    regs[rd] = sign_extend<uint32_t>(mem.read_memt<uint8_t>(addr),8);
+                    regs[rd] = sign_extend<uint32_t>(mem.read_u8(addr),8);
                 }
 
 
@@ -903,7 +903,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
         {
             case 1: // strh
             {
-                mem.write_memt<uint16_t>(addr,value);
+                mem.write_u16(addr,value);
                 break;
             }
             
@@ -1010,12 +1010,12 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
         // ldrb
         if(is_byte)
         {
-            regs[rd] = mem.read_memt<uint8_t>(addr);
+            regs[rd] = mem.read_u8(addr);
         }
 
         else // ldr and swp use rotated reads
         {
-            regs[rd] = mem.read_memt<uint32_t>(addr);
+            regs[rd] = mem.read_u32(addr);
             regs[rd] = rotr(regs[rd],(addr&3)*8);
         }
        
@@ -1041,12 +1041,12 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 
 		if(is_byte)
 		{
-			mem.write_memt<uint8_t>(addr,v);
+			mem.write_u8(addr,v);
 		}
 		
 		else
 		{
-			mem.write_memt<uint32_t>(addr,v);
+			mem.write_u32(addr,v);
 		}
     }
 

@@ -543,10 +543,9 @@ void Display::merge_layers()
 
             auto &b1 = scanline[0][x];
 
-            const auto bg_priority1 = disp_io.bg_cnt[static_cast<uint32_t>(b1.source)].priority;
-
             // lower priority is higher, sprite wins even if its equal
-            const bool obj_win1 = s.source != pixel_source::bd && sprite_enable && (sprite_priority[x] <= bg_priority1 || b1.source == pixel_source::bd);
+            const bool obj_win1 = b1.source == pixel_source::bd || s.source != pixel_source::bd && sprite_enable &&
+                (sprite_priority[x] <= disp_io.bg_cnt[static_cast<uint32_t>(b1.source)].priority);
 
             auto &p1 = obj_win1? s : b1;
 
@@ -565,12 +564,10 @@ void Display::merge_layers()
             // check color2 prioritys
             auto &b2 = scanline[1][x];
 
-            const auto bg_priority2 = disp_io.bg_cnt[static_cast<uint32_t>(b2.source)].priority;
-
             // lower priority is higher, sprite wins even if its equal
             // if obj has allready won then we dont care
-            const bool obj_win2 = !obj_win1 && s.source != pixel_source::bd && sprite_enable && 
-                (sprite_priority[x] <= bg_priority2 || b2.source == pixel_source::bd);
+            const bool obj_win2 = b2.source == pixel_source::bd || !obj_win1 && s.source != pixel_source::bd && sprite_enable && 
+                (sprite_priority[x] <= disp_io.bg_cnt[static_cast<uint32_t>(b2.source)].priority);
 
             auto &p2 = obj_win2? s : b2;
 
@@ -770,19 +767,17 @@ bool Display::special_window_enabled(unsigned int x) const
 }
 
 
-void Display::render()
+// sort bg so we draw the one with the highest priority into our scanline first
+struct BgPriority
+{
+    int bg;
+    int priority;
+};
+
+int get_lim(BgPriority *bg_priority, DispIo &disp_io)
 {
     const auto disp_cnt = disp_io.disp_cnt;
     const auto render_mode = disp_cnt.bg_mode; 
-
-    const TileData DEAD_PIXEL(read_bg_palette(0,0),pixel_source::bd);
-    std::fill(scanline[0].begin(),scanline[0].end(),DEAD_PIXEL);
-    std::fill(scanline[1].begin(),scanline[1].end(),DEAD_PIXEL);
-
-    // ideally we would try to cull draws
-    // that are not enabled in the window
-    cache_window();
-    render_sprites(render_mode);
 
     // okay what order do we need to render in?
     static constexpr unsigned int bg_limits[3][2] = 
@@ -795,19 +790,6 @@ void Display::render()
     // ideally id find a nicer way to split off is_bitmap so this is not required
     const auto start = bg_limits[render_mode][0];
     const auto end = bg_limits[render_mode][1];
-    
-
-
-
-    // sort bg so we draw the one with the highest priority into our scanline first
-    struct BgPriority
-    {
-        int bg;
-        int priority;
-    };
-
-    // max of four but we may end up using less
-    BgPriority bg_priority[4];
 
     unsigned int lim = end-start;
 
@@ -838,13 +820,31 @@ void Display::render()
 
         // else by the bg_cnt priority
         return a.priority > b.priority;
-    });
+    });  
+
+    return lim;  
+}
+
+void Display::render()
+{
+    const auto render_mode = disp_io.disp_cnt.bg_mode; 
+
+    const TileData DEAD_PIXEL(read_bg_palette(0,0),pixel_source::bd);
+    std::fill(scanline[0].begin(),scanline[0].end(),DEAD_PIXEL);
+    std::fill(scanline[1].begin(),scanline[1].end(),DEAD_PIXEL);
+
+    // ideally we would try to cull draws
+    // that are not enabled in the window
+    cache_window();
+    render_sprites(render_mode);
 
     switch(render_mode)
     {
 
         case 0x0: // text mode
-        {
+        {   
+            BgPriority bg_priority[4];
+            int lim = get_lim(bg_priority,disp_io);
             //render_bg(0,4);
             for(int i = lim-1; i >= 0; i--)
             {
@@ -857,6 +857,8 @@ void Display::render()
         // needs checking
         case 0x1: // text mode
         {
+            BgPriority bg_priority[4];
+            int lim = get_lim(bg_priority,disp_io);
             // render_bg(0,4)
             // 2 is affine
             for(int i = lim-1; i >= 0; i--)
@@ -880,6 +882,8 @@ void Display::render()
         // needs checking
         case 0x2: // bg mode 2
         {
+            BgPriority bg_priority[4];
+            int lim = get_lim(bg_priority,disp_io);
             //render_bg(2,4);
             for(int i = lim-1; i >= 0; i--)
             {
@@ -892,8 +896,10 @@ void Display::render()
 
         case 0x3: // bg mode 3 
         { 
+            BgPriority bg_priority[4];
+            int lim = get_lim(bg_priority,disp_io);
             // bg 2 enable for this
-            if(!disp_cnt.bg_enable[2])
+            if(!disp_io.disp_cnt.bg_enable[2])
             {
                 break;
             }
@@ -914,7 +920,7 @@ void Display::render()
         case 0x4: // mode 4 (does not handle scrolling)
         {
             // bg 2 enable for this
-            if(!disp_cnt.bg_enable[2])
+            if(!disp_io.disp_cnt.bg_enable[2])
             {
                 break;
             }

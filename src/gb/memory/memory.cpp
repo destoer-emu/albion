@@ -82,7 +82,7 @@ Memory::Memory(GB &gb) : cpu(gb.cpu), ppu(gb.ppu),
         x.resize(0x2000); 
 		std::fill(x.begin(),x.end(),0);
     }
-	rom.resize(0x4000);
+	rom.resize(0x8000);
 } 
 
 void Memory::init_mem_table() noexcept
@@ -235,7 +235,7 @@ void Memory::init(std::string rom_name, bool with_rom, bool use_bios)
 
 	else
 	{
-		rom.resize(0x4000);
+		rom.resize(0x8000);
 	}
 
 	if(use_bios)

@@ -4,6 +4,90 @@
 using namespace gameboyadvance;
 
 
+
+
+void ImguiMainWindow::gba_run_frame()
+{
+    try
+    {
+        //auto start = std::chrono::system_clock::now();
+        gba_controller.update(gba);
+
+        gba.run();
+
+        if(gba.disp.new_vblank)
+        {
+            // swap the buffer so the frontend can render it
+            screen.swap_buffer(gba.disp.screen);
+        }
+    #ifdef DEBUG
+        if(gba_display_viewer.enabled)
+        {
+            gba_display_viewer.update(gba);
+        }
+    #endif
+        //auto end = std::chrono::system_clock::now();
+        //printf("fps: %d\n",1000 / std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() );
+    }
+    
+
+    catch(std::exception &ex)
+    {
+        gba.debug.write_logger(ex.what());
+        std::cout << ex.what() << "\n";
+        emu_running = false;
+        SDL_GL_SetSwapInterval(1); // Enable vsync
+        return;
+    }    
+}
+
+
+void ImguiMainWindow::gba_stop_instance()
+{
+    gba.quit = true;
+    emu_running = false;
+    gba.mem.save_cart_ram();
+}
+
+void ImguiMainWindow::gba_start_instance()
+{
+    emu_running = true;
+    gba.debug.wake_up();
+}
+
+void ImguiMainWindow::gba_new_instance(std::string filename)
+{
+    try
+    {
+        gba_reset_instance(filename);
+        gba_start_instance();
+    }
+
+    catch(std::exception &ex)
+    {
+        std::cout << ex.what()  << "\n";
+        return;
+    }          
+}
+
+
+void ImguiMainWindow::gba_reset_instance(std::string filename)
+{
+    try
+    {
+        gba.reset(filename);
+    }
+
+    catch(std::exception &ex)
+    {
+        std::cout << ex.what()  << "\n";
+        return;
+    }    
+}
+
+
+#ifdef DEBUG
+
 void GBADisplayViewer::init()
 {
     for(auto &t: bg_maps)
@@ -72,42 +156,6 @@ void GBADisplayViewer::draw_palette()
 		}
 	}
     ImGui::End();        
-}
-
-
-void ImguiMainWindow::gba_run_frame()
-{
-    try
-    {
-        //auto start = std::chrono::system_clock::now();
-        gba_controller.update(gba);
-
-        gba.run();
-
-        if(gba.disp.new_vblank)
-        {
-            // swap the buffer so the frontend can render it
-            screen.swap_buffer(gba.disp.screen);
-        }
-
-        if(gba_display_viewer.enabled)
-        {
-            gba_display_viewer.update(gba);
-        }
-
-        //auto end = std::chrono::system_clock::now();
-        //printf("fps: %d\n",1000 / std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() );
-    }
-    
-
-    catch(std::exception &ex)
-    {
-        gba.debug.write_logger(ex.what());
-        std::cout << ex.what() << "\n";
-        emu_running = false;
-        SDL_GL_SetSwapInterval(1); // Enable vsync
-        return;
-    }    
 }
 
 
@@ -374,45 +422,4 @@ void ImguiMainWindow::gba_draw_disassembly_child()
 }
 
 
-void ImguiMainWindow::gba_stop_instance()
-{
-    gba.quit = true;
-    emu_running = false;
-    gba.mem.save_cart_ram();
-}
-
-void ImguiMainWindow::gba_start_instance()
-{
-    emu_running = true;
-    gba.debug.wake_up();
-}
-
-void ImguiMainWindow::gba_new_instance(std::string filename)
-{
-    try
-    {
-        gba_reset_instance(filename);
-        gba_start_instance();
-    }
-
-    catch(std::exception &ex)
-    {
-        std::cout << ex.what()  << "\n";
-        return;
-    }          
-}
-
-
-void ImguiMainWindow::gba_reset_instance(std::string filename)
-{
-    try
-    {
-        gba.reset(filename);
-    }
-
-    catch(std::exception &ex)
-    {
-        std::cout << ex.what()  << "\n";
-        return;
-    }    
-}
+#endif

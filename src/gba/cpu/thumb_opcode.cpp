@@ -12,9 +12,9 @@ namespace gameboyadvance
 // TODO: remove preftech hacks
 void Cpu::thumb_fill_pipeline()
 {
-    pipeline[0] = mem.read_memt<uint16_t>(regs[PC]);
+    pipeline[0] = mem.read_u16(regs[PC]);
     regs[PC] += ARM_HALF_SIZE;
-    pipeline[1] = mem.read_memt<uint16_t>(regs[PC]);
+    pipeline[1] = mem.read_u16(regs[PC]);
 }
 
 
@@ -24,7 +24,7 @@ uint16_t Cpu::fetch_thumb_opcode()
     pipeline[0] = pipeline[1];
     regs[PC] += ARM_HALF_SIZE; 
     pc_actual += ARM_HALF_SIZE; 
-    pipeline[1] = mem.read_memt<uint16_t>(regs[PC]);
+    pipeline[1] = mem.read_u16(regs[PC]);
     return opcode;
 }
 
@@ -68,14 +68,14 @@ void Cpu::thumb_load_store_sp(uint16_t opcode)
 
     if constexpr(L)
     {
-        regs[RD] = mem.read_memt<uint32_t>(addr);
+        regs[RD] = mem.read_u32(addr);
         regs[RD] = rotr(regs[RD],(addr&3)*8);
         internal_cycle(); // internal for writeback       
     }
 
     else
     {
-        mem.write_memt<uint32_t>(addr,regs[RD]);
+        mem.write_u32(addr,regs[RD]);
     } 
 }
 
@@ -145,20 +145,20 @@ void Cpu::thumb_load_store_sbh(uint16_t opcode)
     {
         case 0: // strh
         {
-            mem.write_memt<uint16_t>(addr,regs[rd]);
+            mem.write_u16(addr,regs[rd]);
             break;
         }
 
         case 1: // ldsb
         {
-            regs[rd] = sign_extend<uint32_t>(mem.read_memt<uint8_t>(addr),8);
+            regs[rd] = sign_extend<uint32_t>(mem.read_u8(addr),8);
             internal_cycle(); // internal cycle for reg writeback
             break;
         }
 
         case 2: // ldrh
         {
-            regs[rd] = mem.read_memt<uint16_t>(addr);
+            regs[rd] = mem.read_u16(addr);
             // result rotated right by 8 on arm7 if unaligned 
             regs[rd] = rotr(regs[rd],8*(addr&1)); 
             internal_cycle(); // internal cycle for reg writeback
@@ -169,12 +169,12 @@ void Cpu::thumb_load_store_sbh(uint16_t opcode)
         {
             if(!(addr & 1)) // is aligned
             {
-                regs[rd] = sign_extend<uint32_t>(mem.read_memt<uint16_t>(addr),16);
+                regs[rd] = sign_extend<uint32_t>(mem.read_u16(addr),16);
             }
 
             else // unaligned
             {
-                regs[rd] = sign_extend<uint32_t>(mem.read_memt<uint8_t>(addr),8);
+                regs[rd] = sign_extend<uint32_t>(mem.read_u8(addr),8);
             }
             internal_cycle(); // internal cycle for reg writeback
             break;
@@ -195,19 +195,19 @@ void Cpu::thumb_load_store_reg(uint16_t opcode)
     {
         case 0: // str
         {
-            mem.write_memt<uint32_t>(addr,regs[rd]);
+            mem.write_u32(addr,regs[rd]);
             break;
         }
 
         case 1: //strb
         {
-            mem.write_memt<uint8_t>(addr,regs[rd]);
+            mem.write_u8(addr,regs[rd]);
             break;
         }
 
         case 2: // ldr
         {
-            regs[rd] = mem.read_memt<uint32_t>(addr);
+            regs[rd] = mem.read_u32(addr);
             regs[rd] = rotr(regs[rd],(addr&3)*8);
             internal_cycle(); // for reg writeback
             break;
@@ -215,7 +215,7 @@ void Cpu::thumb_load_store_reg(uint16_t opcode)
 
         case 3: // ldrb
         {
-            regs[rd] = mem.read_memt<uint8_t>(addr);
+            regs[rd] = mem.read_u8(addr);
             internal_cycle(); // for reg writeback
             break;
         }
@@ -247,7 +247,7 @@ void Cpu::thumb_load_store_half(uint16_t opcode)
     if constexpr(L) // ldrh
     {
         const auto addr = regs[rb] + nn;
-        regs[rd] = mem.read_memt<uint16_t>(addr);
+        regs[rd] = mem.read_u16(addr);
         // arm7 rotate by 8 if unaligned
         regs[rd] = rotr(regs[rd],8*(addr&1)); 
         internal_cycle(); // internal cycle for writeback
@@ -255,7 +255,7 @@ void Cpu::thumb_load_store_half(uint16_t opcode)
 
     else //strh
     {
-        mem.write_memt<uint16_t>(regs[rb]+nn,regs[rd]);
+        mem.write_u16(regs[rb]+nn,regs[rd]);
     } 
 }
 
@@ -271,7 +271,7 @@ void Cpu::thumb_push_pop(uint16_t opcode)
         {
             if(is_set(reg_range,i))
             {
-                regs[i] = mem.read_memt<uint32_t>(regs[SP]);
+                regs[i] = mem.read_u32(regs[SP]);
                 regs[SP] += ARM_WORD_SIZE;
             }
         }
@@ -282,7 +282,7 @@ void Cpu::thumb_push_pop(uint16_t opcode)
         // nS +1N +1I (pop) | (n+1)S +2N +1I(pop pc)
         if constexpr(IS_LR)
         {
-            write_pc(mem.read_memt<uint32_t>(regs[SP]));
+            write_pc(mem.read_u32(regs[SP]));
             regs[SP] += ARM_WORD_SIZE;
         }
     }
@@ -312,14 +312,14 @@ void Cpu::thumb_push_pop(uint16_t opcode)
         {
             if(is_set(reg_range,i))
             {
-                mem.write_memt<uint32_t>(addr,regs[i]);
+                mem.write_u32(addr,regs[i]);
                 addr += ARM_WORD_SIZE;
             }
         }
 
         if constexpr(IS_LR)
         {
-            mem.write_memt<uint32_t>(addr,regs[LR]);
+            mem.write_u32(addr,regs[LR]);
         }
     }
 
@@ -523,7 +523,7 @@ void Cpu::thumb_multiple_load_store(uint16_t opcode)
         // ldmia
         if constexpr(L)
         {
-            const auto v = mem.read_memt<uint32_t>(regs[RB]);
+            const auto v = mem.read_u32(regs[RB]);
             internal_cycle();
             write_pc(v);
         }
@@ -531,7 +531,7 @@ void Cpu::thumb_multiple_load_store(uint16_t opcode)
         //stmia
         else
         {
-            mem.write_memt<uint32_t>(regs[RB],regs[PC]);
+            mem.write_u32(regs[RB],regs[PC]);
         }
 
         regs[RB] += 0x40;        
@@ -546,12 +546,12 @@ void Cpu::thumb_multiple_load_store(uint16_t opcode)
                 // ldmia
                 if constexpr(L)
                 {
-                    regs[i] = mem.read_memt<uint32_t>(regs[RB]);
+                    regs[i] = mem.read_u32(regs[RB]);
                 }
                 //stmia
                 else
                 {
-                    mem.write_memt<uint32_t>(regs[RB],regs[i]);
+                    mem.write_u32(regs[RB],regs[i]);
                 }
                 regs[RB] += ARM_WORD_SIZE;
             }
@@ -579,14 +579,14 @@ void Cpu::thumb_ldst_imm(uint16_t opcode)
     {
         case 0b00: // str
         {  
-            mem.write_memt<uint32_t>((regs[rb]+imm*4),regs[rd]);
+            mem.write_u32((regs[rb]+imm*4),regs[rd]);
             break;
         }
 
         case 0b01: // ldr
         {
             uint32_t addr = regs[rb]+imm*4;
-            regs[rd] = mem.read_memt<uint32_t>(addr);
+            regs[rd] = mem.read_u32(addr);
             regs[rd] = rotr(regs[rd],(addr&3)*8);
             internal_cycle(); // cycle for register writeback
             break;            
@@ -594,13 +594,13 @@ void Cpu::thumb_ldst_imm(uint16_t opcode)
 
         case 0b10: // strb
         {
-            mem.write_memt<uint8_t>((regs[rb]+imm),regs[rd]);
+            mem.write_u8((regs[rb]+imm),regs[rd]);
             break;
         }
 
         case 0b11: // ldrb
         {
-            regs[rd] = mem.read_memt<uint8_t>((regs[rb]+imm));
+            regs[rd] = mem.read_u8((regs[rb]+imm));
             internal_cycle(); // cycle for register writeback     
             break;
         }
@@ -737,7 +737,7 @@ void Cpu::thumb_ldr_pc(uint16_t opcode)
     // pc is + 4 ahead of current instr
     const uint32_t addr = (regs[PC] & ~2) + offset;
 
-    regs[RD] = mem.read_memt<uint32_t>(addr);
+    regs[RD] = mem.read_u32(addr);
 
     // internal cycle for load writeback
     internal_cycle();

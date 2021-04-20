@@ -126,6 +126,11 @@ public:
         const auto str = fmt::format(x,args...);
         std::cout << str;
     }
+
+#ifdef FRONTEND_IMGUI
+    void draw_console() {}
+#endif
+
 #endif
 
     void breakpoint(const std::vector<Token> &args);

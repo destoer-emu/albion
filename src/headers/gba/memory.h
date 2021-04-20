@@ -40,10 +40,12 @@ public:
     template<typename access_type>
     access_type read_mem_handler(uint32_t addr);
 
-
     template<typename access_type>
     access_type read_memt(uint32_t addr);
 
+
+    template<typename access_type>
+    access_type read_memt_no_debug(uint32_t addr);
 
 
     // read mem
@@ -54,6 +56,110 @@ public:
 
     template<typename access_type>    
     void write_memt(uint32_t addr,access_type v);
+
+    template<typename access_type>
+    void write_memt_no_debug(uint32_t addr, access_type v);
+
+
+#ifdef DEBUG
+    template<typename access_type>
+    using WRITE_MEM_FPTR = void (Mem::*)(uint32_t addr,access_type data);
+
+    WRITE_MEM_FPTR<uint32_t> write_u32_fptr = &Mem::write_memt_no_debug<uint32_t>;
+    WRITE_MEM_FPTR<uint16_t> write_u16_fptr = &Mem::write_memt_no_debug<uint16_t>;
+    WRITE_MEM_FPTR<uint8_t> write_u8_fptr  = &Mem::write_memt_no_debug<uint8_t>;
+
+
+    template<typename access_type>
+    using READ_MEM_FPTR = access_type (Mem::*)(uint32_t addr);
+
+    READ_MEM_FPTR<uint32_t> read_u32_fptr = &Mem::read_memt_no_debug<uint32_t>;
+    READ_MEM_FPTR<uint16_t> read_u16_fptr = &Mem::read_memt_no_debug<uint16_t>;
+    READ_MEM_FPTR<uint8_t> read_u8_fptr = &Mem::read_memt_no_debug<uint8_t>;
+
+
+    void change_breakpoint_enable(bool enabled)
+    {
+        if(enabled)
+        {
+            read_u32_fptr = &Mem::read_memt<uint32_t>;
+            read_u16_fptr = &Mem::read_memt<uint16_t>;
+            read_u8_fptr = &Mem::read_memt<uint8_t>;
+            
+            write_u32_fptr = &Mem::write_memt<uint32_t>;
+            write_u16_fptr = &Mem::write_memt<uint16_t>;
+            write_u8_fptr  = &Mem::write_memt<uint8_t>;
+        }
+
+        else
+        {
+            read_u32_fptr = &Mem::read_memt_no_debug<uint32_t>;
+            read_u16_fptr = &Mem::read_memt_no_debug<uint16_t>;
+            read_u8_fptr = &Mem::read_memt_no_debug<uint8_t>;
+            
+            write_u32_fptr = &Mem::write_memt_no_debug<uint32_t>;
+            write_u16_fptr = &Mem::write_memt_no_debug<uint16_t>;
+            write_u8_fptr  = &Mem::write_memt_no_debug<uint8_t>;
+        }
+    }
+#endif
+
+    // wrapper to optimise away debug check
+    void write_u8(uint32_t addr , uint8_t v)
+    {
+        #ifdef DEBUG
+            std::invoke(write_u8_fptr,this,addr,v);
+        #else
+            write_memt<uint8_t>(addr,v);
+        #endif
+    }
+
+    void write_u16(uint32_t addr , uint16_t v)
+    {
+        #ifdef DEBUG
+            std::invoke(write_u16_fptr,this,addr,v);
+        #else
+            write_memt_no_debug<uint16_t>(addr,v);
+        #endif
+    }
+
+    void write_u32(uint32_t addr, uint32_t v)
+    {
+        #ifdef DEBUG
+            std::invoke(write_u32_fptr,this,addr,v);
+        #else
+            write_memt_no_debug<uint32_t>(addr,v);
+        #endif
+    }
+
+    uint8_t read_u8(uint32_t addr)
+    {
+        #ifdef DEBUG
+            return std::invoke(read_u8_fptr,this,addr);
+        #else
+            return read_memt_no_debug<uint8_t>(addr);
+        #endif
+    }
+
+    uint16_t read_u16(uint32_t addr)
+    {
+        #ifdef DEBUG
+            return std::invoke(read_u16_fptr,this,addr);
+        #else
+            return read_memt_no_debug<uint16_t>(addr);
+        #endif
+    }
+
+    uint32_t read_u32(uint32_t addr)
+    {
+        #ifdef DEBUG
+            return std::invoke(read_u32_fptr,this,addr);
+        #else
+            return read_memt_no_debug<uint32_t>(addr);
+        #endif
+    }
+
+
 
     void check_joypad_intr();
 
@@ -356,6 +462,10 @@ extern template uint8_t Mem::read_memt<uint8_t>(uint32_t addr);
 extern template uint16_t Mem::read_memt<uint16_t>(uint32_t addr);
 extern template uint32_t Mem::read_memt<uint32_t>(uint32_t addr);
 
+extern template uint8_t Mem::read_memt_no_debug<uint8_t>(uint32_t addr);
+extern template uint16_t Mem::read_memt_no_debug<uint16_t>(uint32_t addr);
+extern template uint32_t Mem::read_memt_no_debug<uint32_t>(uint32_t addr);
+
 // and for writes
 extern template void Mem::write_mem<uint8_t>(uint32_t addr, uint8_t v);
 extern template void Mem::write_mem<uint16_t>(uint32_t addr, uint16_t v);
@@ -364,6 +474,10 @@ extern template void Mem::write_mem<uint32_t>(uint32_t addr, uint32_t v);
 extern template void Mem::write_memt<uint8_t>(uint32_t addr, uint8_t v);
 extern template void Mem::write_memt<uint16_t>(uint32_t addr, uint16_t v);
 extern template void Mem::write_memt<uint32_t>(uint32_t addr, uint32_t v);
+
+extern template void Mem::write_memt_no_debug<uint8_t>(uint32_t addr, uint8_t v);
+extern template void Mem::write_memt_no_debug<uint16_t>(uint32_t addr, uint16_t v);
+extern template void Mem::write_memt_no_debug<uint32_t>(uint32_t addr, uint32_t v);
 
 
 extern template bool Mem::fast_memcpy<uint16_t>(uint32_t src, uint32_t dst, uint32_t n);

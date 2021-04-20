@@ -4,6 +4,77 @@
 using namespace gameboy;
 
 
+
+
+
+// we will switch them in and out but for now its faster to just copy it
+void ImguiMainWindow::gameboy_run_frame()
+{
+    try
+    {
+        gb_controller.update(gb);
+  
+        gb.run();
+    #ifdef DEBUG
+        if(gb_display_viewer.enabled)
+        {
+            gb_display_viewer.update(gb);
+        }
+    #endif
+        if(gb.ppu.new_vblank)
+        {
+            // swap the buffer so the frontend can render it
+            screen.swap_buffer(gb.ppu.screen);
+        }
+    }
+
+    catch(std::exception &ex)
+    {
+        std::cout << ex.what() << "\n";
+        emu_running = false;
+        SDL_GL_SetSwapInterval(1); // Enable vsync
+        return;
+    }
+}
+
+
+void ImguiMainWindow::gameboy_stop_instance()
+{
+    gb.quit = true;
+    gb.mem.save_cart_ram();
+    emu_running = false;
+}
+
+void ImguiMainWindow::gameboy_start_instance()
+{
+    emu_running = true;
+    gb.debug.wake_up();
+}
+
+void ImguiMainWindow::gameboy_new_instance(std::string filename, bool use_bios)
+{
+    try
+    {
+        gameboy_reset_instance(filename,use_bios);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+        return; 
+    }
+    
+   
+    gameboy_start_instance();     
+}
+
+
+void ImguiMainWindow::gameboy_reset_instance(std::string filename,bool use_bios)
+{
+
+    gb.reset(filename,true,use_bios);
+}
+
+#ifdef DEBUG
 void GameboyDisplayViewer::init()
 {
     bg_map.init_texture(256,256);
@@ -64,75 +135,6 @@ void GameboyDisplayViewer::draw_palette()
 	}
     ImGui::End();        
 }
-
-
-// we will switch them in and out but for now its faster to just copy it
-void ImguiMainWindow::gameboy_run_frame()
-{
-    try
-    {
-        gb_controller.update(gb);
-  
-        gb.run();
-
-        if(gb_display_viewer.enabled)
-        {
-            gb_display_viewer.update(gb);
-        }
-
-        if(gb.ppu.new_vblank)
-        {
-            // swap the buffer so the frontend can render it
-            screen.swap_buffer(gb.ppu.screen);
-        }
-    }
-
-    catch(std::exception &ex)
-    {
-        std::cout << ex.what() << "\n";
-        emu_running = false;
-        SDL_GL_SetSwapInterval(1); // Enable vsync
-        return;
-    }
-}
-
-
-void ImguiMainWindow::gameboy_stop_instance()
-{
-    gb.quit = true;
-    gb.mem.save_cart_ram();
-    emu_running = false;
-}
-
-void ImguiMainWindow::gameboy_start_instance()
-{
-    emu_running = true;
-    gb.debug.wake_up();
-}
-
-void ImguiMainWindow::gameboy_new_instance(std::string filename, bool use_bios)
-{
-    try
-    {
-        gameboy_reset_instance(filename,use_bios);
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << e.what() << '\n';
-        return; 
-    }
-    
-   
-    gameboy_start_instance();     
-}
-
-
-void ImguiMainWindow::gameboy_reset_instance(std::string filename,bool use_bios)
-{
-
-    gb.reset(filename,true,use_bios);
-}
-
 
 void ImguiMainWindow::gameboy_draw_screen()
 {
@@ -284,4 +286,4 @@ void ImguiMainWindow::gameboy_draw_disassembly_child()
 
     ImGui::EndChild();
 }
-
+#endif

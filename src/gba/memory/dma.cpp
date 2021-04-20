@@ -350,8 +350,8 @@ void Dma::do_dma(int reg_num, dma_type req_type)
             // dma takes 2N + 2(n-1)s +xI
             for(size_t i = 0; i < 4; i++)
             {
-                const auto v = mem.read_memt<uint32_t>(r.src_shadow);
-                mem.write_memt<uint32_t>(r.dst_shadow,v);
+                const auto v = mem.read_u32(r.src_shadow);
+                mem.write_u32(r.dst_shadow,v);
                 
                 // increment + reload is forbidden dont use it
                 if(r.src_cnt != 3)
@@ -381,8 +381,8 @@ void Dma::do_dma(int reg_num, dma_type req_type)
                 {
                     for(size_t i = 0; i < r.word_count_shadow; i++)
                     {
-                        const auto v = mem.read_memt<uint32_t>(r.src_shadow);
-                        mem.write_memt<uint32_t>(r.dst_shadow,v);
+                        const auto v = mem.read_u32(r.src_shadow);
+                        mem.write_u32(r.dst_shadow,v);
                         handle_increment(reg_num);  
                     }
                 }
@@ -391,8 +391,8 @@ void Dma::do_dma(int reg_num, dma_type req_type)
                 {
                     for(size_t i = 0; i < r.word_count_shadow; i++)
                     {
-                        const auto v = mem.read_memt<uint16_t>(r.src_shadow);
-                        mem.write_memt<uint16_t>(r.dst_shadow,v);
+                        const auto v = mem.read_u16(r.src_shadow);
+                        mem.write_u16(r.dst_shadow,v);
                         handle_increment(reg_num);
                     }
                 }

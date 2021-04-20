@@ -562,7 +562,7 @@ void ImguiMainWindow::menu_bar(Debug &debug)
 
             ImGui::EndMenu();
         }
-
+    #ifdef DEBUG
         if(ImGui::BeginMenu("Debug"))
         {
             if (ImGui::MenuItem("Cpu"))
@@ -595,7 +595,7 @@ void ImguiMainWindow::menu_bar(Debug &debug)
 
             ImGui::EndMenu();
         }
-
+    #endif
         if(ImGui::BeginMenu("File"))
         {
             if (ImGui::MenuItem("Load rom"))
@@ -649,9 +649,11 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
     //IM_ASSERT(font != NULL);
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     screen.init_texture(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);
+
+#ifdef DEBUG
     gb_display_viewer.init();
     gba_display_viewer.init();
-    
+#endif
     
     FpsCounter fps;
 
@@ -778,7 +780,9 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
                         case current_window::load_rom: file_browser(file_option::load_rom,"load rom"); break;
                         case current_window::load_state: file_browser(file_option::load_state,"load state"); break;
                         case current_window::save_state: file_browser(file_option::save_state,"save state"); break;
-
+                        case current_window::screen: break;
+                        
+                    #ifdef DEBUG
                         case current_window::cpu:
                         {
                             gameboy_draw_cpu_info();
@@ -807,16 +811,8 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
                             gameboy_draw_screen();
                             break;
                         }
+                    #endif
 
-                        case current_window::screen:
-                        {
-                            break;
-                        }
-
-                        case current_window::full_debugger:
-                        {
-                            break;
-                        }
                     }
                     break;
                 }
@@ -830,7 +826,9 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
                         case current_window::load_rom: file_browser(file_option::load_rom,"load rom"); break;
                         case current_window::load_state: file_browser(file_option::load_state,"load state"); break;
                         case current_window::save_state: file_browser(file_option::save_state,"save state"); break;
-
+                        case current_window::screen: break;
+                        
+                    #ifdef DEBUG
                         case current_window::cpu:
                         {
                             gba_draw_cpu_info();
@@ -850,23 +848,15 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
                             draw_memory();
                             break;
                         }
-
+                    
                         case current_window::display_viewer:
                         {
                             gba_display_viewer.draw_palette();
                             gba_display_viewer.draw_map();
                             break;
                         }
+                    #endif
 
-                        case current_window::screen:
-                        {
-                            break;
-                        }
-
-                        case current_window::full_debugger:
-                        {
-                            break;
-                        }
                     }
                     break;
                 }

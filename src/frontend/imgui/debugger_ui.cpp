@@ -2,7 +2,7 @@
 #include "imgui_window.h"
 #include <destoer-emu/destoer-emu.h>
 
-
+#ifdef DEBUG
 std::unordered_map<uint32_t,Breakpoint> &ImguiMainWindow::get_breakpoint_ref()
 {
     switch(running_type)
@@ -13,6 +13,7 @@ std::unordered_map<uint32_t,Breakpoint> &ImguiMainWindow::get_breakpoint_ref()
     }
     assert(false);
 }
+
 
 void ImguiMainWindow::draw_breakpoints()
 {
@@ -138,7 +139,6 @@ void ImguiMainWindow::draw_breakpoints()
 	ImGui::End();	    
 }
 
-
 uint8_t ImguiMainWindow::read_mem(uint32_t addr)
 {
     switch(running_type)
@@ -200,7 +200,6 @@ MemRegion GBA_MEM_REGION_TABLE[GBA_MEM_REGION_SIZE] =
     {"rom 08000000-09ffffff",0x08000000,32*1024*1024},
     {"sram 0e000000-0e00ffff",0x0e000000,0x10000},
 };
-
 
 // TODO: okay now we just figure out how to take the key input and this works perfectly
 void ImguiMainWindow::draw_memory()
@@ -313,3 +312,4 @@ void ImguiMainWindow::draw_memory()
     ImGui::EndChild();
     ImGui::End();
 }
+#endif

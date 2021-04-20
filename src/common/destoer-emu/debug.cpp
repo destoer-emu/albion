@@ -1,14 +1,16 @@
 #include <destoer-emu/debug.h>
 
-#ifdef DEBUG
-
-// TODO: add memory searching
-
 // wake the instance up
 void Debug::wake_up()
 {
     halted = false;
 }
+
+
+#ifdef DEBUG
+
+// TODO: add memory searching
+
 
 // halt the instance so the debugger is free to poke at it
 void Debug::halt()
@@ -152,6 +154,7 @@ Debug::~Debug()
 
 #ifdef FRONTEND_IMGUI
 #include <frontend/imgui/imgui_window.h>
+
 void Debug::draw_console()
 {
     ImGui::Begin("console");
