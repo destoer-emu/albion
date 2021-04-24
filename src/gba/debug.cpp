@@ -67,18 +67,30 @@ void GBADebug::regs(const std::vector<Token> &args)
     gba.cpu.print_regs();
 }
 
+void GBADebug::step_internal()
+{
+    gba.cpu.exec_instr_no_debug();
+    halt();
+}
+
+uint32_t GBADebug::get_pc()
+{
+    return gba.cpu.get_pc();
+}
+
 void GBADebug::step(const std::vector<Token> &args)
 {
     UNUSED(args);
     const auto pc = gba.cpu.get_pc();
     const auto instr = gba.cpu.is_cpu_thumb()? gba.disass.disass_thumb(pc) : gba.disass.disass_arm(pc);
     print_console("{:8x}: {}\n",pc,instr);
-    gba.cpu.exec_instr_no_debug();
+    step_internal();
 }
 
 std::string GBADebug::disass_instr(uint32_t addr)
 {
-    return disass_thumb? gba.disass.disass_thumb(addr) : gba.disass.disass_arm(addr);
+    return fmt::format("{:x}: {}",addr,
+        disass_thumb? gba.disass.disass_thumb(addr) : gba.disass.disass_arm(addr));
 }
 
 
@@ -96,6 +108,13 @@ void GBADebug::disassemble_thumb(const std::vector<Token> &args)
     disass_internal(args);
 }
 
+
+void GBADebug::disass(const std::vector<Token> &args)
+{
+    UNUSED(args);
+    disass_thumb = gba.cpu.is_cpu_thumb();
+    disass_internal(args);
+}
 
 uint32_t GBADebug::get_instr_size(uint32_t addr)
 {

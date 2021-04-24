@@ -154,10 +154,9 @@ void ImguiMainWindow::gameboy_draw_cpu_info()
     ImGui::SameLine();
 
     ImGui::BeginChild("right pane");
-    gameboy_draw_disassembly_child();
+    gb.debug.draw_console();
     ImGui::EndChild();
     
-    gb.debug.draw_console();
     ImGui::End();
 }
 
@@ -172,118 +171,4 @@ void ImguiMainWindow::gameboy_draw_regs_child()
     ImGui::Text("sp: %04x",gb.cpu.read_sp());          
 }
 
-// TODO: factor this off
-void ImguiMainWindow::gameboy_draw_disassembly_child()
-{
-    static uint32_t addr = 0x100; // make this resync when a breakpoint is hit :)
-    static int selected = -1;
-    static uint32_t selected_addr = 0x0;
-    static bool update = false;
-
-	static char input_disass[12] = "";
-	if (ImGui::Button("Goto"))
-	{
-		if (is_valid_hex_string(input_disass))
-		{
-			addr = strtoll(input_disass, NULL, 16) % 0xffff;
-            update = true;
-			*input_disass = '\0';
-		}  
-	}
-
-
-    ImGui::SameLine();
-
-    ImGui::InputText("", input_disass, IM_ARRAYSIZE(input_disass));
-
-    if(ImGui::Button("Break"))
-    {
-        if(selected != -1)
-        {
-            gb.debug.set_breakpoint(selected_addr,false,false,true);
-        }
-    }
-
-    ImGui::SameLine();
-
-    if(ImGui::Button("Step"))
-    {
-        gb.cpu.exec_instr_no_debug();
-        gb.debug.halt();
-    }
-
-
-    ImGui::SameLine();
-
-    if(ImGui::Button("Continue"))
-    {
-        // perform a step with breakpoints off so we can
-        // bypass the current instr
-        const auto old = gb.debug.breakpoints_enabled;
-        gb.debug.breakpoints_enabled = false;
-        gb.cpu.exec_instr();
-        gb.debug.breakpoints_enabled  = old;
-
-        gb.debug.wake_up();
-    }
-
-
-    ImGui::SameLine();
-
-    if(ImGui::Button("Goto pc"))
-    {
-        addr = gb.cpu.read_pc();
-        update = true;
-    }
-
-    ImGui::BeginChild("disass view");
-    // technically could be less than this but we dont know for sure
-    constexpr int ITEMS_COUNT = 0x10000; 
-    ImGuiListClipper clipper(ITEMS_COUNT); 
-
-    float line_size = ImGui::GetTextLineHeightWithSpacing();
-
-    if(update)
-    {
-        update = false;
-        ImGui::SetScrollY(addr * line_size);
-    }
-
-
-    std::string disass_str;
-    while (clipper.Step())
-    {
-        uint16_t target = clipper.DisplayStart;
-        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-        {
-            bool is_pc = target == gb.cpu.read_pc();
-            if(is_pc)
-            {
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f,0.0f,1.0f,1.0f));
-            }
-
-            // for now only show bank over zero target in rom banking range
-            // will add vram and wram banks etc later
-            int bank = target >= 0x4000  && target <= 0x8000 ? gb.mem.get_bank() : 0;
-
-            disass_str = fmt::format("{:02x}:{:04x}: {}",bank,target,gb.disass.disass_op(target));
-            
-            if(ImGui::Selectable(disass_str.c_str(),selected == i))
-            {
-                selected = i;
-                selected_addr = target;
-            }
-
-
-            if(is_pc)
-            {
-                ImGui::PopStyleColor();
-            }
-
-            target = (target + gb.disass.get_op_sz(target)) & 0xffff;
-        }
-    }
-
-    ImGui::EndChild();
-}
 #endif

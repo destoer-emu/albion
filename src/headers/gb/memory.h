@@ -166,6 +166,9 @@ public:
 	static constexpr int GEKKIO_FAIL_SIZE = 6;
 
     RomInfo rom_info; 
+
+    // oam dma 
+    bool oam_dma_active = false; // indicate a dma is active and to lock memory
 private:
 
     Cpu &cpu;
@@ -277,7 +280,6 @@ private:
     static constexpr int FRAME_SAVE_LIMIT = 3600;
 
     // oam dma
-	bool oam_dma_active = false; // indicate a dma is active and to lock memory
 	int oam_dma_address = 0; // the source address
 	int oam_dma_index = 0; // how far along the dma transfer we are    
 

@@ -157,8 +157,6 @@ Debug::~Debug()
 
 void Debug::draw_console()
 {
-    ImGui::Begin("console");
-
     ImGui::BeginChild("console_child",ImVec2(0, 300), true);
 
     static bool update = false;
@@ -404,7 +402,7 @@ void Debug::disass_internal(const std::vector<Token> &args)
 
     if(args.size() == 2)
     {
-        print_console("{:x}: {}\n",addr,disass_instr(addr));
+        print_console("{}\n",disass_instr(addr));
     }
 
     else
@@ -423,8 +421,8 @@ void Debug::disass_internal(const std::vector<Token> &args)
 
         for(int i = 0; i < n; i++)
         {
-            print_console("{:x}: {}\n",addr,disass_instr(addr));
-            addr = (addr + get_instr_size(addr)) & 0xffff;
+            print_console("{}\n",disass_instr(addr));
+            addr = (addr + get_instr_size(addr));
         }
     }    
 }
@@ -526,7 +524,6 @@ void Debug::watch(const std::vector<Token> &args)
 {
     set_break_internal(args,true);
 }
-
 
 void Debug::run(const std::vector<Token> &args)
 {

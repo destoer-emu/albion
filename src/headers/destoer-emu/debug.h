@@ -189,6 +189,8 @@ protected:
     virtual std::string disass_instr(uint32_t addr) = 0;
     virtual uint32_t get_instr_size(uint32_t addr) = 0;
     virtual void execute_command(const std::vector<Token> &args) = 0;
+    virtual void step_internal() = 0;
+    virtual uint32_t get_pc() = 0;
 #endif
 
     std::ofstream log_file;

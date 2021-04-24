@@ -72,17 +72,29 @@ void GBDebug::regs(const std::vector<Token> &args)
         ,cpu.read_flag_c(),cpu.read_flag_h(),cpu.read_flag_n(),cpu. read_flag_z());
 }
 
+void GBDebug::step_internal()
+{
+    gb.cpu.exec_instr_no_debug();
+    halt();
+}
+
+uint32_t GBDebug::get_pc()
+{
+    return gb.cpu.read_pc();
+}
+
 void GBDebug::step(const std::vector<Token> &args)
 {
     UNUSED(args);
     print_console("{:4x}: {}\n",gb.cpu.read_pc(),gb.disass.disass_op(gb.cpu.read_pc()));
-    gb.cpu.exec_instr_no_debug();
+    step_internal();
 }
 
 
 std::string GBDebug::disass_instr(uint32_t addr)
 {
-    return gb.disass.disass_op(addr);    
+    uint32_t bank = addr < 0x8000? gb.mem.get_bank() : 0;
+    return fmt::format("{:x}:{:x} {}",bank,addr,gb.disass.disass_op(addr));    
 }
 
 uint32_t GBDebug::get_instr_size(uint32_t addr)

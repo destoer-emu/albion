@@ -555,8 +555,12 @@ void Cpu::instr_rst(uint16_t addr, uint8_t op)
 	const uint16_t source = pc-1;
 	if(mem.read_mem(addr) == op)
 	{
-		write_log(debug,"[ERROR] rst infinite loop at {:x}->{:x}",pc,addr);
-		throw std::runtime_error("infinite rst lockup");
+		// if oam dma is active then we there is a chance this wont loop
+		if(!mem.oam_dma_active)
+		{
+			write_log(debug,"[ERROR] rst infinite loop at {:x}->{:x}",pc,addr);
+			throw std::runtime_error("infinite rst lockup");
+		}
 	}
 	cycle_delay(4); // internal
 	write_stackwt(pc);

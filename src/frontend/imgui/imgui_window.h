@@ -168,7 +168,6 @@ private:
     // display viewer handled by seperate class
 
     void gameboy_draw_regs_child();
-    void gameboy_draw_disassembly_child();
     void gameboy_draw_memory();
     void gameboy_draw_cpu_info();
 #endif
@@ -180,8 +179,6 @@ private:
     void gba_run_frame();
 #ifdef DEBUG
     // frotend drawing
-    //void gba_draw_screen();
-    void gba_draw_disassembly_child();
     void gba_draw_registers_child(); 
     void gba_draw_cpu_info();
     void gba_draw_memory();

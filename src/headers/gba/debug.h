@@ -21,6 +21,7 @@ public:
     void step(const std::vector<Token> &args);
     void disassemble_arm(const std::vector<Token> &args);    
     void disassemble_thumb(const std::vector<Token> &args);   
+    void disass(const std::vector<Token> &args);
 
 
 
@@ -32,7 +33,9 @@ public:
     std::string disass_instr(uint32_t addr) override;
     uint32_t get_instr_size(uint32_t addr) override;
     void execute_command(const std::vector<Token> &args) override;
-
+    void step_internal() override;
+    uint32_t get_pc() override;
+    bool disass_thumb = false;
 private:
 
     using COMMAND_FUNC =  void (GBADebug::*)(const std::vector<Token>&);
@@ -42,6 +45,7 @@ private:
         {"run", &GBADebug::run},
         {"regs",&GBADebug::regs},
         {"step",&GBADebug::step},
+        {"disass",&GBADebug::disass},
         {"disass_thumb",&GBADebug::disassemble_thumb},
         {"disass_arm",&GBADebug::disassemble_arm},
         {"trace",&GBADebug::print_trace},
@@ -57,7 +61,6 @@ private:
     };
 
     GBA &gba;
-    bool disass_thumb = false;
 };
 
 #else

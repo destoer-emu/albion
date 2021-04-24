@@ -32,6 +32,8 @@ public:
     std::string disass_instr(uint32_t addr) override;
     uint32_t get_instr_size(uint32_t addr) override;
     void execute_command(const std::vector<Token> &args) override;
+    void step_internal() override;
+    uint32_t get_pc() override;
 
 private:
 
