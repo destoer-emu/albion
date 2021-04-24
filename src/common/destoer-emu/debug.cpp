@@ -143,7 +143,8 @@ Debug::Debug()
     disable_everything();
 
 #ifdef FRONTEND_IMGUI
-    console.resize(80);
+    console.resize(256);
+    assert((console.size() & (console.size() - 1)) == 0);
 #endif
 }
 
