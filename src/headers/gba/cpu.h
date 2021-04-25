@@ -378,6 +378,10 @@ private:
     // in arm or thumb mode?
     bool is_thumb = false;
 
+    // instruction state when the currently executed instruction is fetched
+    // required to correctly log branches
+    bool is_thumb_fetch = false;
+
     bool dma_in_progress = false;
 
     // what context is the arm cpu in

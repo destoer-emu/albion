@@ -234,6 +234,7 @@ bool Cpu::cond_met(uint32_t cond)
 void Cpu::exec_instr_no_debug()
 {    
     // step the cpu in thumb mode
+    is_thumb_fetch = is_thumb;
     if(is_thumb) 
     {
         exec_thumb();
@@ -872,7 +873,7 @@ void Cpu::service_interrupt()
 
 void Cpu::write_pc(uint32_t v)
 {    
-    const auto source = pc_actual - (2 << !is_thumb); 
+    const auto source = pc_actual - (2 << !is_thumb_fetch); 
 
     if(is_thumb)
     {

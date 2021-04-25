@@ -108,7 +108,7 @@ public:
 
 #ifdef FRONTEND_IMGUI
         console[console_idx] = str;
-        console_idx = (console_idx + 1) & console.size() - 1;
+        console_idx = (console_idx + 1) & (console.size() - 1);
 #endif
     }
 

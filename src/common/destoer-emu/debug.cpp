@@ -162,9 +162,9 @@ void Debug::draw_console()
 
     static bool update = false;
 
-    for (int i = 0; i < console.size(); i++)
+    for (size_t i = 0; i < console.size(); i++)
     {         
-        const auto str = console[(i+console_idx) % console.size()];
+        const auto str = console[(i+console_idx) & (console.size() - 1)];
         ImGui::Text(str.c_str());
     }
     
@@ -200,10 +200,7 @@ void Debug::draw_console()
 
         // scroll to bottom after command
         update = true;
-    }    
-
-
-    ImGui::End();
+    }
 }
 
 #endif
