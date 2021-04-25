@@ -675,11 +675,6 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
 
         const bool focus = SDL_GetWindowFlags(window) & SDL_WINDOW_MOUSE_FOCUS;
 
-        // Poll and handle events (inputs, window resize, etc.)
-        // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-        // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
-        // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
-        // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
@@ -705,6 +700,11 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
 
                 case SDL_KEYDOWN:
                 {
+                    if(ImGui::GetIO().WantCaptureKeyboard)
+                    {
+                        break;
+                    }
+
                     switch(running_type)
                     {
                         case emu_type::gameboy:
@@ -727,6 +727,11 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
                 
                 case SDL_KEYUP:
                 {
+                    if(ImGui::GetIO().WantCaptureKeyboard)
+                    {
+                        break;
+                    }
+
                     switch(running_type)
                     {
                         case emu_type::gameboy:

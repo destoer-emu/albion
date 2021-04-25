@@ -235,6 +235,13 @@ void Cpu::exec_instr_no_debug()
 {    
     // step the cpu in thumb mode
     is_thumb_fetch = is_thumb;
+
+    if(pc_actual == 0x03003518 && regs[4] == 0x030046a0)
+    {
+        debug.halt();
+        return;
+    }
+
     if(is_thumb) 
     {
         exec_thumb();

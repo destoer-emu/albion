@@ -163,7 +163,8 @@ void ImguiMainWindow::gba_draw_cpu_info()
 {
     ImGui::Begin("Gba cpu");
 
-    ImGui::Text("current instr: %s",gba.cpu.is_cpu_thumb()? "thumb" : "arm");
+    ImGui::Text("current instr: %s",gba.cpu.is_cpu_thumb()? "thumb" : "arm"); ImGui::SameLine();
+    ImGui::Text(",current mode: %s",mode_names[static_cast<int>(gba.cpu.get_mode())]);
 
     ImGui::BeginChild("gba cpu left pane", ImVec2(150, 0), true);
     gba_draw_registers_child();

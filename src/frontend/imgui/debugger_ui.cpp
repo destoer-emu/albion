@@ -44,8 +44,8 @@ void ImguiMainWindow::draw_breakpoints()
     {
         switch(running_type)
         {
-            case emu_type::gameboy: gb.change_breakpoint_enable(enabled[type_idx]); break;
-            case emu_type::gba: gba.change_breakpoint_enable(enabled[type_idx]); break;
+            case emu_type::gameboy: gb.change_breakpoint_enable(enabled[type_idx]); gb.debug.breakpoints_enabled = enabled[type_idx]; break;
+            case emu_type::gba: gba.change_breakpoint_enable(enabled[type_idx]); gba.debug.breakpoints_enabled = enabled[type_idx]; break;
             case emu_type::none: break;
         }
     }

@@ -17,7 +17,6 @@ GBA::GBA()
 #ifdef DEBUG
 void GBA::change_breakpoint_enable(bool enabled)
 {
-	debug.breakpoints_enabled = enabled;
 	cpu.change_breakpoint_enable(enabled);
 	mem.change_breakpoint_enable(enabled);
 }

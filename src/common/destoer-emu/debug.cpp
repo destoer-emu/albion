@@ -48,7 +48,7 @@ bool Debug::breakpoint_hit(uint32_t addr, uint32_t value, break_type type)
 
         if(breakpoints_enabled && !b.watch)
         {
-            print_console("{} breakpoint hit at {:x}:{:x}\n",static_cast<int>(type),addr,value);
+            print_console("[{:x}]:{} breakpoint hit at {:x}:{:x}\n",get_pc(),static_cast<int>(type),addr,value);
         }
 
         // this is a watchpoint we just want to print to the console
@@ -56,7 +56,7 @@ bool Debug::breakpoint_hit(uint32_t addr, uint32_t value, break_type type)
         else if(watchpoints_enabled && b.watch)
         {
             //print_watchpoint(b);
-            print_console("{} watch hit at {:x}:{:x}\n",static_cast<int>(type),addr,value);
+            print_console("[{:x}]:{} watch hit at {:x}:{:x}\n",get_pc(),static_cast<int>(type),addr,value);
             return false;
         }
     }
