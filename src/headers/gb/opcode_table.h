@@ -236,7 +236,7 @@ const OPCODE_HANDLER opcode_table[256] =
 &Cpu::undefined_opcode, // e4
 &Cpu::push<2>, // e5
 &Cpu::and_u8, // e6
-&Cpu::rst<0x00,0xe7>, // e7
+&Cpu::rst<0x20,0xe7>, // e7
 &Cpu::add_sp_i8, // e8
 &Cpu::jp_hl, // e9
 &Cpu::ld_u16_a, // ea
@@ -244,7 +244,7 @@ const OPCODE_HANDLER opcode_table[256] =
 &Cpu::undefined_opcode, // ec
 &Cpu::undefined_opcode, // ed
 &Cpu::xor_u8, // ee
-&Cpu::rst<0x08,0xef>, // ef
+&Cpu::rst<0x28,0xef>, // ef
 &Cpu::ld_a_ffu8, // f0
 &Cpu::pop<3>, // f1
 &Cpu::ld_a_ff00_c, // f2
@@ -252,7 +252,7 @@ const OPCODE_HANDLER opcode_table[256] =
 &Cpu::undefined_opcode, // f4
 &Cpu::push<3>, // f5
 &Cpu::or_u8, // f6
-&Cpu::rst<0x10,0xf7>, // f7
+&Cpu::rst<0x30,0xf7>, // f7
 &Cpu::ld_hl_sp_i8, // f8
 &Cpu::ld_sp_hl, // f9
 &Cpu::ld_a_u16, // fa
@@ -260,7 +260,7 @@ const OPCODE_HANDLER opcode_table[256] =
 &Cpu::undefined_opcode, // fc
 &Cpu::undefined_opcode, // fd
 &Cpu::cp_u8, // fe
-&Cpu::rst<0x18,0xff>, // ff
+&Cpu::rst<0x38,0xff>, // ff
 };
 using OPCODE_HANDLER = void (Cpu::*)(void);
 const OPCODE_HANDLER cb_table[256] = 

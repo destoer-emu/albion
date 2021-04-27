@@ -284,7 +284,7 @@ void print_opcode_table()
 
         else if((i & 0b11000111) == 0b11000111)
         {
-            const int ADDR = (i & 0b00011000);
+            const int ADDR = (i & 0b00111000);
             const uint8_t OP = i;
             printf("&Cpu::rst<0x%02x,0x%02x>",ADDR,OP);
         }

@@ -32,3 +32,6 @@ converted.sav
 destoer-emu.vcxproj.user
 destoer-emu
 vgcore.*
+build.ninja
+.ninja_deps
+.ninja_log
