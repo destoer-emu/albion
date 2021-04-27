@@ -244,7 +244,6 @@ private:
 
 
 
-    void exec_cb(uint8_t cbop);
     void handle_halt();
 
     void switch_double_speed() noexcept;
@@ -254,38 +253,244 @@ private:
     // interrupts
     void do_interrupts() noexcept;
 
+public:
     // instr helpers
-    void set_zero(uint8_t reg) noexcept;
-    void instr_dec(uint8_t reg) noexcept;
-    void instr_inc(uint8_t reg) noexcept;
-    void instr_bit(uint8_t reg, uint8_t bit) noexcept;
-    void instr_and(uint8_t num) noexcept;
-    uint8_t instr_rl(uint8_t reg) noexcept;
-    void instr_sub(uint8_t num) noexcept;
-    void instr_cp(uint8_t num) noexcept;
-    void instr_sbc(uint8_t num) noexcept;
-    void instr_add(uint8_t num) noexcept;
-    uint16_t instr_addi(uint16_t reg, int8_t num) noexcept;
-    void instr_adc(uint8_t num) noexcept;
-    uint16_t instr_addw(uint16_t reg, uint16_t num) noexcept;
-    void instr_or(uint8_t val) noexcept;
-    uint8_t instr_swap(uint8_t num) noexcept;
-    void instr_xor(uint8_t num) noexcept;
-    uint8_t instr_sla(uint8_t reg) noexcept;
-    uint8_t instr_sra(uint8_t reg) noexcept;
-    uint8_t instr_srl(uint8_t reg) noexcept;
-    uint8_t instr_rr(uint8_t reg) noexcept;
-    uint8_t instr_rrc(uint8_t reg) noexcept;
-    uint8_t instr_rlc(uint8_t reg) noexcept;
-    void instr_jr() noexcept;
-    void instr_jr_cond(bool cond, bool flag) noexcept;
-    void instr_jp_cond(bool cond, bool flag) noexcept;
-    void call_cond(bool cond, bool flag) noexcept;
-    void ret_cond(bool cond, bool falg) noexcept;
-    uint16_t instr_incw(uint16_t v) noexcept;
-    uint16_t instr_decw(uint16_t v) noexcept;
-    void instr_rst(uint16_t addr, uint8_t op);
 
+    template<const int REG>
+    void write_r16_group1(uint16_t v);
+
+    template<const int REG>
+    void write_r8(uint8_t v);
+
+    template<const int REG>
+    void write_r16_group3(uint16_t v);
+
+    template<const int REG>
+    void write_r16_group2(uint16_t v);
+
+    template<const int REG>
+    uint16_t read_r16_group1();
+
+    template<const int REG>
+    uint16_t read_r16_group3();
+
+    template<const int REG>
+    uint16_t read_r16_group2();
+
+    template<const int REG>
+    uint8_t read_r8();
+
+
+    template<const int COND>
+    bool cond();
+
+    void undefined_opcode();
+    void undefined_opcode_cb();
+    void ld_u16_sp();
+    void nop();
+    void jp();
+    void di();
+
+    template<const int REG>
+    void ld_r16_u16();
+
+    void ld_u16_a();
+
+    template<const int REG>
+    void ld_r8_u8();
+
+    void ld_ffu8_a();
+    void call();
+    void halt();
+
+    template<const int DST, const int SRC>
+    void ld_r8_r8();
+
+    void jr();
+    void ret();
+
+    template<const int REG>
+    void push();
+
+    template<const int REG>
+    void pop();
+
+    template<const int REG>
+    void inc_r16();
+
+
+    template<const int REG>
+    void ld_a_r16();
+
+    void set_zero(uint8_t v);
+
+    void instr_or(uint8_t v);
+
+    template<const int REG>
+    void or_r8();
+
+    template<const int COND>
+    void jr_cond();
+
+    void ld_a_ffu8();
+
+    void instr_cp(uint8_t v);
+
+    template<const int REG>
+    void cp_r8();
+
+    void cp_u8();
+    void or_u8();
+    void ld_a_u16();
+    void instr_and(uint8_t v);
+    void and_u8();
+
+    template<const int REG>
+    void and_r8();
+
+    template<const int COND>
+    void call_cond();
+
+    template<const int REG>
+    void dec_r8();
+
+    template<const int REG>
+    void inc_r8();
+
+    void instr_xor(uint8_t v);
+
+    template<const int REG>
+    void xor_r8();
+
+    void xor_u8();
+
+    template<const int REG>
+    void ld_r16_a();
+
+    void instr_add(uint8_t v);
+
+    template<const int REG>
+    void add_r8();
+
+    void add_u8();
+
+
+    void instr_sub(uint8_t v);
+
+    template<const int REG>
+    void sub_r8();
+
+    void sub_u8();
+
+
+    void instr_adc(uint8_t v);
+
+    template<const int REG>
+    void adc_r8();
+
+    void adc_u8();
+
+    template<const int COND>
+    void ret_cond();
+
+    template<const int REG>
+    void add_hl_r16();
+
+    void jp_hl();
+
+    template<const int COND>
+    void jp_cond();
+
+    uint16_t instr_addi(int8_t v);
+    void ld_hl_sp_i8();
+    void daa();
+
+    void ld_sp_hl();
+
+    void ei();
+
+    void stop();
+
+    template<const int REG>
+    void dec_r16();
+
+    void add_sp_i8();
+
+
+    void instr_sbc(uint8_t v);
+
+    template<const int REG>
+    void sbc_r8();
+
+    void sbc_u8();
+
+    void reti();
+
+    template<const int ADDR, const int OP>
+    void rst();
+
+    void ld_a_ff00_c();
+    void ld_ff00_c_a();
+
+    void cpl();
+    void scf();
+    void ccf();
+
+    // cb ops
+
+    void cb_opcode();
+
+    template<const int REG>
+    void srl();
+
+    uint8_t instr_rrc(uint8_t v);
+
+    template<const int REG>
+    void rrc_r8();
+
+    void rrca();
+
+    template<const int REG>
+    void rr_r8();
+    
+    uint8_t instr_rr(uint8_t v);
+    void rra();
+
+    template<const int REG>
+    void instr_swap();
+
+    uint8_t instr_rlc(uint8_t v);
+    void rlca();
+
+    template<const int REG>
+    void rlc_r8();
+
+
+    uint8_t instr_rl(uint8_t v);
+
+    template<const int REG>
+    void rl_r8();
+
+    void rla();
+
+
+    template<const int REG>
+    void sla_r8();
+
+
+    template<const int REG>
+    void sra_r8();
+
+    template<const int REG, const int BIT>
+    void bit_r8();
+
+    template<const int REG, const int BIT>
+    void res_r8();
+
+    template<const int REG, const int BIT>
+    void set_r8();
+
+private:
     // stack helpers
     uint8_t read_stackt() noexcept;
     void write_stackt(uint8_t v) noexcept;

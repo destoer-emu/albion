@@ -1,4 +1,5 @@
 #include <gb/gb.h>
+#include <gb/opcode_table.h>
 #include <destoer-emu/debug.h>
 
 
@@ -21,1232 +22,1255 @@ void Cpu::exec_instr_debug()
 }
 #endif
 
-// consider implementing an algorithmic decoder
-// https://gb-archive.github.io/salvage/decoding_gbz80_opcodes/Decoding%20Gamboy%20Z80%20Opcodes.html
+
+template<const int REG>
+void Cpu::write_r16_group1(uint16_t v)
+{
+	static_assert(REG <= 3,"register not valid for group");
+
+	if constexpr(REG == 0) 
+	{
+		write_bc(v);
+	}
+
+	else if constexpr(REG == 1) 
+	{
+		write_de(v);
+	}
+
+	else if constexpr(REG == 2)
+	{
+		write_hl(v);
+	}
+
+	else if constexpr(REG == 3)
+	{
+		sp = v;
+	}
+}
+
+template<const int REG>
+void Cpu::write_r8(uint8_t v)
+{
+	static_assert(REG <= 7);
+	if constexpr(REG == 0)
+	{
+		b = v;
+	}
+
+	else if constexpr(REG == 1)
+	{
+		c = v;
+	}
+
+	else if constexpr(REG == 2)
+	{
+		d = v;
+	}
+
+	else if constexpr(REG == 3)
+	{
+		e = v;
+	}
+
+	else if constexpr(REG == 4)
+	{
+		h = v;
+	}
+
+	else if constexpr(REG == 5)
+	{
+		l = v;
+	}
+
+	else if constexpr(REG == 6)
+	{
+		mem.write_memt(read_hl(),v);
+	}
+
+	else if constexpr(REG == 7)
+	{
+		a = v;
+	}	
+}
+
+template<const int REG>
+uint8_t Cpu::read_r8()
+{
+	static_assert(REG <= 7);
+	if constexpr(REG == 0)
+	{
+		return b;
+	}
+
+	else if constexpr(REG == 1)
+	{
+		return c;
+	}
+
+	else if constexpr(REG == 2)
+	{
+		return d;
+	}
+
+	else if constexpr(REG == 3)
+	{
+		return e;
+	}
+
+	else if constexpr(REG == 4)
+	{
+		return h;
+	}
+
+	else if constexpr(REG == 5)
+	{
+		return l;
+	}
+
+	else if constexpr(REG == 6)
+	{
+		return mem.read_memt(read_hl());
+	}
+
+	else if constexpr(REG == 7)
+	{
+		return a;
+	}	
+}
+
+template<const int REG>
+uint16_t Cpu::read_r16_group3()
+{
+	static_assert(REG <= 3);
+
+	if constexpr(REG == 0)
+	{
+		return read_bc();
+	}
+
+	else if constexpr(REG == 1)
+	{
+		return read_de();
+	}
+
+	else if constexpr(REG == 2)
+	{
+		return read_hl();
+	}
+
+	else if constexpr(REG == 3)
+	{
+		return read_af();
+	}	
+}
+
+
+template<const int REG>
+uint16_t Cpu::read_r16_group1()
+{
+	static_assert(REG <= 3,"register not valid for group");
+
+	if constexpr(REG == 0) 
+	{
+		return read_bc();
+	}
+
+	else if constexpr(REG == 1) 
+	{
+		return read_de();
+	}
+
+	else if constexpr(REG == 2)
+	{
+		return read_hl();
+	}
+
+	else if constexpr(REG == 3)
+	{
+		return sp;
+	}
+}
+
+
+template<const int REG>
+void Cpu::write_r16_group3(uint16_t v)
+{
+	static_assert(REG <= 3);
+
+	if constexpr(REG == 0)
+	{
+		write_bc(v);
+	}
+
+	else if constexpr(REG == 1)
+	{
+		write_de(v);
+	}
+
+	else if constexpr(REG == 2)
+	{
+		write_hl(v);
+	}
+
+	else if constexpr(REG == 3)
+	{
+		write_af(v);
+	}	
+}
+
+template<const int REG>
+void Cpu::write_r16_group2(uint16_t v)
+{
+	static_assert(REG <= 3);
+
+	if constexpr(REG == 0)
+	{
+		write_bc(v);
+	}
+
+	else if constexpr(REG == 1)
+	{
+		write_de(v);
+	}
+
+	else if constexpr(REG == 2)
+	{
+		write_hl(v);
+	}
+
+	else if constexpr(REG == 3)
+	{
+		write_hl(v);
+	}		
+}
+
+template<const int REG>
+uint16_t Cpu::read_r16_group2()
+{
+	static_assert(REG <= 3);
+
+	if constexpr(REG == 0)
+	{
+		return read_bc();
+	}
+
+	else if constexpr(REG == 1)
+	{
+		return read_de();
+	}
+
+	else if constexpr(REG == 2)
+	{
+		return read_hl();
+	}
+
+	else if constexpr(REG == 3)
+	{
+		return read_hl();
+	}		
+}
+
+template<const int COND>
+bool Cpu::cond()
+{
+	static_assert(COND <= 3);
+	// nz
+	if constexpr(COND == 0)
+	{
+		return !zero;
+	}
+
+	// z
+	else if constexpr(COND == 1)
+	{
+		return zero;
+	}
+
+	// nc
+	else if constexpr(COND == 2)
+	{
+		return !carry;
+	}
+
+	// c
+	else if constexpr(COND == 3)
+	{
+		return carry;
+	}
+}
+
+void Cpu::undefined_opcode()
+{
+	const auto str = fmt::format("[ERROR] invalid opcode {:x} at {:x}:{}",mem.read_mem(pc-1),pc-1,disass.disass_op(pc-1));
+	write_log(debug,str);
+	throw std::runtime_error(str);		
+}
+
+void Cpu::undefined_opcode_cb()
+{
+	const auto str = fmt::format("[ERROR] invalid cb opcode {:x} at {:x}:{}",mem.read_mem(pc-1),pc-2,disass.disass_op(pc-2));
+	write_log(debug,str);
+	throw std::runtime_error(str);		
+}
+
+void Cpu::nop() 
+{
+
+}
+
+void Cpu::jp()
+{
+	const uint16_t source = pc-1;
+	pc = mem.read_wordt(pc);
+	cycle_delay(4); // internal
+	debug.trace.add(source,pc);	
+}
+
+void Cpu::ld_u16_sp()
+{
+	mem.write_wordt(mem.read_wordt(pc),sp);
+	pc += 2; // for two immediate ops	
+}
+
+template<const int REG>
+void Cpu::ld_r16_u16()
+{
+	write_r16_group1<REG>(mem.read_wordt(pc));
+	pc += 2;
+}
+
+void Cpu::ld_u16_a()
+{
+	mem.write_memt(mem.read_wordt(pc),a);
+	pc += 2;	
+}
+
+template<const int REG>
+void Cpu::ld_r8_u8()
+{
+	write_r8<REG>(mem.read_memt(pc++));
+}
+
+
+void Cpu::ld_ffu8_a()
+{
+	mem.write_iot((0xff00+mem.read_memt(pc++)),a);
+}
+
+void Cpu::call()
+{
+	const uint16_t source = pc-1;
+	uint16_t v = mem.read_wordt(pc);
+	pc += 2;
+	cycle_delay(4); // internal
+	write_stackwt(pc);
+	pc = v;
+	debug.trace.add(source,pc);	
+}
+
+void Cpu::halt()
+{
+	handle_halt();
+}
+
+template<const int DST,const int SRC>
+void Cpu::ld_r8_r8()
+{
+	// halt
+	static_assert(!(DST == 6 && SRC == 6));
+	write_r8<DST>(read_r8<SRC>());
+}
+
+void Cpu::jr()
+{
+	const auto operand = static_cast<int8_t>(mem.read_memt(pc++));
+	cycle_delay(4); // internal delay
+	pc += operand;		
+}
+
+void Cpu::ret()
+{
+	const uint16_t source = pc-1;
+	pc = read_stackwt();	
+	cycle_delay(4); // internal
+	debug.trace.add(source,pc);	
+}
+
+void Cpu::di()
+{
+	// di should disable immediately unlike ei!
+	// if we havent just exected a ei then we are done and can reset the state
+	// else we need to mark it so ei wont reneable it by mistake
+	instr_side_effect = instr_side_effect == instr_state::ei? instr_state::di : instr_state::normal;
+	interrupt_enable = false; 
+	update_intr_fire();	
+}
+
+template<const int REG>
+void Cpu::push()
+{
+	const uint16_t reg = read_r16_group3<REG>();
+	cycle_delay(4); // internal
+	write_stackwt(reg);
+}
+
+template<const int REG>
+void Cpu::pop()
+{
+	write_r16_group3<REG>(read_stackwt());
+}
+
+template<const int REG>
+void Cpu::dec_r16()
+{
+	const uint16_t reg = read_r16_group1<REG>();
+	oam_bug_write(reg);
+	cycle_delay(4); // internal
+	write_r16_group1<REG>(reg-1);		
+}
+
+template<const int REG>
+void Cpu::inc_r16()
+{
+	const uint16_t reg = read_r16_group1<REG>();
+	oam_bug_write(reg);
+	cycle_delay(4); // internal
+	write_r16_group1<REG>(reg+1);	
+}
+
+
+// how do we want to handle specializing this 
+// for ldi and ldd?
+// need to impl group2
+template<const int REG>
+void Cpu::ld_a_r16()
+{
+	const uint16_t reg = read_r16_group2<REG>();
+	a = mem.read_memt(reg);
+
+	// ldi
+	if constexpr(REG == 2)
+	{
+		write_r16_group2<REG>(reg+1);
+	}
+
+	// ldd 
+	else if constexpr(REG == 3)
+	{
+		write_r16_group2<REG>(reg-1);
+	}
+}
+
+void Cpu::set_zero(uint8_t v)
+{
+	zero = !v;
+}
+
+void Cpu::instr_or(uint8_t v)
+{
+	a |= v;
+	// reset flags
+	negative = false;
+	half = false;
+	carry = false;
+	set_zero(a);	
+}
+
+template<const int REG>
+void Cpu::or_r8()
+{
+	const uint8_t v = read_r8<REG>();
+	instr_or(v);
+}
+
+template<const int COND>
+void Cpu::jr_cond()
+{
+	const auto operand = static_cast<int8_t>(mem.read_memt(pc++));
+	if(cond<COND>())
+	{
+		cycle_tick_t(4); // internal delay
+		pc += operand;
+	}		
+}
+
+void Cpu::ld_a_ffu8()
+{
+	a = mem.read_iot(0xff00+mem.read_memt(pc++));
+}
+
+void Cpu::instr_cp(uint8_t v)
+{
+
+	negative = true;
+	
+	zero = a == v;
+
+	// check half carry
+	half = (((a & 0x0f) - (v & 0x0f)) < 0);
+
+
+	carry = v > a; 
+}
+
+template<const int REG>
+void Cpu::cp_r8()
+{
+	const uint8_t v = read_r8<REG>();
+	instr_cp(v);
+}
+
+void Cpu::cp_u8()
+{
+	instr_cp(mem.read_memt(pc++));
+}
+
+void Cpu::or_u8()
+{
+	instr_or(mem.read_memt(pc++));
+}
+
+void Cpu::ld_a_u16()
+{
+	a = mem.read_memt(mem.read_wordt(pc));
+	pc += 2;	
+}
+
+
+void Cpu::instr_and(uint8_t v)
+{
+	// set only the half carry flag
+	half = true;
+	carry = false;
+	negative = false;
+
+	// set if result is zero 
+	a &= v;
+	set_zero(a);	
+}
+
+void Cpu::and_u8()
+{
+	instr_and(mem.read_memt(pc++));
+}
+
+template<const int REG>
+void Cpu::and_r8()
+{
+	instr_and(read_r8<REG>());
+}
+
+template<const int COND>
+void Cpu::call_cond()
+{
+	const uint16_t source = pc-1;
+	const auto v = mem.read_wordt(pc);
+	pc += 2;
+	if(cond<COND>())
+	{
+		cycle_delay(4);  // internal delay
+		write_stackwt(pc);
+		pc = v;
+		debug.trace.add(source,pc);
+	}	
+}
+
+template<const int REG>
+void Cpu::dec_r8()
+{
+	uint8_t reg = read_r8<REG>();
+    reg -= 1;
+
+    // the N flag
+	negative = true;
+
+    set_zero(reg);
+
+	// check the carry 
+	half = is_set(((reg+1)&0xf)-1,4);
+	write_r8<REG>(reg);
+}
+
+template<const int REG>
+void Cpu::inc_r8()
+{
+	uint8_t reg = read_r8<REG>();
+
+	// deset negative
+	negative = false;
+
+	reg += 1;
+	
+    set_zero(reg);
+
+	// test carry from bit 3
+	// set the half carry if there is
+	half = is_set(((reg-1)&0xf) + 1,4);	
+	write_r8<REG>(reg);
+}
+
+void Cpu::instr_xor(uint8_t v)
+{
+	// reset flags
+	negative = false;
+	half = false;
+	carry = false;
+
+	a ^= v;
+	set_zero(a);	
+}
+
+template<const int REG>
+void Cpu::xor_r8()
+{
+	const uint8_t reg = read_r8<REG>();
+	instr_xor(reg);
+}
+
+void Cpu::xor_u8()
+{
+	instr_xor(mem.read_memt(pc++));
+}
+
+template<const int REG>
+void Cpu::ld_r16_a()
+{
+	const uint16_t reg = read_r16_group2<REG>();
+	mem.write_memt(reg,a);
+
+	// ldi
+	if constexpr(REG == 2)
+	{
+		write_r16_group2<REG>(reg+1);
+	}
+
+	// ldd 
+	else if constexpr(REG == 3)
+	{
+		write_r16_group2<REG>(reg-1);
+	}
+}
+
+void Cpu::instr_add(uint8_t v)
+{
+	// deset negative
+	negative = false;
+
+
+	// test carry from bit 3
+	// set the half carry if there is
+	half = (is_set((a & 0x0f) + (v & 0x0f),4));
+
+	
+	// check carry from bit 7
+	carry = (a + v > 255);
+		
+	a += v;
+	set_zero(a);	
+}
+
+template<const int REG>
+void Cpu::add_r8()
+{
+	const uint8_t reg = read_r8<REG>();
+	instr_add(reg);
+}
+
+void Cpu::add_u8()
+{
+	instr_add(mem.read_memt(pc++));
+}
+
+
+void Cpu::instr_sub(uint8_t v)
+{
+	// set negative
+	negative = true;
+	
+	zero = a == v;
+
+
+	// check half carry
+	half = (((a & 0x0f) - (v & 0x0f)) < 0);
+
+	carry = v > a;
+
+	a -= v;
+}
+
+template<const int REG>
+void Cpu::sub_r8()
+{
+	const uint8_t reg = read_r8<REG>();
+	instr_sub(reg);
+}
+
+void Cpu::sub_u8()
+{
+	instr_sub(mem.read_memt(pc++));
+}
+
+
+// n + carry flag to a
+void Cpu::instr_adc(uint8_t v)
+{
+	const uint8_t reg = a;
+	
+	const int carry_val = carry ? 1 : 0;
+	
+	const int result = reg + v + carry_val;
+	
+	// deset negative
+	negative = false;
+	
+	carry = (result > 0xff);
+
+	
+	half = (is_set((reg & 0x0f) + (v & 0x0f) + carry_val,4));
+		
+	a = result;
+	set_zero(a);
+}
+
+template<const int REG>
+void Cpu::adc_r8()
+{
+	const uint8_t reg = read_r8<REG>();
+	instr_adc(reg);	
+}
+
+void Cpu::adc_u8()
+{
+	instr_adc(mem.read_memt(pc++));
+}
+
+template<const int COND>
+void Cpu::ret_cond()
+{
+	const uint16_t source = pc-1;
+	cycle_delay(4); // internal
+	if(cond<COND>())
+	{
+		pc = read_stackwt();
+		cycle_delay(4);  // internal
+		debug.trace.add(source,pc);
+	}		
+}
+
+template<const int REG>
+void Cpu::add_hl_r16()
+{
+	uint16_t dst = read_hl();
+	const uint16_t oper = read_r16_group1<REG>();
+
+	// deset negative
+	negative = false;
+
+	// check for carry from bit 11
+	half = (is_set((dst & 0x0fff) + (oper & 0x0fff),12));
+	
+	// check for full carry 
+	carry = (is_set(dst + oper,16));
+
+	dst += oper;
+	
+	write_hl(dst);
+	cycle_delay(4); // internal
+}
+
+void Cpu::jp_hl()
+{
+	const uint16_t source = pc-1;
+	pc = read_hl();
+	debug.trace.add(source,pc);	
+}
+
+template<const int COND>
+void Cpu::jp_cond()
+{
+	const uint16_t source = pc-1;
+	const auto v =  mem.read_wordt(pc);
+	pc += 2;
+	if(cond<COND>())
+	{
+		pc = v;
+		cycle_delay(4); // internal delay
+		debug.trace.add(source,pc);
+	}		
+}
+
+void Cpu::ld_hl_sp_i8()
+{
+	write_hl(instr_addi(static_cast<int8_t>(mem.read_memt(pc++))));
+	cycle_delay(4); // internal	
+}
+
+
+// for the sp add opcodes
+uint16_t Cpu::instr_addi(int8_t v)
+{
+	// deset negative & zero
+	negative = false;
+	zero = false;
+
+	// test carry from bit 3
+	// set the half carry if there is
+	half = (is_set((sp & 0x0f) + (v & 0x0f),4));
+	
+	carry = (is_set((sp & 0xff) + (v & 0xff),8));
+
+	
+	return sp + v;	
+}
+
+// bcd
+void Cpu::daa()
+{
+	//https://forums.nesdev.com/viewtopic.php?f=20&t=15944
+	if (!negative) 
+	{  
+		// after an addition, adjust if (half-)carry occurred or if result is out of bounds
+		if (carry || a > 0x99) 
+		{ 
+			a += 0x60; 
+			carry = true;
+		}
+		if (half || (a & 0x0f) > 0x09)  
+		{ 
+			a += 0x6; 
+		}
+	} 
+	
+	else 
+	{  
+		// after a subtraction, only adjust if (half-)carry occurred
+		if (carry) 
+		{
+			a -= 0x60; 
+		}
+		
+		if (half) 
+		{ 
+			a -= 0x6; 
+		}
+	}
+	
+	// preserve C and N flags
+	//f &= (1 << C) | (1 << N);
+	half = false;
+
+	set_zero(a);
+}
+
+void Cpu::ld_sp_hl()
+{
+	sp = read_hl();
+	cycle_delay(4); // internal
+}
+
+void Cpu::ei()
+{
+	// if we execute two ie in a row we dont need to bother
+	// as we are allready enabled
+	if(instr_side_effect != instr_state::ei)
+	{
+		// caller will check opcode and handle it
+		instr_side_effect = instr_state::ei;
+
+		exec_instr(); 
+	}
+
+	// if last instr was a di we should not enable
+	if(instr_side_effect != instr_state::di)
+	{
+		interrupt_enable = true;
+	}
+
+	instr_side_effect = instr_state::normal;
+
+	update_intr_fire();
+}
+
+void Cpu::stop()
+{
+	pc += 1; // skip over next byte
+			
+	if(is_cgb && is_set(mem.io[IO_SPEED],0))
+	{
+		mem.io[IO_SPEED] = deset_bit(mem.io[IO_SPEED],0); // clear the bit
+		
+		switch_double_speed();
+		
+		if(is_double)
+		{
+			mem.io[IO_SPEED] = set_bit(mem.io[IO_SPEED],7);
+		}
+	
+		else // single speed 
+		{
+			mem.io[IO_SPEED] = deset_bit(mem.io[IO_SPEED],7);
+		}
+	}
+	
+	else // almost nothing triggers this 
+	{
+		write_log(debug,"[WARNING] stop opcode hit at {:x}",pc);
+	}
+}
+
+void Cpu::add_sp_i8()
+{
+	sp = instr_addi(static_cast<int8_t>(mem.read_memt(pc++)));
+	cycle_delay(8); // internal delay (unsure)	
+}
+
+void Cpu::instr_sbc(uint8_t v)
+{
+	const uint8_t reg = a;
+
+	const int carry_val = carry ? 1 : 0;
+	
+	const int result = reg - v - carry_val;
+	
+	// set negative
+	negative = true;
+	
+	carry = (result < 0);
+
+	
+	half = ((reg & 0x0f) - (v & 0x0f) - carry_val < 0);
+
+	a = result;
+	set_zero(a);	
+}
+
+template<const int REG>
+void Cpu::sbc_r8()
+{
+	const uint8_t reg = read_r8<REG>();
+	instr_sbc(reg);
+}
+
+void Cpu::sbc_u8()
+{
+	instr_sbc(mem.read_memt(pc++));
+}
+
+void Cpu::reti()
+{
+	const uint16_t source = pc-1;
+	pc = read_stackwt();	
+	cycle_delay(4);// internal
+	interrupt_enable = true; // re-enable interrupts
+	update_intr_fire();
+	debug.trace.add(source,pc);
+}
+
+template<const int ADDR, const int OP>
+void Cpu::rst()
+{
+	const uint16_t source = pc-1;
+	if(mem.read_mem(ADDR) == OP)
+	{
+		// if oam dma is active then we there is a chance this wont loop
+		if(!mem.oam_dma_active)
+		{
+			write_log(debug,"[ERROR] rst infinite loop at {:x}->{:x}",pc,ADDR);
+			throw std::runtime_error("infinite rst lockup");
+		}
+	}
+	cycle_delay(4); // internal
+	write_stackwt(pc);
+	pc = ADDR;
+	debug.trace.add(source,pc);	
+}
+
+void Cpu::ld_a_ff00_c()
+{
+	a = mem.read_iot(0xff00 + c);
+}
+
+void Cpu::ld_ff00_c_a()
+{
+	mem.write_iot(0xff00+c,a);
+}
+
+void Cpu::cpl()
+{
+	// cpl (flip bits in a)
+	// set H and N
+	half = true;
+	negative = true;
+	a = ~a;	
+}
+
+void Cpu::scf()
+{
+	// set the carry flag deset h and N
+	carry = true;
+	negative = false;
+	half = false;	
+}
+
+void Cpu::ccf()
+{
+	carry = !carry;
+	negative = false;
+	half = false;	
+}
+
 void Cpu::exec_instr_no_debug()
 {
     const auto opcode = fetch_opcode();
+	std::invoke(opcode_table[opcode],this);
+}
 
-    switch(opcode)
-    {
-		case 0x0: // nop
-			break;
-		
-		case 0x1: // ld bc, nn
-			write_bc(mem.read_wordt(pc));
-			pc += 2;
-			break;
-		
-		case 0x2: // ld (bc), a
-			mem.write_memt(read_bc(),a);
-			break;
-		
-		case 0x3: // inc bc
-			write_bc(instr_incw(read_bc()));
-			break;
-		
-		case 0x4: // inc b
-			instr_inc(b++);
-			break;
-			
-		case 0x5: // dec b
-			instr_dec(b--);
-			break;
-			
-		case 0x6: // ld b, n
-			b = mem.read_memt(pc++);
-			break;
-			
-		case 0x7: // rlca (rotate a left bit 7 to carry)
-			a = instr_rlc(a);
-			zero = false;
-			break;
-		
-		
-		case 0x8: // ld (nnnn), sp
-			mem.write_wordt(mem.read_wordt(pc),sp);
-			pc += 2; // for two immediate ops
-			break;
-		
-		case 0x9: // add hl,bc
-			write_hl(instr_addw(read_hl(),read_bc()));
-			cycle_delay(4); // internal
-			break;
-			
 
-		
-		case 0xa: // ld a, (bc)
-			a = mem.read_memt(read_bc());
-			break;
-		
-		
-		case 0xb: // dec bc 
-			write_bc(instr_decw(read_bc()));
-			break;
-		
-		case 0xc: // inc c
-			instr_inc(c++);
-			break;
-		
-		case 0xd: // dec c
-			instr_dec(c--);
-			break;
-		
-		
-		case 0xe: // ld c, nn
-			c = mem.read_memt(pc++);
-			break;
 
-			
-		case 0xf: // rrca
-			a = instr_rrc(a);
-			zero = false;
-			break;
-			
-			// most games should never even execute this 
-		case 0x10: // stop 
-			pc += 1; // skip over next byte
-			
-			if(is_cgb && is_set(mem.io[IO_SPEED],0))
-			{
-				mem.io[IO_SPEED] = deset_bit(mem.io[IO_SPEED],0); // clear the bit
-				
-				switch_double_speed();
-				
-				if(is_double)
-				{
-					mem.io[IO_SPEED] = set_bit(mem.io[IO_SPEED],7);
-				}
-			
-				else // single speed 
-				{
-					mem.io[IO_SPEED] = deset_bit(mem.io[IO_SPEED],7);
-				}
-			}
-			
-			else // almost nothing triggers this 
-			{
-				write_log(debug,"[WARNING] stop opcode hit at {:x}",pc);
-			}
 
-			break;
-			
-		case 0x11: // ld de, nn
-			write_de(mem.read_wordt(pc));
-			pc += 2;
-			break;
-		
-		case 0x12: // ld (de), a
-			mem.write_memt(read_de(), a);
-			break;
-		
-		case 0x13: // inc de
-			write_de(instr_incw(read_de()));
-			break;
-		
-		case 0x14: // inc d
-			instr_inc(d++);
-			break;
-		
-		case 0x15: // dec d
-			instr_dec(d--);
-			break;
-		
-		case 0x16: // ld d, nn 
-			d = mem.read_memt(pc++);
-			break;
-		
-		case 0x17: // rla (rotate left through carry flag) 
-			a = instr_rl(a);
-			zero = false;
-			break;
-		
-		case 0x18: // jr n
-			instr_jr();
-			break;
-		
-		case 0x19: // add hl, de
-			write_hl(instr_addw(read_hl(),read_de()));
-			cycle_delay(4); // internal
-			break;
-		
-		case 0x1a: // ld a,(de) 
-			a = mem.read_memt(read_de());
-			break;
-		
 
-		case 0x1b: // dec de
-			write_de(instr_decw(read_de()));
-			break;
-		
-		case 0x1c: // inc e
-			instr_inc(e++);
-			break;
-		
-		case 0x1d: // dec e
-			instr_dec(e--);
-			break;
-			
-		case 0x1e: // ld e, n
-			e = mem.read_memt(pc++);
-			break;
-		
-		case 0x1f: // rra
-			a = instr_rr(a);
-			zero = false;
-			break;
-		
-		case 0x20: // jr nz, n
-			instr_jr_cond(false,zero);
-			break;
-			
-		case 0x21: // ld hl, nn
-			write_hl(mem.read_wordt(pc));
-			pc += 2;
-			break;
-		
-		case 0x22: // ldi (hl), a
-		{
-			const auto hl = read_hl();
-			mem.write_memt(hl,a);
-			write_hl(hl+1);
-			break;
-		}
-		case 0x23: // inc hl
-			write_hl(instr_incw(read_hl()));
-			break;
-		
-		case 0x24: // inc h
-			instr_inc(h++);
-			break;
-		
-		case 0x25: // dec h
-			instr_dec(h--);
-			break;
-		
-		case 0x26: // ld h, nn
-			h = mem.read_memt(pc++);
-			break;
-		
-		case 0x27: // daa (lots of edge cases)
-			//https://forums.nesdev.com/viewtopic.php?f=20&t=15944
-			if (!negative) 
-            {  
-				// after an addition, adjust if (half-)carry occurred or if result is out of bounds
-				if (carry || a > 0x99) 
-                { 
-					a += 0x60; 
-                    carry = true;
-				}
-				if (half || (a & 0x0f) > 0x09)  
-                { 
-					a += 0x6; 
-				}
-			} 
-			
-			else 
-            {  
-				// after a subtraction, only adjust if (half-)carry occurred
-				if (carry) 
-                {
-					a -= 0x60; 
-				}
-				
-				if (half) 
-                { 
-					a -= 0x6; 
-				}
-			}
-			
-			// preserve C and N flags
-			//f &= (1 << C) | (1 << N);
-			half = false;
+void Cpu::cb_opcode()
+{
+	const uint8_t cbop = mem.read_memt(pc++);
+	std::invoke(cb_table[cbop],this);
+}
 
-			set_zero(a);
-			break;
-			
-		case 0x28: // jr z, n
-			instr_jr_cond(true,zero);
-			break;
-		
-		case 0x29: // add hl, hl
-			write_hl(instr_addw(read_hl(),read_hl()));
-			cycle_delay(4); // internal
-			break;
-		
-		// flags affected by this?
-		case 0x2a: // ldi a, (hl)
-		{
-			const auto hl = read_hl();
-			oam_bug_read_increment(hl);
-			a = mem.read_memt_no_oam_bug(hl);
-			write_hl(hl+1);
-			break;
-		}
-		case 0x2b: // dec hl
-			write_hl(instr_decw(read_hl()));
-			break;
-		
-		case 0x2c: // inc l
-			instr_inc(l++);
-			break;
-		
-		case 0x2d: // dec l
-			instr_dec(l--);
-			break;
-		
-		case 0x2e: // ld l, nn
-			l = mem.read_memt(pc++);
-			break;
-			
-		case 0x2f: // cpl (flip bits in a)
-			// set H and N
-			half = true;
-			negative = true;
-			a = ~a;
-			break;
-		
-		case 0x30: // jr nc, nn
-			instr_jr_cond(false,carry);
-			break;
-		
-		case 0x31: // ld sp, nn
-			sp = mem.read_wordt(pc);
-			pc += 2;
-			break;
-		
-		case 0x32: // ldd (hl), a 
-		{
-			const auto hl = read_hl();
-			mem.write_memt(hl,a);
-			write_hl(hl-1);
-			break;
-		}
+template<const int REG>
+void Cpu::srl()
+{
+	uint8_t reg = read_r8<REG>();
+	half = false;
+	negative = false;
 
-		case 0x33: // inc sp
-			sp = instr_incw(sp);
-			break;
-		
-		case 0x34: // inc (hl)
-        {
-			uint8_t v = mem.read_memt(read_hl()); // use to store (hl)
-			instr_inc(v++); // inc 
-			mem.write_memt(read_hl(),v); // and write back
-			break;
-        }
+	carry = is_set(reg,0);
 
-		case 0x35: // dec (hl)
-        {
-			uint8_t v = mem.read_memt(read_hl());
-			instr_dec(v--); // dec it
-			mem.write_memt(read_hl(),v); // and write straight back	
-			break;
-        }	
-		
-		case 0x36: // ld (hl), n 
-			mem.write_memt(read_hl(),mem.read_memt(pc++));
-			break;
-		
-		case 0x37: // scf
-			// set the carry flag deset h and N
-			carry = true;
-			negative = false;
-			half = false;
-			break;
-		
-		case 0x38: // jr c, nnnn
-			instr_jr_cond(true,carry);
-			break;
-			
-		case 0x39: // add hl, sp 
-			write_hl(instr_addw(read_hl(),sp));
-			cycle_delay(4); // internal
-			break;	
-			
-		case 0x3a: // ldd a, (hl)
-		{
-			const auto hl = read_hl();
-			oam_bug_read_increment(hl);
-			a = mem.read_memt_no_oam_bug(hl);
-			write_hl(hl-1);
-			break;
-		}
-		case 0x3b: // dec sp
-			sp = instr_decw(sp);
-			break;
-		
-		case 0x3c: // inc a
-			instr_inc(a++);
-			break;
-		
-		case 0x3d: // dec a
-			instr_dec(a--);
-			break;
-			
-		
-		case 0x3e: // ld a, n
-			a = mem.read_memt(pc++);
-			break;
-		
-		case 0x3f: // ccf
-
-			carry = !carry;
-			negative = false;
-			half = false;
-			break;
-		
-		case 0x40: // ld b, b
-			// do nothing lol
-			break;
-		
-		case 0x41: // ld b, c
-			b = c;
-			break;
-		
-		case 0x42: // ld b, d
-			b = d;
-			break;
-		
-		case 0x43: // ld b, e
-			b = e;
-			break;
-		
-		case 0x44: // ld b, h
-			b = h;
-			break;
-		
-		case 0x45: // ld b, l
-			b = l;
-			break;
-		
-		case 0x46: // ld b, (hl)
-			b = mem.read_memt(read_hl());
-			break;
-		
-		case 0x47: // ld b,a
-			b = a;
-			break;
-		
-		case 0x48: // ld c, b 
-			c = b;
-			break;
-		
-		case 0x49: // ld c, c 
-			// nop
-			break;
-		
-		case 0x4a: // ld c, d 
-			c = d;
-			break;
-		
-		case 0x4b: // ld c, e 
-			c = e;
-			break;
-		
-		case 0x4c: // ld c, h
-			c = h;
-			break;
-		
-		case 0x4d: // ld c ,l 
-			c = l;
-			break;
-		
-		case 0x4e: // ld c, (hl)
-			c = mem.read_memt(read_hl());
-			break;
-		
-		case 0x4f: // ld c,a
-			c = a;
-			break;
-		
-		
-		case 0x50: // ld d, b 
-			d = b;
-			break;
-		
-		case 0x51: // ld d, c 
-			d = c;
-			break;
-		
-		
-		case 0x52: // ld d, d
-			// nop lol 
-			break;
-		
-		
-		case 0x53: // ld d, e
-			d = e;
-			break;
-		
-		case 0x54: // ld d, h
-			d = h;
-			break;
-		
-		case 0x55: // ld d , l 
-			d = l;
-			break;
-		
-		case 0x56: // ld d, (hl)
-			d = mem.read_memt(read_hl());
-			break;
-		
-		case 0x57: // ld d, a
-			d = a;
-			break;
-		
-		
-		case 0x58: // ld e, b 
-			e = b;
-			break;
-		
-		case 0x59: // ld e, c
-			e = c;
-			break;
-		
-		case 0x5a: // ld e, d
-			e = d; 
-			break;
-		
-		case 0x5b: // ld e, e
-			// nop 
-			break;
-		
-		case 0x5c: // ld e,h
-			e = h;
-			break;
-			
-		case 0x5d: // ld e, l
-			e = l;
-			break;
-			
-		case 0x5e: // ld e, (hl)
-			e = mem.read_memt(read_hl());
-			break;
-		
-		case 0x5f: // ld e, a
-			e = a;
-			break;
-		
-		
-		case 0x60: // ld h, b
-			h = b;
-			break;
-		
-		case 0x61: // ld h, c
-			h = c;
-			break;
-		
-		case 0x62: // ld h, d
-			h = d;
-			break;
-		
-		
-		case 0x63: // ld h, e
-			h = e;
-			break;
-			
-		case 0x64: // ld h, h
-			// nop;
-			break;
-			
-		case 0x65: // ld h, l 	
-			h = l;
-			break;
-			
-		case 0x66: // ld h, (hl)
-			h = mem.read_memt(read_hl());
-			break;
-		
-		case 0x67: // ld h, a 
-			h = a;
-			break;
-		
-		case 0x68: // ld l, b
-			l = b;
-			break;
-		
-		case 0x69: // ld l,c
-			l = c;
-			break;
-		
-		
-		case 0x6a: // ld l, d
-			l = d;
-			break;
-		
-		case 0x6b: // ld l, e
-			l = e;
-			break;
-		
-		case 0x6c: // ld l, h 
-			l = h;
-			break;
-			
-		case 0x6d: // ld l, l
-			// nop
-			break;
-		
-		case 0x6e: // ld l, (hl)
-			
-			l = mem.read_memt(read_hl());
-			
-			break;
-		
-		case 0x6f: // ld l, a
-			l = a;
-			break;
-		
-		case 0x70: // ld (hl),b
-			mem.write_memt(read_hl(),b);
-			break;
-		
-		case 0x71: // ld (hl), c
-			mem.write_memt(read_hl(), c);
-			break;
-		
-		case 0x72: // ld (hl), d
-			mem.write_memt(read_hl(),d);
-			break;
-		
-		case 0x73: // ld (hl), e
-			mem.write_memt(read_hl(),e);
-			break;
-		
-		case 0x74: // ld (hl), h
-			mem.write_memt(read_hl(),h);
-			break;
-		
-		case 0x75: // ld (hl), l
-			mem.write_memt(read_hl(),l);
-			break;
-		
-		case 0x76: // halt 
-			handle_halt();
-			break;
-		
-		case 0x77: // ld (hl), a 
-			mem.write_memt(read_hl(),a);
-			break;
-		
-		case 0x78: // ld a, b
-			a = b;
-			break;
-		
-		case 0x79: //ld a, c
-			a = c;
-			break;
-		
-		case 0x7a: // ld a, d
-			a = d;
-			break;
-		
-		case 0x7b: // ld a, e
-			a = e;
-			break;
-		
-		case 0x7c: // ld a, h
-			a = h;
-			break;
-		
-		case 0x7d: // ld a, l
-			a = l;
-			break;
-		
-		case 0x7e: // ld a, (hl)
-			a = mem.read_memt(read_hl());
-			break;
-		
-		case 0x7f: // ld a, a
-			// nop 
-			break;
-		
-		case 0x80: // add b
-			instr_add(b);
-			break;
-		
-		case 0x81: // add c
-			instr_add(c);
-			break;
-		
-		case 0x82: // add d
-			instr_add(d);
-			break;
-		
-		case 0x83: // add e
-			instr_add(e);
-			break;
-		
-		case 0x84: // add h
-			instr_add(h);
-			break;
-		
-		case 0x85: // add l
-			instr_add(l);
-			break;
-		
-		case 0x86: // add a, (hl)
-        {
-		    uint8_t v = mem.read_memt(read_hl());
-			instr_add(v);
-			break;
-        }
-
-		case 0x87: // add a
-			instr_add(a);
-			break;
-		
-		case 0x88: // adc a, b
-			instr_adc(b);
-			break;
-		
-		case 0x89: // adc c (add carry + n)
-			instr_adc(c);
-			break;
-		
-		case 0x8a: // adc d
-			instr_adc(d);
-			break;
-			
-		case 0x8b: // adc e
-			instr_adc(e);
-			break;
-			
-		case 0x8c: // adc h
-			instr_adc(h);
-			break;
-			
-		case 0x8d: // adc l
-			instr_adc(l);
-			break;
-		
-		case 0x8e: // adc (hl)
-        {
-			uint8_t v = mem.read_memt(read_hl());
-			instr_adc(v);
-			break;
-        }
-
-		case 0x8f: // adc a
-			instr_adc(a);
-			break;
-		
-		case 0x90: // sub b
-			instr_sub(b);
-			break;
-		
-		case 0x91: // sub c
-			instr_sub(c);
-			break;
-		
-		case 0x92: // sub d
-			instr_sub(d);
-			break;
-			
-		case 0x93: // sub e
-			instr_sub(e);
-			break;
-			
-		case 0x94: // sub h
-			instr_sub(h);
-			break;
-			
-		case 0x95: // sub l
-			instr_sub(l);
-			break;
-		
-		case 0x96: // sub (hl)
-        {
-			uint8_t v = mem.read_memt(read_hl());
-			instr_sub(v);
-			break;
-        }
-
-		case 0x97: // sub a 
-			instr_sub(a);
-			break;
-		
-		case 0x98: // sbc, a, b
-			instr_sbc(b);
-			break;
-			
-		case 0x99: // sbc a, c
-			instr_sbc(c);
-			break;
-			
-		case 0x9a: // sbc a ,d
-			instr_sbc(d);
-			break;
-			
-		case 0x9b: // sbc a, e
-			instr_sbc(e);
-			break;
-			
-		case 0x9c: // sbc a, h 
-			instr_sbc(h);
-			break;
-			
-		case 0x9d: // sbc a, l
-			instr_sbc(l);
-			break;
-		
-		case 0x9e: // sbc a, (hl)
-        {
-			uint8_t v = mem.read_memt(read_hl());
-			instr_sbc(v);
-			break;
-        }
-
-		case 0x9f: // sbc a, a
-			instr_sbc(a);
-			break;
-		
-		case 0xa0: // and b
-			instr_and(b);
-			break;
-		
-		case 0xa1: // and c
-			instr_and(c);
-			break;
-		
-		case 0xa2: // and d
-			instr_and(d);
-			break;
-		
-		case 0xa3: // and e
-			instr_and(e);
-			break;
-		
-		case 0xa4: // and h
-			instr_and(h);
-			break;
-			
-		case 0xa5: // and l
-			instr_and(l);
-			break;
-		
-		case 0xa6: // and (hl)
-			instr_and(mem.read_memt(read_hl()));
-			break;
-		
-		case 0xa7: // and a
-			instr_and(a);
-			break;
-		
-
-		case 0xa8: // xor b
-			instr_xor(b);
-			break;
-		
-		case 0xa9: // xor c 
-			instr_xor(c);
-			break;
-		
-		case 0xaa: // xor d
-			instr_xor(d);
-			break;
-			
-		case 0xab: // xor e
-			instr_xor(e);
-			break;
-			
-		case 0xac: // xor h
-			instr_xor(h);
-			break;
-		
-		case 0xad: // xor l
-			instr_xor(l);
-			break;
-		
-		case 0xae: // xor (hl)
-        {
-			uint8_t v = mem.read_memt(read_hl());
-			instr_xor(v);
-			break;
-        }
-
-		// could shortcut case end up with just zero flag being set 
-		case 0xaf: // xor a, a
-			instr_xor(a);
-			break;
-		
-		case 0xb0: // or b
-			instr_or(b);
-			break;
-		
-		case 0xb1: // or c (a is implicit)
-			instr_or(c);
-			break;
-		
-		case 0xb2: // or d
-			instr_or(d);
-			break;
-		
-		case 0xb3: // or e
-			instr_or(e);
-			break;
-			
-		case 0xb4: // or h
-			instr_or(h);
-			break;
-			
-		case 0xb5: // or l
-			instr_or(l);
-			break;
-		
-		case 0xb6: // or (hl)
-			instr_or(mem.read_memt(read_hl()));
-			break;
-		
-		case 0xb7: // or a
-			//instr_or(a);
-			// a | a = a 
-			// only thing that can happen is the zero flag setting
-			// clear flags
-			half = false;
-			carry = false;
-			negative = false;
-			set_zero(a);
-			break;
-		
-		case 0xb8: // cp b (sub but ignore result only keep flags)
-			instr_cp(b);
-			break;
-
-		case 0xb9: // cp c
-			instr_cp(c);
-			break;
-		
-		case 0xba: // cp d
-			instr_cp(d);
-			break;
-		
-		case 0xbb: // cp e
-			instr_cp(e);
-			break;
-		
-		case 0xbc: // cp h
-			instr_cp(h);
-			break;
-			
-		case 0xbd: // cp l
-			instr_cp(l);
-			break;
-		
-		case 0xbe: // cp (hl)
-        {
-			uint8_t v = mem.read_memt(read_hl());
-			instr_cp(v);
-			break;
-        }
-
-		case 0xbf: // cp a <-- probably can be optimised to a constant
-			instr_cp(a);
-			break;
-		
-		case 0xc0: // ret nz
-			ret_cond(false,zero);
-			break;
 	
-		case 0xc1: // pop bc	
-			write_bc(read_stackwt());	
-			break;
-		
-		case 0xc2: // jp nz, nnnn
-        {
-			instr_jp_cond(false,zero);
-			break;
-        }
+	reg >>= 1;
 
-		case 0xc3: // jump
-		{
-			const uint16_t source = pc-1;
-			pc = mem.read_wordt(pc);
-			cycle_delay(4); // internal
-			debug.trace.add(source,pc);
-			break;
-		}
-		
-		case 0xc4: // call nz
-        {
-			call_cond(false,zero);
-			break;
-        }
+	set_zero(reg);
+	
+	write_r8<REG>(reg);
+}
 
-		case 0xc5: // push bc 	
-			cycle_delay(4); // internal
-			write_stackwt(read_bc());
-			break;
-		
-		
-		case 0xc6: // add a, nn
-			instr_add(mem.read_memt(pc++));
-			break;
-		
-		case 0xc7: // rst 00
-			instr_rst(0x00,0xc7);
-			break;
-		
-		case 0xc8: // ret z
-        {
-			ret_cond(true,zero);
-			break;
-        }
+uint8_t Cpu::instr_rrc(uint8_t v)
+{
+	carry = is_set(v,0);
+	
+	negative = false;
+	half = false;
 
-		case 0xc9: // ret 
-		{
-			const uint16_t source = pc-1;
-			pc = read_stackwt();	
-			cycle_delay(4); // internal
-			debug.trace.add(source,pc);
-			break;
-		}
-		
-		case 0xca: // jp z, nnnn
-        {
-			instr_jp_cond(true,zero);
-			break;
-        }
+	v >>= 1;
+	
+	if(carry)
+	{
+		v = set_bit(v,7);
+	}
+	set_zero(v);
+	
+	return v;
+}
 
-		case 0xcb: // multi len opcode (cb prefix)
-        {
-			uint8_t cbop = mem.read_memt(pc++); // fetch the opcode
-			// tick our instr fetch for cb
-			exec_cb(cbop); // exec it
-			break; 
-        }
-		
-		case 0xcc: // call z
-        {
-			call_cond(true,zero);
-			break;
-        }
-		case 0xCD: // call nn 
-        {
-			const uint16_t source = pc-1;
-			uint16_t v = mem.read_wordt(pc);
-			pc += 2;
-			cycle_delay(4); // internal
-			write_stackwt(pc);
-			pc = v;
-			debug.trace.add(source,pc);
-			break;
-        }
+void Cpu::rrca()
+{
+	a = instr_rrc(a);
+	zero = false;
+}
 
-		case 0xce: // adc a, nn
-			instr_adc(mem.read_memt(pc++));
-			break;
-		
-		case 0xcf: // rst 08
-			instr_rst(0x08,0xcf);
-			break;
-		
-		case 0xd0: // ret nc
-			ret_cond(false,carry);
-			break;
-		
-		case 0xd1: // pop de
-			write_de(read_stackwt());
-			break;
-		
-		case 0xd2: // jp nc u16
-        {
-			instr_jp_cond(false,carry);
-			break;
-        }
 
-		case 0xd4: // call nc nnnn
-        {
-			call_cond(false,carry);
-			break;			
-        }
+template<const int REG>
+void Cpu::rrc_r8()
+{
+	write_r8<REG>(instr_rrc(read_r8<REG>()));
+}
 
-		case 0xD5: // push de
-			cycle_delay(4); // internal delay 
-			write_stackwt(read_de());
-			break;
-		
-		case 0xd6: // sub a, nn
-			instr_sub(mem.read_memt(pc++));
-			break;
-		
-		case 0xd7: // rst 10
-			instr_rst(0x10,0xd7);
-			break;
-		
-		case 0xd8: // ret c
-			ret_cond(true,carry);
-			break;
-			
-		case 0xd9: // reti
-		{
-			const uint16_t source = pc-1;
-			pc = read_stackwt();	
-			cycle_delay(4);// internal
-			interrupt_enable = true; // re-enable interrupts
-			update_intr_fire();
-			debug.trace.add(source,pc);
-			break;
-		}
+uint8_t Cpu::instr_rr(uint8_t v)
+{
+	const bool set = is_set(v,0);
+	
+	v >>= 1;
+	
+	// bit 7 gets carry 
+	v = carry? set_bit(v,7) : deset_bit(v,7);
 
-		case 0xda: // jp c, u16
-        {
-			instr_jp_cond(true,carry);
-			break;
-        }
+	// deset negative
+	negative = false;
+	// unset half
+	half = false;
+	
+	// carry gets bit 0
+	carry = set;
 
-		case 0xdc: // call c, u16
-        {
-			call_cond(true,carry);
-			break;
-        }
+	set_zero(v);
+	
+	return v;
+}
 
-		case 0xde: // sbc a, n
-			instr_sbc(mem.read_memt(pc++));
-			break;
+template<const int REG>
+void Cpu::rr_r8()
+{
+	write_r8<REG>(instr_rr(read_r8<REG>()));
+}
 
-		case 0xdf: // rst 18
-			instr_rst(0x18,0xdf);
-			break;
-		
-		case 0xE0: // ld (ff00+n),a
-			mem.write_iot((0xff00+mem.read_memt(pc++)),a);
-			break;
+void Cpu::rra()
+{
+	a = instr_rr(a);
+	zero = false;
+}
 
-		case 0xe1: // pop hl
-			write_hl(read_stackwt());
-			break;
-			
-		case 0xE2: // LD ($FF00+C),A
-			mem.write_iot(0xff00 + c, a);
-			break;
 
-		case 0xe5: // push hl
-			cycle_delay(4); // internal
-			write_stackwt( read_hl());
-			break;
+uint8_t Cpu::instr_rlc(uint8_t v)
+{
+	carry = is_set(v,7);
 		
-		case 0xe6: // and a, n
-			instr_and(mem.read_memt(pc++));
-			break;
-		
-		case 0xe7: // rst 20
-			instr_rst(0x20,0xe7);
-			break;
-		
-		case 0xe8: // add sp, i8 
-			sp = instr_addi(sp, static_cast<int8_t>(mem.read_memt(pc++)));
-			cycle_delay(8); // internal delay (unsure)
-			break;
-		
-		case 0xe9: // jp hl
-		{
-			const uint16_t source = pc-1;
-			pc = read_hl();
-			debug.trace.add(source,pc);
-			break;
-		}
+	v <<= 1;
+	
+	negative = false;
+	half = false;
+	
+	if(carry)
+	{
+		v = set_bit(v,0);
+	}	
 
-		case 0xea: // ld (nnnn), a
-			mem.write_memt(mem.read_wordt(pc),a);
-			pc += 2;
-			break;
-		
-		case 0xee: // xor a, nn
-			instr_xor(mem.read_memt(pc++));
-			break;
-		
-		case 0xef: // rst 28
-			instr_rst(0x28,0xef);
-			break;
-		
-		case 0xF0: // ld a, (ff00+nn)
-			a = mem.read_iot(0xff00+mem.read_memt(pc++));
-			break;
-		
-		case 0xf1: // pop af
-			write_af(read_stackwt());
-			break;
-		
-		case 0xf2: // ld a, (ff00+c)
-			a = mem.read_iot(0xff00 + c);
-			break;
-		
-		case 0xf3: // disable interrupt
+	set_zero(v);
+	return v;
+}
 
-			// di should disable immediately unlike ei!
-			// if we havent just exected a ei then we are done and can reset the state
-			// else we need to mark it so ei wont reneable it by mistake
-			instr_side_effect = instr_side_effect == instr_state::ei? instr_state::di : instr_state::normal;
-			interrupt_enable = false; 
-			update_intr_fire();
-			break;
-		
-		case 0xf5: // push af
-			cycle_delay(4); // internal delay
-			write_stackwt(read_af());
-			break;
-		
-		case 0xf6: // or a, nn
-			instr_or(mem.read_memt(pc++));
-			break;
-		
-		case 0xf7: // rst 30
-			instr_rst(0x30,0xf7);
-			break;
-		
-		case 0xf8: // ld hl, sp + i8 
-			write_hl(instr_addi(sp,static_cast<int8_t>(mem.read_memt(pc++))));
-			cycle_delay(4); // internal
-			break;
-		
-		case 0xf9: // ld sp, hl
-			sp = read_hl();
-			cycle_delay(4); // internal
-			break;
-		
-		case 0xfa: // ld a (nn) <-- 16 bit address
-			a = mem.read_memt(mem.read_wordt(pc));
-			pc += 2;
-			break;
-		
-		case 0xfb: 
+void Cpu::rlca()
+{
+	a = instr_rlc(a);
+	zero = false;	
+}
 
-			// if we execute two ie in a row we dont need to bother
-			// as we are allready enabled
-			if(instr_side_effect != instr_state::ei)
-			{
-				// caller will check opcode and handle it
-				instr_side_effect = instr_state::ei;
+template<const int REG>
+void Cpu::rlc_r8()
+{
+	write_r8<REG>(instr_rlc(read_r8<REG>()));
+}
 
-				exec_instr(); 
-			}
 
-			// if last instr was a di we should not enable
-			if(instr_side_effect != instr_state::di)
-			{
-				interrupt_enable = true;
-			}
+// swap upper and lower nibbles 
+template<const int REG>
+void Cpu::instr_swap()
+{
+	const uint8_t reg = read_r8<REG>();
 
-			instr_side_effect = instr_state::normal;
+	// reset flags
+	negative = false;
+	half = false;
+	carry = false;
 
-			update_intr_fire();
-			break;
-		
-		case 0xFE: // cp a, nn (do a sub and discard result)
-			instr_cp(mem.read_memt(pc++));
-			break;
-			
-		
-		case 0xff: // rst 38
-			instr_rst(0x38,0xff);
-			break;   
+    set_zero(reg);
 
-		default:
-		{
-			write_log(debug,"[ERROR] invalid opcode at {:x}",pc);
-			throw std::runtime_error("invalid opcode!");		
-		}
-    }
+	write_r8<REG>(((reg & 0x0f) << 4 | (reg & 0xf0) >> 4));	
+}
+
+uint8_t Cpu::instr_rl(uint8_t v)
+{
+	const bool cond = is_set(v,7); // cache if 7 bit is set
+	
+	// perform the rotation
+	// shift the register left
+	v <<= 1;
+	
+	// bit 0 gets bit of carry flag
+	v = carry? set_bit(v,0) : deset_bit(v,0);
+	
+	// deset half carry 
+	half = false;
+	negative = false;
+	
+	// Carry flag gets bit 7 of reg
+	carry = cond;
+
+
+	set_zero(v);
+	
+	return v;	
+}
+
+template<const int REG>
+void Cpu::rl_r8()
+{
+	write_r8<REG>(instr_rl(read_r8<REG>()));
+}
+
+void Cpu::rla()
+{
+	a = instr_rl(a);
+	zero = false;
+}
+
+template<const int REG>
+void Cpu::sla_r8()
+{
+	uint8_t reg = read_r8<REG>();
+	// reset flags
+	half = false;
+	negative = false;
+
+	const bool cond = is_set(reg,7); // cache if 7 bit is set
+
+	reg <<= 1;
+	
+	// deset bit one
+	reg = deset_bit(reg,0);
+
+	set_zero(reg);
+	
+	carry = cond;
+
+	write_r8<REG>(reg);
+}
+
+template<const int REG>
+void Cpu::sra_r8()
+{
+	uint8_t reg = read_r8<REG>();
+	negative = false;
+	half = false;
+	
+	const bool cond = is_set(reg,0);// cache if 0 bit is set
+	const bool set = is_set(reg,7);
+	
+	reg >>= 1;
+	
+	if(set)
+	{
+		reg = set_bit(reg,7);
+	}
+	
+	carry = cond;
+	
+	set_zero(reg);
+	
+	write_r8<REG>(reg);
+}
+
+
+template<const int REG, const int BIT>
+void Cpu::bit_r8()
+{
+	// unuset negative
+	negative = false;
+
+	zero = !is_set(read_r8<REG>(),BIT);
+	
+	// set half carry
+	half = true;		
+}
+
+template<const int REG,const int BIT>
+void Cpu::res_r8()
+{
+	write_r8<REG>(deset_bit(read_r8<REG>(),BIT));
+}
+
+template<const int REG,const int BIT>
+void Cpu::set_r8()
+{
+	write_r8<REG>(set_bit(read_r8<REG>(),BIT));
 }
 
 }
