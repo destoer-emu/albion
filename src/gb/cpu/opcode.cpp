@@ -929,7 +929,7 @@ void Cpu::instr_sbc(uint8_t v)
 {
 	const uint8_t reg = a;
 
-	const int carry_val = carry ? 1 : 0;
+	const int carry_val = carry;
 	
 	const int result = reg - v - carry_val;
 	
@@ -1062,10 +1062,7 @@ uint8_t Cpu::instr_rrc(uint8_t v)
 
 	v >>= 1;
 	
-	if(carry)
-	{
-		v = set_bit(v,7);
-	}
+	v |= carry << 7;
 	set_zero(v);
 	
 	return v;
@@ -1091,7 +1088,7 @@ uint8_t Cpu::instr_rr(uint8_t v)
 	v >>= 1;
 	
 	// bit 7 gets carry 
-	v = carry? set_bit(v,7) : deset_bit(v,7);
+	v |= carry << 7;
 
 	// deset negative
 	negative = false;
@@ -1128,10 +1125,7 @@ uint8_t Cpu::instr_rlc(uint8_t v)
 	negative = false;
 	half = false;
 	
-	if(carry)
-	{
-		v = set_bit(v,0);
-	}	
+	v |= carry;
 
 	set_zero(v);
 	return v;
@@ -1175,7 +1169,7 @@ uint8_t Cpu::instr_rl(uint8_t v)
 	v <<= 1;
 	
 	// bit 0 gets bit of carry flag
-	v = carry? set_bit(v,0) : deset_bit(v,0);
+	v |= carry;
 	
 	// deset half carry 
 	half = false;
@@ -1210,16 +1204,11 @@ void Cpu::sla_r8()
 	half = false;
 	negative = false;
 
-	const bool cond = is_set(reg,7); // cache if 7 bit is set
+	carry = is_set(reg,7); // cache if 7 bit is set
 
 	reg <<= 1;
 	
-	// deset bit one
-	reg = deset_bit(reg,0);
-
 	set_zero(reg);
-	
-	carry = cond;
 
 	write_r8<REG>(reg);
 }
@@ -1231,18 +1220,13 @@ void Cpu::sra_r8()
 	negative = false;
 	half = false;
 	
-	const bool cond = is_set(reg,0);// cache if 0 bit is set
+	carry = is_set(reg,0);
 	const bool set = is_set(reg,7);
 	
 	reg >>= 1;
 	
-	if(set)
-	{
-		reg = set_bit(reg,7);
-	}
-	
-	carry = cond;
-	
+	reg |= set << 7;
+
 	set_zero(reg);
 	
 	write_r8<REG>(reg);
