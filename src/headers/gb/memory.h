@@ -10,7 +10,10 @@
 namespace gameboy
 {
 
-class Memory
+// function pointers have virtual checks
+// even though runtime polymorphism is used nowhere if i dont add final
+// nice one C++
+class Memory final
 {
 public:
     Memory(GB &gb);

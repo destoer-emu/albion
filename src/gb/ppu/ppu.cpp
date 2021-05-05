@@ -629,14 +629,6 @@ uint32_t Ppu::get_cgb_color(int color_num, int cgb_pal, pixel_source source) con
 // considering taking copies and threading this
 void Ppu::render_scanline() noexcept
 {
-
-
-    const bool is_cgb = cpu.get_cgb();
-	const auto scx_offset = mem.io[IO_SCX] & 0x7;
-	// is sprite drawing enabled?
-	const bool obj_enabled = is_set(mem.io[IO_LCDC],1);
-	
-
 	// is the window drawn on this line?
 	const bool window_rendered = mem.io[IO_WX] <= 166 && 
 		window_y_triggered && is_set(mem.io[IO_LCDC],5);
@@ -644,6 +636,7 @@ void Ppu::render_scanline() noexcept
 	window_x_triggered = window_rendered;
 	
 
+    const auto scx_offset = mem.io[IO_SCX] & 0x7;
 	if(!window_rendered)
 	{
 		for(tile_cord = 0; tile_cord < 176; tile_cord += 8)
@@ -652,7 +645,8 @@ void Ppu::render_scanline() noexcept
 		}
 	}
 
-
+    
+   
 	// window rendering
 	else
 	{
@@ -672,27 +666,22 @@ void Ppu::render_scanline() noexcept
 		}
 	}
 
-
-	if(obj_enabled)
+    // is sprite drawing enabled?
+	if(is_set(mem.io[IO_LCDC],1))
 	{
 		sprite_fetch(&scanline_fifo[scx_offset],false);
 	}
-
-	for(size_t x = 0; x < SCREEN_WIDTH; x++)
+	
+    const uint32_t offset = (current_line*SCREEN_WIDTH);
+    const bool is_cgb = cpu.get_cgb();
+	for(int x = SCREEN_WIDTH-1; x >= 0; x--)
 	{
 		const auto pixel = scanline_fifo[x+scx_offset];
+        
+        const uint32_t full_color = is_cgb? get_cgb_color(pixel.colour_num, pixel.cgb_pal, pixel.source) :
+            get_dmg_color(pixel.colour_num,pixel.source);
 
-		if(!is_cgb)
-		{
-			const uint32_t full_color = get_dmg_color(pixel.colour_num,pixel.source);
-			screen[(current_line*SCREEN_WIDTH)+x] = full_color;
-		}
-		
-		else // gameboy color
-		{
-			const uint32_t full_color = get_cgb_color(pixel.colour_num, pixel.cgb_pal, pixel.source);
-			screen[(current_line*SCREEN_WIDTH)+x] = full_color;
-		}		
+		screen[offset+x] = full_color;
 	}
 
 }
@@ -749,17 +738,11 @@ bool Ppu::push_pixel() noexcept
 
 	const auto pixel = sprite_priority? sp : bg;
 
-	if(!cpu.get_cgb())
-	{
-		const uint32_t full_color = get_dmg_color(pixel.colour_num,pixel.source);
-		screen[(current_line*SCREEN_WIDTH)+x_cord] = full_color;
-	}
+	const uint32_t full_color = cpu.get_cgb()? get_cgb_color(pixel.colour_num, pixel.cgb_pal, pixel.source) :
+		get_dmg_color(pixel.colour_num,pixel.source);
+
+	screen[(current_line*SCREEN_WIDTH)+x_cord] = full_color;
 	
-	else // gameboy color
-	{
-		const uint32_t full_color = get_cgb_color(pixel.colour_num, pixel.cgb_pal, pixel.source);
-		screen[(current_line*SCREEN_WIDTH)+x_cord] = full_color;
-	}
 	
 	x_cord += 1;
 	if(x_cord == 160)
@@ -1001,7 +984,7 @@ void Ppu::tile_fetch(Pixel_Obj *buf, bool use_window) noexcept
 
 		// decide what bank data is coming out of
 		// allready one so dont check the other condition
-		vram_bank = is_set(attr,3) ? 1 : 0;
+		vram_bank = is_set(attr,3);
 	}
 
 	y_pos &= 7;  // scale to line on the tile ( a tile is 8 pixels high)
@@ -1019,27 +1002,23 @@ void Ppu::tile_fetch(Pixel_Obj *buf, bool use_window) noexcept
 	// pixel 0 in the tile is bit 7 of data1 and data2
 	// pixel 1 is bit 6 etc
 	
-	unsigned int color_bit = x_flip? 0 : 7;
+    // inverted because we go backwards
+	unsigned int color_bit = x_flip? 7 : 0;
 	
-	const int shift = x_flip ? 1 : -1;
+	const int shift = x_flip ? -1 : 1;
 
 	// in cgb an priority bit is set it has priority over sprites
 	// unless lcdc has the master overide enabled
 	const auto source = priority ? pixel_source::tile_cgbd : pixel_source::tile;	
 
-	for(unsigned int i = 0; i < 8; i++, color_bit += shift)
+	for(int i = 7; i >= 0; i--, color_bit += shift)
 	{
 		// combine data 2 and data 1 to get the color id for the pixel
-		// in the tile
-		int colour_num = is_set(data2,color_bit) << 1;
-		colour_num |= is_set(data1,color_bit);
-			
-			
-		// save our info to the fetcher
-		// in dmg the pal number will be ignored
-		buf[i].cgb_pal = cgb_pal;
+		// in the tile		
+		buf[i].colour_num = (is_set(data2,color_bit) << 1) | is_set(data1,color_bit);
 
-		buf[i].colour_num = colour_num;
+		// save our info to the fetcher in dmg the pal number will be ignored
+		buf[i].cgb_pal = cgb_pal;
 		buf[i].source = source;	
 	}
 }

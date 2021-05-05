@@ -55,32 +55,32 @@ void Cpu::write_r8(uint8_t v)
 	static_assert(REG <= 7);
 	if constexpr(REG == 0)
 	{
-		b = v;
+		write_upper(&bc,v);
 	}
 
 	else if constexpr(REG == 1)
 	{
-		c = v;
+		write_lower(&bc,v);
 	}
 
 	else if constexpr(REG == 2)
 	{
-		d = v;
+		write_upper(&de,v);
 	}
 
 	else if constexpr(REG == 3)
 	{
-		e = v;
+		write_lower(&de,v);
 	}
 
 	else if constexpr(REG == 4)
 	{
-		h = v;
+		write_upper(&hl,v);
 	}
 
 	else if constexpr(REG == 5)
 	{
-		l = v;
+		write_lower(&hl,v);
 	}
 
 	else if constexpr(REG == 6)
@@ -100,32 +100,32 @@ uint8_t Cpu::read_r8()
 	static_assert(REG <= 7);
 	if constexpr(REG == 0)
 	{
-		return b;
+		return read_b();
 	}
 
 	else if constexpr(REG == 1)
 	{
-		return c;
+		return read_c();
 	}
 
 	else if constexpr(REG == 2)
 	{
-		return d;
+		return read_d();
 	}
 
 	else if constexpr(REG == 3)
 	{
-		return e;
+		return read_e();
 	}
 
 	else if constexpr(REG == 4)
 	{
-		return h;
+		return read_h();
 	}
 
 	else if constexpr(REG == 5)
 	{
-		return l;
+		return read_l();
 	}
 
 	else if constexpr(REG == 6)
@@ -600,13 +600,14 @@ void Cpu::inc_r8()
 	// deset negative
 	negative = false;
 
+
 	reg += 1;
+
+	// if there is a carry from bit 3 we will now be zero
+	// or atleast one
+	half = (reg & 0xf) == 0;
 	
     set_zero(reg);
-
-	// test carry from bit 3
-	// set the half carry if there is
-	half = is_set(((reg-1)&0xf) + 1,4);	
 	write_r8<REG>(reg);
 }
 
@@ -988,12 +989,12 @@ void Cpu::rst()
 
 void Cpu::ld_a_ff00_c()
 {
-	a = mem.read_iot(0xff00 + c);
+	a = mem.read_iot(0xff00 + read_lower(bc));
 }
 
 void Cpu::ld_ff00_c_a()
 {
-	mem.write_iot(0xff00+c,a);
+	mem.write_iot(0xff00 + read_lower(bc),a);
 }
 
 void Cpu::cpl()

@@ -12,7 +12,7 @@ namespace gameboyadvance
 
 // not really happy with the impl 
 // so think of a better way to model it
-class Mem
+class Mem final
 {
 public:
     Mem(GBA &gba);

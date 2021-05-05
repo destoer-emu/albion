@@ -75,8 +75,8 @@ void Scheduler<SIZE,event_type>::tick(uint32_t cycles)
             // remove min event
             const auto event = event_list.peek();
             event_list.pop();
-            min_timestamp = event_list.peek().end;
             service_event(event);
+            min_timestamp = event_list.peek().end;
     }
 }
 

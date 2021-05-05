@@ -27,10 +27,10 @@ void Cpu::init(bool use_bios)
 		// set the cgb initial registers 
 		if(is_cgb)
 		{
-			write_af(0x1180); // af = 0x1180;
-			b = 0x00; c = 0x00; // bc = 0x0000;
-			d = 0xff; e = 0x56; // de = 0xff56;
-			h = 0x00; l = 0x0d; // hl = 0x000d;
+			write_af(0x1180);
+			bc = 0x0000; 
+			de = 0xff56;
+			hl = 0x000d; 
 			sp = 0xfffe;
 			pc = 0x0100;
 		}
@@ -40,9 +40,9 @@ void Cpu::init(bool use_bios)
 		{
 			// set our initial register state
 			write_af(0x01b0); // af = 0x01b0
-			b = 0x00; c = 0x13; // bc = 0x0013
-			d = 0x00; e = 0xd8; // de = 0x00d8
-			h = 0x01; l = 0x4d; // hl = 0x014d
+			bc = 0x0013; 
+			de = 0x00d8; 
+			hl = 0x014d;
 			sp = 0xfffe;
 			pc = 0x0100;
 		}
@@ -51,10 +51,10 @@ void Cpu::init(bool use_bios)
 	// bios all set to zero
 	else
 	{
-		write_af(0x0000); // af = 0x0000
-		b = 0x00; c = 0x00; // bc = 0x0000
-		d = 0x00; e = 0x00; // de = 0x0000
-		h = 0x00; l = 0x00; // hl = 0x0000
+		write_af(0x0000);
+		bc = 0x0000;
+		de = 0x0000; 
+		hl = 0x0000; 
 		sp = 0x0000;
 		pc = 0x0000;		
 	}

@@ -84,7 +84,7 @@ using ARM_OPCODE_LUT = std::array<ARM_OPCODE_FPTR,4096>;
 using THUMB_OPCODE_FPTR = void (Cpu::*)(uint16_t opcode);
 using THUMB_OPCODE_LUT = std::array<THUMB_OPCODE_FPTR,256>;
 
-class Cpu
+class Cpu final
 {
 public:
     Cpu(GBA &gba);

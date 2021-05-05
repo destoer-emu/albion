@@ -18,7 +18,7 @@ enum class instr_state
 };
 
 
-class Cpu
+class Cpu final
 {
 public:
     Cpu(GB &gb);
@@ -105,14 +105,13 @@ public:
     // register getters and setters
     void write_bc(uint16_t data) noexcept
     {
-        b = (data & 0xff00) >> 8;
-        c = data & 0x00ff;
+        bc = data;
     }
 
 
     uint16_t read_bc() const noexcept
     {
-        return (b << 8) | c;
+        return bc;
     }
 
 
@@ -135,42 +134,68 @@ public:
 
     uint16_t read_de() const noexcept 
     {
-        return (d << 8) | e;
+        return de;
     }
 
 
     void write_de(uint16_t v) noexcept
     {
-        d = (v & 0xff00) >> 8;
-        e = v & 0x00ff;
+        de = v;
     }
 
 
     uint16_t read_hl() const noexcept
     {
-        return (h << 8) | l;
+        return hl;
     }
 
 
     void write_hl(uint16_t v) noexcept
     {
-        h = (v & 0xff00) >> 8;
-        l = v & 0x00ff;
+        hl = v;
     }
 
 
-    uint8_t read_h() const noexcept { return h; }
-    uint8_t read_l() const noexcept { return l; }
+    // honestly it would just be easier to use a union
+    uint8_t read_lower(uint16_t v) const
+    {
+        uint8_t buf[2];
+        memcpy(buf,&v,sizeof(buf));
+        return buf[0];
+    }
+
+    uint8_t read_upper(uint16_t v) const
+    {
+        uint8_t buf[2];
+        memcpy(buf,&v,sizeof(buf));
+        return buf[1];
+    }
+
+    void write_lower(uint16_t *r, uint8_t v)
+    {
+        char *buf = reinterpret_cast<char*>(r);
+        buf[0] = v;
+    }
+
+    void write_upper(uint16_t *r, uint8_t v)
+    {
+        char *buf = reinterpret_cast<char*>(r);
+        buf[1] = v;
+    }
+
+
+    uint8_t read_h() const noexcept { return read_upper(hl); }
+    uint8_t read_l() const noexcept { return read_lower(hl); }
     uint8_t read_a() const noexcept { return a; }
     uint8_t read_f() const noexcept 
     { 
         return carry << C | half << H
 		| zero << Z | negative << N; 
     }
-    uint8_t read_b() const noexcept { return b; }
-    uint8_t read_c() const noexcept { return c; }
-    uint8_t read_d() const noexcept { return d; }
-    uint8_t read_e() const noexcept { return e; }
+    uint8_t read_b() const noexcept { return read_upper(bc); }
+    uint8_t read_c() const noexcept { return read_lower(bc); }
+    uint8_t read_d() const noexcept { return read_upper(de); }
+    uint8_t read_e() const noexcept { return read_lower(de); }
 
     bool read_flag_z() const noexcept { return zero; }
     bool read_flag_n() const noexcept { return negative; }
@@ -207,9 +232,9 @@ private:
 
     // registers
     uint8_t a; /*uint8_t f*/; //af
-    uint8_t b; uint8_t c; //bc
-    uint8_t d; uint8_t e; //de
-    uint8_t h; uint8_t l; //hl
+    uint16_t bc;
+    uint16_t de;
+    uint16_t hl;
     uint16_t sp;
     uint16_t pc;
 
