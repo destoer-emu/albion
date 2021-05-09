@@ -26,6 +26,7 @@ void GameboyScheduler::skip_to_event()
     cycles = (cycles + 3) & ~0x3; 
 
     cpu.cycle_tick_t(cycles);
+    service_events();
 } 
 
 

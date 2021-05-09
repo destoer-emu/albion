@@ -24,15 +24,15 @@ uint16_t Display::read_obj_palette(uint32_t pal_num,uint32_t idx)
 void Display::draw_tile(uint32_t x,const TileData &p)
 {
     // 1st target is empty
-    if(scanline[0][x].source == pixel_source::bd)
+    if(scanline[x].t1.source == pixel_source::bd)
     {
-        scanline[0][x] = p;
+        scanline[x].t1 = p;
     }
 
     // 2nd target is empty
-    else if(scanline[1][x].source == pixel_source::bd)
+    else if(scanline[x].t2.source == pixel_source::bd)
     {
-        scanline[1][x] = p;
+        scanline[x].t2 = p;
     }
 }
 
@@ -541,7 +541,8 @@ void Display::merge_layers()
             // TODO: can we push this off into the sprite rendering code?
             // this will require a pre pass for doing the obj window
 
-            auto &b1 = scanline[0][x];
+            auto &b1 = scanline[x].t1;
+            auto &b2 = scanline[x].t2;
 
             // lower priority is higher, sprite wins even if its equal
             const bool obj_win1 = b1.source == pixel_source::bd || (s.source != pixel_source::bd && sprite_enable &&
@@ -562,7 +563,7 @@ void Display::merge_layers()
             // dont bother fetching the 2nd color
             
             // check color2 prioritys
-            auto &b2 = scanline[1][x];
+            
 
             // lower priority is higher, sprite wins even if its equal
             // if obj has allready won then we dont care
@@ -829,9 +830,8 @@ void Display::render()
 {
     const auto render_mode = disp_io.disp_cnt.bg_mode; 
 
-    const TileData DEAD_PIXEL(read_bg_palette(0,0),pixel_source::bd);
-    std::fill(scanline[0].begin(),scanline[0].end(),DEAD_PIXEL);
-    std::fill(scanline[1].begin(),scanline[1].end(),DEAD_PIXEL);
+    static const Scanline DEAD_PIXEL;
+    std::fill(scanline.begin(),scanline.end(),DEAD_PIXEL);
 
     // ideally we would try to cull draws
     // that are not enabled in the window

@@ -6,6 +6,7 @@
 #include <gba/arm.h>
 #include <gba/dma.h>
 #include <gba/interrupt.h>
+#include <gba/scheduler.h>
 
 
 namespace gameboyadvance
@@ -95,8 +96,9 @@ public:
 
     void handle_power_state();
 
-#ifdef DEBUG
     using EXEC_INSTR_FPTR = void (Cpu::*)(void);
+#ifdef DEBUG
+    
 
     EXEC_INSTR_FPTR exec_instr_fptr = &Cpu::exec_instr_no_debug;
 
@@ -116,11 +118,43 @@ public:
 
 #endif
 
+    void exec_instr_no_debug_thumb();
+    void exec_instr_no_debug_arm();
 
-    void exec_instr_no_debug();
+    EXEC_INSTR_FPTR exec_instr_fptr_mode = &Cpu::exec_instr_no_debug_arm;
+
+    void exec_instr_no_debug()
+    {
+        std::invoke(exec_instr_fptr_mode,this);
+    }
+
+    void switch_execution_state(bool thumb)
+    {
+        is_thumb = thumb;
+        cpsr = is_thumb? set_bit(cpsr,5) : deset_bit(cpsr,5);
+        if(!thumb)
+        {
+            exec_instr_fptr_mode = &Cpu::exec_instr_no_debug_arm;
+        }
+
+        else
+        {
+            exec_instr_fptr_mode = &Cpu::exec_instr_no_debug_thumb;
+        }
+    }
 
 
-    void cycle_tick(int cylces); // advance the system state
+    void cycle_tick(int cycles)
+    {
+        scheduler.delay_tick(cycles);
+    }
+
+
+    void internal_cycle()
+    {
+        cycle_tick(1);
+    }
+
 
     void tick_timer(int t, int cycles);
     void insert_new_timer_event(int timer);
@@ -200,7 +234,6 @@ private:
     void write_pc(uint32_t v);
 
 
-    void internal_cycle();
 public:
 
     //arm cpu instructions

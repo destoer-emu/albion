@@ -42,15 +42,28 @@ void GBA::run()
 	disp.new_vblank = false;	
 #ifdef DEBUG
 	// break out early if we have hit a debug event
-	while(!disp.new_vblank && !debug.is_halted()) 
+	while(!disp.new_vblank) 
     {
-        cpu.exec_instr();
+		while(!scheduler.event_ready())
+		{
+			cpu.exec_instr();
+			if(debug.is_halted())
+			{
+				return;
+			}
+		}
+		scheduler.service_events();
 	}
 #else 
 	while(!disp.new_vblank) // exec until a vblank hits
     {
-        cpu.exec_instr();
+		while(!scheduler.event_ready())
+		{
+			cpu.exec_instr();
+		}
+		scheduler.service_events();
 	}
+
 #endif
 	if(disp.new_vblank && throttle_emu)
 	{

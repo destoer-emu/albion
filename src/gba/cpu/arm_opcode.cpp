@@ -781,9 +781,7 @@ void Cpu::arm_branch_and_exchange(uint32_t opcode)
 
     // if bit 0 of rn is a 1
     // subsequent instrs decoded as thumb
-    is_thumb = regs[rn] & 1;
-
-    cpsr = is_thumb? set_bit(cpsr,5) : deset_bit(cpsr,5);
+    switch_execution_state(regs[rn] & 1);
 
     write_pc(regs[rn]);
 }

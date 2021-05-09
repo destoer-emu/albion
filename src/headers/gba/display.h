@@ -94,7 +94,15 @@ private:
     Cpu &cpu;
     GBAScheduler &scheduler;
 
-    std::array<std::vector<TileData>,2> scanline;
+    struct Scanline
+    {
+        TileData t1;
+        TileData t2;
+    };
+
+    std::vector<Scanline> scanline;
+
+
     std::vector<TileData> sprite_line;
     std::vector<bool> sprite_semi_transparent;
     std::vector<window_source> window;

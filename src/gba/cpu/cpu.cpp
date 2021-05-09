@@ -30,7 +30,7 @@ void Cpu::init()
 
 
     // setup main cpu state
-    is_thumb = false;  // cpu in arm mode
+    switch_execution_state(false);  // cpu in arm mode
 
     write_pc(0x08000000); // cartrige reset vector
     regs[LR] = 0x08000000;
@@ -56,25 +56,6 @@ void Cpu::init()
     cpu_io.init();
     update_intr_status();
     debug.trace.clear();
-}
-
-void Cpu::internal_cycle()
-{
-    cycle_tick(1);
-}
-
-void Cpu::cycle_tick(int cycles)
-{
-
-    UNUSED(cycles);
-    // hack until we fix timings
-    //cycles = 1;
-/*
-    disp.tick(cycles);
-    apu.tick(cycles);
-    tick_timers(cycles);
-*/
-    scheduler.tick(cycles);
 }
 
 void Cpu::insert_new_timer_event(int timer)
@@ -111,13 +92,8 @@ void Cpu::tick_timer(int t, int cycles)
     auto &timer = cpu_io.timers[t];
 
     // increments on prev timer overflow so we dont care
-    if(timer.count_up)
-    {
-        return;
-    }
-
     // timer is not enabled we dont care
-    if(!timer.enable)
+    if(!timer.enable || timer.count_up)
     {
         return;
     }
@@ -230,31 +206,21 @@ bool Cpu::cond_met(uint32_t cond)
     return is_set(cond_lut[cond],flags);
 }
 
+void Cpu::exec_instr_no_debug_arm()
+{
+    is_thumb_fetch = false;
+    exec_arm();
+    do_interrupts();
+}
 
-void Cpu::exec_instr_no_debug()
+void Cpu::exec_instr_no_debug_thumb()
 {    
-    // step the cpu in thumb mode
-    is_thumb_fetch = is_thumb;
-
-    if(pc_actual == 0x03003518 && regs[4] == 0x030046a0)
-    {
-        debug.halt();
-        return;
-    }
-
-    if(is_thumb) 
-    {
-        exec_thumb();
-    }
-
-     // step the cpu in arm mode
-    else
-    {
-        exec_arm();
-    }
-
+    is_thumb_fetch = true;
+    exec_thumb();
     do_interrupts(); 
 }
+
+
 
 #ifdef DEBUG
 void Cpu::exec_instr_debug()
@@ -517,6 +483,7 @@ void Cpu::set_cpsr(uint32_t v)
 
     // confirm this?
     is_thumb = is_set(cpsr,5);
+    switch_execution_state(is_thumb);
     cpu_mode new_mode = cpu_mode_from_bits(cpsr & 0b11111);
     switch_mode(new_mode);    
 }
@@ -867,8 +834,7 @@ void Cpu::service_interrupt()
 
     
     // switch to arm mode
-    is_thumb = false; // switch to arm mode
-    cpsr = deset_bit(cpsr,5); // toggle thumb in cpsr
+    switch_execution_state(false); // switch to arm mode
     cpsr = set_bit(cpsr,7); //set the irq bit to mask interrupts
 
     write_log(debug,"[irq {:08x}] interrupt flag: {:02x} ",pc_actual,cpu_io.interrupt_flag);

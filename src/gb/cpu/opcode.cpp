@@ -323,7 +323,7 @@ void Cpu::jp()
 {
 	const uint16_t source = pc-1;
 	pc = mem.read_wordt(pc);
-	cycle_delay(4); // internal
+	cycle_tick_t(4); // internal
 	debug.trace.add(source,pc);	
 }
 
@@ -363,7 +363,7 @@ void Cpu::call()
 	const uint16_t source = pc-1;
 	uint16_t v = mem.read_wordt(pc);
 	pc += 2;
-	cycle_delay(4); // internal
+	cycle_tick_t(4); // internal
 	write_stackwt(pc);
 	pc = v;
 	debug.trace.add(source,pc);	
@@ -385,7 +385,7 @@ void Cpu::ld_r8_r8()
 void Cpu::jr()
 {
 	const auto operand = static_cast<int8_t>(mem.read_memt(pc++));
-	cycle_delay(4); // internal delay
+	cycle_tick_t(4); // internal delay
 	pc += operand;		
 }
 
@@ -393,7 +393,7 @@ void Cpu::ret()
 {
 	const uint16_t source = pc-1;
 	pc = read_stackwt();	
-	cycle_delay(4); // internal
+	cycle_tick_t(4); // internal
 	debug.trace.add(source,pc);	
 }
 
@@ -411,7 +411,7 @@ template<const int REG>
 void Cpu::push()
 {
 	const uint16_t reg = read_r16_group3<REG>();
-	cycle_delay(4); // internal
+	cycle_tick_t(4); // internal
 	write_stackwt(reg);
 }
 
@@ -426,7 +426,7 @@ void Cpu::dec_r16()
 {
 	const uint16_t reg = read_r16_group1<REG>();
 	oam_bug_write(reg);
-	cycle_delay(4); // internal
+	cycle_tick_t(4); // internal
 	write_r16_group1<REG>(reg-1);		
 }
 
@@ -435,7 +435,7 @@ void Cpu::inc_r16()
 {
 	const uint16_t reg = read_r16_group1<REG>();
 	oam_bug_write(reg);
-	cycle_delay(4); // internal
+	cycle_tick_t(4); // internal
 	write_r16_group1<REG>(reg+1);	
 }
 
@@ -569,7 +569,7 @@ void Cpu::call_cond()
 	pc += 2;
 	if(cond<COND>())
 	{
-		cycle_delay(4);  // internal delay
+		cycle_tick_t(4);  // internal delay
 		write_stackwt(pc);
 		pc = v;
 		debug.trace.add(source,pc);
@@ -750,11 +750,11 @@ template<const int COND>
 void Cpu::ret_cond()
 {
 	const uint16_t source = pc-1;
-	cycle_delay(4); // internal
+	cycle_tick_t(4); // internal
 	if(cond<COND>())
 	{
 		pc = read_stackwt();
-		cycle_delay(4);  // internal
+		cycle_tick_t(4);  // internal
 		debug.trace.add(source,pc);
 	}		
 }
@@ -777,7 +777,7 @@ void Cpu::add_hl_r16()
 	dst += oper;
 	
 	write_hl(dst);
-	cycle_delay(4); // internal
+	cycle_tick_t(4); // internal
 }
 
 void Cpu::jp_hl()
@@ -796,7 +796,7 @@ void Cpu::jp_cond()
 	if(cond<COND>())
 	{
 		pc = v;
-		cycle_delay(4); // internal delay
+		cycle_tick_t(4); // internal delay
 		debug.trace.add(source,pc);
 	}		
 }
@@ -804,7 +804,7 @@ void Cpu::jp_cond()
 void Cpu::ld_hl_sp_i8()
 {
 	write_hl(instr_addi(static_cast<int8_t>(mem.read_memt(pc++))));
-	cycle_delay(4); // internal	
+	cycle_tick_t(4); // internal	
 }
 
 
@@ -867,7 +867,7 @@ void Cpu::daa()
 void Cpu::ld_sp_hl()
 {
 	sp = read_hl();
-	cycle_delay(4); // internal
+	cycle_tick_t(4); // internal
 }
 
 void Cpu::ei()
@@ -923,7 +923,7 @@ void Cpu::stop()
 void Cpu::add_sp_i8()
 {
 	sp = instr_addi(static_cast<int8_t>(mem.read_memt(pc++)));
-	cycle_delay(8); // internal delay (unsure)	
+	cycle_tick_t(8); // internal delay (unsure)	
 }
 
 void Cpu::instr_sbc(uint8_t v)
@@ -962,7 +962,7 @@ void Cpu::reti()
 {
 	const uint16_t source = pc-1;
 	pc = read_stackwt();	
-	cycle_delay(4);// internal
+	cycle_tick_t(4);// internal
 	interrupt_enable = true; // re-enable interrupts
 	update_intr_fire();
 	debug.trace.add(source,pc);
@@ -981,7 +981,7 @@ void Cpu::rst()
 			throw std::runtime_error("infinite rst lockup");
 		}
 	}
-	cycle_delay(4); // internal
+	cycle_tick_t(4); // internal
 	write_stackwt(pc);
 	pc = ADDR;
 	debug.trace.add(source,pc);	

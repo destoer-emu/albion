@@ -108,8 +108,7 @@ void Cpu::thumb_swi(uint16_t opcode)
     switch_mode(cpu_mode::supervisor);
 
     // switch to arm mode
-    is_thumb = false; // switch to arm mode
-    cpsr = deset_bit(cpsr,5); // toggle thumb in cpsr
+    switch_execution_state(false); // switch to arm mode
     cpsr = set_bit(cpsr,7); //set the irq bit to mask interrupts
 
     // branch to interrupt vector
@@ -376,10 +375,8 @@ void Cpu::thumb_hi_reg_ops(uint16_t opcode)
         {
             // if bit 0 of rn is a 1
             // subsequent instrs decoded as thumb
-            is_thumb = rs_val & 1;
+            switch_execution_state(rs_val & 1);
 
-            // set the thumb bit
-            cpsr = is_thumb? set_bit(cpsr,5) : deset_bit(cpsr,5);
 
             // branch
             write_pc(rs_val);

@@ -216,14 +216,18 @@ void GB::run()
     ppu.new_vblank = false;
 #ifdef DEBUG
 	// break out early if we have hit a debug event
-	while(!ppu.new_vblank && !debug.is_halted()) 
+	while(!ppu.new_vblank) 
     {
-        cpu.exec_instr();
+		cpu.exec_instr();
+		if(debug.is_halted())
+		{
+			return;
+		}
 	}
 #else 
 	while(!ppu.new_vblank) // exec until a vblank hits
-    {
-        cpu.exec_instr();
+	{
+		cpu.exec_instr();
 	}
 #endif
 

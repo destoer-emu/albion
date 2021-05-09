@@ -62,10 +62,8 @@ public:
     void exec_instr_no_debug();
 
 
-    void tick_pending_cycles() noexcept;
     void cycle_tick(uint32_t cycles) noexcept; 
     void cycle_tick_t(uint32_t cycles) noexcept;
-    void cycle_delay(uint32_t cycles) noexcept;
     void tima_inc() noexcept;
     bool internal_tima_bit_set() const noexcept;
     bool tima_enabled() const noexcept;
@@ -257,8 +255,6 @@ private:
     bool interrupt_req = false;
     bool interrupt_fire = false;
     bool halt_bug = false;
-
-    uint32_t pending_cycles = 0;
 
     // next opcode
     uint8_t opcode = 0;

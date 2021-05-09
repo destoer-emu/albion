@@ -13,7 +13,7 @@ void GBAScheduler::skip_to_event()
 {
     auto cycles = min_timestamp - timestamp;
 
-    cpu.cycle_tick(cycles);
+    tick(cycles);
 } 
 
 

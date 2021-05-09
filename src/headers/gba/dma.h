@@ -77,6 +77,7 @@ public:
 private:
     Mem &mem;
     Cpu &cpu;
+    GBAScheduler &scheduler;
     Debug &debug;
 
     void do_dma(int reg_num,dma_type req_type);

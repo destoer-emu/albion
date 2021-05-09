@@ -666,7 +666,6 @@ void Memory::write_word(uint16_t addr, uint16_t v) noexcept
 // maybe should have an eqiv for optimisation purposes where we know it cant trigger
 uint8_t Memory::read_memt_no_oam_bug(uint16_t addr) noexcept
 {
-	cpu.tick_pending_cycles();
 	ignore_oam_bug = true;
 	uint8_t v = read_mem(addr);
 	ignore_oam_bug = false;
@@ -677,7 +676,6 @@ uint8_t Memory::read_memt_no_oam_bug(uint16_t addr) noexcept
 // memory accesses (timed)
 uint8_t Memory::read_memt(uint16_t addr) noexcept
 {
-	cpu.tick_pending_cycles();
     uint8_t v = read_mem(addr);
 	cpu.cycle_tick(1); // tick for the memory access 
     return v;
@@ -685,7 +683,6 @@ uint8_t Memory::read_memt(uint16_t addr) noexcept
 
 void Memory::write_memt_no_oam_bug(uint16_t addr, uint8_t v) noexcept
 {
-	cpu.tick_pending_cycles();
 	ignore_oam_bug = true;
     write_mem(addr,v);
 	ignore_oam_bug = false;
@@ -695,7 +692,7 @@ void Memory::write_memt_no_oam_bug(uint16_t addr, uint8_t v) noexcept
 
 void Memory::write_memt(uint16_t addr, uint8_t v) noexcept
 {
-	cpu.tick_pending_cycles();
+	
     write_mem(addr,v);
 	cpu.cycle_tick(1); // tick for the memory access
 }
@@ -746,6 +743,7 @@ uint8_t Memory::read_oam(uint16_t addr) const noexcept
 // video ram 0x8000 - 0xa000
 uint8_t Memory::read_vram(uint16_t addr) const noexcept
 {
+	scheduler.service_events();
     // vram is used in pixel transfer cannot access
     if(ppu.get_mode() != ppu_mode::pixel_transfer)
     {
@@ -1171,7 +1169,7 @@ uint8_t Memory::read_iot_debug(uint16_t addr) noexcept
 
 uint8_t Memory::read_iot_no_debug(uint16_t addr) noexcept
 {
-	cpu.tick_pending_cycles();
+	scheduler.service_events();
     uint8_t v = read_io(addr);
 	cpu.cycle_tick(1); // tick for mem access
     return v;
@@ -1226,6 +1224,7 @@ uint8_t Memory::read_wram_high(uint16_t addr) const noexcept
 // 0xf000 various
 uint8_t Memory::read_hram(uint16_t addr) const noexcept
 {
+	scheduler.service_events();
     // io regs
     if(addr >= 0xff00)
     {
@@ -1283,6 +1282,7 @@ void Memory::write_oam(uint16_t addr,uint8_t v) noexcept
 //video ram 0x8000 - 0xa000
 void Memory::write_vram(uint16_t addr,uint8_t v) noexcept
 {
+	scheduler.service_events();
     // vram is used in pixel transfer cannot access
     if(ppu.get_mode() != ppu_mode::pixel_transfer)
     {
@@ -1293,6 +1293,7 @@ void Memory::write_vram(uint16_t addr,uint8_t v) noexcept
 
 void Memory::do_dma(uint8_t v) noexcept
 {
+	scheduler.service_events();
 	io[IO_DMA] = v; // write to the dma reg
 	uint16_t dma_address = v << 8;
 	// transfer is from 0xfe00 to 0xfea0
@@ -1359,6 +1360,7 @@ uint8_t Memory::read_blocked(uint16_t addr) const noexcept
 uint8_t Memory::read_oam_dma(uint16_t addr) const noexcept
 {
 	UNUSED(addr);
+	scheduler.service_events();
 	// cpu gets back what oam is reading
 	// so what we need to do is figure out where the oam dma is
 	const auto cycles_opt = scheduler.get_event_ticks(gameboy_event::oam_dma_end);
@@ -2170,7 +2172,8 @@ void Memory::write_iot_debug(uint16_t addr, uint8_t v) noexcept
 
 void Memory::write_iot_no_debug(uint16_t addr,uint8_t v) noexcept
 {
-	cpu.tick_pending_cycles();
+	
+	scheduler.service_events();
     write_io(addr,v);
 	cpu.cycle_tick(1); // tick for mem access
 }
@@ -2192,6 +2195,7 @@ void Memory::write_wram_high(uint16_t addr,uint8_t v) noexcept
 // we bundle io into this but the hram section is at 0xff80-ffff
 void Memory::write_hram(uint16_t addr,uint8_t v) noexcept
 {
+	scheduler.service_events();
     // io regs
     if(addr >= 0xff00)
     {

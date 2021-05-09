@@ -2042,6 +2042,7 @@ bool Mem::fast_memcpy(uint32_t dst, uint32_t src, uint32_t n)
     {
         cpu.cycle_tick(src_wait);
         cpu.cycle_tick(dst_wait);
+        scheduler.service_events();
     }
 
     return true; 

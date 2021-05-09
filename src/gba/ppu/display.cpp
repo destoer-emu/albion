@@ -10,10 +10,8 @@ namespace gameboyadvance
 Display::Display(GBA &gba) : mem(gba.mem), cpu(gba.cpu), scheduler(gba.scheduler)
 {
     screen.resize(SCREEN_WIDTH*SCREEN_HEIGHT);
-    for(auto &x: scanline)
-    {
-        x.resize(SCREEN_WIDTH);
-    }
+    scanline.resize(SCREEN_WIDTH);
+    
     sprite_line.resize(SCREEN_WIDTH);
     sprite_semi_transparent.resize(SCREEN_WIDTH);
     window.resize(SCREEN_WIDTH);
@@ -237,7 +235,10 @@ void Display::tick(int cycles)
 void Display::insert_new_ppu_event()
 {
     uint32_t cycles = 0;
-
+    if(cyc_cnt >= 1232)
+    {
+        printf("%d\n",cyc_cnt);
+    }
     switch(mode)
     {
         case display_mode::vblank:

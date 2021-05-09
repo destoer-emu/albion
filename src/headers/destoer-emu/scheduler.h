@@ -12,7 +12,10 @@ public:
     void load_state(std::ifstream &fp);    
 
     void tick(uint32_t cycles);
+    void delay_tick(uint32_t cycles);
     bool is_active(event_type t) const;
+    bool event_ready() const;
+    void service_events();
 
     std::optional<EventNode<event_type>> get(event_type t) const;
     std::optional<size_t> get_event_ticks(event_type t) const;
@@ -60,24 +63,41 @@ bool Scheduler<SIZE,event_type>::is_active(event_type t) const
 {
     return event_list.is_active(t);
 }
+template<size_t SIZE,typename event_type>
+bool Scheduler<SIZE,event_type>::event_ready() const
+{
+    return timestamp >= min_timestamp;
+}
+
+template<size_t SIZE,typename event_type>
+void Scheduler<SIZE,event_type>::delay_tick(uint32_t cycles)
+{
+    timestamp += cycles;
+}
+
+template<size_t SIZE,typename event_type>
+void Scheduler<SIZE,event_type>::service_events()
+{
+    // if the timestamp is greater than the event fire
+    // handle the event and remove it
+    // as the list is sorted the next event is first
+    // any subsequent events aernt going to fire so we can return early
+    while(event_list.size() && event_ready())
+    {
+        // remove min event
+        const auto event = event_list.peek();
+        event_list.pop();
+        service_event(event);
+        min_timestamp = event_list.peek().end;
+    }
+}
 
 template<size_t SIZE,typename event_type>
 void Scheduler<SIZE,event_type>::tick(uint32_t cycles)
 {
     timestamp += cycles;
 
-    // if the timestamp is greater than the event fire
-    // handle the event and remove it
-    // as the list is sorted the next event is first
-    // any subsequent events aernt going to fire so we can return early
-    while(event_list.size() && timestamp >= min_timestamp)
-    {
-            // remove min event
-            const auto event = event_list.peek();
-            event_list.pop();
-            service_event(event);
-            min_timestamp = event_list.peek().end;
-    }
+    service_events();
 }
 
 template<size_t SIZE,typename event_type>

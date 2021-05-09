@@ -3,7 +3,7 @@
 namespace gameboyadvance
 {
 
-Dma::Dma(GBA &gba) : mem(gba.mem), cpu(gba.cpu) , debug(gba.debug)
+Dma::Dma(GBA &gba) : mem(gba.mem), cpu(gba.cpu), scheduler(gba.scheduler), debug(gba.debug)
 {
 
 }
@@ -383,7 +383,8 @@ void Dma::do_dma(int reg_num, dma_type req_type)
                     {
                         const auto v = mem.read_u32(r.src_shadow);
                         mem.write_u32(r.dst_shadow,v);
-                        handle_increment(reg_num);  
+                        handle_increment(reg_num); 
+                        scheduler.service_events(); 
                     }
                 }
 
@@ -394,6 +395,7 @@ void Dma::do_dma(int reg_num, dma_type req_type)
                         const auto v = mem.read_u16(r.src_shadow);
                         mem.write_u16(r.dst_shadow,v);
                         handle_increment(reg_num);
+                        scheduler.service_events();
                     }
                 }
             }

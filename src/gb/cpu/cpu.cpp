@@ -83,8 +83,6 @@ void Cpu::init(bool use_bios)
 	serial_cyc = 0;
 	serial_cnt = 0;
 
-	pending_cycles = 0;
-
 	insert_new_timer_event();
 }
 
@@ -110,6 +108,7 @@ uint8_t Cpu::fetch_opcode() noexcept
 	// at midpoint of instr fetch interrupts are checked
 	// and if so the opcode is thrown away and interrupt dispatch started
 	cycle_tick_t(2);
+	scheduler.service_events();
 	const bool fired = interrupt_fire;
 	cycle_tick_t(2);
 
@@ -138,15 +137,6 @@ uint8_t Cpu::fetch_opcode() noexcept
 	
 }
 
-void Cpu::tick_pending_cycles() noexcept
-{
-	if(pending_cycles > 0)
-	{
-		cycle_tick_t(0);
-	}
-}
-
-
 
 // m cycle tick
 void Cpu::cycle_tick(uint32_t cycles) noexcept
@@ -156,23 +146,9 @@ void Cpu::cycle_tick(uint32_t cycles) noexcept
 }
 
 
-
-// cycles that dont need to be ticked yet
-// as there is no memory access involed
-// takes t cycles
-void Cpu::cycle_delay(uint32_t cycles) noexcept
-{
-	pending_cycles += cycles;
-}
-
-
 // t cycle tick
 void Cpu::cycle_tick_t(uint32_t cycles) noexcept
 {
-	// tick off any cycles that are pending
-	// from instr cycles that dont do memory accesses
-	cycles += pending_cycles;
-	pending_cycles = 0;
 /*
 	// timers act at constant speed
 	update_timers(cycles); 
@@ -187,13 +163,12 @@ void Cpu::cycle_tick_t(uint32_t cycles) noexcept
 
 	tick_serial(cycles);
 */
-	scheduler.tick(cycles);
-
-	//apu.tick(cycles >> is_double); // advance the apu state	
+	scheduler.delay_tick(cycles);
 
 	// if we are using the fifo this needs to be ticked each time
 	if(ppu.using_fifo())
 	{
+		scheduler.service_events();
 		ppu.update_graphics(cycles >> is_double); // handle the lcd emulation
 	}
 
@@ -203,7 +178,7 @@ void Cpu::switch_double_speed() noexcept
 {
 	puts("double speed");
 	
-	tick_pending_cycles();
+	scheduler.service_events();
 
 	const bool c1_active = scheduler.is_active(gameboy_event::c1_period_elapse);
 	const bool c2_active = scheduler.is_active(gameboy_event::c2_period_elapse);
@@ -461,7 +436,8 @@ void Cpu::tick_serial(int cycles) noexcept
 void Cpu::handle_halt()
 {
 	// smash off all pending cycles before the halt check
-	tick_pending_cycles(); 
+	scheduler.service_events();
+	
 
 	if(scheduler.size() == 0)
 	{
@@ -552,6 +528,7 @@ void Cpu::do_interrupts() noexcept
 	// 5th cycle in middle of stack push ie and if are checked to  get the 
 	// fired interrupt
 	cycle_tick_t(2);
+	scheduler.service_events();
 	const auto flags = mem.io[IO_IF] & mem.io[IO_IE];
 	cycle_tick_t(2);
 
@@ -696,7 +673,7 @@ bool Cpu::oam_should_corrupt(uint16_t v) const noexcept
 // eqiv to an increment
 void Cpu::oam_bug_write(uint16_t v)
 {
-	tick_pending_cycles();
+	scheduler.service_events();
 	if(!oam_should_corrupt(v))
 	{
 		return;
@@ -729,7 +706,7 @@ void Cpu::oam_bug_write(uint16_t v)
 
 void Cpu::oam_bug_read(uint16_t v)
 {
-	tick_pending_cycles();
+	scheduler.service_events();
 	if(!oam_should_corrupt(v))
 	{
 		return;
@@ -763,7 +740,7 @@ void Cpu::oam_bug_read(uint16_t v)
 
 void Cpu::oam_bug_read_increment(uint16_t v)
 {
-	tick_pending_cycles();
+	scheduler.service_events();
 	if(!oam_should_corrupt(v))
 	{
 		return;
