@@ -390,15 +390,6 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
 
     addr &= IO_MASK;
 
-
-    // add to unused handler in default later
-    // we just want this range of unused addrs
-    // to be totally ignore for now for convenice
-    if(addr >= 0x20a && addr <= 0x2ff)
-    {
-        return;
-    }
-
     switch(addr)
     {
 
@@ -907,12 +898,6 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
             apu.psg.write_wave_table(addr-0x90,v);
             break;
         }
-
-
-
-
-
-
 
 
 

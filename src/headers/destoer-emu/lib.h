@@ -30,6 +30,16 @@
 #include <fmt/format.h>
 
 
+using u8 = uint8_t;
+using u16 = uint16_t;
+using u32 = uint32_t;
+using u64 = uint64_t;
+
+using s8 = int8_t;
+using s16 = int16_t;
+using s32 = int32_t;
+using s64 = int64_t;
+
 inline uint64_t current_time()
 {
     return std::chrono::duration_cast<std::chrono::milliseconds>
@@ -286,3 +296,16 @@ bool tokenize(const std::string &line,std::vector<Token> &args);
 uint32_t convert_imm(const std::string &imm);
 
 void print_tokens(const std::vector<Token> &tokens);
+
+// TODO: make this use compilier builtins where avaible
+template<typename T>
+inline T bswap(T x)
+{
+	unsigned char *buf = reinterpret_cast<unsigned char *>(&x);
+	for(size_t i = 0; i < sizeof(x) / 2; i++)
+	{
+		std::swap(buf[i],buf[sizeof(x)-i-1]);
+	}
+	memcpy(&x,buf,sizeof(x));
+	return x;
+}

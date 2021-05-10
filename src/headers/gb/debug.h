@@ -28,12 +28,12 @@ public:
 
     // overrides
     void change_breakpoint_enable(bool enable) override;
-    uint8_t read_mem(uint32_t addr) override;
-    std::string disass_instr(uint32_t addr) override;
-    uint32_t get_instr_size(uint32_t addr) override;
+    uint8_t read_mem(uint64_t addr) override;
+    std::string disass_instr(uint64_t addr) override;
+    uint64_t get_instr_size(uint64_t addr) override;
     void execute_command(const std::vector<Token> &args) override;
     void step_internal() override;
-    uint32_t get_pc() override;
+    uint64_t get_pc() override;
 
 private:
 

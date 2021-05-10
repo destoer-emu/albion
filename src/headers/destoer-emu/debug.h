@@ -16,7 +16,7 @@ struct Trace
         memset(history_source,0,sizeof(history_source));
     }
 
-    void add(uint32_t src, uint32_t dst)
+    void add(uint64_t src, uint64_t dst)
     {
         history_source[idx] = src;
         history_target[idx] = dst;
@@ -34,9 +34,9 @@ struct Trace
         return out;
     }
 
-    uint32_t idx;
-    uint32_t history_target[0x10] = {0};
-    uint32_t history_source[0x10] = {0};
+    uint64_t idx;
+    uint64_t history_target[0x10] = {0};
+    uint64_t history_source[0x10] = {0};
 };
 
 
@@ -52,19 +52,19 @@ enum class break_type : int
 // breakpoint helper class
 struct Breakpoint
 {
-    void set(uint32_t addr, bool r, bool w, bool x, 
-        bool value_enabled,uint32_t value,bool break_enabled, bool watch);
+    void set(uint64_t addr, bool r, bool w, bool x, 
+        bool value_enabled,uint64_t value,bool break_enabled, bool watch);
 
     void disable();
 
     void enable();
 
-    bool is_hit(break_type type,uint32_t value);
+    bool is_hit(break_type type,uint64_t value);
 
-    uint32_t value = 0xdeadbeef;
+    uint64_t value = 0xdeadbeef;
     bool value_enabled = false;
     bool break_enabled = false;
-    uint32_t addr = 0xdeadbeef;
+    uint64_t addr = 0xdeadbeef;
     int break_setting = 0;
     bool watch = false;
 };
@@ -148,6 +148,7 @@ public:
     void list_breakpoint(const std::vector<Token> &args);
     void print_breakpoint(const Breakpoint &b);
     void disass_internal(const std::vector<Token> &args);
+    void debug_input();
 
 
     void wake_up();
@@ -161,13 +162,13 @@ public:
     void disable_everything();
 
 
-    bool breakpoint_hit(uint32_t addr, uint32_t value, break_type type);
+    bool breakpoint_hit(uint64_t addr, uint64_t value, break_type type);
 
-    void set_breakpoint(uint32_t addr,bool r, bool w, bool x, bool value_enabled=false, uint32_t value=0xdeadbeef,bool watch = false);
+    void set_breakpoint(uint64_t addr,bool r, bool w, bool x, bool value_enabled=false, uint64_t value=0xdeadbeef,bool watch = false);
 
 
     // map to hold breakpoints (lookup by addr)
-    std::unordered_map<uint32_t,Breakpoint> breakpoints;
+    std::unordered_map<uint64_t,Breakpoint> breakpoints;
 
     bool breakpoints_enabled = false;
     bool watchpoints_enabled = false;
@@ -185,12 +186,12 @@ protected:
 #ifdef DEBUG
     // internal overrides
     virtual void change_breakpoint_enable(bool enable) = 0;
-    virtual uint8_t read_mem(uint32_t addr) = 0;
-    virtual std::string disass_instr(uint32_t addr) = 0;
-    virtual uint32_t get_instr_size(uint32_t addr) = 0;
+    virtual uint8_t read_mem(uint64_t addr) = 0;
+    virtual std::string disass_instr(uint64_t addr) = 0;
+    virtual uint64_t get_instr_size(uint64_t addr) = 0;
     virtual void execute_command(const std::vector<Token> &args) = 0;
     virtual void step_internal() = 0;
-    virtual uint32_t get_pc() = 0;
+    virtual uint64_t get_pc() = 0;
 #endif
 
     std::ofstream log_file;

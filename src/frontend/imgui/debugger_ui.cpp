@@ -2,13 +2,16 @@
 #include "imgui_window.h"
 #include <destoer-emu/destoer-emu.h>
 
+// TODO: implement n64 debugging
+
 #ifdef DEBUG
-std::unordered_map<uint32_t,Breakpoint> &ImguiMainWindow::get_breakpoint_ref()
+std::unordered_map<uint64_t,Breakpoint> &ImguiMainWindow::get_breakpoint_ref()
 {
     switch(running_type)
     {
         case emu_type::gameboy: return gb.debug.breakpoints;
         case emu_type::gba: return gba.debug.breakpoints;
+        case emu_type::n64: return gba.debug.breakpoints;
         case emu_type::none: assert(false);
     }
     assert(false);
@@ -24,7 +27,7 @@ void ImguiMainWindow::draw_breakpoints()
     static bool break_w = false;
     static bool enabled[3] = {false};
     static int selected = -1;
-    static uint32_t addr_selected;
+    static uint64_t addr_selected;
 	ImGui::Begin("Breakpoints");
 
 
@@ -46,6 +49,7 @@ void ImguiMainWindow::draw_breakpoints()
         {
             case emu_type::gameboy: gb.change_breakpoint_enable(enabled[type_idx]); gb.debug.breakpoints_enabled = enabled[type_idx]; break;
             case emu_type::gba: gba.change_breakpoint_enable(enabled[type_idx]); gba.debug.breakpoints_enabled = enabled[type_idx]; break;
+            case emu_type::n64: break;
             case emu_type::none: break;
         }
     }
@@ -62,12 +66,13 @@ void ImguiMainWindow::draw_breakpoints()
 	{
 		if (is_valid_hex_string(input_breakpoint))
 		{
-			uint32_t breakpoint = strtoll(input_breakpoint, NULL, 16);
+			uint64_t breakpoint = strtoll(input_breakpoint, NULL, 16);
 
             switch(running_type)
             {
                 case emu_type::gameboy: gb.debug.set_breakpoint(breakpoint,break_r,break_w,break_x,false,false,false); break;
                 case emu_type::gba: gba.debug.set_breakpoint(breakpoint,break_r,break_w,break_x,false,false,false); break;
+                case emu_type::n64: break;
                 case emu_type::none: break;
             }
 			*input_breakpoint = '\0';
@@ -139,40 +144,42 @@ void ImguiMainWindow::draw_breakpoints()
 	ImGui::End();	    
 }
 
-uint8_t ImguiMainWindow::read_mem(uint32_t addr)
+uint8_t ImguiMainWindow::read_mem(uint64_t addr)
 {
     switch(running_type)
     {
         case emu_type::gba: return gba.mem.read_mem<uint8_t>(addr);
         case emu_type::gameboy: return gb.mem.raw_read(addr);
+        case emu_type::n64: return 0;
         case emu_type::none: return 0;
     }
     assert(false);
 }
 
 
-void ImguiMainWindow::write_mem(uint32_t addr,uint8_t v)
+void ImguiMainWindow::write_mem(uint64_t addr,uint8_t v)
 {
     switch(running_type)
     {
         case emu_type::gba: gba.mem.write_mem<uint8_t>(addr,v); break;
         case emu_type::gameboy: gb.mem.raw_write(addr,v); break;
+        case emu_type::n64: break;
         case emu_type::none: break;
     }
 }
 
 struct MemRegion
 {
-    MemRegion(const char *n,uint32_t o, uint32_t s) : name(n), offset(o), size(s)
+    MemRegion(const char *n,uint64_t o, uint64_t s) : name(n), offset(o), size(s)
     {}
 
     const char *name;
-    const uint32_t offset;
-    const uint32_t size;
+    const uint64_t offset;
+    const uint64_t size;
 };
 
 
-const uint32_t GAMEBOY_MEM_REGION_SIZE = 7;
+const uint64_t GAMEBOY_MEM_REGION_SIZE = 7;
 
 MemRegion GAMEBOY_MEM_REGION_TABLE[GAMEBOY_MEM_REGION_SIZE] =
 {
@@ -186,7 +193,7 @@ MemRegion GAMEBOY_MEM_REGION_TABLE[GAMEBOY_MEM_REGION_SIZE] =
 };
 
 
-const uint32_t GBA_MEM_REGION_SIZE = 9;
+const uint64_t GBA_MEM_REGION_SIZE = 9;
 
 MemRegion GBA_MEM_REGION_TABLE[GBA_MEM_REGION_SIZE] =
 {
@@ -213,17 +220,17 @@ void ImguiMainWindow::draw_memory()
 
 
 
-    static uint32_t region_idx_table[2] = {0};
-    static const uint32_t SIZE_TABLE[2] = {GAMEBOY_MEM_REGION_SIZE,GBA_MEM_REGION_SIZE};
-    static const MemRegion *MEM_REGION_PTR_TABLE[2] = {GAMEBOY_MEM_REGION_TABLE,GBA_MEM_REGION_TABLE};
+    static uint64_t region_idx_table[3] = {0};
+    static const uint64_t SIZE_TABLE[3] = {GAMEBOY_MEM_REGION_SIZE,GBA_MEM_REGION_SIZE,0xdeadbeef};
+    static const MemRegion *MEM_REGION_PTR_TABLE[3] = {GAMEBOY_MEM_REGION_TABLE,GBA_MEM_REGION_TABLE,GBA_MEM_REGION_TABLE};
 
-    const auto type_idx = static_cast<uint32_t>(running_type);
+    const auto type_idx = static_cast<uint64_t>(running_type);
     const auto region_ptr =  MEM_REGION_PTR_TABLE[type_idx];
     const auto size = SIZE_TABLE[type_idx];
     auto region_idx = region_idx_table[type_idx];
 
-    const uint32_t base_addr = region_ptr[region_idx].offset;
-    const uint32_t clipper_count = region_ptr[region_idx].size / 0x10;
+    const uint64_t base_addr = region_ptr[region_idx].offset;
+    const uint64_t clipper_count = region_ptr[region_idx].size / 0x10;
 
     static int y = -1;
     static int x = -1;
@@ -231,7 +238,7 @@ void ImguiMainWindow::draw_memory()
     // combo box to select view type
     if(ImGui::BeginCombo("",region_ptr[region_idx].name))
     {
-        for(uint32_t i = 0; i < size; i++)
+        for(uint64_t i = 0; i < size; i++)
         {
             if(ImGui::Selectable(region_ptr[i].name,region_idx == i))
             {
@@ -297,7 +304,7 @@ void ImguiMainWindow::draw_memory()
             for(int j = 0; j < 0x10; j++)
             {
                 ImGui::TableNextColumn();
-                uint32_t dest = (base_addr+j+(i*0x10));
+                uint64_t dest = (base_addr+j+(i*0x10));
                 if(ImGui::Selectable(fmt::format("{:02x} ",read_mem(dest)).c_str(),i == y && j == x,ImGuiSelectableFlags_AllowDoubleClick))
                 {
                     y = i;

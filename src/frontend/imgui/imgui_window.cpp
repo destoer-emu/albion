@@ -162,22 +162,10 @@ void ImguiMainWindow::start_instance()
 {
     switch(running_type)
     {
-        case emu_type::gameboy:
-        {
-            gameboy_start_instance();
-            break;
-        }
-
-        case emu_type::gba:
-        {
-            gba_start_instance();
-            break;
-        }
-
-        case emu_type::none:
-        {
-            break;
-        }
+        case emu_type::gameboy: gameboy_start_instance(); break;
+        case emu_type::gba: gba_start_instance(); break;
+        case emu_type::n64:  n64_start_instance(); break;
+        case emu_type::none: break;
     }
 }
 
@@ -185,50 +173,10 @@ void ImguiMainWindow::stop_instance()
 {
     switch(running_type)
     {
-        case emu_type::gameboy:
-        {       
-            gameboy_stop_instance();
-            break;
-        }
-
-        case emu_type::gba:
-        {
-            gba_stop_instance();
-            break;
-        }
-
-        case emu_type::none:
-        {
-            break;
-        }        
-    }
-}
-
-void ImguiMainWindow::reset_instance(std::string filename, bool use_bios)
-{
-    running_type = get_emulator_type(filename);
-
-    switch(running_type)
-    {
-        case emu_type::gameboy:
-        {
-            screen.init_texture(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);    
-            gameboy_reset_instance(filename,use_bios);
-            break;
-        }
-
-        case emu_type::gba:
-        {
-            screen.init_texture(gameboyadvance::SCREEN_WIDTH,gameboyadvance::SCREEN_HEIGHT);
-            gba_reset_instance(filename);
-            break;
-        }
-
-        case emu_type::none:
-        {
-            break;
-        }
-
+        case emu_type::gameboy: gameboy_stop_instance(); break;
+        case emu_type::gba: gba_stop_instance(); break;
+        case emu_type::n64:  n64_stop_instance(); break;
+        case emu_type::none: break;
     }
 }
 
@@ -262,6 +210,14 @@ void ImguiMainWindow::new_instance(std::string filename, bool use_bios)
         {
             screen.init_texture(gameboyadvance::SCREEN_WIDTH,gameboyadvance::SCREEN_HEIGHT);
             gba_new_instance(filename);
+            break;
+        }
+
+        case emu_type::n64:
+        {
+            // TODO: how is the screen handled?
+            n64_new_instance(filename);
+            break;
         }
 
         case emu_type::none:
@@ -275,22 +231,10 @@ void ImguiMainWindow::load_state(std::string filename)
 {
     switch(running_type)
     {
-        case emu_type::gameboy:
-        {
-            gb.load_state(filename);
-            break;
-        }
-
-        case emu_type::gba:
-        {
-            // ignore unsupported
-            break;
-        }
-
-        case emu_type::none:
-        {
-            break;
-        }
+        case emu_type::gameboy: gb.load_state(filename); break;
+        case emu_type::gba: break;
+        case emu_type::n64: break;
+        case emu_type::none: break;
     }
 }
 
@@ -298,23 +242,10 @@ void ImguiMainWindow::save_state(std::string filename)
 {
     switch(running_type)
     {
-        case emu_type::gameboy:
-        {    
-            gb.save_state(filename);
-            break;
-        }
-
-        case emu_type::gba:
-        {
-            //ignore unsupported
-            break;
-        }
-
-        case emu_type::none:
-        {
-            break;
-        }
-
+        case emu_type::gameboy:  gb.save_state(filename); break;
+        case emu_type::gba: break;
+        case emu_type::n64: break;
+        case emu_type::none: break;
     }
 }
 
@@ -473,23 +404,10 @@ void ImguiMainWindow::enable_audio()
 {
     switch(running_type)
     {
-        case emu_type::gameboy:
-        {
-            gb.apu.playback.start();
-            break;
-        }
-
-        case emu_type::gba:
-        {
-            gba.apu.playback.start();
-            break;
-        }
-
-        case emu_type::none:
-        {
-            break;
-        }
-
+        case emu_type::gameboy: gb.apu.playback.start(); break;
+        case emu_type::gba: gba.apu.playback.start(); break;
+        case emu_type::n64: break;
+        case emu_type::none: break;
     }
 }
 
@@ -498,23 +416,10 @@ void ImguiMainWindow::disable_audio()
 {
     switch(running_type)
     {
-        case emu_type::gameboy:
-        {
-            gb.apu.playback.stop();
-            break;
-        }
-
-        case emu_type::gba:
-        {
-            gba.apu.playback.stop();
-            break;
-        }
-
-        case emu_type::none:
-        {
-            break;
-        }
-
+        case emu_type::gameboy: gb.apu.playback.stop(); break;
+        case emu_type::gba: gba.apu.playback.stop(); break;
+        case emu_type::n64: break;
+        case emu_type::none: break;
     }
 }
 
@@ -629,24 +534,21 @@ void ImguiMainWindow::menu_bar(Debug &debug)
     }
 }
 
+void ImguiMainWindow::handle_file_ui()
+{
+    // handle common cases
+    switch(selected_window)
+    {
+        case current_window::load_rom: file_browser(file_option::load_rom,"load rom"); break;
+        case current_window::load_state: file_browser(file_option::load_state,"load state"); break;
+        case current_window::save_state: file_browser(file_option::save_state,"save state"); break;
+        default: break;
+    }    
+}
+
 void ImguiMainWindow::mainloop(const std::string &rom_name)
 {
 
-
-    // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-    // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-    // - Read 'misc/fonts/README.txt' for more instructions and details.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
-    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-    //IM_ASSERT(font != NULL);
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     screen.init_texture(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);
 
@@ -707,18 +609,9 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
 
                     switch(running_type)
                     {
-                        case emu_type::gameboy:
-                        {
-                            gb.key_input(event.key.keysym.sym,true);
-                            break;
-                        }
-
-                        case emu_type::gba:
-                        {
-                            gba.key_input(event.key.keysym.sym,true);
-                            break;
-                        }
-
+                        case emu_type::gameboy: gb.key_input(event.key.keysym.sym,true); break;
+                        case emu_type::gba: gba.key_input(event.key.keysym.sym,true); break;
+                        case emu_type::n64: break;
                         default: break;
                     }
 
@@ -734,17 +627,9 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
 
                     switch(running_type)
                     {
-                        case emu_type::gameboy:
-                        {
-                            gb.key_input(event.key.keysym.sym,false);
-                            break;
-                        }
-
-                        case emu_type::gba:
-                        {
-                            gba.key_input(event.key.keysym.sym,false);
-                            break;
-                        }
+                        case emu_type::gameboy: gb.key_input(event.key.keysym.sym,false); break;
+                        case emu_type::gba: gba.key_input(event.key.keysym.sym,false); break;
+                        case emu_type::n64: break;
 
                         default: break;
                     }
@@ -763,6 +648,7 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
             {
                 case emu_type::gameboy: gameboy_run_frame(); break;
                 case emu_type::gba: gba_run_frame(); break;
+                case emu_type::n64: n64_run_frame(); break;
                 default: break;
             }
         }
@@ -774,85 +660,47 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
             ImGui_ImplSDL2_NewFrame(window);
             ImGui::NewFrame();
 
+
             switch(running_type)
             {
                 case emu_type::gameboy:
                 {
                     menu_bar(gb.debug);
-
-                    switch(selected_window)
-                    {
-                        case current_window::load_rom: file_browser(file_option::load_rom,"load rom"); break;
-                        case current_window::load_state: file_browser(file_option::load_state,"load state"); break;
-                        case current_window::save_state: file_browser(file_option::save_state,"save state"); break;
-                        case current_window::screen: break;
-                        
+                    handle_file_ui();
                     #ifdef DEBUG
-                        case current_window::cpu:
+                        switch(selected_window)
                         {
-                            gameboy_draw_cpu_info();
-                            break;
-                        }
+                            case current_window::cpu: gameboy_draw_cpu_info(); break;
+                            case current_window::breakpoint: draw_breakpoints(); break;
+                            case current_window::memory: draw_memory(); break;
+                            case current_window::display_viewer:
+                            {
+                                gb_display_viewer.draw_bg_map();
+                                gb_display_viewer.draw_tiles();
+                                gb_display_viewer.draw_palette();
+                                gameboy_draw_screen();
+                                break;
+                            }
 
+                            default: break;
+                        
 
-                        case current_window::breakpoint:
-                        {
-                            draw_breakpoints();
-                            break;
-                        }
-
-
-                        case current_window::memory:
-                        {
-                            draw_memory();
-                            break;
-                        }
-
-                        case current_window::display_viewer:
-                        {
-                            gb_display_viewer.draw_bg_map();
-                            gb_display_viewer.draw_tiles();
-                            gb_display_viewer.draw_palette();
-                            gameboy_draw_screen();
-                            break;
                         }
                     #endif
-
-                    }
                     break;
                 }
 
                 case emu_type::gba:
                 {
                     menu_bar(gba.debug);
-
+                    handle_file_ui();
                     switch(selected_window)
-                    {
-                        case current_window::load_rom: file_browser(file_option::load_rom,"load rom"); break;
-                        case current_window::load_state: file_browser(file_option::load_state,"load state"); break;
-                        case current_window::save_state: file_browser(file_option::save_state,"save state"); break;
-                        case current_window::screen: break;
-                        
+                    {      
                     #ifdef DEBUG
-                        case current_window::cpu:
-                        {
-                            gba_draw_cpu_info();
-                            break;
-                        }
-
-
-                        case current_window::breakpoint:
-                        {
-                            draw_breakpoints();
-                            break;
-                        }
-
-
-                        case current_window::memory:
-                        {
-                            draw_memory();
-                            break;
-                        }
+                        case current_window::cpu: gba_draw_cpu_info(); break;
+                        case current_window::breakpoint: draw_breakpoints(); break;
+                        case current_window::memory: draw_memory(); break;
+                        
                     
                         case current_window::display_viewer:
                         {
@@ -860,11 +708,29 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
                             gba_display_viewer.draw_map();
                             break;
                         }
+
+                        default: break;
                     #endif
 
                     }
                     break;
                 }
+
+
+                case emu_type::n64:
+                {
+                    menu_bar(n64.debug);
+                    handle_file_ui();
+                    #ifdef DEBUG
+                    switch(selected_window)
+                    {
+                        // TODO: implement debugger functions
+                        default: break;
+                    }
+                    #endif
+                    break;
+                }
+
 
                 case emu_type::none:
                 {

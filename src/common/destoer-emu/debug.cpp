@@ -25,7 +25,7 @@ void Debug::disable_everything()
     breakpoints_enabled = false;
 }
 
-bool Debug::breakpoint_hit(uint32_t addr, uint32_t value, break_type type)
+bool Debug::breakpoint_hit(uint64_t addr, uint64_t value, break_type type)
 {
     if(!breakpoints_enabled && !watchpoints_enabled)
     {
@@ -64,7 +64,7 @@ bool Debug::breakpoint_hit(uint32_t addr, uint32_t value, break_type type)
     return hit && breakpoints_enabled;
 }
 
-void Debug::set_breakpoint(uint32_t addr,bool r, bool w, bool x, bool value_enabled, uint32_t value, bool watch)
+void Debug::set_breakpoint(uint64_t addr,bool r, bool w, bool x, bool value_enabled, uint64_t value, bool watch)
 {
     Breakpoint b;
 
@@ -74,8 +74,8 @@ void Debug::set_breakpoint(uint32_t addr,bool r, bool w, bool x, bool value_enab
 }
 
 
-void Breakpoint::set(uint32_t addr, bool r, bool w, bool x, 
-    bool value_enabled,uint32_t value,bool break_enabled, bool watch)
+void Breakpoint::set(uint64_t addr, bool r, bool w, bool x, 
+    bool value_enabled,uint64_t value,bool break_enabled, bool watch)
 {
     this->value = value;
     this->addr = addr;
@@ -111,7 +111,7 @@ void Breakpoint::enable()
     break_enabled = true;
 }
 
-bool Breakpoint::is_hit(break_type type,uint32_t value)
+bool Breakpoint::is_hit(break_type type,uint64_t value)
 {
     // if the its not enabled or the value does not match if enabled
     // then it is not hit
@@ -384,7 +384,7 @@ void Debug::disass_internal(const std::vector<Token> &args)
         return;
     }
 
-    uint32_t addr;
+    uint64_t addr;
 
     if(args[1].type == token_type::integer)
     {
@@ -530,5 +530,30 @@ void Debug::run(const std::vector<Token> &args)
     quit = true;
     print_console("resuming execution\n");
 }
+
+void Debug::debug_input()
+{
+    print_console("{:16x}\n",get_pc());
+    std::string line = "";
+
+
+    std::vector<Token> args;
+    quit = false;
+    while(!quit)
+    {
+        print_console("$ ");
+        std::getline(std::cin,line);
+
+        // lex the line and pull the command name along with the args.
+        if(!tokenize(line,args))
+        {
+            // TODO: provide better error reporting
+            print_console("one or more args is invalid");
+        }
+        
+        execute_command(args);
+        std::cin.clear();
+    }
+}  
 
 #endif

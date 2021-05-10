@@ -62,6 +62,9 @@ mattcurrie https://github.com/mattcurrie
 
 LIJI https://github.com/LIJI32
 
+# n64
+dillon https://github.com/Dillonb
+
 and anyone else i missed
 
 # resources used
@@ -70,3 +73,5 @@ https://problemkaputt.de/gbatek.htm
 https://gbdev.gg8.se/wiki/articles/Pan_Docs
 
 https://www.coranac.com/tonc/text/
+
+https://n64.readthedocs.io/index.html

@@ -141,9 +141,6 @@ void Display::tick(int cycles)
             // enter hblank 
             if(cyc_cnt >= 1006)
             {
-
-
-                // if in vdraw render the line
                 if(ly < SCREEN_HEIGHT)
                 {
                     render();
@@ -173,7 +170,7 @@ void Display::tick(int cycles)
                 advance_line();
 
                 // 160 we need to enter vblank
-                if(ly == 160) 
+                if(ly == SCREEN_HEIGHT) 
                 {
                     mode = display_mode::vblank;
                     disp_io.disp_stat.vblank = true;

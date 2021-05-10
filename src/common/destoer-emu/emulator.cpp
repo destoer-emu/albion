@@ -24,6 +24,11 @@ emu_type get_emulator_type(std::string filename)
             return emu_type::gba;
         }
 
+        else if(ext == "z64" || ext == "n64")
+        {
+            return emu_type::n64;
+        }
+
         else
         {
             return emu_type::none;

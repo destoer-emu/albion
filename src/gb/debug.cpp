@@ -34,32 +34,6 @@ void GBDebug::execute_command(const std::vector<Token> &args)
     std::invoke(func,this,args);
 }
 
-// for use under SDL i dont know how we want to do the one for imgui yet...
-void GBDebug::debug_input()
-{
-    print_console("{:4x}\n",gb.cpu.read_pc());
-    std::string line = "";
-
-
-    std::vector<Token> args;
-    quit = false;
-    while(!quit)
-    {
-        print_console("$ ");
-        std::getline(std::cin,line);
-
-        // lex the line and pull the command name along with the args.
-        if(!tokenize(line,args))
-        {
-            // TODO: provide better error reporting
-            print_console("one or more args is invalid");
-        }
-        
-        execute_command(args);
-        std::cin.clear();
-    }
-}
-
 // these are better off being completly overriden
 void GBDebug::regs(const std::vector<Token> &args)
 {
@@ -78,7 +52,7 @@ void GBDebug::step_internal()
     halt();
 }
 
-uint32_t GBDebug::get_pc()
+uint64_t GBDebug::get_pc()
 {
     return gb.cpu.read_pc();
 }
@@ -91,18 +65,18 @@ void GBDebug::step(const std::vector<Token> &args)
 }
 
 
-std::string GBDebug::disass_instr(uint32_t addr)
+std::string GBDebug::disass_instr(uint64_t addr)
 {
-    uint32_t bank = addr < 0x8000? gb.mem.get_bank() : 0;
+    uint64_t bank = addr < 0x8000? gb.mem.get_bank() : 0;
     return fmt::format("{:x}:{:x} {}",bank,addr,gb.disass.disass_op(addr));    
 }
 
-uint32_t GBDebug::get_instr_size(uint32_t addr)
+uint64_t GBDebug::get_instr_size(uint64_t addr)
 {
     return gb.disass.get_op_sz(addr);
 }
 
-uint8_t GBDebug::read_mem(uint32_t addr)
+uint8_t GBDebug::read_mem(uint64_t addr)
 {
     return gb.mem.raw_read(addr);
 }

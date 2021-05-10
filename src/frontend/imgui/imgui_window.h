@@ -54,6 +54,7 @@ using namespace gl;
 
 #include <gb/gb.h>
 #include <gba/gba.h>
+#include <n64/n64.h>
 
 class Texture
 {
@@ -129,11 +130,11 @@ private:
     void stop_instance();
     void disable_audio();
     void enable_audio();
-    void reset_instance(std::string filename, bool use_bios = false);
     void new_instance(std::string filename, bool use_bios = false);
     void load_state(std::string filename);
     void save_state(std::string filename);
 
+    void handle_file_ui();
 
     enum class file_option
     {
@@ -146,11 +147,11 @@ private:
     void file_browser(file_option option, const char *title);
     void menu_bar(Debug &debug);
 #ifdef DEBUG
-    std::unordered_map<uint32_t,Breakpoint> &get_breakpoint_ref();
+    std::unordered_map<uint64_t,Breakpoint> &get_breakpoint_ref();
     void draw_breakpoints();
 
-    void write_mem(uint32_t addr,uint8_t v);
-    uint8_t read_mem(uint32_t addr);
+    void write_mem(uint64_t addr,uint8_t v);
+    uint8_t read_mem(uint64_t addr);
     void draw_memory();
 #endif
     // Gameboy
@@ -184,6 +185,13 @@ private:
     void gba_draw_memory();
 #endif
 
+    void n64_stop_instance();
+    void n64_start_instance();
+    void n64_new_instance(std::string filename, bool use_bios = false);
+    void n64_reset_instance(std::string filename, bool use_bios = false);
+    void n64_run_frame();
+
+
     ImVec2 menubar_size;
 
      
@@ -191,6 +199,7 @@ private:
     // underlying emulator instance data
     gameboy::GB gb;
     gameboyadvance::GBA gba;
+    nintendo64::N64 n64;
     GbControllerInput gb_controller;
     GbaControllerInput gba_controller;
 

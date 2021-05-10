@@ -34,32 +34,6 @@ void GBADebug::execute_command(const std::vector<Token> &args)
     std::invoke(func,this,args);
 }
 
-// for use under SDL i dont know how we want to do the one for imgui yet...
-void GBADebug::debug_input()
-{
-    print_console("{:8x}\n",gba.cpu.get_pc());
-    std::string line = "";
-
-
-    std::vector<Token> args;
-    quit = false;
-    while(!quit)
-    {
-        print_console("$ ");
-        std::getline(std::cin,line);
-
-        // lex the line and pull the command name along with the args.
-        if(!tokenize(line,args))
-        {
-            // TODO: provide better error reporting
-            print_console("one or more args is invalid");
-        }
-        
-        execute_command(args);
-        std::cin.clear();
-    }
-}
-
 // these are better off being completly overriden
 void GBADebug::regs(const std::vector<Token> &args)
 {
@@ -73,7 +47,7 @@ void GBADebug::step_internal()
     halt();
 }
 
-uint32_t GBADebug::get_pc()
+uint64_t GBADebug::get_pc()
 {
     return gba.cpu.get_pc();
 }
@@ -87,7 +61,7 @@ void GBADebug::step(const std::vector<Token> &args)
     step_internal();
 }
 
-std::string GBADebug::disass_instr(uint32_t addr)
+std::string GBADebug::disass_instr(uint64_t addr)
 {
     return fmt::format("{:x}: {}",addr,
         disass_thumb? gba.disass.disass_thumb(addr) : gba.disass.disass_arm(addr));
@@ -116,14 +90,14 @@ void GBADebug::disass(const std::vector<Token> &args)
     disass_internal(args);
 }
 
-uint32_t GBADebug::get_instr_size(uint32_t addr)
+uint64_t GBADebug::get_instr_size(uint64_t addr)
 {
     UNUSED(addr);
     return (!disass_thumb * 2) + 2;
 }
 
 // TODO: use the no debug version when we have it
-uint8_t GBADebug::read_mem(uint32_t addr)
+uint8_t GBADebug::read_mem(uint64_t addr)
 {
     return gba.mem.read_mem<uint8_t>(addr);
 }

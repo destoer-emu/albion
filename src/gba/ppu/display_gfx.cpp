@@ -2,8 +2,8 @@
 
 namespace gameboyadvance
 {
-// TODO
-// metroid screen tears (allthough i think this a timing issue)
+
+// TODO: implement lazy evaluation
 
 // renderer helper functions
 uint16_t Display::read_bg_palette(uint32_t pal_num,uint32_t idx)
