@@ -30,15 +30,11 @@ serial, sgb, dmg cgb color palettes
 gba bitmap affine transforms,
 gba bitmap alpha blending,
 mosaic,
-open bus,
-cpu pipeline,
-bus limitations,
+open bus (partial),
 instr timing rewrite
 memory timing (seq, nonseq),
 gamepak prefetch,
-waitcnt,
-gb psg port to gba,
-gba vram viewer
+
 
 # thanks
 

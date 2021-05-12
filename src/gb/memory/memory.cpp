@@ -41,11 +41,14 @@ void Memory::load_cart_ram()
 	const auto save_name = get_save_file_name(filename);
 
     auto fp = std::fstream(save_name, std::ios::in | std::ios::binary);
-	for(auto &x : cart_ram_banks)
+	if(fp)
 	{
-    	fp.read(reinterpret_cast<char*>(x.data()), x.size());
+		for(auto &x : cart_ram_banks)
+		{
+			fp.read(reinterpret_cast<char*>(x.data()), x.size());
+		}
+		fp.close();	
 	}
-    fp.close();	
 }
 
 bool Memory::rom_cgb_enabled() const noexcept
@@ -224,6 +227,11 @@ void Memory::init(std::string rom_name, bool with_rom, bool use_bios)
 	if(with_rom)
 	{
 		read_file(rom_name,rom); // read our rom in
+
+		// if we have a ips patch with the same name try loading it
+		const auto ips_file = remove_ext(rom_name) + ".ips";
+
+		load_ips_patch(ips_file,rom);
 
 
 		// propagate an error back with an exception later for now we just bail

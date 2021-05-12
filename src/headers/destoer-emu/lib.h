@@ -95,6 +95,7 @@ inline bool is_valid_hex_string(char *input_str) noexcept
 #define UNUSED(X) ((void)X)
 void read_file(const std::string &filename, std::vector<uint8_t> &buf);
 void write_file(const std::string &filename,std::vector<uint8_t> &buf);
+void load_ips_patch(const std::string &filename,std::vector<uint8_t> &rom);
 
 inline std::string remove_ext(const std::string &str)
 {
