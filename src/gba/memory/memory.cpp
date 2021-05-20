@@ -163,12 +163,12 @@ void Mem::init(std::string filename)
     }
     rom_size = rom.size();
     std::cout << "rom size: " << rom_size << "\n";
-
+/*
     if(rom_size >= 32*1024*1024)
     {
         throw std::runtime_error("rom is too large!");
     }
-
+*/
     rom.resize(32*1024*1024);
 
     // account for out of range open bus
@@ -1650,44 +1650,28 @@ void set_wait(int *buf, int wait)
     buf[2] =  (wait * 2) + 1;
 }
 
+
 void Mem::update_wait_states()
 {
     static constexpr int wait_first_table[] = {4,3,2,8};
     const auto &wait_cnt = mem_io.wait_cnt;
 
-    // TODO: hack for prefetch if prefetch is enabled make access instant
-    if(wait_cnt.prefetch)
-    {
-        for(int x = 0; x < 3; x++)
-        {
-            for(int y = 0; y < 2; y++)
-            {
-                for(int z = 0; z < 3; z++)
-                {
-                    rom_wait_states[x][y][z] = 1;
-                }
-            }
-        }
-    }
+    const auto wait_first0 = wait_first_table[wait_cnt.wait01];
+    const auto wait_second0 = wait_cnt.wait02? 2 : 1;
+    set_wait(&rom_wait_states[0][0][0],wait_first0);
+    set_wait(&rom_wait_states[0][1][0],wait_second0);
 
-    else
-    {
-        const auto wait_first0 = wait_first_table[wait_cnt.wait01];
-        const auto wait_second0 = wait_cnt.wait02? 2 : 1;
-        set_wait(&rom_wait_states[0][0][0],wait_first0);
-        set_wait(&rom_wait_states[0][1][0],wait_second0);
-
-        const auto wait_first1 = wait_first_table[wait_cnt.wait11];
-        const auto wait_second1 = wait_cnt.wait12? 4 : 1;
-        set_wait(&rom_wait_states[1][0][0],wait_first1);
-        set_wait(&rom_wait_states[1][1][0],wait_second1);
+    const auto wait_first1 = wait_first_table[wait_cnt.wait11];
+    const auto wait_second1 = wait_cnt.wait12? 4 : 1;
+    set_wait(&rom_wait_states[1][0][0],wait_first1);
+    set_wait(&rom_wait_states[1][1][0],wait_second1);
 
 
-        const auto wait_first2 = wait_first_table[wait_cnt.wait21];
-        const auto wait_second2 = wait_cnt.wait22? 8 : 1;
-        set_wait(&rom_wait_states[2][0][0],wait_first2);
-        set_wait(&rom_wait_states[2][1][0],wait_second2);
-    }
+    const auto wait_first2 = wait_first_table[wait_cnt.wait21];
+    const auto wait_second2 = wait_cnt.wait22? 8 : 1;
+    set_wait(&rom_wait_states[2][0][0],wait_first2);
+    set_wait(&rom_wait_states[2][1][0],wait_second2);
+    
 
     const auto sram_wait = wait_first_table[wait_cnt.sram_cnt];
     set_wait(&wait_states[static_cast<size_t>(memory_region::cart_backup)][0],sram_wait);

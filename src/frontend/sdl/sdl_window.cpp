@@ -24,6 +24,12 @@ SDLMainWindow::SDLMainWindow(std::string filename)
 				break;
 			}
 
+			case emu_type::n64:
+			{
+				puts("not supported");
+				break;
+			}
+
 			case emu_type::none:
 			{
 				std::cout << "unrecognised rom type" 

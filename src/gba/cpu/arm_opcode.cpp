@@ -8,9 +8,23 @@ namespace gameboyadvance
 // TODO remove prefetch hacks
 void Cpu::arm_fill_pipeline() // need to verify this...
 {
-    pipeline[0] = mem.read_u32(regs[PC]);
-    regs[PC] += ARM_WORD_SIZE;
-    pipeline[1] = mem.read_u32(regs[PC]);
+
+    if(execute_rom)
+    {
+        const auto wait = mem.get_rom_wait_states<uint32_t>();
+        pipeline[0] = mem.read_mem<uint32_t>(regs[PC]);
+        cycle_tick(wait);
+        regs[PC] += ARM_WORD_SIZE;
+        pipeline[1] = mem.read_mem<uint32_t>(regs[PC]);
+        cycle_tick(wait);
+    }
+
+    else
+    {
+        pipeline[0] = mem.read_u32(regs[PC]);
+        regs[PC] += ARM_WORD_SIZE;
+        pipeline[1] = mem.read_u32(regs[PC]);       
+    }
 }
 
 void Cpu::write_pc_arm(uint32_t v)
@@ -26,7 +40,17 @@ uint32_t Cpu::fetch_arm_opcode()
     pipeline[0] = pipeline[1];
     regs[PC] += ARM_WORD_SIZE; 
     pc_actual += ARM_WORD_SIZE;
-    pipeline[1] = mem.read_u32(regs[PC]);
+    if(execute_rom)
+    {
+        const auto wait = mem.get_rom_wait_states<uint32_t>();
+        pipeline[1] = mem.read_u32(regs[PC]);
+        cycle_tick(wait);
+    }
+
+    else
+    {   
+        pipeline[1] = mem.read_u32(regs[PC]);   
+    }
     return opcode;
 }
 

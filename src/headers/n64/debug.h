@@ -13,10 +13,6 @@ public:
     N64Debug(N64 &n64);
 
 
-    void debug_input();
-    
-
-
     // standard commands
     void regs(const std::vector<Token> &args);
     void step(const std::vector<Token> &args);

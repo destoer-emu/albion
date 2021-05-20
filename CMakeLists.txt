@@ -38,78 +38,10 @@ if(${FRONTEND} STREQUAL "HEADLESS")
 endif()
 
 
-# make these paths less of a pain to modify :)
-
-if(WIN32)
-	set(SDL2_DIR "C:/SDL2-2.0.10")
-
-	if(${FRONTEND} STREQUAL "IMGUI")  # needed only for imgui 
-		# external libs 
-		list(APPEND CMAKE_PREFIX_PATH "C:/glew-2.1.0")
-
-		#why does this not work nicely?
-		#find_package(GLEW REQUIRED)
-		#if (GLEW_FOUND)
-			#include_directories(${GLEW_INCLUDE_DIRS})
-			#link_libraries(${GLEW_LIBRARIES})
-			include_directories("C:/glew-2.1.0/include/")
-			link_libraries("C:/glew-2.1.0/lib/Release/x64/glew32.lib" "C:/glew-2.1.0/lib/Release/x64/glew32s.lib")
-		#endif()
-
-
-		find_package(OPENGL REQUIRED)
-		if (OPENGL_FOUND)
-			include_directories(${OPENGL_INCLUDE_DIRS})
-			link_libraries(${OPENGL_LIBRARIES})
-		endif()
-	endif()
-
-
-	# sdl allways needed
-	#find_package(SDL2 REQUIRED)
-	#if(SDL2_FOUND)
-		#include_directories(${SDL2_INCLUDE_DIRS})
-		#link_libraries(${SDL2_LIBRARIES})
-		# if no sdl2 
-		include_directories("C:/SDL2-2.0.12/include")
-		link_libraries("C:/SDL2-2.0.12/lib/x64/SDL2.lib")
-	#endif()
-else()
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -pthread -Ofast -fomit-frame-pointer")
-if(${FRONTEND} STREQUAL "HEADLESS")
-
-else ()
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lSDL2")
-endif()
-
-	if(${FRONTEND} STREQUAL "IMGUI") 
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lGL -lGLEW")
-	endif()
-endif()
 
 
 
-if(${FRONTEND} STREQUAL "QT") 
-	if(WIN32)
-		list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.9.9/msvc2017_64")
-		find_package(OPENGL REQUIRED)
-		if (OPENGL_FOUND)
-			include_directories(${OPENGL_INCLUDE_DIRS})
-			link_libraries(${OPENGL_LIBRARIES})
-		endif()
-	else()
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lGL")
-	endif()
-
-	set(CMAKE_AUTOMOC ON)
-	set(CMAKE_AUTORCC ON)
-	set(CMAKE_AUTOUIC ON)
-	find_package(Qt5 COMPONENTS Widgets OpenGL REQUIRED)
-	link_libraries(Qt5::Widgets)
-	link_libraries(Qt5::OpenGL)
-endif()
-
-
+# source files 
 
 # main source files
 file(GLOB src_files
@@ -182,4 +114,81 @@ if(${FRONTEND} STREQUAL "QT")
 	endif()
 else()
 	add_executable(destoer-emu ${src_files} ${frontend_files})
+endif()
+
+
+
+
+
+
+# make these paths less of a pain to modify :)
+
+if(WIN32)
+	set(SDL2_DIR "C:/SDL2-2.0.10")
+
+	if(${FRONTEND} STREQUAL "IMGUI")  # needed only for imgui 
+		# external libs 
+		list(APPEND CMAKE_PREFIX_PATH "C:/glew-2.1.0")
+
+		#why does this not work nicely?
+		#find_package(GLEW REQUIRED)
+		#if (GLEW_FOUND)
+			#include_directories(${GLEW_INCLUDE_DIRS})
+			#link_libraries(${GLEW_LIBRARIES})
+			include_directories("C:/glew-2.1.0/include/")
+			link_libraries("C:/glew-2.1.0/lib/Release/x64/glew32.lib" "C:/glew-2.1.0/lib/Release/x64/glew32s.lib")
+		#endif()
+
+
+		find_package(OPENGL REQUIRED)
+		if (OPENGL_FOUND)
+			include_directories(${OPENGL_INCLUDE_DIRS})
+			link_libraries(${OPENGL_LIBRARIES})
+		endif()
+	endif()
+
+
+	# sdl allways needed
+	#find_package(SDL2 REQUIRED)
+	#if(SDL2_FOUND)
+		#include_directories(${SDL2_INCLUDE_DIRS})
+		#link_libraries(${SDL2_LIBRARIES})
+		# if no sdl2 
+		include_directories("C:/SDL2-2.0.12/include")
+		link_libraries("C:/SDL2-2.0.12/lib/x64/SDL2.lib")
+	#endif()
+else()
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -pthread -Ofast -fomit-frame-pointer")
+if(${FRONTEND} STREQUAL "HEADLESS")
+
+else ()
+	target_link_libraries(destoer-emu SDL2)
+endif()
+
+if(${FRONTEND} STREQUAL "IMGUI") 
+	target_link_libraries(destoer-emu GL GLEW)
+endif()
+
+endif()
+
+
+
+if(${FRONTEND} STREQUAL "QT") 
+	if(WIN32)
+		list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.9.9/msvc2017_64")
+		find_package(OPENGL REQUIRED)
+		if (OPENGL_FOUND)
+			include_directories(${OPENGL_INCLUDE_DIRS})
+			link_libraries(${OPENGL_LIBRARIES})
+		endif()
+	else()
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lGL")
+	endif()
+
+	set(CMAKE_AUTOMOC ON)
+	set(CMAKE_AUTORCC ON)
+	set(CMAKE_AUTOUIC ON)
+	find_package(Qt5 COMPONENTS Widgets OpenGL REQUIRED)
+	link_libraries(Qt5::Widgets)
+	link_libraries(Qt5::OpenGL)
 endif()

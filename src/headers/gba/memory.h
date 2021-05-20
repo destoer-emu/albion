@@ -10,6 +10,37 @@
 namespace gameboyadvance
 {
 
+
+// last accessed memory region
+enum class memory_region
+{
+    bios = 0,wram_board,wram_chip,
+    io,pal,vram,oam,rom,cart_backup,
+    undefined
+};
+
+// we can just switch on the top 4 bits of the addr
+// thanks fleroviux
+static constexpr memory_region memory_region_table[0x10] = 
+{
+    memory_region::bios, // 
+    memory_region::undefined, // 
+    memory_region::wram_board, // 
+    memory_region::wram_chip,  // 
+    memory_region::io, //  
+    memory_region::pal, // 
+    memory_region::vram, //
+    memory_region::oam, //
+    memory_region::rom, // waitstate 0
+    memory_region::rom, // waitstate 0
+    memory_region::rom, // waitstate 1
+    memory_region::rom, // waitstate 1
+    memory_region::rom, // waitstate 2
+    memory_region::rom, // waitstate 2
+    memory_region::cart_backup, // cart ram
+    memory_region::cart_backup // cart ram mirror
+};
+
 // not really happy with the impl 
 // so think of a better way to model it
 class Mem final
@@ -33,7 +64,6 @@ public:
 
     template<typename access_type>
     uint32_t get_waitstates(uint32_t addr) const;
-
 
     template<typename access_type>
     access_type read_mem(uint32_t addr);
@@ -187,6 +217,27 @@ public:
 
     // inited by main constructor
     Dma dma;
+
+
+    template<typename access_type>
+    uint32_t get_rom_wait_states() const
+    {
+        // hack we dont properly emulate prefetch
+        if(mem_io.wait_cnt.prefetch)
+        {
+            return 1;
+        }    
+
+        else
+        {
+            // hardcode to sequential access!
+            return rom_wait_states[(static_cast<int>(memory_region::rom) - 8) / 2][1][sizeof(access_type) >> 1];
+        }
+    }
+
+
+
+
 private:
     Debug &debug;
     Cpu &cpu;
@@ -262,14 +313,6 @@ private:
     void write_timer_control(int timer,uint8_t v);
     uint8_t read_timer_counter(int timer, int idx);
 
-    // last accessed memory region
-    enum class memory_region
-    {
-        bios = 0,wram_board,wram_chip,
-        io,pal,vram,oam,rom,cart_backup,
-        undefined
-    };
-
     struct RegionData
     {
         RegionData(uint32_t m, uint32_t s)
@@ -321,29 +364,6 @@ private:
         {5,5,8}, // eeprom (dont know)
         {5,5,8} // flash only 16/32 write all reads
     };
-
-    // we can just switch on the top 4 bits of the addr
-    // thanks fleroviux
-    static constexpr memory_region memory_region_table[0x10] = 
-    {
-        memory_region::bios, // 
-        memory_region::undefined, // 
-        memory_region::wram_board, // 
-        memory_region::wram_chip,  // 
-        memory_region::io, //  
-        memory_region::pal, // 
-        memory_region::vram, //
-        memory_region::oam, //
-        memory_region::rom, // waitstate 0
-        memory_region::rom, // waitstate 0
-        memory_region::rom, // waitstate 1
-        memory_region::rom, // waitstate 1
-        memory_region::rom, // waitstate 2
-        memory_region::rom, // waitstate 2
-        memory_region::cart_backup, // cart ram
-        memory_region::cart_backup // cart ram mirror
-    };
-
 
     static constexpr size_t CART_TYPE_SIZE = 5;
     const std::array<std::string,CART_TYPE_SIZE> cart_magic = 

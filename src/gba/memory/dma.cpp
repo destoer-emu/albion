@@ -304,8 +304,15 @@ bool Dma::do_fast_dma(int reg_num)
 
     if(success)
     {
+        // in rom force increment
+        if(r.src_shadow >= 0x08000000 && r.src_shadow <= 0x0e000000)
+        {
+            r.src_shadow += addr_increment_table[r.is_word][0] * r.word_count_shadow;
+        }
+
+
         // increment + reload is forbidden dont use it
-        if(r.src_cnt != 3)
+        else if(r.src_cnt != 3)
         {
             r.src_shadow += addr_increment_table[r.is_word][r.src_cnt] * r.word_count_shadow;
         }
@@ -352,9 +359,15 @@ void Dma::do_dma(int reg_num, dma_type req_type)
             {
                 const auto v = mem.read_u32(r.src_shadow);
                 mem.write_u32(r.dst_shadow,v);
-                
+
+                // in rom force increment
+                if(r.src_shadow >= 0x08000000 && r.src_shadow <= 0x0e000000)
+                {
+                    r.src_shadow += addr_increment_table[r.is_word][0];
+                }
+   
                 // increment + reload is forbidden dont use it
-                if(r.src_cnt != 3)
+                else if(r.src_cnt != 3)
                 {
                     // allways in word mode here
                     r.src_shadow += addr_increment_table[r.is_word][r.src_cnt];
@@ -422,9 +435,14 @@ void Dma::handle_increment(int reg_num)
 {
     auto &r = dma_regs[reg_num];
 
-    
+    // in rom force increment
+    if(r.src_shadow >= 0x08000000 && r.src_shadow <= 0x0e000000)
+    {
+        r.src_shadow += addr_increment_table[r.is_word][0];
+    }
+
     // increment + reload is forbidden dont use it
-    if(r.src_cnt != 3)
+    else if(r.src_cnt != 3)
     {
         r.src_shadow += addr_increment_table[r.is_word][r.src_cnt];
     }

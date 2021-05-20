@@ -411,6 +411,8 @@ private:
     // in arm or thumb mode?
     bool is_thumb = false;
 
+    bool execute_rom = false;
+
     // instruction state when the currently executed instruction is fetched
     // required to correctly log branches
     bool is_thumb_fetch = false;

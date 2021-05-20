@@ -865,6 +865,11 @@ void Cpu::write_pc(uint32_t v)
     } 
 
     debug.trace.add(source,pc_actual);
+
+    const int region =  (pc_actual >> 24) & 0xf; 
+    const auto mem_region = memory_region_table[region];
+
+    execute_rom = mem_region == memory_region::rom;
 }
 
 }
