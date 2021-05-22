@@ -189,6 +189,14 @@ public:
         #endif
     }
 
+    // gba is locked to little endian
+    template<typename access_type>
+    access_type read_rom(uint32_t addr)
+    {
+        //return rom[addr - <whatever page start>];
+        return handle_read<access_type>(rom,addr&0x1FFFFFF);        
+    }
+
 
 
     void check_joypad_intr();
@@ -217,25 +225,6 @@ public:
 
     // inited by main constructor
     Dma dma;
-
-
-    template<typename access_type>
-    uint32_t get_rom_wait_states() const
-    {
-        // hack we dont properly emulate prefetch
-        if(mem_io.wait_cnt.prefetch)
-        {
-            return 1;
-        }    
-
-        else
-        {
-            // hardcode to sequential access!
-            return rom_wait_states[(static_cast<int>(memory_region::rom) - 8) / 2][1][sizeof(access_type) >> 1];
-        }
-    }
-
-
 
 
 private:
@@ -276,9 +265,6 @@ private:
     access_type read_oam(uint32_t addr);
 
     uint8_t read_eeprom();
-
-    template<typename access_type>
-    access_type read_rom(uint32_t addr);
 
     // write mem helpers
     template<typename access_type>

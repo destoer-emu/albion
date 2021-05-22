@@ -61,7 +61,7 @@ private:
 class N64Debug : public Debug 
 {
 public:
-    N64Debug(GB &gb) { UNUSED(gb); }
+    N64Debug(N64 &n64) { UNUSED(n64); }
 };
 
 #endif

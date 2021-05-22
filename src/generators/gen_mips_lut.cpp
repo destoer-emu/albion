@@ -10,7 +10,7 @@
 // so we can just dump them in one big file
 void gen_mips_lut(const char *prefix)
 {
-    for(int i = 0; i < 32; i++)
+    for(int i = 0; i < 64; i++)
     {
 
     }

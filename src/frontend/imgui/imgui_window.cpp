@@ -709,9 +709,9 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
                             break;
                         }
 
-                        default: break;
+                        
                     #endif
-
+                        default: break;
                     }
                     break;
                 }

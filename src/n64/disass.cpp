@@ -6,7 +6,7 @@ namespace nintendo64
 
 using DISASS_FUNC = std::string (*)(N64 &n64,u64 addr);
 
-// if i recall we jsut switch on the top 5 bits
+// if i recall we just switch on the top 6 bits
 // and the others if we hit a coprocessor opcode
 // so simply enough we should just write something to gen a nice function table for us
 

@@ -8,13 +8,15 @@ namespace gameboyadvance
 // TODO remove prefetch hacks
 void Cpu::arm_fill_pipeline() // need to verify this...
 {
-
+    // read_rom will break if the program wraps around to the bios region
+    // (this will cause a crash unless the bios swap hardware feature is on)
+    // in this case we cant use this code
     if(execute_rom)
     {
-        const auto wait = mem.get_rom_wait_states<uint32_t>();
-        pipeline[0] = mem.read_mem<uint32_t>(regs[PC]); cycle_tick(wait);
+        const auto wait = rom_wait_sequential_32;
+        pipeline[0] = mem.read_rom<uint32_t>(regs[PC]); cycle_tick(wait);
         regs[PC] += ARM_WORD_SIZE;
-        pipeline[1] = mem.read_mem<uint32_t>(regs[PC]); cycle_tick(wait);
+        pipeline[1] = mem.read_rom<uint32_t>(regs[PC]); cycle_tick(wait);
     }
 
     else
@@ -40,8 +42,8 @@ uint32_t Cpu::fetch_arm_opcode()
     pc_actual += ARM_WORD_SIZE;
     if(execute_rom)
     {
-        const auto wait = mem.get_rom_wait_states<uint32_t>();
-        pipeline[1] = mem.read_u32(regs[PC]);
+        const auto wait = rom_wait_sequential_32;
+        pipeline[1] = mem.read_rom<uint32_t>(regs[PC]);
         cycle_tick(wait);
     }
 

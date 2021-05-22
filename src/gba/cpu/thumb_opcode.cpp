@@ -15,10 +15,10 @@ void Cpu::thumb_fill_pipeline()
 
     if(execute_rom)
     {
-        const auto wait = mem.get_rom_wait_states<uint16_t>();
-        pipeline[0] = mem.read_mem<uint16_t>(regs[PC]); cycle_tick(wait);
+        const auto wait = rom_wait_sequential_16;
+        pipeline[0] = mem.read_rom<uint16_t>(regs[PC]); cycle_tick(wait);
         regs[PC] += ARM_HALF_SIZE;
-        pipeline[1] = mem.read_mem<uint16_t>(regs[PC]); cycle_tick(wait);
+        pipeline[1] = mem.read_rom<uint16_t>(regs[PC]); cycle_tick(wait);
 
     }
 
@@ -40,9 +40,8 @@ uint16_t Cpu::fetch_thumb_opcode()
 
     if(execute_rom)
     {
-        const auto wait = mem.get_rom_wait_states<uint16_t>();
-        pipeline[1] = mem.read_mem<uint16_t>(regs[PC]);
-        cycle_tick(wait);     
+        const auto wait = rom_wait_sequential_16;
+        pipeline[1] = mem.read_rom<uint16_t>(regs[PC]); cycle_tick(wait);     
     }
 
     else

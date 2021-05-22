@@ -97,6 +97,8 @@ public:
 
     void handle_power_state();
 
+    void exec_instr_no_debug();
+
     using EXEC_INSTR_FPTR = void (Cpu::*)(void);
 #ifdef DEBUG
     
@@ -122,26 +124,11 @@ public:
     void exec_instr_no_debug_thumb();
     void exec_instr_no_debug_arm();
 
-    EXEC_INSTR_FPTR exec_instr_fptr_mode = &Cpu::exec_instr_no_debug_arm;
-
-    void exec_instr_no_debug()
-    {
-        std::invoke(exec_instr_fptr_mode,this);
-    }
 
     void switch_execution_state(bool thumb)
     {
         is_thumb = thumb;
         cpsr = is_thumb? set_bit(cpsr,5) : deset_bit(cpsr,5);
-        if(!thumb)
-        {
-            exec_instr_fptr_mode = &Cpu::exec_instr_no_debug_arm;
-        }
-
-        else
-        {
-            exec_instr_fptr_mode = &Cpu::exec_instr_no_debug_thumb;
-        }
     }
 
 
@@ -219,6 +206,9 @@ public:
 
     // cpu io memory
     CpuIo cpu_io;
+
+    uint32_t rom_wait_sequential_16 = 1;
+    uint32_t rom_wait_sequential_32 = 1;
 private:
 
 

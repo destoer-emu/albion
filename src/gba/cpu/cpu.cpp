@@ -53,6 +53,9 @@ void Cpu::init()
 
     in_bios = false;
 
+    rom_wait_sequential_16 = 1;
+    rom_wait_sequential_32 = 1;
+
     cpu_io.init();
     update_intr_status();
     debug.trace.clear();
@@ -214,6 +217,19 @@ void Cpu::exec_instr_no_debug_thumb()
     do_interrupts(); 
 }
 
+
+void Cpu::exec_instr_no_debug()
+{
+    if(is_thumb)
+    {
+        exec_instr_no_debug_thumb();
+    }
+
+    else
+    {
+        exec_instr_no_debug_arm();
+    }
+}
 
 
 #ifdef DEBUG
@@ -846,6 +862,7 @@ void Cpu::write_pc(uint32_t v)
     {
         pc_actual = v & ~1;
         in_bios = pc_actual < 0x4000;
+        execute_rom = pc_actual >= 0x08000000 && pc_actual <= 0x0e000000;
         mem.switch_bios(in_bios);
         write_pc_thumb(v);
     }
@@ -855,15 +872,11 @@ void Cpu::write_pc(uint32_t v)
         pc_actual = v & ~3;
         in_bios = pc_actual < 0x4000;
         mem.switch_bios(in_bios);
+        execute_rom = pc_actual >= 0x08000000 && pc_actual <= 0x0e000000;
         write_pc_arm(v);
     } 
 
     debug.trace.add(source,pc_actual);
-
-    const int region =  (pc_actual >> 24) & 0xf; 
-    const auto mem_region = memory_region_table[region];
-
-    execute_rom = mem_region == memory_region::rom;
 }
 
 }

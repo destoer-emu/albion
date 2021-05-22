@@ -1675,6 +1675,22 @@ void Mem::update_wait_states()
 
     const auto sram_wait = wait_first_table[wait_cnt.sram_cnt];
     set_wait(&wait_states[static_cast<size_t>(memory_region::cart_backup)][0],sram_wait);
+
+    // update rom fetch wait state
+    if(mem_io.wait_cnt.prefetch)
+    {
+        cpu.rom_wait_sequential_16 = 1;
+        cpu.rom_wait_sequential_32 = 1;
+    }    
+
+    else
+    {
+        // hardcode to sequential access!
+        cpu.rom_wait_sequential_16 = rom_wait_states[(static_cast<int>(memory_region::rom) - 8) / 2][1][1];
+        cpu.rom_wait_sequential_32 = rom_wait_states[(static_cast<int>(memory_region::rom) - 8) / 2][1][2];
+    }
+    
+
 }
 
 
@@ -1728,14 +1744,6 @@ void Mem::tick_mem_access(uint32_t addr)
 
 
 
-
-// gba is locked to little endian
-template<typename access_type>
-access_type Mem::read_rom(uint32_t addr)
-{
-    //return rom[addr - <whatever page start>];
-    return handle_read<access_type>(rom,addr&0x1FFFFFF);        
-}
 
 template<>
 uint8_t Mem::read_io<uint8_t>(uint32_t addr)
