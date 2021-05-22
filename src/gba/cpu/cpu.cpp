@@ -199,12 +199,6 @@ void Cpu::timer_overflow(int timer_num)
     }
 }
 
-bool Cpu::cond_met(uint32_t cond)
-{
-    const auto flags = flag_z | flag_c << 1 | flag_n << 2 | flag_v << 3;
-
-    return is_set(cond_lut[cond],flags);
-}
 
 void Cpu::exec_instr_no_debug_arm()
 {

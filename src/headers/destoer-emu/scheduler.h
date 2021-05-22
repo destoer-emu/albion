@@ -37,6 +37,8 @@ public:
     // helper to create events
     EventNode<event_type> create_event(uint32_t duration, event_type t) const;
 
+    void adjust_timestamp();
+
 protected:
     virtual void service_event(const EventNode<event_type> & node) = 0;
 
@@ -87,8 +89,8 @@ void Scheduler<SIZE,event_type>::service_events()
         // remove min event
         const auto event = event_list.peek();
         event_list.pop();
-        service_event(event);
         min_timestamp = event_list.peek().end;
+        service_event(event);
     }
 }
 
@@ -101,12 +103,9 @@ void Scheduler<SIZE,event_type>::tick(uint32_t cycles)
 }
 
 template<size_t SIZE,typename event_type>
-void Scheduler<SIZE,event_type>::insert(const EventNode<event_type> &node,bool tick_old)
+void Scheduler<SIZE,event_type>::adjust_timestamp()
 {
-    remove(node.type,tick_old);
-    event_list.insert(node);
-    min_timestamp = event_list.peek().end;
-    
+    // timestamp will soon overflow
     if(is_set(timestamp,31))
     {
         uint32_t min = 0xffffffff;
@@ -129,7 +128,15 @@ void Scheduler<SIZE,event_type>::insert(const EventNode<event_type> &node,bool t
         }
         timestamp -= min;
         min_timestamp -= min;
-    }
+    }    
+}
+
+template<size_t SIZE,typename event_type>
+void Scheduler<SIZE,event_type>::insert(const EventNode<event_type> &node,bool tick_old)
+{
+    remove(node.type,tick_old);
+    event_list.insert(node);
+    min_timestamp = event_list.peek().end;
 }
 
 template<size_t SIZE,typename event_type>

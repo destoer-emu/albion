@@ -213,6 +213,7 @@ void GB::key_pressed(button b)
 // run a frame
 void GB::run()
 {
+	scheduler.adjust_timestamp();
     ppu.new_vblank = false;
 #ifdef DEBUG
 	// break out early if we have hit a debug event
@@ -231,7 +232,7 @@ void GB::run()
 	}
 #endif
 
-	if(throttle_emu && ppu.new_vblank)
+	if(throttle_emu)
 	{
 		mem.frame_end();
 	}

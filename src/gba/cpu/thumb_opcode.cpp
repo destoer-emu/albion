@@ -738,12 +738,11 @@ void Cpu::thumb_mcas_imm(uint16_t opcode)
 template<const int COND>
 void Cpu::thumb_cond_branch(uint16_t opcode)
 {
-    // 1st cycle is branch calc overlayed with pipeline
-    const int8_t offset = opcode & 0xff;
-    const uint32_t addr = regs[PC] + offset*2;
-
-    if(cond_met(COND))
+    if(cond_met_constexpr<COND>())
     {
+        // 1st cycle is branch calc overlayed with pipeline
+        const int8_t offset = opcode & 0xff;
+        const uint32_t addr = regs[PC] + offset*2;
         write_pc(addr);  
     }
 }

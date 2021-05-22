@@ -39,6 +39,7 @@ void GBA::reset(std::string filename)
 // run a frame
 void GBA::run()
 {
+	scheduler.adjust_timestamp();
 	disp.new_vblank = false;	
 #ifdef DEBUG
 	// break out early if we have hit a debug event
@@ -65,7 +66,7 @@ void GBA::run()
 	}
 
 #endif
-	if(disp.new_vblank && throttle_emu)
+	if(throttle_emu)
 	{
 		mem.frame_end();
 	}
