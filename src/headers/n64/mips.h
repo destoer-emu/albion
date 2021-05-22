@@ -45,4 +45,15 @@ static constexpr int CONFIG = 16;
 // constants for disassembling mips
 extern const char *r[32];
 
+// sign extend on a 8 bit aligned quantity
+template<typename T,typename IN>
+inline T sign_extend_mips(IN x)
+{
+    using signed_type_in = typename std::make_signed<IN>::type;
+    const auto v = static_cast<signed_type_in>(x);
+
+    using signed_type_out = typename std::make_signed<T>::type;
+    return static_cast<T>(static_cast<signed_type_out>(v));
+}
+
 }

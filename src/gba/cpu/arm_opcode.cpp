@@ -12,11 +12,9 @@ void Cpu::arm_fill_pipeline() // need to verify this...
     if(execute_rom)
     {
         const auto wait = mem.get_rom_wait_states<uint32_t>();
-        pipeline[0] = mem.read_mem<uint32_t>(regs[PC]);
-        cycle_tick(wait);
+        pipeline[0] = mem.read_mem<uint32_t>(regs[PC]); cycle_tick(wait);
         regs[PC] += ARM_WORD_SIZE;
-        pipeline[1] = mem.read_mem<uint32_t>(regs[PC]);
-        cycle_tick(wait);
+        pipeline[1] = mem.read_mem<uint32_t>(regs[PC]); cycle_tick(wait);
     }
 
     else

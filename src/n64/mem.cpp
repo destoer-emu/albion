@@ -67,9 +67,16 @@ u64 remap_addr(u64 addr)
     return 0;
 }
 
+
+// for now assume accesses are force aligned
+// however they are supposed to throw exceptions
+
 template<typename access_type>
 access_type read_mem(N64 &n64, u64 addr)
 {
+    // force align addr
+    addr &= ~(sizeof(access_type)-1);   
+
     UNUSED(n64);
     addr = remap_addr(addr);
 
@@ -94,7 +101,6 @@ access_type read_mem(N64 &n64, u64 addr)
 
     else if(addr < 0x04001000)
     {
-        // how does aligment work on mips?
         return handle_read<access_type>(n64.mem.sp_dmem,addr & 0xfff);
     }
 
