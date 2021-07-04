@@ -113,6 +113,7 @@ void Cpu::thumb_sp_add(uint16_t opcode)
 
 void Cpu::thumb_swi(uint16_t opcode)
 {
+
     //printf("swi %08x: %08x\n",get_pc(),opcode);
 
     // nn is ignored by hardware
@@ -136,6 +137,9 @@ void Cpu::thumb_swi(uint16_t opcode)
 
     // branch to interrupt vector
     write_pc(0x8);
+
+    //swi(opcode & 0xff);
+
 }
 
 template<const int RD, const bool IS_PC>

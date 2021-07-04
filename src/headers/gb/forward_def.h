@@ -5,7 +5,8 @@ namespace gameboy
 {
 
 class Memory;
-class Cpu;
+class Cpu; 
+using EXEC_INSTR_FPTR = void (Cpu::*)(void);
 class Ppu;
 class Disass;
 class Apu;

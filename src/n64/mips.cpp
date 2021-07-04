@@ -1,9 +1,8 @@
 namespace nintendo64
 {
-    
-    const char *r[32]
+    const char *reg_names[32]
     {
-        "r0", // hardwired to zero
+        "zero", // hardwired to zero
         "at", // assembler tempoary
         "v0", // return value or expression eval
         "v1",
@@ -37,4 +36,39 @@ namespace nintendo64
         "ra", // return address 
     };
 
+
+    const char *cp0_names[32]
+    {
+        "index",
+        "random",
+        "entryLo0",
+        "entryLo1",
+        "context",
+        "pageMask",
+        "Wired",
+        "r7",
+        "badVAddr",
+        "count",
+        "entryHi",
+        "compare",
+        "status",
+        "cause",
+        "EPC",
+        "config",
+        "LLAddr",
+        "watchLo",
+        "watchHi",
+        "xContext",
+        "r21",
+        "r22",
+        "r23",
+        "r24",
+        "r25",
+        "parityError",
+        "cacheError",
+        "TagLo",
+        "TagHi",
+        "errorEPC",
+        "r31",
+    };
 }

@@ -42,10 +42,16 @@ void GBA::run()
 	scheduler.adjust_timestamp();
 	disp.new_vblank = false;	
 #ifdef DEBUG
+
+	if(debug.is_halted())
+	{
+		return;
+	}
+
 	// break out early if we have hit a debug event
 	while(!disp.new_vblank) 
     {
-		while(!scheduler.event_ready())
+		while(!scheduler.event_ready() && !cpu.interrupt_ready())
 		{
 			cpu.exec_instr();
 			if(debug.is_halted())
@@ -54,15 +60,17 @@ void GBA::run()
 			}
 		}
 		scheduler.service_events();
+		cpu.do_interrupts();
 	}
 #else 
 	while(!disp.new_vblank) // exec until a vblank hits
     {
-		while(!scheduler.event_ready())
+		while(!scheduler.event_ready() && !cpu.interrupt_ready())
 		{
 			cpu.exec_instr();
 		}
 		scheduler.service_events();
+		cpu.do_interrupts();
 	}
 
 #endif

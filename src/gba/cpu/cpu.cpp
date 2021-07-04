@@ -53,6 +53,8 @@ void Cpu::init()
 
     in_bios = false;
 
+    bios_hle_interrupt = false;
+
     rom_wait_sequential_16 = 1;
     rom_wait_sequential_32 = 1;
 
@@ -75,18 +77,6 @@ void Cpu::insert_new_timer_event(int timer)
 
     const auto event = scheduler.create_event(cycles,event_type);
     scheduler.insert(event,false);    
-}
-
-// should have a list of active timers that aernt count up
-// so we aernt needlesly checking them, allthough this is kind of defetaed by a scheduler
-// we should also cache the limit and scale on the reg write!
-void Cpu::tick_timers(int cycles)
-{
-    // for each timer
-    for(int i = 0; i < 4; i++)
-    {        
-        tick_timer(i,cycles);
-    }
 }
 
 
@@ -207,14 +197,12 @@ void Cpu::exec_instr_no_debug_arm()
 {
     is_thumb_fetch = false;
     exec_arm();
-    do_interrupts();
 }
 
 void Cpu::exec_instr_no_debug_thumb()
 {    
     is_thumb_fetch = true;
     exec_thumb();
-    do_interrupts(); 
 }
 
 
@@ -262,8 +250,10 @@ void Cpu::handle_power_state()
 
         case HaltCnt::power_state::halt:
         {
+            // debug perf
+            //printf("%d:%d\n",disp.get_vcount(),disp.get_cycles());
             //puts("halt");
-
+            
             // need a better check here to prevent the emulator just locking up
             if(!cpu_io.interrupt_enable)
             {
@@ -816,21 +806,26 @@ void Cpu::request_interrupt(interrupt i)
     update_intr_status();
 }
 
-
-void Cpu::do_interrupts()
+// must decrement before and after for total number of pushed regs
+// just like stmfd does
+void Cpu::write_stack_fd(uint32_t reg)
 {
-    // the handler will find out what fired for us!
-    // just check irqs aernt masked
-    if(interrupt_service && !is_set(cpsr,7))
-    {
-        service_interrupt();
-    }
+    mem.write_u32(regs[SP],regs[reg]);
+    regs[SP] += ARM_WORD_SIZE;
 }
 
-// do we need to indicate the interrupt somewhere?
-// or does the handler check if?
+void Cpu::read_stack_fd(uint32_t reg)
+{
+    regs[reg] = mem.read_u32(regs[SP]);
+    regs[SP] += ARM_WORD_SIZE;
+}
+
+
+// the handler will find out what fired for us!
+// just check irqs aernt masked
 void Cpu::service_interrupt()
 {
+
     const auto idx = static_cast<int>(cpu_mode::irq);
 
     // spsr for irq = cpsr
@@ -851,11 +846,57 @@ void Cpu::service_interrupt()
 
     //internal_cycle();
 
-    write_pc(0x18); // irq handler    
+    // go to bios irq handler
+    write_pc(0x18); // irq handler
+/*
+    // HLE routine
+
+    // push r0-r3,r12,lr
+    regs[SP] -= 6 * ARM_WORD_SIZE;
+    write_stack_fd(R0);
+    write_stack_fd(R1);
+    write_stack_fd(R2);
+    write_stack_fd(R3);
+    write_stack_fd(R12);
+    write_stack_fd(LR);
+    regs[SP] -= 6 * ARM_WORD_SIZE;
+
+    bios_hle_interrupt = true;
+    
+
+    // r0 used to load the user irq handler
+    // fake lr for bios (hooked in write_pc)
+    regs[LR] = 0x138;
+    regs[R0] = 0x04000000;
+
+    // jump to user irq handler
+    write_pc(mem.read_u32(0x03FFFFFC));
+*/
 }
 
 void Cpu::write_pc(uint32_t v)
 {    
+/*
+    // return from user irq hanlder
+    if(bios_hle_interrupt && v == 0x138)
+    {
+        bios_hle_interrupt = false;
+        pc_actual = 0x138;
+
+        // pop our regs
+        read_stack_fd(R0);
+        read_stack_fd(R1);
+        read_stack_fd(R2);
+        read_stack_fd(R3);
+        read_stack_fd(R12);
+        read_stack_fd(LR);
+        
+        
+        // switch back to previous mode and branch back to where we came from
+        v = regs[LR] - 4;
+        set_cpsr(status_banked[static_cast<int>(arm_mode)]);
+    }
+*/
     const auto source = pc_actual - (2 << !is_thumb_fetch); 
 
     if(is_thumb)
@@ -876,7 +917,7 @@ void Cpu::write_pc(uint32_t v)
         write_pc_arm(v);
     } 
 
-    debug.trace.add(source,pc_actual);
+    debug.trace.add(source,pc_actual);	
 }
 
 }

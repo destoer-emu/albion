@@ -66,6 +66,7 @@ void Display::advance_line()
         // exit vblank
         mode = display_mode::visible;
         ly = 0;
+        //puts("line reset");
     }
 
     // not set on line 227
@@ -144,6 +145,14 @@ void Display::tick(int cycles)
                 if(ly < SCREEN_HEIGHT)
                 {
                     render();
+                    
+
+                    // update ref points
+                    disp_io.bg2_ref_point.ref_point_x += disp_io.bg2_scale_param.b >> 8;
+                    disp_io.bg2_ref_point.ref_point_y += disp_io.bg2_scale_param.d >> 8;
+                    
+                    disp_io.bg3_ref_point.ref_point_x += disp_io.bg3_scale_param.b >> 8;
+                    disp_io.bg3_ref_point.ref_point_y += disp_io.bg3_scale_param.d >> 8;
                 }
 
                 mode = display_mode::hblank;
@@ -181,8 +190,7 @@ void Display::tick(int cycles)
                     {
                         cpu.request_interrupt(interrupt::vblank);
                     }
-                    mem.dma.handle_dma(dma_type::vblank);
-
+                    
                     // reload internal ref point registers
                     disp_io.bg2_ref_point.int_ref_point_x = disp_io.bg2_ref_point.ref_point_x;
                     disp_io.bg2_ref_point.int_ref_point_y = disp_io.bg2_ref_point.ref_point_y;
@@ -190,6 +198,8 @@ void Display::tick(int cycles)
                     disp_io.bg3_ref_point.int_ref_point_x = disp_io.bg3_ref_point.ref_point_x;
                     disp_io.bg3_ref_point.int_ref_point_y = disp_io.bg3_ref_point.ref_point_y;
 
+                    
+                    mem.dma.handle_dma(dma_type::vblank);
                 }
 
                 else

@@ -22,6 +22,7 @@ public:
 
 
     int get_vcount() const { return ly; } 
+    int get_cycles() const { return cyc_cnt; }
 
     void update_vcount_compare();
 

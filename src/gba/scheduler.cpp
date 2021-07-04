@@ -22,6 +22,8 @@ void GBAScheduler::service_event(const EventNode<gba_event> &node)
 {
     const auto cycles_to_tick = timestamp - node.start;
 
+    //printf("%x:%d\n",cycles_to_tick,static_cast<int>(node.type));
+
     switch(node.type)
     {
         case gba_event::sample_push:

@@ -26,14 +26,14 @@ and not very accurate
 not really necessary but would be nice for gb
 serial, sgb, dmg cgb color palettes
 
-
+priority based rendering tests,
 gba bitmap affine transforms,
 gba bitmap alpha blending,
 mosaic,
 open bus (partial),
 instr timing rewrite
 memory timing (seq, nonseq),
-gamepak prefetch,
+gamepak prefetch
 
 
 # thanks

@@ -38,12 +38,20 @@ static constexpr int RA = 31;
 
 // cop0 regs
 static constexpr int RANDOM = 1;
+
+static constexpr int COUNT = 9;
+
+static constexpr int COMPARE = 11;
 static constexpr int STATUS = 12;
+
+static constexpr int CAUSE = 13;
+
 static constexpr int PRID = 15;
 static constexpr int CONFIG = 16;
 
 // constants for disassembling mips
-extern const char *r[32];
+extern const char *reg_names[32];
+extern const char *cp0_names[32];
 
 // sign extend on a 8 bit aligned quantity
 template<typename T,typename IN>
@@ -54,6 +62,16 @@ inline T sign_extend_mips(IN x)
 
     using signed_type_out = typename std::make_signed<T>::type;
     return static_cast<T>(static_cast<signed_type_out>(v));
+}
+
+inline u32 get_rt(u32 opcode)
+{
+    return (opcode >> 16) & 0xf;
+}
+
+inline u32 get_rd(u32 opcode)
+{
+    return (opcode >> 11) & 0xf;
 }
 
 }

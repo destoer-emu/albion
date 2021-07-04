@@ -216,6 +216,12 @@ void GB::run()
 	scheduler.adjust_timestamp();
     ppu.new_vblank = false;
 #ifdef DEBUG
+
+	if(debug.is_halted())
+	{
+		return;
+	}
+
 	// break out early if we have hit a debug event
 	while(!ppu.new_vblank) 
     {

@@ -223,9 +223,6 @@ void Display::render_affine(int id)
             draw_tile(x,TileData(color,static_cast<pixel_source>(id)));
         }
     }
-
-    ref_point_x += scale_param.b >> 8;
-    ref_point_y += scale_param.d >> 8;
 }
 
 // nasty optimisation
@@ -535,7 +532,7 @@ void Display::merge_layers()
         {
 
             auto &s = sprite_line[x];
-            const bool sprite_enable = sprite_window_enabled(x);
+            const bool sprite_enable = sprite_window_enabled(x) && s.source == pixel_source::obj;
 
             // check color1 prioritys
             // TODO: can we push this off into the sprite rendering code?
@@ -545,8 +542,8 @@ void Display::merge_layers()
             auto &b2 = scanline[x].t2;
 
             // lower priority is higher, sprite wins even if its equal
-            const bool obj_win1 = b1.source == pixel_source::bd || (s.source != pixel_source::bd && sprite_enable &&
-                (sprite_priority[x] <= disp_io.bg_cnt[static_cast<uint32_t>(b1.source)].priority) );
+            const bool obj_win1 = (sprite_enable) && 
+                (b1.source == pixel_source::bd || sprite_priority[x] <= disp_io.bg_cnt[static_cast<uint32_t>(b1.source)].priority);
 
             auto &p1 = obj_win1? s : b1;
 
@@ -567,8 +564,8 @@ void Display::merge_layers()
 
             // lower priority is higher, sprite wins even if its equal
             // if obj has allready won then we dont care
-            const bool obj_win2 = b2.source == pixel_source::bd || (!obj_win1 && s.source != pixel_source::bd && sprite_enable && 
-                (sprite_priority[x] <= disp_io.bg_cnt[static_cast<uint32_t>(b2.source)].priority) );
+            const bool obj_win2 = (!obj_win1 && sprite_enable) &&  
+                (b2.source == pixel_source::bd || sprite_priority[x] <= disp_io.bg_cnt[static_cast<uint32_t>(b2.source)].priority);
 
             auto &p2 = obj_win2? s : b2;
 
@@ -830,8 +827,12 @@ void Display::render()
 {
     const auto render_mode = disp_io.disp_cnt.bg_mode; 
 
-    static const Scanline DEAD_PIXEL;
-    std::fill(scanline.begin(),scanline.end(),DEAD_PIXEL);
+    const TileData lose_bg(read_bg_palette(0,0),pixel_source::bd);
+    Scanline dead_pixel;
+    dead_pixel.t1 = lose_bg;
+    dead_pixel.t2 = lose_bg;
+
+    std::fill(scanline.begin(),scanline.end(),dead_pixel);
 
     // ideally we would try to cull draws
     // that are not enabled in the window

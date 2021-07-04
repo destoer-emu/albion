@@ -12,6 +12,15 @@ struct Disass
 
 };
 
-std::string disass_opcode(N64 &n64,u64 addr);
+using DISASS_FUNC = std::string (*)(N64 &n64,u32 opcode);
+
+
+std::string disass_opcode(N64 &n64,u32 opcode);
+
+std::string disass_unknown(N64 &n64, u32 opcode);
+std::string disass_unknown_cop0(N64 &n64, u32 opcode);
+
+std::string disass_cop0(N64 &n64, u32 opcode);
+std::string disass_mtc0(N64 &n64, u32 opcode); 
 
 }

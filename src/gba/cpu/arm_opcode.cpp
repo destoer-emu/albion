@@ -100,6 +100,7 @@ void Cpu::log_regs()
 
 void Cpu::arm_swi(uint32_t opcode)
 {
+
     //printf("swi %08x: %08x\n",get_pc(),opcode);
 
     // nn is ignored by hardware
@@ -122,6 +123,8 @@ void Cpu::arm_swi(uint32_t opcode)
 
     // branch to interrupt vector
     write_pc(0x8);
+
+    //swi((opcode & 0x00ffffff) >> 16);
 }
 
 // mul timings need to be worked on

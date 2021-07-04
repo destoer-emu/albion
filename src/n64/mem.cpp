@@ -31,7 +31,7 @@ void reset_mem(Mem &mem, const std::string &filename)
 // come time for implementing the tlb but lets just keep things nice and simple for now
 u64 remap_addr(u64 addr)
 {
-    printf("%16zx\n",addr);
+    //printf("%16zx\n",addr);
     if(addr < 0x80000000)
     {
         puts("KUSEG");

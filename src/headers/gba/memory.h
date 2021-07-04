@@ -227,6 +227,20 @@ public:
     Dma dma;
 
 
+    // general memory
+    // bios code
+    std::vector<uint8_t> bios_rom; // 0x4000
+
+    // on board work ram
+    std::vector<uint8_t> board_wram; // 0x40000
+
+    // on chip wram
+    std::vector<uint8_t> chip_wram; // 0x8000
+
+    // cart save ram
+    std::vector<uint8_t> sram; // 0x8000
+
+
 private:
     Debug &debug;
     Cpu &cpu;
@@ -420,18 +434,6 @@ private:
     int rom_wait_states[3][2][3];
 
 
-    // general memory
-    // bios code
-    std::vector<uint8_t> bios_rom; // 0x4000
-
-    // on board work ram
-    std::vector<uint8_t> board_wram; // 0x40000
-
-    // on chip wram
-    std::vector<uint8_t> chip_wram; // 0x8000
-
-    // cart save ram
-    std::vector<uint8_t> sram; // 0x8000
 
     enum class eeprom_state
     {

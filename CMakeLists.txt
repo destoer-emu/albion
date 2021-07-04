@@ -158,7 +158,7 @@ if(WIN32)
 		link_libraries("C:/SDL2-2.0.12/lib/x64/SDL2.lib")
 	#endif()
 else()
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -pthread -Ofast -fomit-frame-pointer")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -march=native -pthread -Ofast -fomit-frame-pointer")
 if(${FRONTEND} STREQUAL "HEADLESS")
 
 else ()

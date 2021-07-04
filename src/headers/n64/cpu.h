@@ -16,7 +16,22 @@ struct Cpu
 };
 
 
+using INSTR_FUNC = void (*)(N64 &n64, u32 opcode);
+
 void step(N64 &n64);
 void reset_cpu(Cpu &cpu);
+
+
+void cycle_tick(N64 &n64, u32 cycles);
+
+void write_cp0(N64 &n64, u64 v, u32 reg);
+
+// instruction handlers
+void instr_unknown(N64 &n64, u32 opcode);
+void instr_unknown_cop0(N64 &n64, u32 opcode);
+
+void instr_cop0(N64 &n64, u32 opcode);
+void instr_mtc0(N64 &n64, u32 opcode); 
+
 
 }

@@ -99,6 +99,20 @@ public:
 
     void exec_instr_no_debug();
 
+    bool interrupt_ready() const
+    {
+        return interrupt_service && !is_set(cpsr,7);    
+    }
+
+    void do_interrupts()
+    {
+        if(interrupt_ready())
+        {
+            service_interrupt();
+        }
+    }
+
+
     using EXEC_INSTR_FPTR = void (Cpu::*)(void);
 #ifdef DEBUG
     
@@ -371,13 +385,15 @@ private:
         return is_set(cond_lut[cond],flags);
     }
 
-    // interrupts
-    //void request_interrupt(Interrupt interrupt);
-    void do_interrupts();
     void service_interrupt();
 
+    void write_stack_fd(uint32_t reg);
+    void read_stack_fd(uint32_t reg);
+
+
+    void swi(uint32_t function);
+
     // timers
-    void tick_timers(int cycles);
     void timer_overflow(int timer);
 
     // mode switching
@@ -419,6 +435,8 @@ private:
     bool interrupt_request;
     bool interrupt_service;
 
+
+    bool bios_hle_interrupt;
 
 
     // backup stores

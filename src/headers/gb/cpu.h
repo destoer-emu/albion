@@ -37,9 +37,8 @@ public:
 
     void init(bool use_bios = false);
 
-#ifdef DEBUG
-    using EXEC_INSTR_FPTR = void (Cpu::*)(void);
 
+#ifdef DEBUG
     EXEC_INSTR_FPTR exec_instr_fptr;
 
     inline void exec_instr()
