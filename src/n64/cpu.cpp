@@ -13,7 +13,7 @@ void reset_cpu(Cpu &cpu)
     cpu.regs[SP] = 0xFFFFFFFFA4001FF0;
 
     cpu.cp0_regs[RANDOM] = 0x0000001F;
-    cpu.cp0_regs[STATUS] = 0x70400004;
+    write_cp0(cpu,0x70400004,STATUS);
     cpu.cp0_regs[PRID] = 0x00000B00;
     cpu.cp0_regs[CONFIG] = 0x0006E463;
 
@@ -30,24 +30,9 @@ void cycle_tick(N64 &n64, u32 cycles)
 }
 
 
-void instr_unknown(N64 &n64, u32 opcode)
+void write_cp0(Cpu &cpu, u64 v, u32 reg)
 {
-    const auto err = fmt::format("[cpu {:16x} {}] unknown opcode {:08x}\n",n64.cpu.pc,disass_opcode(n64,opcode),opcode);
-    n64.debug.trace.print();
-    throw std::runtime_error(err);    
-}
-
-void instr_unknown_cop0(N64 &n64, u32 opcode)
-{
-    const auto err = fmt::format("[cpu {:16x} {}] unknown cop0 opcode {:08x}\n",n64.cpu.pc,disass_opcode(n64,opcode),(opcode >> 21) & 0b11111);
-    n64.debug.trace.print();
-    throw std::runtime_error(err);    
-}
-
-
-void write_cp0(N64 &n64, u64 v, u32 reg)
-{
-    auto &regs = n64.cpu.cp0_regs;
+    auto &regs = cpu.cp0_regs;
 
     switch(reg)
     {
@@ -68,6 +53,50 @@ void write_cp0(N64 &n64, u64 v, u32 reg)
             break;
         }
 
+        // various cpu settings
+        case STATUS:
+        {
+            cpu.ie = is_set(v,0);
+            cpu.exl = is_set(v,1);
+            cpu.erl = is_set(v,2);
+            cpu.ksu = (v >> 3) & 0b11;
+
+            cpu.ux = is_set(v,5);
+            cpu.sx = is_set(v,6);
+            cpu.kx = is_set(v,7);
+
+            cpu.im = (v >> 8) & 0xff;
+
+            cpu.ds = (v >> 16) & 0x1ff;
+
+            cpu.re = is_set(v,25);
+            cpu.fr = is_set(v,26);
+            cpu.rp = is_set(v,27);
+
+            cpu.cu1 = is_set(v,29);
+
+
+            if(cpu.rp)
+            {
+                unimplemented("low power mode");
+            }
+
+            if(cpu.re)
+            {
+                unimplemented("little endian");
+            }
+
+            if((cpu.ux && cpu.ksu == 0b10) || (cpu.sx && cpu.ksu == 0b01) || (cpu.kx && cpu.ksu == 0b00))
+            {
+                unimplemented("64 bit addressing");
+            }
+
+
+            // make this easier to read back out to the cpu
+            regs[STATUS] = v;
+            break;
+        }
+
         // interrupt / exception info
         case CAUSE:
         {
@@ -80,24 +109,10 @@ void write_cp0(N64 &n64, u64 v, u32 reg)
 
         default:
         {
-            printf("unimplemnted cop0 write: %d\n",reg);
+            printf("unimplemented cop0 write: %d\n",reg);
             exit(1);
         }
     }
-}
-
-// coprocessor zero insruction
-void instr_cop0(N64 &n64, u32 opcode)
-{
-    instr_cop0_lut[(opcode >> 21) & 0b11111](n64,opcode);
-}
-
-void instr_mtc0(N64 &n64, u32 opcode)
-{
-    const auto rt = get_rt(opcode);
-    const auto rd = get_rd(opcode);
-
-    write_cp0(n64,n64.cpu.regs[rt],rd); 
 }
 
 
@@ -124,8 +139,8 @@ void step(N64 &n64)
     // TODO: push this onto the scheduler later
     if((n64.cpu.cp0_regs[COUNT] >> 1) == n64.cpu.cp0_regs[COMPARE])
     {
-        puts("counter interrupt!");
-        exit(1);
+        // flag interrupt
+        n64.cpu.cp0_regs[CAUSE] = set_bit(n64.cpu.cp0_regs[CAUSE],15);
     }
 }
 

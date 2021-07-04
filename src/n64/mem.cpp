@@ -29,12 +29,11 @@ void reset_mem(Mem &mem, const std::string &filename)
 
 // TODO: this will probably have to be switched over to software page table
 // come time for implementing the tlb but lets just keep things nice and simple for now
-u64 remap_addr(u64 addr)
+u32 remap_addr(u32 addr)
 {
-    //printf("%16zx\n",addr);
     if(addr < 0x80000000)
     {
-        puts("KUSEG");
+        printf("KUSEG %8x\n",addr);
         exit(1);
     }
 
@@ -53,13 +52,13 @@ u64 remap_addr(u64 addr)
     // KSSEG
     else if(addr < 0xe0000000)
     {
-        puts("KSSEG");
+        printf("KSSEG %8x\n",addr);
         exit(1);
     }
 
     else
     {
-        puts("KSEG3");
+        printf("KSEG3 %8x\n",addr);
         exit(1);
     }
 
@@ -70,9 +69,10 @@ u64 remap_addr(u64 addr)
 
 // for now assume accesses are force aligned
 // however they are supposed to throw exceptions
+// when they are not
 
 template<typename access_type>
-access_type read_mem(N64 &n64, u64 addr)
+access_type read_mem(N64 &n64, u32 addr)
 {
     // force align addr
     addr &= ~(sizeof(access_type)-1);   
@@ -83,8 +83,7 @@ access_type read_mem(N64 &n64, u64 addr)
     // just do something naive for now so we can get roms running
     if(addr < 0x00800000)
     {
-        puts("rdram");
-        exit(1);
+        unimplemented("rdram");
     }
 
     // UNUSED
@@ -95,8 +94,7 @@ access_type read_mem(N64 &n64, u64 addr)
 
     else if(addr < 0x04000000)
     {
-        puts("rdram regs");
-        exit(1);
+        unimplemented("rdram regs");
     }
 
     else if(addr < 0x04001000)
@@ -104,31 +102,37 @@ access_type read_mem(N64 &n64, u64 addr)
         return handle_read<access_type>(n64.mem.sp_dmem,addr & 0xfff);
     }
 
+    // UNUSED
+    else if(addr < 0x04040000)
+    {
+        return 0;
+    }
+
 
     else
     {
-        printf("unknown address: %16zx",addr);
+        printf("unknown physical address: %8x\n",addr);
         exit(1);
         return 0;
     }
 }
 
-u8 read_u8(N64 &n64,u64 addr)
+u8 read_u8(N64 &n64,u32 addr)
 {
     return read_mem<u8>(n64,addr);
 }
 
-u16 read_u16(N64 &n64,u64 addr)
+u16 read_u16(N64 &n64,u32 addr)
 {
     return bswap(read_mem<u16>(n64,addr));
 }
 
-u32 read_u32(N64 &n64,u64 addr)
+u32 read_u32(N64 &n64,u32 addr)
 {
     return bswap(read_mem<u32>(n64,addr));
 }
 
-u64 read_u64(N64 &n64,u64 addr)
+u64 read_u64(N64 &n64,u32 addr)
 {
     return bswap(read_mem<u64>(n64,addr));
 }

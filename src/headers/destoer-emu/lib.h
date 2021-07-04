@@ -310,3 +310,10 @@ inline T bswap(T x)
 	memcpy(&x,buf,sizeof(x));
 	return x;
 }
+
+inline void unimplemented(const char *msg)
+{
+	printf("unimplemented: ");
+	puts(msg);
+	exit(1);
+}

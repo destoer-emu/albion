@@ -74,4 +74,9 @@ inline u32 get_rd(u32 opcode)
     return (opcode >> 11) & 0xf;
 }
 
+inline u32 get_rs(u32 opcode)
+{
+    return (opcode >> 21) & 0xf;
+}
+
 }

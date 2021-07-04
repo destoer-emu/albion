@@ -28,6 +28,39 @@ std::string disass_unknown_cop0(N64 &n64, u32 opcode)
 }
 
 
+std::string disass_lui(N64 &n64, u32 opcode)
+{
+    UNUSED(n64);
+
+    const auto rt = get_rt(opcode);
+
+    return fmt::format("lui {}, {:4x}",reg_names[rt],opcode & 0xffff);
+}
+
+std::string disass_addiu(N64 &n64, u32 opcode)
+{
+    UNUSED(n64);
+
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+
+    const auto imm = opcode & 0xffff;
+
+    return fmt::format("addiu {}, {}, {:4x}",reg_names[rt],reg_names[rs],imm);
+}
+
+std::string disass_lw(N64 &n64, u32 opcode)
+{
+    UNUSED(n64);
+
+    const auto base = get_rs(opcode);
+    const auto rt = get_rt(opcode);
+
+    const auto imm = opcode & 0xffff;  
+
+    return fmt::format("lw {}, {:4x}({})",reg_names[rt],imm,reg_names[base]);
+}
+
 std::string disass_cop0(N64 &n64, u32 opcode)
 {
     UNUSED(n64);

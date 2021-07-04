@@ -17,6 +17,11 @@ using DISASS_FUNC = std::string (*)(N64 &n64,u32 opcode);
 
 std::string disass_opcode(N64 &n64,u32 opcode);
 
+std::string disass_lui(N64 &n64, u32 opcode);
+std::string disass_addiu(N64 &n64, u32 opcode);
+
+std::string disass_lw(N64 &n64, u32 opcode);
+
 std::string disass_unknown(N64 &n64, u32 opcode);
 std::string disass_unknown_cop0(N64 &n64, u32 opcode);
 

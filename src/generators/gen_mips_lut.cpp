@@ -9,6 +9,27 @@ void gen_mips_lut(const char *prefix)
         printf("&%s",prefix);
         switch(i)
         {
+            // lw
+            case 0b100011:
+            {
+                printf("lw");
+                break;
+            }
+
+            // addiu
+            case 0b001001:
+            {
+                printf("addiu");
+                break;
+            }
+
+            // lui:
+            case 0b001111:
+            {
+                printf("lui");
+                break;
+            } 
+
             // cop0
             case 0b010000:
             {
