@@ -19,7 +19,7 @@ set(FRONTEND "IMGUI")
 
 #add_definitions(-DBOUNDS_CHECK)
 if(${FRONTEND} STREQUAL "IMGUI")
-	add_definitions(-DAUDIO_ENABLE -DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL)
+	add_definitions(-DAUDIO_ENABLE -DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL )
 	add_definitions(-DFRONTEND_IMGUI -DIMGUI_IMPL_OPENGL_LOADER_GLEW -DDEBUG -DLOG_CONSOLE)
 endif()
 
@@ -124,39 +124,39 @@ endif()
 # make these paths less of a pain to modify :)
 
 if(WIN32)
-	set(SDL2_DIR "C:/SDL2-2.0.10")
-
 	if(${FRONTEND} STREQUAL "IMGUI")  # needed only for imgui 
-		# external libs 
-		list(APPEND CMAKE_PREFIX_PATH "C:/glew-2.1.0")
+		# external libs
 
-		#why does this not work nicely?
-		#find_package(GLEW REQUIRED)
-		#if (GLEW_FOUND)
-			#include_directories(${GLEW_INCLUDE_DIRS})
-			#link_libraries(${GLEW_LIBRARIES})
-			include_directories("C:/glew-2.1.0/include/")
-			link_libraries("C:/glew-2.1.0/lib/Release/x64/glew32.lib" "C:/glew-2.1.0/lib/Release/x64/glew32s.lib")
-		#endif()
-
-
+		# opengl
 		find_package(OPENGL REQUIRED)
-		if (OPENGL_FOUND)
-			include_directories(${OPENGL_INCLUDE_DIRS})
-			link_libraries(${OPENGL_LIBRARIES})
-		endif()
+		target_link_libraries(destoer-emu OpenGL::GL)
+
+		# glew
+		list(APPEND CMAKE_PREFIX_PATH "C:/glew-2.1.0")
+		find_package(GLEW REQUIRED)
+		target_link_libraries(destoer-emu GLEW::GLEW)
+
+		# for some reason building is broken and extra steps are required
+		add_library(GLEW SHARED IMPORTED)
+		set_target_properties(GLEW PROPERTIES
+			IMPORTED_IMPLIB "C:/glew-2.1.0/lib/Release/x64/glew32.lib"
+			LINKER_LANGUAGE C
+		)
+		target_link_libraries(destoer-emu GLEW)
+
 	endif()
 
 
-	# sdl allways needed
-	#find_package(SDL2 REQUIRED)
-	#if(SDL2_FOUND)
-		#include_directories(${SDL2_INCLUDE_DIRS})
-		#link_libraries(${SDL2_LIBRARIES})
-		# if no sdl2 
-		include_directories("C:/SDL2-2.0.12/include")
-		link_libraries("C:/SDL2-2.0.12/lib/x64/SDL2.lib")
-	#endif()
+	# sdl (allways needed)
+    add_library(SDL2 SHARED IMPORTED)
+    set_target_properties(SDL2 PROPERTIES
+        IMPORTED_LOCATION "C:/SDL2-2.0.14/lib/x64/SDL2.dll"
+        IMPORTED_IMPLIB "C:/SDL2-2.0.14/lib/x64/SDL2.lib"
+        LINKER_LANGUAGE C
+    )
+	target_link_libraries(destoer-emu SDL2)
+	
+    include_directories("C:/SDL2-2.0.14/include")
 else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -march=native -pthread -Ofast -fomit-frame-pointer")
 if(${FRONTEND} STREQUAL "HEADLESS")
