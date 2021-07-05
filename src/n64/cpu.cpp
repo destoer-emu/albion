@@ -17,7 +17,8 @@ void reset_cpu(Cpu &cpu)
     cpu.cp0_regs[PRID] = 0x00000B00;
     cpu.cp0_regs[CONFIG] = 0x0006E463;
 
-    cpu.pc = 0xA4000040; 
+    cpu.pc_old = 0xA4000040;
+    cpu.pc = cpu.pc_old + 4; 
 }
 
 
@@ -118,14 +119,20 @@ void write_cp0(Cpu &cpu, u64 v, u32 reg)
 
 void step(N64 &n64)
 {
+    // keep a pc delayed 1 instr fetch to handle delay slots
+    auto &pc_old = n64.cpu.pc_old;
+
     auto &pc = n64.cpu.pc;
 
-    const u32 opcode = read_u32(n64,pc);
+    const u32 opcode = read_u32(n64,pc_old);
 
-    // TODO: handle the branch delay slot
+    std::cout << fmt::format("{:16x}: {}\n",pc,disass_opcode(opcode,n64.cpu.pc_old));
+
+    // goto next opcode
+    pc_old = pc;    
     pc += 4;
 
-    std::cout << fmt::format("{:16x}: {}\n",pc,disass_opcode(n64,opcode));
+    
 
     instr_lut[opcode >> 26](n64,opcode);
 

@@ -1,4 +1,5 @@
 #include <n64/n64.h>
+#include <n64/mem_constants.h>
 
 namespace nintendo64
 {
@@ -29,6 +30,7 @@ void reset_mem(Mem &mem, const std::string &filename)
 
 // TODO: this will probably have to be switched over to software page table
 // come time for implementing the tlb but lets just keep things nice and simple for now
+// and do a giant if else chain for everything
 u32 remap_addr(u32 addr)
 {
     if(addr < 0x80000000)
@@ -84,6 +86,7 @@ access_type read_mem(N64 &n64, u32 addr)
     if(addr < 0x00800000)
     {
         unimplemented("rdram");
+        return 0;
     }
 
     // UNUSED
@@ -95,6 +98,7 @@ access_type read_mem(N64 &n64, u32 addr)
     else if(addr < 0x04000000)
     {
         unimplemented("rdram regs");
+        return 0;
     }
 
     else if(addr < 0x04001000)
@@ -108,6 +112,70 @@ access_type read_mem(N64 &n64, u32 addr)
         return 0;
     }
 
+    // TODO: start here impl the read lw is doing
+    else if(addr < 0x04100000)
+    {
+        unimplemented("sp regs");
+        return 0;
+    }
+
+    else if(addr < 0x04200000)
+    {
+        unimplemented("dp command regs");
+        return 0;
+    }
+
+    else if(addr < 0x04300000)
+    {
+        unimplemented("dp span regs");
+        return 0;
+    }
+
+    else if(addr < 0x04400000)
+    {
+        unimplemented("mips interface");
+        return 0;
+    }
+
+    else if(addr < 0x04500000)
+    {
+        unimplemented("video interface");
+        return 0;
+    }
+
+    else if(addr < 0x04600000)
+    {
+        unimplemented("audio interface");
+        return 0;
+    }
+
+    else if(addr < 0x04700000)
+    {
+        unimplemented("peripheral interface");
+        return 0;
+    }
+    
+    else if(addr < 0x04800000)
+    {
+        // UNUSED
+        if(addr >= 0x04700020)
+        {
+            return 0;
+        }
+
+        // TODO: should these all be byte accesses?
+        switch(addr)
+        {
+            case RI_SELECT_REG: return n64.mem.ri_select;
+
+            default: unimplemented("rdram interface");
+        }
+
+        return 0;
+    }
+
+    
+  
 
     else
     {

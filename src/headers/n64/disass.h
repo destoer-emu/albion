@@ -7,25 +7,23 @@ namespace nintendo64
 {
 
 
-struct Disass
-{
-
-};
-
-using DISASS_FUNC = std::string (*)(N64 &n64,u32 opcode);
+using DISASS_FUNC = std::string (*)(u32 opcode, u64 pc);
 
 
-std::string disass_opcode(N64 &n64,u32 opcode);
+std::string disass_opcode(u32 opcode, u64 pc);
 
-std::string disass_lui(N64 &n64, u32 opcode);
-std::string disass_addiu(N64 &n64, u32 opcode);
+std::string disass_lui(u32 opcode, u64 pc);
+std::string disass_addiu(u32 opcode, u64 pc);
 
-std::string disass_lw(N64 &n64, u32 opcode);
+std::string disass_lw(u32 opcode, u64 pc);
 
-std::string disass_unknown(N64 &n64, u32 opcode);
-std::string disass_unknown_cop0(N64 &n64, u32 opcode);
 
-std::string disass_cop0(N64 &n64, u32 opcode);
-std::string disass_mtc0(N64 &n64, u32 opcode); 
+std::string disass_bne(u32 opcode, u64 pc);
+
+std::string disass_unknown(u32 opcode, u64 pc);
+std::string disass_unknown_cop0(u32 opcode, u64 pc);
+
+std::string disass_cop0(u32 opcode, u64 pc);
+std::string disass_mtc0(u32 opcode, u64 pc); 
 
 }

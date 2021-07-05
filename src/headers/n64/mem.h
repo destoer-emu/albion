@@ -9,6 +9,11 @@ struct Mem
     std::vector<u8> rom;
     std::vector<u8> rd_ram;
     std::vector<u8> sp_dmem;
+
+
+
+    // RDRAM interface
+    u8 ri_select = 0;
 };
 
 void reset_mem(Mem &mem, const std::string &filename);

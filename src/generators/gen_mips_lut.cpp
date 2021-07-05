@@ -9,6 +9,21 @@ void gen_mips_lut(const char *prefix)
         printf("&%s",prefix);
         switch(i)
         {
+            // r-format instruction
+            // TODO: start here
+            case 0b000000:
+            {
+                printf("r_fmt");
+                break;
+            }
+
+            // bne
+            case 0b000101:
+            {
+                printf("bne");
+                break;
+            }
+
             // lw
             case 0b100011:
             {

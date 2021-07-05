@@ -11,6 +11,7 @@ struct Cpu
 {
     u64 regs[32];
     u64 pc;
+    u64 pc_old;
 
     u64 cp0_regs[32];
 
@@ -53,6 +54,7 @@ void instr_addiu(N64 &n64, u32 opcode);
 
 void instr_lw(N64 &n64, u32 opcode);
 
+void instr_bne(N64 &n64, u32 opcode);
 
 void instr_cop0(N64 &n64, u32 opcode);
 void instr_mtc0(N64 &n64, u32 opcode); 

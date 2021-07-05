@@ -79,4 +79,9 @@ inline u32 get_rs(u32 opcode)
     return (opcode >> 21) & 0xf;
 }
 
+inline u64 compute_branch_addr(u64 pc, u16 imm)
+{
+    return pc + (sign_extend_mips<s32,s16>(imm) << 2);
+}
+
 }
