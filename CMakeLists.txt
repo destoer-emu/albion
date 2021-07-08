@@ -158,7 +158,7 @@ if(WIN32)
 	
     include_directories("C:/SDL2-2.0.14/include")
 else()
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -march=native -pthread -Ofast -fomit-frame-pointer")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -march=native -pthread -Ofast -fomit-frame-pointer -Wsuggest-final-types ")
 if(${FRONTEND} STREQUAL "HEADLESS")
 
 else ()

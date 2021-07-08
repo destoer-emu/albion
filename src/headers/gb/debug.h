@@ -7,7 +7,7 @@
 namespace gameboy
 {
 #ifdef DEBUG
-class GBDebug : public Debug 
+class GBDebug final : public Debug 
 {
 public:
     GBDebug(GB &gb);

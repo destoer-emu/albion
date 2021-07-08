@@ -25,7 +25,7 @@ enum class gba_event
 
 constexpr size_t EVENT_SIZE = 11;
 
-class GBAScheduler : public Scheduler<EVENT_SIZE,gba_event>
+class GBAScheduler final : public Scheduler<EVENT_SIZE,gba_event>
 {
 public:
     GBAScheduler(GBA &gba);

@@ -7,7 +7,7 @@
 namespace nintendo64
 {
 #ifdef DEBUG
-class N64Debug : public Debug 
+class N64Debug final : public Debug 
 {
 public:
     N64Debug(N64 &n64);

@@ -24,7 +24,7 @@ enum class gameboy_event
 
 constexpr size_t EVENT_SIZE = 10;
 
-class GameboyScheduler : public Scheduler<EVENT_SIZE,gameboy_event>
+class GameboyScheduler final : public Scheduler<EVENT_SIZE,gameboy_event>
 {
 public:
     GameboyScheduler(GB &gb);
