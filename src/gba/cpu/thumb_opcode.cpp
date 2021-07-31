@@ -255,11 +255,24 @@ void Cpu::thumb_branch(uint16_t opcode)
     
     const auto old = pc_actual-2;
 
-    write_pc(regs[PC] + offset);
-
     if(old == pc_actual)
     {
-        scheduler.skip_to_event();               
+        while(!interrupt_ready())
+        {
+            if(scheduler.size() == 0)
+            {
+                throw std::runtime_error("thumb branch infinite loop");
+            }
+
+            scheduler.skip_to_event();
+        }   
+
+        write_pc(regs[PC] + offset);            
+    }
+
+    else
+    {
+        write_pc(regs[PC] + offset);
     }
 }
 

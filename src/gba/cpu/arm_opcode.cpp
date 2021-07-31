@@ -451,15 +451,28 @@ void Cpu::arm_branch(uint32_t opcode)
 
     const auto old = pc_actual-4;
 
-    // should switch to sequential access here
-    // writing to the pc will trigger the pipeline refill
-    write_pc(regs[PC] + offset);
 
     if(old == pc_actual)
     {
-        scheduler.skip_to_event();  
+        while(!interrupt_ready())
+        {
+            if(scheduler.size() == 0)
+            {
+                throw std::runtime_error("arm branch infinite loop");
+            }
+
+            scheduler.skip_to_event();
+        }
+
+        write_pc(regs[PC] + offset);  
     }
 
+    else
+    {
+        // should switch to sequential access here
+        // writing to the pc will trigger the pipeline refill
+        write_pc(regs[PC] + offset);
+    }
 }
 
 // psr transfer

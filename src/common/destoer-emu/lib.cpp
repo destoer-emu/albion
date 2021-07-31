@@ -78,7 +78,7 @@ void load_ips_patch(const std::string &filename,std::vector<uint8_t> &rom)
                 break;
             }
 
-            uint32_t offset;
+            uint32_t offset = 0;
 
             // read out 24bit value and bswap
             memcpy(&offset,&buf[idx],3);
