@@ -12,6 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 #set(FRONTEND "QT")
 #set(FRONTEND "SDL")
 set(FRONTEND "IMGUI")
+#set(FRONTEND "ANDROID")
 
 # external frontend
 #set(FRONTEND "HEADLESS")
@@ -26,6 +27,12 @@ endif()
 if(${FRONTEND} STREQUAL "SDL")
 	add_definitions(-DAUDIO_ENABLE -DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL -DDEBUG)
 	add_definitions(-DFRONTEND_SDL)
+endif()
+
+
+if(${FRONTEND} STREQUAL "ANDROID")
+	add_definitions(-DAUDIO_ENABLE -DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL -DDEBUG)
+	add_definitions(-DFRONTEND_ANDROID)
 endif()
 
 if(${FRONTEND} STREQUAL "QT") # not supported yet come back to this
@@ -105,6 +112,14 @@ if(${FRONTEND} STREQUAL "SDL")
 		"src/frontend/sdl/*.cpp"
 	)
 endif()
+
+if(${FRONTEND} STREQUAL "ANDROID")
+	file(GLOB frontend_files
+		"src/frontend/android/*.h"
+		"src/frontend/android/*.cpp"
+	)
+endif()
+
 
 if(${FRONTEND} STREQUAL "QT")
 	if(WIN32)

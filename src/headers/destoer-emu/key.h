@@ -1,7 +1,7 @@
 #include <frontend/qt/qt_window.h>
 #include <frontend/sdl/sdl_window.h>
 #include <frontend/imgui/imgui_window.h>
-
+#include <frontend/android/android_window.h>
 
 
 #ifdef FRONTEND_QT
@@ -23,7 +23,7 @@ enum class emu_key
 #endif
 
 
-#if defined FRONTEND_SDL || defined FRONTEND_IMGUI 
+#if defined FRONTEND_SDL || defined FRONTEND_IMGUI  || defined FRONTEND_ANDROID
 enum class emu_key
 {
     enter = SDLK_RETURN,		

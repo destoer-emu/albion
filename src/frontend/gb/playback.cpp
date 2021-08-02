@@ -10,6 +10,7 @@
 #include <SDL2/SDL.h>
 #endif
 
+// TODO: improve audio playback with resampling
 void GbPlayback::init(int playback_frequency,int sample_size) noexcept
 {
     SDL_AudioSpec audio_spec;
@@ -26,6 +27,7 @@ void GbPlayback::init(int playback_frequency,int sample_size) noexcept
 
     sample_idx = 0;
 
+    // one sample for each channel
     audio_buf.resize(sample_size);
 
     SDL_OpenAudio(&audio_spec,NULL);

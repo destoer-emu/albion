@@ -199,6 +199,7 @@ void Mem::init(std::string filename)
     // if we are not using the bios boot we need to set postflg
     mem_io.postflg = 1;   
 
+    open_bus_value = 0;
 
     page_table.resize(16384);
     for(size_t i = 0; i < page_table.size(); i++)
@@ -1253,7 +1254,7 @@ access_type Mem::read_mem_handler(uint32_t addr)
 
             else // approximation for open bus
             {
-                return cpu.get_pipeline_val();
+                return open_bus_value;
             }
         }
         case memory_region::wram_board: return read_board_wram<access_type>(addr);
@@ -1350,6 +1351,7 @@ access_type Mem::read_memt(uint32_t addr)
         debug.halt();
     }
 #endif
+    open_bus_value = v;
     return v;
 }
 
@@ -1634,6 +1636,7 @@ void Mem::write_memt(uint32_t addr,access_type v)
     }   
 #endif
     write_memt_no_debug(addr,v);
+    open_bus_value = v;
 }
 
 

@@ -226,6 +226,7 @@ public:
     // inited by main constructor
     Dma dma;
 
+    u32 open_bus_value;
 
     // general memory
     // bios code

@@ -665,6 +665,14 @@ std::string Disass::disass_arm_single_data_transfer(uint32_t opcode)
         imm = fmt::format("#0x{:x}",v);
     }
 
+
+    // minus imm
+    // TODO: this isn't quite the proper arm syntax but the meaning is clear
+    if(!is_set(opcode,23))
+    {
+        imm = "-" + imm;
+    }
+
     if(is_set(opcode,24)) // pre indexed
     {
         // write back enabled?

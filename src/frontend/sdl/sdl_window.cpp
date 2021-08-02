@@ -310,15 +310,21 @@ void SDLMainWindow::gba_main(std::string filename)
 
 SDLMainWindow::~SDLMainWindow()
 {
-	if(renderer != NULL)
+	if(renderer)
 	{
     	SDL_DestroyRenderer(renderer);
 	}
 
-	if(window != NULL)
+	if(window)
 	{
     	SDL_DestroyWindow(window);
 	}
+
+	if(texture)
+	{
+		SDL_DestroyTexture(texture);
+	}
+
     SDL_QuitSubSystem(SDL_INIT_EVERYTHING);  
 }
 #endif
