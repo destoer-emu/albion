@@ -31,6 +31,13 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+
+            case 0b101011:
+            {
+                printf("sw");
+                break;
+            }
+
             // addiu
             case 0b001001:
             {

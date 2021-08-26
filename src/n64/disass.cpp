@@ -74,6 +74,20 @@ std::string disass_lw(u32 opcode, u64 pc)
     return fmt::format("lw {}, {:04x}({})",reg_names[rt],imm,reg_names[base]);
 }
 
+
+std::string disass_sw(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto base = get_rs(opcode);
+    const auto rt = get_rt(opcode);
+
+    const auto imm = opcode & 0xffff;  
+
+    return fmt::format("sw {}, {:04x}({})",reg_names[rt],imm,reg_names[base]);
+}
+
+
 std::string disass_bne(u32 opcode, u64 pc)
 {
     const auto rs = get_rs(opcode);
@@ -101,12 +115,21 @@ std::string disass_sll(u32 opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto rt = get_rt(opcode);
-    const auto rd = get_rd(opcode);
+    if(opcode)
+    {
+        const auto rt = get_rt(opcode);
+        const auto rd = get_rd(opcode);
 
-    const auto shamt = get_shamt(opcode);
+        const auto shamt = get_shamt(opcode);
+        
+        
+        return fmt::format("sll {}, {}, {}",reg_names[rd],reg_names[rt],shamt);
+    }
 
-    return fmt::format("sll {}, {}, {}",reg_names[rd],reg_names[rt],shamt);
+    else
+    {
+        return "nop";
+    }
 }
 
 std::string disass_cop0(u32 opcode, u64 pc)

@@ -10,9 +10,11 @@ void reset_mem(Mem &mem, const std::string &filename)
     read_file(filename,mem.rom);
 
     // init memory
-    // 4mb rd ram
-    mem.rd_ram.resize(4 * 1024 * 1024);
+    // 8mb rd ram
+    mem.rd_ram.resize(8 * 1024 * 1024);
     mem.sp_dmem.resize(0x1000);
+
+    mem.sp_imem.resize(0x1000);
 
     const auto magic = handle_read<uint32_t>(mem.rom,0x0);
 
@@ -87,6 +89,7 @@ access_type read_mem(N64 &n64, u32 addr)
     {
         unimplemented("rdram");
         return 0;
+        //return handle_read<access_type>(n64.mem.rd_ram,addr);
     }
 
     // UNUSED
@@ -104,6 +107,11 @@ access_type read_mem(N64 &n64, u32 addr)
     else if(addr < 0x04001000)
     {
         return handle_read<access_type>(n64.mem.sp_dmem,addr & 0xfff);
+    }
+
+    else if(addr < 0x04002000)
+    {
+        return handle_read<access_type>(n64.mem.sp_imem,addr & 0xfff);
     }
 
     // UNUSED
@@ -179,11 +187,43 @@ access_type read_mem(N64 &n64, u32 addr)
 
     else
     {
-        printf("unknown physical address: %8x\n",addr);
+        printf("read_mem: unknown physical address: %8x\n",addr);
         exit(1);
         return 0;
     }
 }
+
+// for now assume accesses are force aligned
+// however they are supposed to throw exceptions
+// when they are not
+
+template<typename access_type>
+void write_mem(N64 &n64, u32 addr, access_type v)
+{
+    // force align addr
+    addr &= ~(sizeof(access_type)-1);   
+
+    UNUSED(n64);
+    addr = remap_addr(addr);
+
+    if(addr < 0x00800000)
+    {
+        unimplemented("rdram");
+        //handle_write<access_type>(n64.mem.rd_ram,addr,v);
+    }
+
+    else if(addr < 0x04002000)
+    {
+        handle_write<access_type>(n64.mem.sp_imem,addr & 0xfff,v);
+    }
+
+    else
+    {
+        std::cout << fmt::format("write_mem: unknown physical address: {:8x}:{:x}\n",addr,v);
+        exit(1);
+    }
+}
+
 
 u8 read_u8(N64 &n64,u32 addr)
 {
@@ -203,6 +243,27 @@ u32 read_u32(N64 &n64,u32 addr)
 u64 read_u64(N64 &n64,u32 addr)
 {
     return bswap(read_mem<u64>(n64,addr));
+}
+
+
+void write_u8(N64 &n64,u32 addr,u8 v)
+{
+    write_mem<u8>(n64,addr,v);
+}
+
+void write_u16(N64 &n64,u32 addr,u16 v)
+{
+    write_mem<u16>(n64,addr,bswap(v));
+}
+
+void write_u32(N64 &n64,u32 addr,u32 v)
+{
+    write_mem<u32>(n64,addr,bswap(v));
+}
+
+void write_u64(N64 &n64,u32 addr,u64 v)
+{
+    write_mem<u64>(n64,addr,bswap(v));
 }
 
 
