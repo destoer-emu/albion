@@ -20,10 +20,15 @@ std::string disass_lw(u32 opcode, u64 pc);
 
 std::string disass_bne(u32 opcode, u64 pc);
 
+
+std::string disass_sll(u32 opcode, u64 pc);
+
 std::string disass_unknown(u32 opcode, u64 pc);
 std::string disass_unknown_cop0(u32 opcode, u64 pc);
+std::string disass_unknown_r(u32 opcode, u64 pc);
 
 std::string disass_cop0(u32 opcode, u64 pc);
 std::string disass_mtc0(u32 opcode, u64 pc); 
+std::string disass_r_fmt(u32 opcode, u64 pc);
 
 }

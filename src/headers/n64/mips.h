@@ -66,17 +66,22 @@ inline T sign_extend_mips(IN x)
 
 inline u32 get_rt(u32 opcode)
 {
-    return (opcode >> 16) & 0xf;
+    return (opcode >> 16) & 0x1f;
 }
 
 inline u32 get_rd(u32 opcode)
 {
-    return (opcode >> 11) & 0xf;
+    return (opcode >> 11) & 0x1f;
 }
 
 inline u32 get_rs(u32 opcode)
 {
-    return (opcode >> 21) & 0xf;
+    return (opcode >> 21) & 0x1f;
+}
+
+inline u32 get_shamt(u32 opcode)
+{
+    return (opcode >> 6) & 0x1f;
 }
 
 inline u64 compute_branch_addr(u64 pc, u16 imm)

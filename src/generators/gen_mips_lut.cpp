@@ -93,12 +93,18 @@ void gen_cop0_lut(const char *prefix)
 
 void gen_r_lut(const char *prefix)
 {
-    for(int i = 0; i < 32; i++)
+    for(int i = 0; i < 64; i++)
     {
         printf("&%s",prefix);
 
         switch(i)
         {
+            case 0:
+            {
+                printf("sll");
+                break;
+            }
+
             default:
             {
                 printf("unknown_r");

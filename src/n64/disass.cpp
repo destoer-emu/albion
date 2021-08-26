@@ -28,6 +28,19 @@ std::string disass_unknown_cop0(u32 opcode, u64 pc)
 }
 
 
+std::string disass_unknown_r(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    // make this panic for now
+    printf("disass r unknown opcode: %08x\n",opcode);
+    exit(1);
+
+    return "unknown r opcode";
+}
+
+
+
 std::string disass_lui(u32 opcode, u64 pc)
 {
     UNUSED(pc);
@@ -74,13 +87,6 @@ std::string disass_bne(u32 opcode, u64 pc)
 }
 
 
-std::string disass_cop0(u32 opcode, u64 pc)
-{
-    UNUSED(pc);
-
-    return disass_cop0_lut[(opcode >> 21) & 0b11111](opcode,pc);
-}
-
 std::string disass_mtc0(u32 opcode, u64 pc)
 {
     UNUSED(pc);
@@ -89,6 +95,28 @@ std::string disass_mtc0(u32 opcode, u64 pc)
     const auto rd = get_rd(opcode);
 
     return fmt::format("mtc0 {}, {}",reg_names[rt],cp0_names[rd]);
+}
+
+std::string disass_sll(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto rt = get_rt(opcode);
+    const auto rd = get_rd(opcode);
+
+    const auto shamt = get_shamt(opcode);
+
+    return fmt::format("sll {}, {}, {}",reg_names[rd],reg_names[rt],shamt);
+}
+
+std::string disass_cop0(u32 opcode, u64 pc)
+{
+    return disass_cop0_lut[(opcode >> 21) & 0b11111](opcode,pc);
+}
+
+std::string disass_r_fmt(u32 opcode, u64 pc)
+{
+    return disass_r_lut[opcode & 0b111111](opcode,pc);
 }
 
 // okay lets figure out a good way to decode these again
