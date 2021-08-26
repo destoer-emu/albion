@@ -2,7 +2,7 @@
 
 namespace nintendo64 {
 const INSTR_FUNC instr_lut[] = {
-&instr_unknown,
+&instr_r_fmt,
 &instr_unknown,
 &instr_unknown,
 &instr_unknown,
@@ -70,7 +70,7 @@ const INSTR_FUNC instr_lut[] = {
 
 
 const DISASS_FUNC disass_lut[] = {
-&disass_unknown,
+&disass_r_fmt,
 &disass_unknown,
 &disass_unknown,
 &disass_unknown,
@@ -206,6 +206,78 @@ const DISASS_FUNC disass_cop0_lut[] = {
 &disass_unknown_cop0,
 &disass_unknown_cop0,
 &disass_unknown_cop0,
+};
+
+
+const INSTR_FUNC instr_r_lut[] = {
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+&instr_unknown_r,
+};
+
+
+const DISASS_FUNC disass_r_lut[] = {
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
+&disass_unknown_r,
 };
 
 

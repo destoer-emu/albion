@@ -91,6 +91,24 @@ void gen_cop0_lut(const char *prefix)
     }    
 }
 
+void gen_r_lut(const char *prefix)
+{
+    for(int i = 0; i < 32; i++)
+    {
+        printf("&%s",prefix);
+
+        switch(i)
+        {
+            default:
+            {
+                printf("unknown_r");
+                break;
+            }
+        }
+
+        printf(",\n");
+    }
+}
 
 
 // do we really want to handle the names this way
@@ -142,6 +160,25 @@ int main()
     printf("};\n\n\n");
 
 
+
+
+    // and r format
+
+    printf("const INSTR_FUNC instr_r_lut[] = {\n");
+
+    // gen the instr table
+    gen_r_lut("instr_");
+
+    printf("};\n\n\n");
+
+
+
+    printf("const DISASS_FUNC disass_r_lut[] = {\n");
+
+    // gen the disass table
+    gen_r_lut("disass_");
+
+    printf("};\n\n\n");
 
 
     printf("}\n");

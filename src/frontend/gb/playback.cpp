@@ -27,7 +27,6 @@ void GbPlayback::init(int playback_frequency,int sample_size) noexcept
 
     sample_idx = 0;
 
-    // one sample for each channel
     audio_buf.resize(sample_size);
 
     SDL_OpenAudio(&audio_spec,NULL);
