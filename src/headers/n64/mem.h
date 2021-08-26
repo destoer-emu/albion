@@ -16,6 +16,10 @@ struct Mem
 
     // RDRAM interface
     u8 ri_select = 0;
+    u8 ri_config = 0;
+
+    // PI interface
+    u32 pi_cart_addr = 0;
 };
 
 void reset_mem(Mem &mem, const std::string &filename);

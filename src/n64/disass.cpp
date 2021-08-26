@@ -62,6 +62,33 @@ std::string disass_addiu(u32 opcode, u64 pc)
     return fmt::format("addiu {}, {}, {:04x}",reg_names[rt],reg_names[rs],imm);
 }
 
+
+std::string disass_addi(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+
+    const auto imm = opcode & 0xffff;
+
+    return fmt::format("addi {}, {}, {:04x}",reg_names[rt],reg_names[rs],imm);
+}
+
+
+std::string disass_ori(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+
+    const auto imm = opcode & 0xffff;
+
+    return fmt::format("ori {}, {}, {:04x}",reg_names[rt],reg_names[rs],imm);
+}
+
+
 std::string disass_lw(u32 opcode, u64 pc)
 {
     UNUSED(pc);

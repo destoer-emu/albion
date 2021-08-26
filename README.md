@@ -71,3 +71,4 @@ https://gbdev.gg8.se/wiki/articles/Pan_Docs
 https://www.coranac.com/tonc/text/
 
 https://n64.readthedocs.io/index.html
+http://en64.shoutwiki.com

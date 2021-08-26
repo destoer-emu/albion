@@ -311,9 +311,24 @@ inline T bswap(T x)
 	return x;
 }
 
-inline void unimplemented(const char *msg)
+inline void unimplemented(const char *fmt, ...)
 {
 	printf("unimplemented: ");
-	puts(msg);
+
+	va_list args;
+	va_start(args,fmt);
+
+	vprintf(fmt,args);
+
+	va_end(args);
 	exit(1);
+}
+
+
+// this checks if the msb (sign) changes to something it shouldunt
+// during arithmetic
+template <typename T,typename U, typename X>
+inline bool did_overflow(T v1, U v2, X ans) noexcept
+{
+    return  is_set((v1 ^ ans) & (v2 ^ ans),(sizeof(T)*8)-1); 
 }

@@ -28,6 +28,13 @@ void reset_mem(Mem &mem, const std::string &filename)
 
     // hle pif rom
     memcpy(mem.sp_dmem.data(),mem.rom.data(),0x1000);
+
+    // rdram interface
+    mem.ri_select = 0;
+    mem.ri_config = 0;
+
+    // pi interface
+    mem.pi_cart_addr = 0;
 }
 
 // TODO: this will probably have to be switched over to software page table
@@ -87,7 +94,7 @@ access_type read_mem(N64 &n64, u32 addr)
     // just do something naive for now so we can get roms running
     if(addr < 0x00800000)
     {
-        unimplemented("rdram");
+        unimplemented("read_mem: rdram");
         return 0;
         //return handle_read<access_type>(n64.mem.rd_ram,addr);
     }
@@ -100,7 +107,7 @@ access_type read_mem(N64 &n64, u32 addr)
 
     else if(addr < 0x04000000)
     {
-        unimplemented("rdram regs");
+        unimplemented("read_mem: rdram regs");
         return 0;
     }
 
@@ -123,43 +130,43 @@ access_type read_mem(N64 &n64, u32 addr)
     // TODO: start here impl the read lw is doing
     else if(addr < 0x04100000)
     {
-        unimplemented("sp regs");
+        unimplemented("read_mem: sp regs");
         return 0;
     }
 
     else if(addr < 0x04200000)
     {
-        unimplemented("dp command regs");
+        unimplemented("read_mem: dp command regs");
         return 0;
     }
 
     else if(addr < 0x04300000)
     {
-        unimplemented("dp span regs");
+        unimplemented("read_mem: dp span regs");
         return 0;
     }
 
     else if(addr < 0x04400000)
     {
-        unimplemented("mips interface");
+        unimplemented("read_mem: mips interface");
         return 0;
     }
 
     else if(addr < 0x04500000)
     {
-        unimplemented("video interface");
+        unimplemented("read_mem: video interface");
         return 0;
     }
 
     else if(addr < 0x04600000)
     {
-        unimplemented("audio interface");
+        unimplemented("read_mem: audio interface");
         return 0;
     }
 
     else if(addr < 0x04700000)
     {
-        unimplemented("peripheral interface");
+        unimplemented("read_mem: peripheral interface");
         return 0;
     }
     
@@ -176,7 +183,7 @@ access_type read_mem(N64 &n64, u32 addr)
         {
             case RI_SELECT_REG: return n64.mem.ri_select;
 
-            default: unimplemented("rdram interface");
+            default: unimplemented("read_mem: rdram interface: %8x\n",addr);
         }
 
         return 0;
@@ -206,15 +213,101 @@ void write_mem(N64 &n64, u32 addr, access_type v)
     UNUSED(n64);
     addr = remap_addr(addr);
 
+    // just do something naive for now so we can get roms running
     if(addr < 0x00800000)
     {
-        unimplemented("rdram");
-        //handle_write<access_type>(n64.mem.rd_ram,addr,v);
+        unimplemented("write_mem: rdram");
+        //return handle_read<access_type>(n64.mem.rd_ram,addr);
+    }
+
+    // UNUSED
+    else if(addr < 0x03F00000)
+    {
+    }
+
+    else if(addr < 0x04000000)
+    {
+        unimplemented("write_mem: rdram regs");
+    }
+
+    else if(addr < 0x04001000)
+    {
+        handle_write<access_type>(n64.mem.sp_dmem,addr & 0xfff,v);
     }
 
     else if(addr < 0x04002000)
     {
         handle_write<access_type>(n64.mem.sp_imem,addr & 0xfff,v);
+    }
+
+    // UNUSED
+    else if(addr < 0x04040000)
+    {
+
+    }
+
+    // TODO: start here impl the read lw is doing
+    else if(addr < 0x04100000)
+    {
+        unimplemented("write_mem: sp regs");
+    }
+
+    else if(addr < 0x04200000)
+    {
+        unimplemented("write_mem: dp command regs");
+    }
+
+    else if(addr < 0x04300000)
+    {
+        unimplemented("write_mem: dp span regs");
+    }
+
+    else if(addr < 0x04400000)
+    {
+        unimplemented("write_mem: mips interface");
+    }
+
+    else if(addr < 0x04500000)
+    {
+        unimplemented("write_mem: video interface");
+    }
+
+    else if(addr < 0x04600000)
+    {
+        unimplemented("write_mem: audio interface");
+    }
+
+    else if(addr < 0x04700000)
+    {
+        switch(addr)
+        {
+            case  PI_CART_ADDR_REG:
+            {
+                n64.mem.pi_cart_addr = v;
+                break;
+            }
+
+            default: unimplemented("write_mem: pi interface");
+        }
+    }
+    
+    else if(addr < 0x04800000)
+    {
+        // UNUSED
+        if(addr >= 0x04700020)
+        {
+            return;
+        }
+
+
+        // TODO: should these all be byte accesses?
+        switch(addr)
+        {
+            case RI_SELECT_REG: n64.mem.ri_select = v & 0b111111; break;
+            case RI_CONFIG_REG: n64.mem.ri_config = v & 0b1111111; break;
+
+            default: unimplemented("write_mem: rdram interface: %8x\n",addr);
+        }
     }
 
     else

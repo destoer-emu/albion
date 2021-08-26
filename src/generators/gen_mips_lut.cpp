@@ -45,6 +45,18 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+            case 0b001000:
+            {
+                printf("addi");
+                break;
+            }
+
+            case 0b001101:
+            {
+                printf("ori");
+                break;
+            }
+
             // lui:
             case 0b001111:
             {

@@ -30,7 +30,43 @@ void instr_addiu(N64 &n64, u32 opcode)
     n64.cpu.regs[rt] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs]) + imm;
 }
 
+void instr_addi(N64 &n64, u32 opcode)
+{
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
 
+    const auto imm = sign_extend_mips<s64,s16>(opcode & 0xffff);
+
+    // TODO: how do we detect an exception on this!
+
+    const auto old = n64.cpu.regs[rs];
+    
+    // 32 bit oper
+    const auto ans = sign_extend_mips<s64,s32>(n64.cpu.regs[rs]) + imm;  
+
+    // TODO: speed this up with builtins
+    if(did_overflow(old,imm,n64.cpu.regs[rt]))
+    {
+        unimplemented("addi exception!");
+    }  
+
+    else
+    {
+        n64.cpu.regs[rt] = ans;
+    }
+}
+
+
+void instr_ori(N64 &n64, u32 opcode)
+{
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+
+    const auto imm = sign_extend_mips<s64,s16>(opcode & 0xffff);
+
+    // addiu (oper is 32 bit, no exceptions thrown)
+    n64.cpu.regs[rt] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs]) | imm;    
+}
 
 // TODO: how do we do the pc_old trick to get branch delay slots working?
 void instr_bne(N64 &n64, u32 opcode)

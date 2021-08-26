@@ -79,8 +79,7 @@ uint64_t N64Debug::get_instr_size(uint64_t addr)
 
 uint8_t N64Debug::read_mem(uint64_t addr)
 {
-    //return gba.mem.read_mem<uint8_t>(addr);
-    return addr;
+    return read_u8(n64,addr);
 }
 
 void N64Debug::change_breakpoint_enable(bool enable)
