@@ -29,12 +29,17 @@ void reset_mem(Mem &mem, const std::string &filename)
     // hle pif rom
     memcpy(mem.sp_dmem.data(),mem.rom.data(),0x1000);
 
-    // rdram interface
+    // ri
     mem.ri_select = 0;
     mem.ri_config = 0;
+    mem.ri_base = 0;
 
-    // pi interface
+    // pi 
     mem.pi_cart_addr = 0;
+
+    // MI
+    mem.mi_mode = 0;
+    mem.mi_intr = 0;
 }
 
 // TODO: this will probably have to be switched over to software page table
@@ -227,7 +232,13 @@ void write_mem(N64 &n64, u32 addr, access_type v)
 
     else if(addr < 0x04000000)
     {
-        unimplemented("write_mem: rdram regs");
+    /* RDRAM configuration (we will ignore this for now)
+
+        switch(addr)
+        {
+            default: unimplemented("write_mem: rdram regs: %8x\n",addr); 
+        }
+    */
     }
 
     else if(addr < 0x04001000)
@@ -264,7 +275,20 @@ void write_mem(N64 &n64, u32 addr, access_type v)
 
     else if(addr < 0x04400000)
     {
-        unimplemented("write_mem: mips interface");
+        switch(addr)
+        {  
+            case MI_MODE_REG: 
+            {
+                n64.mem.mi_mode = v; 
+                if(is_set(v,11)) // bit 11 wrote clear DP interrupt bit 
+                {
+                    n64.mem.mi_intr = deset_bit(n64.mem.mi_intr,DP_INTR_BIT);
+                }
+                break;
+            }
+
+            default: unimplemented("write_mem: mips interface : %8x\n",addr); break;
+        }
     }
 
     else if(addr < 0x04500000)
@@ -300,11 +324,13 @@ void write_mem(N64 &n64, u32 addr, access_type v)
         }
 
 
-        // TODO: should these all be byte accesses?
+
         switch(addr)
         {
             case RI_SELECT_REG: n64.mem.ri_select = v & 0b111111; break;
             case RI_CONFIG_REG: n64.mem.ri_config = v & 0b1111111; break;
+            case RI_CURRENT_LOAD_REG: break; // write only ignore for now
+            case RI_BASE_REG: n64.mem.ri_base = v & 0b1111; break;
 
             default: unimplemented("write_mem: rdram interface: %8x\n",addr);
         }

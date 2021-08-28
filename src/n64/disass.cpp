@@ -159,6 +159,17 @@ std::string disass_sll(u32 opcode, u64 pc)
     }
 }
 
+std::string disass_or(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto rt = get_rt(opcode);
+    const auto rd = get_rd(opcode);
+    const auto rs = get_rs(opcode);
+
+    return fmt::format("or {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);    
+}
+
 std::string disass_cop0(u32 opcode, u64 pc)
 {
     return disass_cop0_lut[(opcode >> 21) & 0b11111](opcode,pc);

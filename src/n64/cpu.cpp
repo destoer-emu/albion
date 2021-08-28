@@ -126,21 +126,20 @@ void step(N64 &n64)
 
     const u32 opcode = read_u32(n64,pc_old);
 
-    std::cout << fmt::format("{:16x}: {}\n",pc,disass_opcode(opcode,n64.cpu.pc_old));
+    std::cout << fmt::format("{:16x}: {}\n",pc_old,disass_opcode(opcode,n64.cpu.pc));
+
+    instr_lut[opcode >> 26](n64,opcode);
 
     // goto next opcode
     pc_old = pc;    
     pc += 4;
 
     
-
-    instr_lut[opcode >> 26](n64,opcode);
-
     // $zero is hardwired to zero, make sure writes cant touch it
     n64.cpu.regs[0] = 0;
 
-    // assume 1 CPI
-    cycle_tick(n64,1);
+    // assume 2 CPI
+    cycle_tick(n64,2);
 
     // check for count interrupt
     // TODO: push this onto the scheduler later

@@ -118,9 +118,15 @@ void gen_r_lut(const char *prefix)
 
         switch(i)
         {
-            case 0:
+            case 0b000000:
             {
                 printf("sll");
+                break;
+            }
+
+            case 0b100101:
+            {
+                printf("or");
                 break;
             }
 

@@ -14,12 +14,17 @@ struct Mem
     std::vector<u8> sp_imem;
 
 
-    // RDRAM interface
+    // RI
     u8 ri_select = 0;
     u8 ri_config = 0;
+    u8 ri_base = 0;
 
-    // PI interface
+    // PI 
     u32 pi_cart_addr = 0;
+
+    // MI
+    u16 mi_mode = 0;
+    u8 mi_intr = 0;
 };
 
 void reset_mem(Mem &mem, const std::string &filename);

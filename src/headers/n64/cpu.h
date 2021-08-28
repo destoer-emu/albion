@@ -62,6 +62,7 @@ void instr_bne(N64 &n64, u32 opcode);
 
 
 void instr_sll(N64 &n64, u32 opcode);
+void instr_or(N64 &n64, u32 opcode);
 
 void instr_cop0(N64 &n64, u32 opcode);
 void instr_mtc0(N64 &n64, u32 opcode);

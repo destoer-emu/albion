@@ -24,6 +24,7 @@ std::string disass_bne(u32 opcode, u64 pc);
 
 
 std::string disass_sll(u32 opcode, u64 pc);
+std::string disass_or(u32 opcode, u64 pc);
 
 std::string disass_unknown(u32 opcode, u64 pc);
 std::string disass_unknown_cop0(u32 opcode, u64 pc);
