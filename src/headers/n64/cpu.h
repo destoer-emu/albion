@@ -55,6 +55,7 @@ void instr_addiu(N64 &n64, u32 opcode);
 void instr_addi(N64 &n64, u32 opcode);
 void instr_ori(N64 &n64, u32 opcode);
 void instr_jal(N64 &n64, u32 opcode);
+void instr_slti(N64 &n64, u32 opcode);
 
 
 void instr_lw(N64 &n64, u32 opcode);

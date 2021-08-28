@@ -30,6 +30,16 @@ void instr_addiu(N64 &n64, u32 opcode)
     n64.cpu.regs[rt] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs]) + imm;
 }
 
+void instr_slti(N64 &n64, u32 opcode)
+{
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+
+    const auto imm = sign_extend_mips<s64,s16>(opcode & 0xffff);
+
+    n64.cpu.regs[rt] = static_cast<s64>(n64.cpu.regs[rs]) < imm;
+}
+
 void instr_addi(N64 &n64, u32 opcode)
 {
     const auto rt = get_rt(opcode);

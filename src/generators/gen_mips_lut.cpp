@@ -17,6 +17,13 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+            // slti:
+            case 0b001010:
+            {
+                printf("slti");
+                break;
+            }
+
             // bne
             case 0b000101:
             {

@@ -17,6 +17,7 @@ std::string disass_addiu(u32 opcode, u64 pc);
 std::string disass_addi(u32 opcode, u64 pc);
 std::string disass_ori(u32 opcode, u64 pc);
 std::string disass_jal(u32 opcode, u64 pc);
+std::string disass_slti(u32 opcode, u64 pc);
 
 std::string disass_lw(u32 opcode, u64 pc);
 std::string disass_sw(u32 opcode, u64 pc);
