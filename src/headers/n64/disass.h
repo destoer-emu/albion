@@ -16,6 +16,8 @@ std::string disass_lui(u32 opcode, u64 pc);
 std::string disass_addiu(u32 opcode, u64 pc);
 std::string disass_addi(u32 opcode, u64 pc);
 std::string disass_ori(u32 opcode, u64 pc);
+std::string disass_andi(u32 opcode, u64 pc);
+std::string disass_xori(u32 opcode, u64 pc);
 std::string disass_jal(u32 opcode, u64 pc);
 std::string disass_slti(u32 opcode, u64 pc);
 
@@ -27,6 +29,7 @@ std::string disass_beql(u32 opcode, u64 pc);
 
 std::string disass_sll(u32 opcode, u64 pc);
 std::string disass_or(u32 opcode, u64 pc);
+std::string disass_jr(u32 opcode, u64 pc);
 
 std::string disass_unknown(u32 opcode, u64 pc);
 std::string disass_unknown_cop0(u32 opcode, u64 pc);

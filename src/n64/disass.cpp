@@ -88,6 +88,31 @@ std::string disass_ori(u32 opcode, u64 pc)
     return fmt::format("ori {}, {}, {:04x}",reg_names[rt],reg_names[rs],imm);
 }
 
+std::string disass_andi(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+
+    const auto imm = opcode & 0xffff;
+
+    return fmt::format("andi {}, {}, {:04x}",reg_names[rt],reg_names[rs],imm);
+}
+
+std::string disass_xori(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+
+    const auto imm = opcode & 0xffff;
+
+    return fmt::format("xori {}, {}, {:04x}",reg_names[rt],reg_names[rs],imm);
+}
+
+
 std::string disass_slti(u32 opcode, u64 pc)
 {
     UNUSED(pc);
@@ -201,6 +226,15 @@ std::string disass_or(u32 opcode, u64 pc)
     const auto rs = get_rs(opcode);
 
     return fmt::format("or {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);    
+}
+
+std::string disass_jr(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto rs = get_rs(opcode);
+
+    return fmt::format("jr {}",reg_names[rs]);
 }
 
 std::string disass_cop0(u32 opcode, u64 pc)

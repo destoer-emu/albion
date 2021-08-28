@@ -99,9 +99,7 @@ access_type read_mem(N64 &n64, u32 addr)
     // just do something naive for now so we can get roms running
     if(addr < 0x00800000)
     {
-        unimplemented("read_mem: rdram");
-        return 0;
-        //return handle_read<access_type>(n64.mem.rd_ram,addr);
+        return handle_read<access_type>(n64.mem.rd_ram,addr);
     }
 
     // UNUSED
@@ -229,8 +227,7 @@ void write_mem(N64 &n64, u32 addr, access_type v)
     // just do something naive for now so we can get roms running
     if(addr < 0x00800000)
     {
-        unimplemented("write_mem: rdram");
-        //return handle_read<access_type>(n64.mem.rd_ram,addr);
+        handle_write<access_type>(n64.mem.rd_ram,addr,v);
     }
 
     // UNUSED

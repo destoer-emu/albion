@@ -36,5 +36,20 @@ void instr_or(N64 &n64, u32 opcode)
     n64.cpu.regs[rd] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs] | n64.cpu.regs[rt]);
 }
 
+void instr_jr(N64 &n64, u32 opcode)
+{
+    const auto rs = get_rs(opcode);
+
+    if((n64.cpu.regs[rs] & 0b11) != 0)
+    {
+        unimplemented("jr address exception");
+    }
+
+    else
+    {
+        n64.cpu.pc = n64.cpu.regs[rs];
+    }
+}
+
 
 }

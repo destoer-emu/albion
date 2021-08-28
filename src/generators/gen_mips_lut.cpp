@@ -31,6 +31,20 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+            // andi
+            case 0b001100:
+            {
+                printf("andi");
+                break;
+            }
+
+            // xori
+            case 0b001110:
+            {
+                printf("xori");
+                break;
+            }
+
             // bne
             case 0b000101:
             {
@@ -147,6 +161,12 @@ void gen_r_lut(const char *prefix)
             case 0b100101:
             {
                 printf("or");
+                break;
+            }
+
+            case 0b001000:
+            {
+                printf("jr");
                 break;
             }
 
