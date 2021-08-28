@@ -24,6 +24,13 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+            // beql:
+            case 0b010100:
+            {
+                printf("beql");
+                break;
+            }
+
             // bne
             case 0b000101:
             {

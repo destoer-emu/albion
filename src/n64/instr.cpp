@@ -89,7 +89,27 @@ void instr_jal(N64 &n64, u32 opcode)
     n64.cpu.regs[RA] = pc_old;
 }
 
-// TODO: how do we do the pc_old trick to get branch delay slots working?
+void instr_beql(N64 &n64, u32 opcode)
+{
+    const auto rs = get_rs(opcode);
+    const auto rt = get_rt(opcode);
+
+    const auto imm = opcode & 0xffff;
+
+    if(n64.cpu.regs[rs] == n64.cpu.regs[rt])
+    {
+        n64.cpu.pc = compute_branch_addr(n64.cpu.pc,imm);
+    }
+    
+    // discard delay slot
+    else
+    {
+        n64.cpu.pc_old = n64.cpu.pc;
+        n64.cpu.pc += 4;
+    }
+}
+
+
 void instr_bne(N64 &n64, u32 opcode)
 {
     const auto rs = get_rs(opcode);
@@ -102,6 +122,7 @@ void instr_bne(N64 &n64, u32 opcode)
         n64.cpu.pc = compute_branch_addr(n64.cpu.pc,imm);
     }
 }
+
 
 void instr_lw(N64 &n64, u32 opcode)
 {

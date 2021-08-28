@@ -147,6 +147,19 @@ std::string disass_bne(u32 opcode, u64 pc)
     return fmt::format("bne {}, {}, {:x}",reg_names[rs],reg_names[rt],addr);
 }
 
+std::string disass_beql(u32 opcode, u64 pc)
+{
+    const auto rs = get_rs(opcode);
+    const auto rt = get_rt(opcode);
+
+    const auto imm = opcode & 0xffff;
+
+    const auto addr = compute_branch_addr(pc,imm);
+
+    return fmt::format("bne {}, {}, {:x}",reg_names[rs],reg_names[rt],addr);
+}
+
+
 
 std::string disass_mtc0(u32 opcode, u64 pc)
 {

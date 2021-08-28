@@ -23,7 +23,7 @@ std::string disass_lw(u32 opcode, u64 pc);
 std::string disass_sw(u32 opcode, u64 pc);
 
 std::string disass_bne(u32 opcode, u64 pc);
-
+std::string disass_beql(u32 opcode, u64 pc);
 
 std::string disass_sll(u32 opcode, u64 pc);
 std::string disass_or(u32 opcode, u64 pc);
