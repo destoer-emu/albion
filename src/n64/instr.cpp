@@ -62,10 +62,21 @@ void instr_ori(N64 &n64, u32 opcode)
     const auto rt = get_rt(opcode);
     const auto rs = get_rs(opcode);
 
-    const auto imm = sign_extend_mips<s64,s16>(opcode & 0xffff);
+    // ori is not sign extended
+    const auto imm = opcode & 0xffff;
 
     // addiu (oper is 32 bit, no exceptions thrown)
     n64.cpu.regs[rt] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs]) | imm;    
+}
+
+void instr_jal(N64 &n64, u32 opcode)
+{
+    const auto target = get_target(opcode,n64.cpu.pc);
+
+    const auto pc_old = n64.cpu.pc;
+    n64.cpu.pc = target;
+
+    n64.cpu.regs[RA] = pc_old;
 }
 
 // TODO: how do we do the pc_old trick to get branch delay slots working?

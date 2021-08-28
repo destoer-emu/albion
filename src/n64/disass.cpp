@@ -89,6 +89,13 @@ std::string disass_ori(u32 opcode, u64 pc)
 }
 
 
+std::string disass_jal(u32 opcode, u64 pc)
+{
+    const auto target = get_target(opcode,pc);
+
+    return fmt::format("jal {:8x}",target);
+}
+
 std::string disass_lw(u32 opcode, u64 pc)
 {
     UNUSED(pc);

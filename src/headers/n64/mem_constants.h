@@ -12,7 +12,7 @@ static constexpr u32  PI_CART_ADDR_REG = 0x04600004;
 
 // mips interface
 static constexpr u32 MI_MODE_REG  = 0x04300000;
-
+static constexpr u32 MI_VERSION_REG = 0x04300004;
 
 
 // intr bits

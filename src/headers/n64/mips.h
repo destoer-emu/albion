@@ -84,6 +84,11 @@ inline u32 get_shamt(u32 opcode)
     return (opcode >> 6) & 0x1f;
 }
 
+inline u32 get_target(u32 opcode, u32 pc)
+{
+    return ((opcode & 0x3FFFFFF) << 2) | (pc & 0xf0000000);
+}
+
 inline u64 compute_branch_addr(u64 pc, u16 imm)
 {
     return pc + (sign_extend_mips<s32,s16>(imm) << 2);

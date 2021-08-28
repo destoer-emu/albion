@@ -31,6 +31,12 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+            // jal
+            case 0b000011:
+            {
+                printf("jal");
+                break;
+            }
 
             case 0b101011:
             {

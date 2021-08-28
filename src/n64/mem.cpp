@@ -153,8 +153,16 @@ access_type read_mem(N64 &n64, u32 addr)
 
     else if(addr < 0x04400000)
     {
-        unimplemented("read_mem: mips interface");
-        return 0;
+        switch(addr)
+        {
+            case MI_VERSION_REG: return static_cast<access_type>(0x02020102);
+
+            default:
+            {
+                unimplemented("read_mem: mips interface: %8x\n",addr);
+                return 0;
+            }
+        }
     }
 
     else if(addr < 0x04500000)
