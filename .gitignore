@@ -35,3 +35,4 @@ vgcore.*
 build.ninja
 .ninja_deps
 .ninja_log
+gen_mips_lut

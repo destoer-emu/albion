@@ -31,6 +31,12 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+            case 0b010101:
+            {
+                printf("bnel");
+                break;
+            }
+
             // andi
             case 0b001100:
             {
@@ -152,6 +158,12 @@ void gen_r_lut(const char *prefix)
 
         switch(i)
         {
+            case 0b000010:
+            {
+                printf("srl");
+                break;
+            }
+
             case 0b000000:
             {
                 printf("sll");

@@ -40,6 +40,8 @@ using INSTR_FUNC = void (*)(N64 &n64, u32 opcode);
 void step(N64 &n64);
 void reset_cpu(Cpu &cpu);
 
+void skip_instr(Cpu &cpu);
+void write_pc(N64 &n64, u64 pc);
 
 void cycle_tick(N64 &n64, u32 cycles);
 
@@ -65,8 +67,10 @@ void instr_sw(N64 &n64, u32 opcode);
 
 void instr_bne(N64 &n64, u32 opcode);
 void instr_beql(N64 &n64, u32 opcode);
+void instr_bnel(N64 &n64, u32 opcode);
 
 void instr_sll(N64 &n64, u32 opcode);
+void instr_srl(N64 &n64, u32 opcode);
 void instr_or(N64 &n64, u32 opcode);
 void instr_jr(N64 &n64, u32 opcode);
 

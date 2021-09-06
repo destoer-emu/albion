@@ -181,7 +181,19 @@ std::string disass_beql(u32 opcode, u64 pc)
 
     const auto addr = compute_branch_addr(pc,imm);
 
-    return fmt::format("bne {}, {}, {:x}",reg_names[rs],reg_names[rt],addr);
+    return fmt::format("beql {}, {}, {:x}",reg_names[rs],reg_names[rt],addr);
+}
+
+std::string disass_bnel(u32 opcode, u64 pc)
+{
+    const auto rs = get_rs(opcode);
+    const auto rt = get_rt(opcode);
+
+    const auto imm = opcode & 0xffff;
+
+    const auto addr = compute_branch_addr(pc,imm);
+
+    return fmt::format("bnel {}, {}, {:x}",reg_names[rs],reg_names[rt],addr);
 }
 
 
@@ -215,6 +227,17 @@ std::string disass_sll(u32 opcode, u64 pc)
     {
         return "nop";
     }
+}
+
+std::string disass_srl(u32 opcode, u64 pc)
+{
+    const auto rt = get_rt(opcode);
+    const auto rd = get_rd(opcode);
+
+    const auto shamt = get_shamt(opcode);
+    
+    
+    return fmt::format("srl {}, {}, {}",reg_names[rd],reg_names[rt],shamt);
 }
 
 std::string disass_or(u32 opcode, u64 pc)

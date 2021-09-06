@@ -26,6 +26,17 @@ void instr_sll(N64 &n64, u32 opcode)
     n64.cpu.regs[rd] = sign_extend_mips<s64,s32>(n64.cpu.regs[rt] << shamt);
 }
 
+void instr_srl(N64 &n64, u32 opcode)
+{
+    const auto rt = get_rt(opcode);
+    const auto rd = get_rd(opcode);
+
+    const auto shamt = get_shamt(opcode);
+
+
+    n64.cpu.regs[rd] = sign_extend_mips<s64,s32>(n64.cpu.regs[rt] >> shamt);    
+}
+
 void instr_or(N64 &n64, u32 opcode)
 {
     const auto rt = get_rt(opcode);

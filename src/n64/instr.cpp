@@ -47,15 +47,11 @@ void instr_addi(N64 &n64, u32 opcode)
 
     const auto imm = sign_extend_mips<s64,s16>(opcode & 0xffff);
 
-    // TODO: how do we detect an exception on this!
-
-    const auto old = n64.cpu.regs[rs];
-    
     // 32 bit oper
     const auto ans = sign_extend_mips<s64,s32>(n64.cpu.regs[rs]) + imm;  
 
     // TODO: speed this up with builtins
-    if(did_overflow(old,imm,n64.cpu.regs[rt]))
+    if(did_overflow(n64.cpu.regs[rs],imm,ans))
     {
         unimplemented("addi exception!");
     }  
@@ -104,10 +100,9 @@ void instr_jal(N64 &n64, u32 opcode)
 {
     const auto target = get_target(opcode,n64.cpu.pc);
 
-    const auto pc_old = n64.cpu.pc;
-    n64.cpu.pc = target;
+    n64.cpu.regs[RA] = n64.cpu.pc;
 
-    n64.cpu.regs[RA] = pc_old;
+    write_pc(n64,target);
 }
 
 void instr_beql(N64 &n64, u32 opcode)
@@ -119,14 +114,36 @@ void instr_beql(N64 &n64, u32 opcode)
 
     if(n64.cpu.regs[rs] == n64.cpu.regs[rt])
     {
-        n64.cpu.pc = compute_branch_addr(n64.cpu.pc,imm);
+        const auto target = compute_branch_addr(n64.cpu.pc,imm);
+
+        write_pc(n64,target);
     }
     
     // discard delay slot
     else
     {
-        n64.cpu.pc_old = n64.cpu.pc;
-        n64.cpu.pc += 4;
+        skip_instr(n64.cpu);
+    }
+}
+
+void instr_bnel(N64 &n64, u32 opcode)
+{
+    const auto rs = get_rs(opcode);
+    const auto rt = get_rt(opcode);
+
+    const auto imm = opcode & 0xffff;
+
+    if(n64.cpu.regs[rs] != n64.cpu.regs[rt])
+    {
+        const auto target = compute_branch_addr(n64.cpu.pc,imm);
+
+        write_pc(n64,target);
+    }
+    
+    // discard delay slot
+    else
+    {
+        skip_instr(n64.cpu);
     }
 }
 
@@ -140,7 +157,9 @@ void instr_bne(N64 &n64, u32 opcode)
 
     if(n64.cpu.regs[rs] != n64.cpu.regs[rt])
     {
-        n64.cpu.pc = compute_branch_addr(n64.cpu.pc,imm);
+        const auto target = compute_branch_addr(n64.cpu.pc,imm);
+
+        write_pc(n64,target);
     }
 }
 

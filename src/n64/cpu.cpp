@@ -136,7 +136,7 @@ void step(N64 &n64)
 
     
     // $zero is hardwired to zero, make sure writes cant touch it
-    n64.cpu.regs[0] = 0;
+    n64.cpu.regs[R0] = 0;
 
     // assume 2 CPI
     cycle_tick(n64,2);
@@ -148,6 +148,17 @@ void step(N64 &n64)
         // flag interrupt
         n64.cpu.cp0_regs[CAUSE] = set_bit(n64.cpu.cp0_regs[CAUSE],15);
     }
+}
+
+void write_pc(N64 &n64, u64 pc)
+{
+    n64.cpu.pc = pc;
+}
+
+void skip_instr(Cpu &cpu)
+{
+    cpu.pc_old = cpu.pc;
+    cpu.pc += 4;
 }
 
 
