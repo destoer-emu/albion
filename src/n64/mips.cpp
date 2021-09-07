@@ -54,6 +54,7 @@ namespace nintendo64
         "status",
         "cause",
         "EPC",
+        "PRID",
         "config",
         "LLAddr",
         "watchLo",

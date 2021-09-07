@@ -58,7 +58,7 @@ void instr_jr(N64 &n64, u32 opcode)
 
     else
     {
-        n64.cpu.pc = n64.cpu.regs[rs];
+        write_pc(n64,n64.cpu.regs[rs]);
     }
 }
 

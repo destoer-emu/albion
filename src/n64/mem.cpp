@@ -30,9 +30,9 @@ void reset_mem(Mem &mem, const std::string &filename)
     memcpy(mem.sp_dmem.data(),mem.rom.data(),0x1000);
 
     // ri
-    mem.ri_select = 0;
-    mem.ri_config = 0;
-    mem.ri_base = 0;
+    mem.ri_select = 0x14; // skip a section of the IPL
+    mem.ri_config = 0x40;
+    mem.ri_base = 0xe;
 
     // pi 
     mem.pi_cart_addr = 0;

@@ -79,7 +79,7 @@ void instr_andi(N64 &n64, u32 opcode)
     const auto rt = get_rt(opcode);
     const auto rs = get_rs(opcode);
 
-    // ori is not sign extended
+    // andi is not sign extended
     const auto imm = opcode & 0xffff;
 
     n64.cpu.regs[rt] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs]) & imm;    
@@ -90,7 +90,7 @@ void instr_xori(N64 &n64, u32 opcode)
     const auto rt = get_rt(opcode);
     const auto rs = get_rs(opcode);
 
-    // ori is not sign extended
+    // xori is not sign extended
     const auto imm = opcode & 0xffff;
 
     n64.cpu.regs[rt] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs]) ^ imm;    

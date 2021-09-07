@@ -53,6 +53,18 @@ void write_cp0(Cpu &cpu, u64 v, u32 reg)
             regs[CAUSE] = deset_bit(regs[CAUSE],7);
             break;
         }
+        
+        case TAGLO: // for cache, ignore for now
+        {
+            regs[TAGLO] = v;
+            break;
+        }
+
+        case TAGHI: // for cache, ignore for now
+        {
+            regs[TAGHI] = v;
+            break;
+        }
 
         // various cpu settings
         case STATUS:

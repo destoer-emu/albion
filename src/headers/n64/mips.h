@@ -49,19 +49,22 @@ static constexpr int CAUSE = 13;
 static constexpr int PRID = 15;
 static constexpr int CONFIG = 16;
 
+static constexpr int TAGLO = 28;
+static constexpr int TAGHI = 29;
+
 // constants for disassembling mips
 extern const char *reg_names[32];
 extern const char *cp0_names[32];
 
 // sign extend on a 8 bit aligned quantity
-template<typename T,typename IN>
-inline T sign_extend_mips(IN x)
+template<typename OUT,typename IN>
+inline OUT sign_extend_mips(IN x)
 {
     using signed_type_in = typename std::make_signed<IN>::type;
     const auto v = static_cast<signed_type_in>(x);
 
-    using signed_type_out = typename std::make_signed<T>::type;
-    return static_cast<T>(static_cast<signed_type_out>(v));
+    using signed_type_out = typename std::make_signed<OUT>::type;
+    return static_cast<OUT>(static_cast<signed_type_out>(v));
 }
 
 inline u32 get_rt(u32 opcode)
@@ -84,12 +87,12 @@ inline u32 get_shamt(u32 opcode)
     return (opcode >> 6) & 0x1f;
 }
 
-inline u32 get_target(u32 opcode, u32 pc)
+inline u64 get_target(u32 opcode, u64 pc)
 {
     return ((opcode & 0x3FFFFFF) << 2) | (pc & 0xf0000000);
 }
 
-inline u64 compute_branch_addr(u64 pc, u16 imm)
+inline u64 compute_branch_addr(u64 pc, s16 imm)
 {
     return pc + (sign_extend_mips<s32,s16>(imm) << 2);
 }
