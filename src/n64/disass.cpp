@@ -6,13 +6,20 @@ namespace nintendo64
 
 std::string disass_unknown(u32 opcode, u64 pc)
 {
-    UNUSED(pc);
-
     // make this panic for now
     printf("[%zx]disass unknown opcode: %08x\n",pc-0x4,opcode);
     exit(1);
 
     return "unknown opcode";
+}
+
+std::string disass_unknown_regimm(u32 opcode, u64 pc)
+{
+    // make this panic for now
+    printf("[%zx]disass regimm unknown opcode: %08x\n",pc-0x4,opcode);
+    exit(1);
+
+    return "unknown opcode";    
 }
 
 
@@ -219,6 +226,18 @@ std::string disass_blezl(u32 opcode, u64 pc)
     return fmt::format("blezl {}, {:x}",reg_names[rs],addr);
 }
 
+std::string disass_bgezl(u32 opcode, u64 pc)
+{
+    const auto rs = get_rs(opcode);
+
+    const auto imm = opcode & 0xffff;
+
+    const auto addr = compute_branch_addr(pc,imm);
+
+    return fmt::format("bgezl {}, {:x}",reg_names[rs],addr);
+}
+
+
 std::string disass_bnel(u32 opcode, u64 pc)
 {
     const auto rs = get_rs(opcode);
@@ -378,6 +397,12 @@ std::string disass_cop0(u32 opcode, u64 pc)
 {
     return disass_cop0_lut[(opcode >> 21) & 0b11111](opcode,pc);
 }
+
+std::string disass_regimm(u32 opcode, u64 pc)
+{
+    return disass_regimm_lut[(opcode >> 16) & 0b11111](opcode,pc);
+}
+
 
 std::string disass_r_fmt(u32 opcode, u64 pc)
 {

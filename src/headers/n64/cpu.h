@@ -54,6 +54,7 @@ void write_cp0(Cpu &cpu, u64 v, u32 reg);
 void instr_unknown(N64 &n64, u32 opcode);
 void instr_unknown_cop0(N64 &n64, u32 opcode);
 void instr_unknown_r(N64 &n64, u32 opcode);
+void instr_unknown_regimm(N64 &n64, u32 opcode);
 
 void instr_lui(N64 &n64, u32 opcode);
 void instr_addiu(N64 &n64, u32 opcode);
@@ -75,6 +76,8 @@ void instr_bne(N64 &n64, u32 opcode);
 void instr_beql(N64 &n64, u32 opcode);
 void instr_bnel(N64 &n64, u32 opcode);
 void instr_blezl(N64 &n64, u32 opcode);
+void instr_bgezl(N64 &n64, u32 opcode);
+
 
 void instr_sll(N64 &n64, u32 opcode);
 void instr_srl(N64 &n64, u32 opcode);
@@ -91,6 +94,7 @@ void instr_and(N64 &n64, u32 opcode);
 void instr_cop0(N64 &n64, u32 opcode);
 void instr_mtc0(N64 &n64, u32 opcode);
 void instr_r_fmt(N64 &n64, u32 opcode);
+void instr_regimm(N64 &n64, u32 opcode);
 
 
 }

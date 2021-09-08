@@ -17,6 +17,13 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+            // regimm instr
+            case 0b000001:
+            {
+                printf("regimm");
+                break;
+            }
+
             // blezl
             case 0b010110:
             {
@@ -152,6 +159,31 @@ void gen_mips_lut(const char *prefix)
     }
 }
 
+void gen_regimm_lut(const char *prefix)
+{
+    for(int i = 0; i < 32; i++)
+    {
+        printf("&%s",prefix);
+        switch(i)
+        {
+            // bgezl
+            case 0b00011:
+            {
+                printf("bgezl");
+                break;
+            }
+
+            default:
+            {
+                printf("unknown_regimm");
+                break;
+            }
+        }
+
+        // end entry
+        printf(",\n");
+    }
+}
 
 void gen_cop0_lut(const char *prefix)
 {
@@ -325,6 +357,24 @@ int main()
 
     // gen the disass table
     gen_r_lut("disass_");
+
+    printf("};\n\n\n");
+
+
+    // regimm
+    printf("const INSTR_FUNC instr_regimm_lut[] = {\n");
+
+    // gen the instr table
+    gen_regimm_lut("instr_");
+
+    printf("};\n\n\n");
+
+
+
+    printf("const DISASS_FUNC disass_regimm_lut[] = {\n");
+
+    // gen the disass table
+    gen_regimm_lut("disass_");
 
     printf("};\n\n\n");
 

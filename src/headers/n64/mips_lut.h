@@ -14,5 +14,7 @@ extern const DISASS_FUNC disass_cop0_lut[];
 extern const INSTR_FUNC instr_r_lut[];
 extern const DISASS_FUNC disass_r_lut[];
 
+extern const INSTR_FUNC instr_regimm_lut[];
+extern const DISASS_FUNC disass_regimm_lut[];
 
 }

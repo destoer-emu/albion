@@ -31,6 +31,7 @@ std::string disass_bne(u32 opcode, u64 pc);
 std::string disass_beql(u32 opcode, u64 pc);
 std::string disass_bnel(u32 opcode, u64 pc);
 std::string disass_blezl(u32 opcode, u64 pc);
+std::string disass_bgezl(u32 opcode, u64 pc);
 
 std::string disass_sll(u32 opcode, u64 pc);
 std::string disass_srl(u32 opcode, u64 pc);
@@ -47,9 +48,11 @@ std::string disass_and(u32 opcode, u64 pc);
 std::string disass_unknown(u32 opcode, u64 pc);
 std::string disass_unknown_cop0(u32 opcode, u64 pc);
 std::string disass_unknown_r(u32 opcode, u64 pc);
+std::string disass_unknown_regimm(u32 opcode, u64 pc);
 
 std::string disass_cop0(u32 opcode, u64 pc);
 std::string disass_mtc0(u32 opcode, u64 pc); 
 std::string disass_r_fmt(u32 opcode, u64 pc);
+std::string disass_regimm(u32 opcode, u64 pc);
 
 }
