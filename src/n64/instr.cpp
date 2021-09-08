@@ -5,7 +5,7 @@ namespace nintendo64
 
 void instr_unknown(N64 &n64, u32 opcode)
 {
-    const auto err = fmt::format("[cpu {:16x} {}] unknown opcode {:08x}\n",n64.cpu.pc,disass_opcode(opcode,n64.cpu.pc),opcode);
+    const auto err = fmt::format("[cpu {:16x} {}] unknown opcode {:08x}\n",n64.cpu.pc-4,disass_opcode(opcode,n64.cpu.pc),opcode);
     n64.debug.trace.print();
     throw std::runtime_error(err);    
 }
@@ -161,6 +161,13 @@ void instr_bne(N64 &n64, u32 opcode)
 
         write_pc(n64,target);
     }
+}
+
+void instr_cache(N64 &n64, u32 opcode)
+{
+    UNUSED(n64); UNUSED(opcode);
+
+    // ignore cache operations for now
 }
 
 

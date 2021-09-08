@@ -196,6 +196,28 @@ std::string disass_bnel(u32 opcode, u64 pc)
     return fmt::format("bnel {}, {}, {:x}",reg_names[rs],reg_names[rt],addr);
 }
 
+std::string disass_cache(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto base = get_rs(opcode);
+    const auto op = get_rt(opcode);
+
+    const auto imm = opcode & 0xffff;
+
+    return fmt::format("cache {}, {:04x}({})",op,imm,reg_names[base]);
+}
+
+std::string disass_sltu(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+    const auto rd = get_rd(opcode);
+
+    return fmt::format("sltu {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);    
+}
 
 
 std::string disass_mtc0(u32 opcode, u64 pc)

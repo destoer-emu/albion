@@ -24,6 +24,14 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+            // cache
+            case 0b101111:
+            {
+                printf("cache");
+                break;
+            }
+
+
             // beql:
             case 0b010100:
             {
@@ -167,6 +175,12 @@ void gen_r_lut(const char *prefix)
             case 0b000000:
             {
                 printf("sll");
+                break;
+            }
+
+            case 0b101011:
+            {
+                printf("sltu");
                 break;
             }
 
