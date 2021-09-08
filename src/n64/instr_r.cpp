@@ -77,6 +77,28 @@ void instr_addu(N64 &n64, u32 opcode)
     n64.cpu.regs[rd] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs] + n64.cpu.regs[rt]);
 }
 
+void instr_add(N64 &n64, u32 opcode)
+{
+    // does not trap on overflow
+
+    const auto rd = get_rd(opcode);
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+    
+    const auto ans =  sign_extend_mips<s64,s32>(n64.cpu.regs[rs] + n64.cpu.regs[rt]);
+
+    if(did_overflow(n64.cpu.regs[rs],n64.cpu.regs[rt],ans))
+    {
+        unimplemented("instr_add overflow");
+    }
+
+    else
+    {
+        n64.cpu.regs[rd] = ans;
+    }
+}
+
+
 void instr_and(N64 &n64, u32 opcode)
 {
     const auto rd = get_rd(opcode);

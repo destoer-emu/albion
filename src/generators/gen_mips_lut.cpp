@@ -243,6 +243,12 @@ void gen_r_lut(const char *prefix)
                 break;
             }
 
+            case 0b100000:
+            {
+                printf("add");
+                break;
+            }
+
             case 0b100100:
             {
                 printf("and");

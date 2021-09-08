@@ -44,6 +44,7 @@ std::string disass_subu(u32 opcode, u64 pc);
 std::string disass_multu(u32 opcode, u64 pc);
 std::string disass_mflo(u32 opcode, u64 pc);
 std::string disass_addu(u32 opcode, u64 pc);
+std::string disass_add(u32 opcode, u64 pc);
 std::string disass_and(u32 opcode, u64 pc);
 std::string disass_slt(u32 opcode, u64 pc);
 

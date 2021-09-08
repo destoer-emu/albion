@@ -318,6 +318,18 @@ std::string disass_addu(u32 opcode, u64 pc)
     return fmt::format("addu {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);
 }
 
+std::string disass_add(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto rd = get_rd(opcode);
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+
+
+    return fmt::format("add {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);
+}
+
 std::string disass_multu(u32 opcode, u64 pc)
 {
     UNUSED(pc);
