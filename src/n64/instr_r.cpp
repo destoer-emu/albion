@@ -46,6 +46,15 @@ void instr_sltu(N64 &n64, u32 opcode)
     n64.cpu.regs[rd] = n64.cpu.regs[rs] < n64.cpu.regs[rt];    
 }
 
+void instr_slt(N64 &n64, u32 opcode)
+{
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+    const auto rd = get_rd(opcode);
+
+    n64.cpu.regs[rd] = static_cast<s64>(n64.cpu.regs[rs]) < static_cast<s64>(n64.cpu.regs[rt]);    
+}
+
 void instr_subu(N64 &n64, u32 opcode)
 {
     // does not trap on overflow

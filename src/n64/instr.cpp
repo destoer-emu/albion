@@ -203,6 +203,22 @@ void instr_bne(N64 &n64, u32 opcode)
     }
 }
 
+void instr_beq(N64 &n64, u32 opcode)
+{
+    const auto rs = get_rs(opcode);
+    const auto rt = get_rt(opcode);
+
+    const auto imm = opcode & 0xffff;
+
+    if(n64.cpu.regs[rs] == n64.cpu.regs[rt])
+    {
+        const auto target = compute_branch_addr(n64.cpu.pc,imm);
+
+        write_pc(n64,target);
+    }
+}
+
+
 void instr_cache(N64 &n64, u32 opcode)
 {
     UNUSED(n64); UNUSED(opcode);

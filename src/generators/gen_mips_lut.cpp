@@ -80,6 +80,12 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+            case 0b000100:
+            {
+                printf("beq");
+                break;
+            }
+
             // lw
             case 0b100011:
             {
@@ -264,6 +270,12 @@ void gen_r_lut(const char *prefix)
             case 0b101011:
             {
                 printf("sltu");
+                break;
+            }
+
+            case 0b101010:
+            {
+                printf("slt");
                 break;
             }
 

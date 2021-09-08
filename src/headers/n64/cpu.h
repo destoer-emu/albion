@@ -73,6 +73,7 @@ void instr_sb(N64 &n64, u32 opcode);
 
 
 void instr_bne(N64 &n64, u32 opcode);
+void instr_beq(N64 &n64, u32 opcode);
 void instr_beql(N64 &n64, u32 opcode);
 void instr_bnel(N64 &n64, u32 opcode);
 void instr_blezl(N64 &n64, u32 opcode);
@@ -90,6 +91,7 @@ void instr_mflo(N64 &n64, u32 opcode);
 void instr_cache(N64 &n64, u32 opcode);
 void instr_addu(N64 &n64, u32 opcode);
 void instr_and(N64 &n64, u32 opcode);
+void instr_slt(N64 &n64, u32 opcode);
 
 void instr_cop0(N64 &n64, u32 opcode);
 void instr_mtc0(N64 &n64, u32 opcode);
