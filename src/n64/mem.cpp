@@ -33,6 +33,7 @@ void reset_mem(Mem &mem, const std::string &filename)
     mem.ri_select = 0x0;
     mem.ri_config = 0x0;
     mem.ri_base = 0x0;
+    mem.ri_refresh = 0x0;
 
     // pi 
     mem.pi_cart_addr = 0;
@@ -203,6 +204,7 @@ access_type read_mem(N64 &n64, u32 addr)
         switch(addr)
         {
             case RI_SELECT_REG: return n64.mem.ri_select;
+            case RI_REFRESH_REG: return n64.mem.ri_refresh;
 
             default: unimplemented("read_mem: rdram interface: %8x\n",addr);
         }
@@ -346,6 +348,7 @@ void write_mem(N64 &n64, u32 addr, access_type v)
             case RI_CONFIG_REG: n64.mem.ri_config = v & 0b1111111; break;
             case RI_CURRENT_LOAD_REG: break; // write only ignore for now
             case RI_BASE_REG: n64.mem.ri_base = v & 0b1111; break;
+            case RI_REFRESH_REG: n64.mem.ri_refresh = v & 0b1111111111111111111; break;
 
             default: unimplemented("write_mem: rdram interface: %8x\n",addr);
         }

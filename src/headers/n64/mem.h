@@ -18,6 +18,7 @@ struct Mem
     u8 ri_select = 0;
     u8 ri_config = 0;
     u8 ri_base = 0;
+    u32 ri_refresh = 0;
 
     // PI 
     u32 pi_cart_addr = 0;
