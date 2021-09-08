@@ -211,15 +211,15 @@ void instr_sw(N64 &n64, u32 opcode)
     write_u32(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[rt]);
 }
 
-void instr_subu(N64 &n64, u32 opcode)
+void instr_sb(N64 &n64, u32 opcode)
 {
-    // does not trap on overflow
-
-    const auto rd = get_rd(opcode);
+    const auto base = get_rs(opcode);
     const auto rt = get_rt(opcode);
-    const auto rs = get_rs(opcode);
-    
-    n64.cpu.regs[rd] = n64.cpu.regs[rs] - n64.cpu.regs[rt];
+
+    const auto imm = sign_extend_mips<s64,s16>(opcode & 0xffff);
+
+    write_u8(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[rt]);
 }
+
 
 }

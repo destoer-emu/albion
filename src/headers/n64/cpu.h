@@ -13,6 +13,9 @@ struct Cpu
     u64 pc;
     u64 pc_next;
 
+    u64 lo;
+    u64 hi;
+
     u64 cp0_regs[32];
 
 
@@ -54,18 +57,18 @@ void instr_unknown_r(N64 &n64, u32 opcode);
 
 void instr_lui(N64 &n64, u32 opcode);
 void instr_addiu(N64 &n64, u32 opcode);
-void instr_subu(N64 &n64, u32 opcode);
 void instr_addi(N64 &n64, u32 opcode);
 void instr_ori(N64 &n64, u32 opcode);
 void instr_andi(N64 &n64, u32 opcode);
 void instr_xori(N64 &n64, u32 opcode);
 void instr_jal(N64 &n64, u32 opcode);
 void instr_slti(N64 &n64, u32 opcode);
-void instr_cache(N64 &n64, u32 opcode);
 
 
 void instr_lw(N64 &n64, u32 opcode);
 void instr_sw(N64 &n64, u32 opcode);
+void instr_sb(N64 &n64, u32 opcode);
+
 
 void instr_bne(N64 &n64, u32 opcode);
 void instr_beql(N64 &n64, u32 opcode);
@@ -77,6 +80,11 @@ void instr_srl(N64 &n64, u32 opcode);
 void instr_or(N64 &n64, u32 opcode);
 void instr_jr(N64 &n64, u32 opcode);
 void instr_sltu(N64 &n64, u32 opcode);
+void instr_multu(N64 &n64, u32 opcode);
+void instr_subu(N64 &n64, u32 opcode);
+void instr_mflo(N64 &n64, u32 opcode);
+void instr_cache(N64 &n64, u32 opcode);
+void instr_addu(N64 &n64, u32 opcode);
 
 void instr_cop0(N64 &n64, u32 opcode);
 void instr_mtc0(N64 &n64, u32 opcode);

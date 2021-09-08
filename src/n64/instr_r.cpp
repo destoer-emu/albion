@@ -46,6 +46,47 @@ void instr_sltu(N64 &n64, u32 opcode)
     n64.cpu.regs[rd] = n64.cpu.regs[rs] < n64.cpu.regs[rt];    
 }
 
+void instr_subu(N64 &n64, u32 opcode)
+{
+    // does not trap on overflow
+
+    const auto rd = get_rd(opcode);
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+    
+    n64.cpu.regs[rd] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs] - n64.cpu.regs[rt]);
+}
+
+void instr_addu(N64 &n64, u32 opcode)
+{
+    // does not trap on overflow
+
+    const auto rd = get_rd(opcode);
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+    
+    n64.cpu.regs[rd] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs] + n64.cpu.regs[rt]);
+}
+
+
+void instr_multu(N64 &n64, u32 opcode)
+{
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+    
+    const u64 res = static_cast<u32>(n64.cpu.regs[rs]) * static_cast<u32>(n64.cpu.regs[rt]);
+
+    n64.cpu.lo = sign_extend_mips<s64,s32>(res & 0xffffffff);
+    n64.cpu.hi = sign_extend_mips<s64,s32>((res >> 32) & 0xffffffff);
+}
+
+void instr_mflo(N64 &n64, u32 opcode)
+{
+    const auto rd = get_rd(opcode);
+
+    n64.cpu.regs[rd] = n64.cpu.lo;
+}
+
 void instr_or(N64 &n64, u32 opcode)
 {
     const auto rt = get_rt(opcode);

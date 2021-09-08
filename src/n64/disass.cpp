@@ -9,7 +9,7 @@ std::string disass_unknown(u32 opcode, u64 pc)
     UNUSED(pc);
 
     // make this panic for now
-    printf("[%zx]disass unknown opcode: %08x\n",pc,opcode);
+    printf("[%zx]disass unknown opcode: %08x\n",pc-0x4,opcode);
     exit(1);
 
     return "unknown opcode";
@@ -159,6 +159,18 @@ std::string disass_sw(u32 opcode, u64 pc)
     return fmt::format("sw {}, {:04x}({})",reg_names[rt],imm,reg_names[base]);
 }
 
+std::string disass_sb(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto base = get_rs(opcode);
+    const auto rt = get_rt(opcode);
+
+    const auto imm = opcode & 0xffff;  
+
+    return fmt::format("sb {}, {:04x}({})",reg_names[rt],imm,reg_names[base]);
+}
+
 
 std::string disass_bne(u32 opcode, u64 pc)
 {
@@ -221,6 +233,8 @@ std::string disass_cache(u32 opcode, u64 pc)
 
 std::string disass_subu(u32 opcode, u64 pc)
 {
+    UNUSED(pc);
+
     const auto rd = get_rd(opcode);
     const auto rt = get_rt(opcode);
     const auto rs = get_rs(opcode);
@@ -228,6 +242,39 @@ std::string disass_subu(u32 opcode, u64 pc)
 
     return fmt::format("subu {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);
 }
+
+std::string disass_addu(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto rd = get_rd(opcode);
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+
+
+    return fmt::format("addu {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);
+}
+
+std::string disass_multu(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+
+
+    return fmt::format("multu {}, {}",reg_names[rs],reg_names[rt]);
+}
+
+std::string disass_mflo(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto rd = get_rd(opcode);
+
+    return fmt::format("mflo {}",reg_names[rd]);
+}
+
 
 std::string disass_sltu(u32 opcode, u64 pc)
 {

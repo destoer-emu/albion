@@ -93,6 +93,13 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+            // sb
+            case 0b101000:
+            {
+                printf("sb");
+                break;
+            }
+
             // addiu
             case 0b001001:
             {
@@ -185,9 +192,27 @@ void gen_r_lut(const char *prefix)
                 break;
             }
 
+            case 0b100001:
+            {
+                printf("addu");
+                break;
+            }
+
             case 0b000000:
             {
                 printf("sll");
+                break;
+            }
+
+            case 0b011001:
+            {
+                printf("multu");
+                break;
+            }
+
+            case 0b010010:
+            {
+                printf("mflo");
                 break;
             }
 
