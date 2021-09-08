@@ -126,6 +126,26 @@ void instr_beql(N64 &n64, u32 opcode)
     }
 }
 
+void instr_blezl(N64 &n64, u32 opcode)
+{
+    const auto rs = get_rs(opcode);
+
+    const auto imm = opcode & 0xffff;
+
+    if(static_cast<s64>(n64.cpu.regs[rs]) <= 0)
+    {
+        const auto target = compute_branch_addr(n64.cpu.pc,imm);
+
+        write_pc(n64,target);
+    }
+    
+    // discard delay slot
+    else
+    {
+        skip_instr(n64.cpu);
+    }
+}
+
 void instr_bnel(N64 &n64, u32 opcode)
 {
     const auto rs = get_rs(opcode);
@@ -189,6 +209,17 @@ void instr_sw(N64 &n64, u32 opcode)
     const auto imm = sign_extend_mips<s64,s16>(opcode & 0xffff);
 
     write_u32(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[rt]);
+}
+
+void instr_subu(N64 &n64, u32 opcode)
+{
+    // does not trap on overflow
+
+    const auto rd = get_rd(opcode);
+    const auto rt = get_rt(opcode);
+    const auto rs = get_rs(opcode);
+    
+    n64.cpu.regs[rd] = n64.cpu.regs[rs] - n64.cpu.regs[rt];
 }
 
 }

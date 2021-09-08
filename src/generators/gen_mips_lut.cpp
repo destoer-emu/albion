@@ -17,6 +17,13 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+            // blezl
+            case 0b010110:
+            {
+                printf("blezl");
+                break;
+            }
+
             // slti:
             case 0b001010:
             {
@@ -169,6 +176,12 @@ void gen_r_lut(const char *prefix)
             case 0b000010:
             {
                 printf("srl");
+                break;
+            }
+
+            case 0b100011:
+            {
+                printf("subu");
                 break;
             }
 

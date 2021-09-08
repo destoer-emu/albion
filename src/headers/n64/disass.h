@@ -21,6 +21,7 @@ std::string disass_xori(u32 opcode, u64 pc);
 std::string disass_jal(u32 opcode, u64 pc);
 std::string disass_slti(u32 opcode, u64 pc);
 std::string disass_cache(u32 opcode, u64 pc);
+std::string disass_subu(u32 opcode, u64 pc);
 
 std::string disass_lw(u32 opcode, u64 pc);
 std::string disass_sw(u32 opcode, u64 pc);
@@ -28,6 +29,7 @@ std::string disass_sw(u32 opcode, u64 pc);
 std::string disass_bne(u32 opcode, u64 pc);
 std::string disass_beql(u32 opcode, u64 pc);
 std::string disass_bnel(u32 opcode, u64 pc);
+std::string disass_blezl(u32 opcode, u64 pc);
 
 std::string disass_sll(u32 opcode, u64 pc);
 std::string disass_srl(u32 opcode, u64 pc);
