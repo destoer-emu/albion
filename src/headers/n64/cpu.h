@@ -67,6 +67,7 @@ void instr_slti(N64 &n64, u32 opcode);
 
 void instr_lw(N64 &n64, u32 opcode);
 void instr_sw(N64 &n64, u32 opcode);
+void instr_lbu(N64 &n64, u32 opcode);
 void instr_sb(N64 &n64, u32 opcode);
 
 
@@ -85,6 +86,7 @@ void instr_subu(N64 &n64, u32 opcode);
 void instr_mflo(N64 &n64, u32 opcode);
 void instr_cache(N64 &n64, u32 opcode);
 void instr_addu(N64 &n64, u32 opcode);
+void instr_and(N64 &n64, u32 opcode);
 
 void instr_cop0(N64 &n64, u32 opcode);
 void instr_mtc0(N64 &n64, u32 opcode);

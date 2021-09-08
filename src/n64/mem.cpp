@@ -110,8 +110,18 @@ access_type read_mem(N64 &n64, u32 addr)
 
     else if(addr < 0x04000000)
     {
-        unimplemented("read_mem: rdram regs");
+        // rdram config ignore for now
         return 0;
+    /*
+        switch(addr)
+        {
+            default:
+            {
+                unimplemented("read_mem: rdram regs %08x\n",addr);
+                return 0;
+            }
+        }
+    */
     }
 
     else if(addr < 0x04001000)

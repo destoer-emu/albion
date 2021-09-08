@@ -100,6 +100,13 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+            // lbu
+            case 0b100100:
+            {
+                printf("lbu");
+                break;
+            }
+
             // addiu
             case 0b001001:
             {
@@ -195,6 +202,12 @@ void gen_r_lut(const char *prefix)
             case 0b100001:
             {
                 printf("addu");
+                break;
+            }
+
+            case 0b100100:
+            {
+                printf("and");
                 break;
             }
 

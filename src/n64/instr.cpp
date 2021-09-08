@@ -211,6 +211,16 @@ void instr_sw(N64 &n64, u32 opcode)
     write_u32(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[rt]);
 }
 
+void instr_lbu(N64 &n64, u32 opcode)
+{
+    const auto base = get_rs(opcode);
+    const auto rt = get_rt(opcode);
+
+    const auto imm = sign_extend_mips<s64,s16>(opcode & 0xffff);
+
+    n64.cpu.regs[rt] = read_u8(n64,n64.cpu.regs[base] + imm);
+}
+
 void instr_sb(N64 &n64, u32 opcode)
 {
     const auto base = get_rs(opcode);
