@@ -21,4 +21,5 @@ static constexpr u32 MI_VERSION_REG = 0x04300004;
 
 
 // intr bits
-static constexpr u32 DP_INTR_BIT = 11;
+static constexpr u32 DP_INTR_BIT = 5;
+static constexpr u32 PI_INTR_BIT = 4;

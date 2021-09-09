@@ -224,7 +224,6 @@ void instr_sw(N64 &n64, u32 opcode)
 
     const auto imm = sign_extend_mips<s64,s16>(opcode & 0xffff);
 
-    printf("sw : %x\n",n64.cpu.regs[rt]);
     write_u32(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[rt]);
 }
 

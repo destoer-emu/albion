@@ -4,6 +4,8 @@
 namespace nintendo64
 {
 
+void do_pi_dma(N64 &n64, u32 src, u32 dst, u32 len);
+
 template<typename access_type>
 access_type handle_read_n64(std::vector<u8> &buf, u32 addr)
 {
@@ -131,20 +133,10 @@ u32 remap_addr(u32 addr)
 }
 
 
-// for now assume accesses are force aligned
-// however they are supposed to throw exceptions
-// when they are not
-
 template<typename access_type>
-access_type read_mem(N64 &n64, u32 addr)
+access_type read_physical(N64 &n64, u32 addr)
 {
-    // force align addr
-    addr &= ~(sizeof(access_type)-1);   
-
-    UNUSED(n64);
-    addr = remap_addr(addr);
-
-    // just do something naive for now so we can get roms running
+   // just do something naive for now so we can get roms running
     if(addr < 0x00800000)
     {
         return handle_read_n64<access_type>(n64.mem.rd_ram,addr);
@@ -314,14 +306,20 @@ access_type read_mem(N64 &n64, u32 addr)
 // when they are not
 
 template<typename access_type>
-void write_mem(N64 &n64, u32 addr, access_type v)
+access_type read_mem(N64 &n64, u32 addr)
 {
     // force align addr
     addr &= ~(sizeof(access_type)-1);   
 
-    UNUSED(n64);
     addr = remap_addr(addr);
 
+    return read_physical<access_type>(n64,addr);
+}
+
+
+template<typename access_type>
+void write_physical(N64 &n64, u32 addr, access_type v)
+{
     // just do something naive for now so we can get roms running
     if(addr < 0x00800000)
     {
@@ -427,8 +425,10 @@ void write_mem(N64 &n64, u32 addr, access_type v)
             case PI_WR_LEN_REG:
             {
                 n64.mem.pi_wr_len = v & 0xffffff;
-                printf("pi dma %08x:%08x:%08x\n",n64.mem.pi_cart_addr,n64.mem.pi_dram_addr,n64.mem.pi_wr_len + 1);
-                exit(1);
+                //printf("pi dma %08x:%08x:%08x\n",n64.mem.pi_cart_addr,n64.mem.pi_dram_addr,n64.mem.pi_wr_len + 1);
+                
+                // dma from cart to rdram
+                do_pi_dma(n64,n64.mem.pi_cart_addr & ~1,n64.mem.pi_dram_addr & ~7,n64.mem.pi_wr_len + 1);
                 break;
             }
 
@@ -462,8 +462,40 @@ void write_mem(N64 &n64, u32 addr, access_type v)
     {
         std::cout << fmt::format("write_mem: unknown physical address: {:8x}:{:x}\n",addr,v);
         exit(1);
-    }
+    }    
 }
+
+// for now assume accesses are force aligned
+// however they are supposed to throw exceptions
+// when they are not
+
+template<typename access_type>
+void write_mem(N64 &n64, u32 addr, access_type v)
+{
+    // force align addr
+    addr &= ~(sizeof(access_type)-1);   
+
+    addr = remap_addr(addr);
+
+    write_physical<access_type>(n64,addr,v);
+}
+
+
+void do_pi_dma(N64 &n64, u32 src, u32 dst, u32 len)
+{
+    // for now just do it naviely with a read and write
+    // and optimise it with memcpy later
+    // len aligned to 16 bit
+    for(int i = 0; i < len / 2; i += 2)
+    {
+        const auto v = read_physical<u16>(n64,src + i);
+        write_physical<u16>(n64,dst+i,v);
+    }
+
+    // dma is done set the intr flag
+    n64.mem.mi_intr = set_bit(n64.mem.mi_intr,PI_INTR_BIT);
+}
+
 
 
 u8 read_u8(N64 &n64,u32 addr)
