@@ -212,8 +212,38 @@ access_type read_mem(N64 &n64, u32 addr)
         return 0;
     }
 
-    
+    else if(addr < 0x04900000)
+    {
+        unimplemented("serial interface");
+        return 0;
+    }
+
+    // UNUSED
+    else if(addr < 0x05000000)
+    {
+        return static_cast<access_type>(0xffffffff);
+    }
+
+    // n64dd
+    else if(addr < 0x08000000)
+    {
+        // return as not present for now
+        return static_cast<access_type>(0xffffffff);
+    }
   
+    // sram
+    else if(addr < 0x10000000)
+    {
+        unimplemented("sram");
+        return 0;
+    }
+
+    // rom
+    else if(addr < 0x1FC00000)
+    {
+        const auto rom_addr = 0x0fffffff;
+        return handle_read<access_type>(n64.mem.rom, rom_addr & (n64.mem.rom.size()-1));
+    }
 
     else
     {
