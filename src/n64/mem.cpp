@@ -4,6 +4,43 @@
 namespace nintendo64
 {
 
+template<typename access_type>
+access_type handle_read_n64(std::vector<u8> &buf, u32 addr)
+{
+    // handle endianess, we have swapped the entire rom
+    // so offset the addresses
+    if constexpr(sizeof(access_type) == 2)
+    {
+        addr ^= 2;
+    }
+
+    else if constexpr(sizeof(access_type) == 3)
+    {
+        addr ^= 3;
+    }
+
+    return handle_read<access_type>(buf,addr);
+}
+
+template<typename access_type>
+void handle_write_n64(std::vector<u8> &buf, u32 addr, access_type v)
+{
+    // handle endianess, we have swapped the entire rom
+    // so offset the addresses
+    if constexpr(sizeof(access_type) == 2)
+    {
+        addr ^= 2;
+    }
+
+    else if constexpr(sizeof(access_type) == 3)
+    {
+        addr ^= 3;
+    }
+
+    handle_write<access_type>(buf,addr,v);
+}
+
+
 void reset_mem(Mem &mem, const std::string &filename)
 {
     // read rom in and hle the pif rom
@@ -16,7 +53,7 @@ void reset_mem(Mem &mem, const std::string &filename)
 
     mem.sp_imem.resize(0x1000);
 
-    const auto magic = handle_read<uint32_t>(mem.rom,0x0);
+    const auto magic = handle_read_n64<uint32_t>(mem.rom,0x0);
 
     // if rom is middle endian byteswap it
 
@@ -25,6 +62,14 @@ void reset_mem(Mem &mem, const std::string &filename)
         puts("byteswapping rom");
         std::iter_swap(mem.rom.begin(),mem.rom.end()-1);
     }
+
+    for(u32 i = 0; i < mem.rom.size(); i += 4)
+    {
+        u32 v = handle_read_n64<u32>(mem.rom,i);
+        v = bswap(v);
+        handle_write_n64<u32>(mem.rom,i,v);
+    }
+
 
     // hle pif rom
     memcpy(mem.sp_dmem.data(),mem.rom.data(),0x1000);
@@ -102,7 +147,7 @@ access_type read_mem(N64 &n64, u32 addr)
     // just do something naive for now so we can get roms running
     if(addr < 0x00800000)
     {
-        return handle_read<access_type>(n64.mem.rd_ram,addr);
+        return handle_read_n64<access_type>(n64.mem.rd_ram,addr);
     }
 
     // UNUSED
@@ -129,12 +174,12 @@ access_type read_mem(N64 &n64, u32 addr)
 
     else if(addr < 0x04001000)
     {
-        return handle_read<access_type>(n64.mem.sp_dmem,addr & 0xfff);
+        return handle_read_n64<access_type>(n64.mem.sp_dmem,addr & 0xfff);
     }
 
     else if(addr < 0x04002000)
     {
-        return handle_read<access_type>(n64.mem.sp_imem,addr & 0xfff);
+        return handle_read_n64<access_type>(n64.mem.sp_imem,addr & 0xfff);
     }
 
     // UNUSED
@@ -252,8 +297,8 @@ access_type read_mem(N64 &n64, u32 addr)
     // rom
     else if(addr < 0x1FC00000)
     {
-        const auto rom_addr = 0x0fffffff;
-        return handle_read<access_type>(n64.mem.rom, rom_addr & (n64.mem.rom.size()-1));
+        const auto rom_addr = addr & (n64.mem.rom.size() - 1);
+        return handle_read_n64<access_type>(n64.mem.rom, rom_addr);
     }
 
     else
@@ -280,7 +325,7 @@ void write_mem(N64 &n64, u32 addr, access_type v)
     // just do something naive for now so we can get roms running
     if(addr < 0x00800000)
     {
-        handle_write<access_type>(n64.mem.rd_ram,addr,v);
+        handle_write_n64<access_type>(n64.mem.rd_ram,addr,v);
     }
 
     // UNUSED
@@ -301,12 +346,12 @@ void write_mem(N64 &n64, u32 addr, access_type v)
 
     else if(addr < 0x04001000)
     {
-        handle_write<access_type>(n64.mem.sp_dmem,addr & 0xfff,v);
+        handle_write_n64<access_type>(n64.mem.sp_dmem,addr & 0xfff,v);
     }
 
     else if(addr < 0x04002000)
     {
-        handle_write<access_type>(n64.mem.sp_imem,addr & 0xfff,v);
+        handle_write_n64<access_type>(n64.mem.sp_imem,addr & 0xfff,v);
     }
 
     // UNUSED
@@ -428,17 +473,17 @@ u8 read_u8(N64 &n64,u32 addr)
 
 u16 read_u16(N64 &n64,u32 addr)
 {
-    return bswap(read_mem<u16>(n64,addr));
+    return read_mem<u16>(n64,addr);
 }
 
 u32 read_u32(N64 &n64,u32 addr)
 {
-    return bswap(read_mem<u32>(n64,addr));
+    return read_mem<u32>(n64,addr);
 }
 
 u64 read_u64(N64 &n64,u32 addr)
 {
-    return bswap(read_mem<u64>(n64,addr));
+    return read_mem<u64>(n64,addr);
 }
 
 
@@ -449,17 +494,17 @@ void write_u8(N64 &n64,u32 addr,u8 v)
 
 void write_u16(N64 &n64,u32 addr,u16 v)
 {
-    write_mem<u16>(n64,addr,bswap(v));
+    write_mem<u16>(n64,addr,v);
 }
 
 void write_u32(N64 &n64,u32 addr,u32 v)
 {
-    write_mem<u32>(n64,addr,bswap(v));
+    write_mem<u32>(n64,addr,v);
 }
 
 void write_u64(N64 &n64,u32 addr,u64 v)
 {
-    write_mem<u64>(n64,addr,bswap(v));
+    write_mem<u64>(n64,addr,v);
 }
 
 
