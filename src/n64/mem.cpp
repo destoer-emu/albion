@@ -37,6 +37,8 @@ void reset_mem(Mem &mem, const std::string &filename)
 
     // pi 
     mem.pi_cart_addr = 0;
+    mem.pi_dram_addr = 0;
+    mem.pi_status = 0;
 
     // MI
     mem.mi_mode = 0;
@@ -188,8 +190,17 @@ access_type read_mem(N64 &n64, u32 addr)
 
     else if(addr < 0x04700000)
     {
-        unimplemented("read_mem: peripheral interface");
-        return 0;
+        switch(addr)
+        {
+            case PI_STATUS_REG: return n64.mem.pi_status;
+
+            
+            default:
+            {
+                unimplemented("read_mem: peripheral interface: %8x\n",addr);
+                return 0;
+            }
+        }
     }
     
     else if(addr < 0x04800000)
@@ -352,13 +363,31 @@ void write_mem(N64 &n64, u32 addr, access_type v)
     {
         switch(addr)
         {
-            case  PI_CART_ADDR_REG:
+            case PI_CART_ADDR_REG:
             {
+                // aligned on 2 bytes
                 n64.mem.pi_cart_addr = v;
                 break;
             }
 
-            default: unimplemented("write_mem: pi interface");
+            case PI_CART_DRAM_ADDR_REG:
+            {
+                // aligned on 8 bytes
+                n64.mem.pi_dram_addr = v & 0xffffff;
+                break;
+            }
+
+            // need to find proper pi dma info
+            // is this where we start a dma?
+            case PI_WR_LEN_REG:
+            {
+                n64.mem.pi_wr_len = v & 0xffffff;
+                printf("pi dma %08x:%08x:%08x\n",n64.mem.pi_cart_addr,n64.mem.pi_dram_addr,n64.mem.pi_wr_len + 1);
+                exit(1);
+                break;
+            }
+
+            default: unimplemented("write_mem: pi interface: %08x\n",addr);
         }
     }
     

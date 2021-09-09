@@ -22,6 +22,9 @@ struct Mem
 
     // PI 
     u32 pi_cart_addr = 0;
+    u32 pi_dram_addr = 0;
+    u8 pi_status = 0;
+    u32 pi_wr_len = 0;
 
     // MI
     u16 mi_mode = 0;

@@ -27,7 +27,7 @@ void instr_addiu(N64 &n64, u32 opcode)
     const auto imm = sign_extend_mips<s64,s16>(opcode & 0xffff);
 
     // addiu (oper is 32 bit, no exceptions thrown)
-    n64.cpu.regs[rt] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs]) + imm;
+    n64.cpu.regs[rt] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs] + imm);
 }
 
 void instr_slti(N64 &n64, u32 opcode)
@@ -48,7 +48,7 @@ void instr_addi(N64 &n64, u32 opcode)
     const auto imm = sign_extend_mips<s64,s16>(opcode & 0xffff);
 
     // 32 bit oper
-    const auto ans = sign_extend_mips<s64,s32>(n64.cpu.regs[rs]) + imm;  
+    const auto ans = sign_extend_mips<s64,s32>(n64.cpu.regs[rs] + imm);  
 
     // TODO: speed this up with builtins
     if(did_overflow(n64.cpu.regs[rs],imm,ans))
@@ -71,7 +71,7 @@ void instr_ori(N64 &n64, u32 opcode)
     // ori is not sign extended
     const auto imm = opcode & 0xffff;
 
-    n64.cpu.regs[rt] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs]) | imm;    
+    n64.cpu.regs[rt] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs] | imm);    
 }
 
 void instr_andi(N64 &n64, u32 opcode)
@@ -82,7 +82,7 @@ void instr_andi(N64 &n64, u32 opcode)
     // andi is not sign extended
     const auto imm = opcode & 0xffff;
 
-    n64.cpu.regs[rt] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs]) & imm;    
+    n64.cpu.regs[rt] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs] & imm);    
 }
 
 void instr_xori(N64 &n64, u32 opcode)
@@ -93,7 +93,7 @@ void instr_xori(N64 &n64, u32 opcode)
     // xori is not sign extended
     const auto imm = opcode & 0xffff;
 
-    n64.cpu.regs[rt] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs]) ^ imm;    
+    n64.cpu.regs[rt] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs] ^ imm);    
 }
 
 void instr_jal(N64 &n64, u32 opcode)
