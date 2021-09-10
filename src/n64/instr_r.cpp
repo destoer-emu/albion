@@ -105,7 +105,7 @@ void instr_and(N64 &n64, u32 opcode)
     const auto rt = get_rt(opcode);
     const auto rs = get_rs(opcode);
     
-    n64.cpu.regs[rd] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs] & n64.cpu.regs[rt]);
+    n64.cpu.regs[rd] = n64.cpu.regs[rs] & n64.cpu.regs[rt];
 }
 
 
@@ -135,7 +135,7 @@ void instr_or(N64 &n64, u32 opcode)
     const auto rs = get_rs(opcode);
 
 
-    n64.cpu.regs[rd] = sign_extend_mips<s64,s32>(n64.cpu.regs[rs] | n64.cpu.regs[rt]);
+    n64.cpu.regs[rd] = n64.cpu.regs[rs] | n64.cpu.regs[rt];
 }
 
 void instr_jr(N64 &n64, u32 opcode)
