@@ -16,7 +16,7 @@ access_type handle_read_n64(std::vector<u8> &buf, u32 addr)
         addr ^= 2;
     }
 
-    else if constexpr(sizeof(access_type) == 3)
+    else if constexpr(sizeof(access_type) == 1)
     {
         addr ^= 3;
     }
@@ -34,7 +34,7 @@ void handle_write_n64(std::vector<u8> &buf, u32 addr, access_type v)
         addr ^= 2;
     }
 
-    else if constexpr(sizeof(access_type) == 3)
+    else if constexpr(sizeof(access_type) == 1)
     {
         addr ^= 3;
     }
