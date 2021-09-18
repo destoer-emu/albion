@@ -1,6 +1,7 @@
 #include <gb/gb.h>
 #include <destoer-emu/lib.h>
 #include <destoer-emu/debug.h>
+#include <gb/sgb.h>
 
 // todo on what cycles are read and writes asserted on the bus?
 namespace gameboy
@@ -61,6 +62,13 @@ bool Memory::rom_cgb_enabled() const noexcept
 	}
 }
 
+
+bool Memory::rom_sgb_enabled() const noexcept
+{
+	return rom[0x146] == 0x3;
+}
+
+
 Memory::Memory(GB &gb) : cpu(gb.cpu), ppu(gb.ppu), 
 	apu(gb.apu), scheduler(gb.scheduler), debug(gb.debug)
 {
@@ -86,6 +94,10 @@ Memory::Memory(GB &gb) : cpu(gb.cpu), ppu(gb.ppu),
 		std::fill(x.begin(),x.end(),0);
     }
 	rom.resize(0x8000);
+
+	sgb_packet.resize(111);
+
+	sgb_pal.resize(0x1000);
 } 
 
 void Memory::init_mem_table() noexcept
@@ -338,6 +350,13 @@ void Memory::init(std::string rom_name, bool with_rom, bool use_bios)
 	hdma_active = false;
 
 	ignore_oam_bug = false;
+
+
+	// sgb
+    sgb_transfer_active = false;
+    packet_count = 0;
+    packet_len = 0;
+    bit_count = 0;
 
 	test_result = emu_test::running;
 	gekkio_pass_count = 0;
@@ -821,7 +840,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 				return ( (req & 0xf0) | ((cpu.joypad_state >> 4) & 0xf ) | 0xc0 );
 			}		
 				
-			return 0xff; // return all unset
+			return 0xf0; // return all unset
 		}	
 
 		case IO_SC:
@@ -1447,6 +1466,125 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 {
     switch(addr & 0xff)
     {
+
+		case IO_JOYPAD:
+		{
+			io[IO_JOYPAD] = v;
+
+			// transfer start
+			if(!sgb_transfer_active && !is_set(v,4) && !is_set(v,5) && cpu.get_sgb())
+			{
+				sgb_transfer_active = true;
+			}
+
+
+
+			// command packet
+			else if(sgb_transfer_active)
+			{
+				// ignore reset pulse and high pulse
+				if(is_set(v,4) == is_set(v,5))
+				{
+					return;
+				}
+
+
+				u32 bit = 0;
+
+				// p14 is low tranfser bit is zero
+				if(!is_set(v,4))
+				{
+					bit = 0;
+				}
+
+				// p15 is low transfer bit is one
+				else if(!is_set(v,5))
+				{
+					bit = 1;
+				}
+
+	
+				if(bit_count == (16 * 8))
+				{
+					// need zero as stop bit
+					if(bit != 0)
+					{
+						return;
+					}
+
+
+					packet_count++;
+					bit_count = 0;
+					if(packet_count == 1)
+					{
+						packet_len = sgb_packet[0] & 0b111;
+						printf("packet_len: %d\n",packet_len);
+					}
+
+
+
+					if(packet_count == packet_len)
+					{
+						sgb_transfer_active = false;
+						packet_len = 0;
+						packet_count = 0;
+
+						const u32 command = sgb_packet[0] >> 3;
+
+
+						printf("sgb command %x\n",command);
+
+						// for now just implement commands necessary to display a palette
+						switch(command)
+						{
+							case PAL_TRN:
+							{
+								const auto offset = is_set(io[IO_LCDC],4)?  0x0000 : 0x0800;
+								memcpy(&sgb_pal[0],&vram[0][offset],0x1000);
+								break;
+							}
+
+
+							// MASK_EN does not work properly in castlevania why?
+							// repetadly writes freeze while it should render...
+							case MASK_EN:
+							{
+								printf("mode %d\n",sgb_packet[1]);
+								ppu.mask_en = static_cast<Ppu::mask_mode>(sgb_packet[1] & 0x3);
+								break;
+							}
+
+							case PAL_SET:
+							{
+								for(int p = 0; p < 3; p++)
+								{
+									const auto pal = handle_read<u16>(sgb_packet,1 + (p * 2)) & 511;
+
+									for(int i = 0; i < 4; i++)
+									{
+										const auto c = deset_bit(handle_read<u16>(sgb_pal,(pal*8) + (i * 2)),15);
+										ppu.dmg_pal[p][i]  = ppu.col_lut[c];
+									}
+								}
+								break;
+							}
+							default:  break;
+						}
+					}
+				}
+
+				// store the incomming bit
+				else
+				{
+					const u32 idx = (bit_count / 8) + (packet_count * 16);
+					const u32 byte_bit = bit_count % 8;
+
+					sgb_packet[idx] = deset_bit(sgb_packet[idx],byte_bit) | (bit << byte_bit);
+					bit_count++;
+				}
+			}
+			break;
+		}
 
 		case IO_SC:
 		{

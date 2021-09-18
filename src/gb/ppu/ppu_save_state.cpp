@@ -33,6 +33,8 @@ void Ppu::save_state(std::ofstream &fp)
     file_write_var(fp,emulate_pixel_fifo);
     file_write_var(fp,early_line_zero);
     file_write_var(fp,glitched_oam_mode);
+    file_write_var(fp,mask_en);
+    file_write_arr(fp,dmg_pal,sizeof(dmg_pal));
 }
 
 void Ppu::load_state(std::ifstream &fp)
@@ -121,6 +123,8 @@ void Ppu::load_state(std::ifstream &fp)
     file_read_var(fp,emulate_pixel_fifo);
     file_read_var(fp,early_line_zero);
     file_read_var(fp,glitched_oam_mode);
+    file_read_var(fp,mask_en);
+    file_read_arr(fp,dmg_pal,sizeof(dmg_pal));
 }
 
 }

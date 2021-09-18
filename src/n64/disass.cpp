@@ -407,6 +407,8 @@ std::string disass_sll(u32 opcode, u64 pc)
 
 std::string disass_srl(u32 opcode, u64 pc)
 {
+    UNUSED(pc);
+
     const auto rt = get_rt(opcode);
     const auto rd = get_rd(opcode);
 

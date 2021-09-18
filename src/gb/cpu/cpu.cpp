@@ -19,6 +19,7 @@ void Cpu::init(bool use_bios)
 
 
 	is_cgb = mem.rom_cgb_enabled();
+	is_sgb = mem.rom_sgb_enabled();
 	//is_cgb = false;
 
 	// setup regs to skip the bios
@@ -33,6 +34,17 @@ void Cpu::init(bool use_bios)
 			hl = 0x000d; 
 			sp = 0xfffe;
 			pc = 0x0100;
+		}
+
+		// prefer cgb
+		else if(is_sgb)
+		{
+			write_af(0xffb0); // af = 0x01b0
+			bc = 0x0014; 
+			de = 0x00d8; 
+			hl = 0x014d;
+			sp = 0xfffe;
+			pc = 0x0100;			
 		}
 
 		// dmg

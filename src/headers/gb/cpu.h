@@ -70,7 +70,7 @@ public:
 
     void request_interrupt(int interrupt) noexcept;
     bool get_cgb() const noexcept {return is_cgb;}
-
+    bool get_sgb() const noexcept {return is_sgb;}
 
     // oam bug
     void oam_bug_write(uint16_t v);
@@ -262,6 +262,7 @@ private:
     bool is_cgb = false;
     bool is_double = false;
 
+    bool is_sgb = false;
 
 
     void handle_halt();

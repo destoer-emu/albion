@@ -94,6 +94,27 @@ public:
     std::vector<uint32_t> render_tiles() noexcept;
     void render_palette(uint32_t *palette_bg,uint32_t *palette_sp) noexcept;
 
+
+    // todo properly handle cgb in dmg
+	u32 dmg_pal[3][4] = 
+	{
+		{0xffffffff,0xffcccccc,0xff777777,0xff000000},
+		{0xffffffff,0xffcccccc,0xff777777,0xff000000},
+		{0xffffffff,0xffcccccc,0xff777777,0xff000000}
+	};
+
+    using ColorLut = std::array<uint32_t,32768>;
+    const ColorLut col_lut = pop_color_lut();
+
+    enum class mask_mode
+    {
+        cancel = 0,
+        freeze = 1,
+        black = 2,
+        clear = 3
+    };
+
+    mask_mode mask_en;
 private:
 
     Cpu &cpu;
@@ -253,16 +274,7 @@ private:
         {0xffffffff,0xffcccccc,0xff777777,0xff000000}
     };		
 
-    // todo properly handle cgb in dmg
-	uint32_t dmg_pal[3][4] = 
-	{
-		{0xffffffff,0xffcccccc,0xff777777,0xff000000},
-		{0xffffffff,0xffcccccc,0xff777777,0xff000000},
-		{0xffffffff,0xffcccccc,0xff777777,0xff000000}
-	};
 
-
-    using ColorLut = std::array<uint32_t,32768>;
     constexpr ColorLut pop_color_lut()
     {
         ColorLut lut{};
@@ -286,8 +298,6 @@ private:
 
         return lut;
     }
-
-    const ColorLut col_lut = pop_color_lut();
 
 };
 

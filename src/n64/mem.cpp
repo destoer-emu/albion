@@ -486,7 +486,7 @@ void do_pi_dma(N64 &n64, u32 src, u32 dst, u32 len)
     // for now just do it naviely with a read and write
     // and optimise it with memcpy later
     // len aligned to 16 bit
-    for(int i = 0; i < len / 2; i += 2)
+    for(u32 i = 0; i < len / 2; i += 2)
     {
         const auto v = read_physical<u16>(n64,src + i);
         write_physical<u16>(n64,dst+i,v);

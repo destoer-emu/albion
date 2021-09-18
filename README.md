@@ -24,7 +24,8 @@ and not very accurate
 # todo
 
 not really necessary but would be nice for gb
-serial, sgb, dmg cgb color palettes
+multiplayer serial, dmg cgb color palettes
+better sgb support
 
 priority based rendering tests,
 gba bitmap affine transforms,

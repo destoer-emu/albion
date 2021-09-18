@@ -75,6 +75,8 @@ void Ppu::init() noexcept
 
 	} 
 
+	mask_en = mask_mode::cancel;
+
 	insert_new_ppu_event();
 }
 
@@ -434,7 +436,7 @@ void Ppu::update_graphics(uint32_t cycles) noexcept
 					{
 						cpu.request_interrupt(1);
 						signal = true;
-					}				
+					}
 				}
 				
 				else 
@@ -463,7 +465,7 @@ void Ppu::update_graphics(uint32_t cycles) noexcept
 					window_y_line = 0;
 					// enter oam search on the first line :)
 					mode = ppu_mode::oam_search; 
-					early_line_zero = false;				
+					early_line_zero = false;	
 				}
 				stat_update();
 				insert_new_ppu_event();		
@@ -549,6 +551,12 @@ void Ppu::update_graphics(uint32_t cycles) noexcept
 
 void Ppu::ppu_write() noexcept
 {
+	// SGB: approximation
+	if(mask_en != mask_mode::cancel)
+	{
+		return;
+	}
+
 	// written during mid scanline
 	// switch to using the fetcher 
 	// and smash any cycles off

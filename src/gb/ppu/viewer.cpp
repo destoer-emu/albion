@@ -150,12 +150,27 @@ std::vector<uint32_t> Ppu::render_bg(bool higher) noexcept
 
 void Ppu::render_palette(uint32_t *palette_bg,uint32_t *palette_sp) noexcept
 {
-	for(int cgb_pal = 0; cgb_pal < 8; cgb_pal++)
+	if(cpu.get_cgb())
 	{
-		for(int color_num = 0; color_num < 4; color_num++)
+		for(int cgb_pal = 0; cgb_pal < 8; cgb_pal++)
 		{
-			palette_bg[(cgb_pal*4)+color_num] = get_cgb_color(color_num,cgb_pal, pixel_source::tile);
-			palette_sp[(cgb_pal*4)+color_num] = get_cgb_color(color_num,cgb_pal,pixel_source::sprite_one);
+			for(int color_num = 0; color_num < 4; color_num++)
+			{
+				palette_bg[(cgb_pal*4)+color_num] = get_cgb_color(color_num,cgb_pal, pixel_source::tile);
+				palette_sp[(cgb_pal*4)+color_num] = get_cgb_color(color_num,cgb_pal,pixel_source::sprite_one);
+			}
+		}
+	}
+
+	// dmg
+	else
+	{
+		for(int p = 0; p < 3; p++)
+		{
+			for(int color_num = 0; color_num < 4; color_num++)
+			{
+				palette_bg[(p*4) + color_num] = dmg_pal[p][color_num];
+			}
 		}
 	}
 }

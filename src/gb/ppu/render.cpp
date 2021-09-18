@@ -432,6 +432,37 @@ uint32_t Ppu::get_cgb_color(int color_num, int cgb_pal, pixel_source source) con
 // considering taking copies and threading this
 void Ppu::render_scanline() noexcept
 {
+
+	// SGB: approximate mask_en only on scanline renderer
+	switch(mask_en)
+	{
+		// standard
+		case mask_mode::cancel: break;
+
+		// TODO: this wont play nice on castlevania
+		case mask_mode::freeze: return;
+		// assume white
+		case mask_mode::clear: 
+		{
+			for(u32 i = 0; i < screen.size(); i++)
+			{
+				screen[i] = 0xffffffff;
+			}
+			break;
+		}
+
+		case mask_mode::black:
+		{
+			for(u32 i = 0; i < screen.size(); i++)
+			{
+				screen[i] = 0xff000000;
+			}
+			break;
+		}	
+	}
+
+
+
 	// is the window drawn on this line?
 	const bool window_rendered = mem.io[IO_WX] <= 166 && 
 		window_y_triggered && is_set(mem.io[IO_LCDC],5);

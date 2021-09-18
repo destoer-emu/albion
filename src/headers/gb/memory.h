@@ -22,6 +22,7 @@ public:
     // disable and enable reads from the bios
     // fiddles the bank zero pointe
     bool rom_cgb_enabled() const noexcept;
+    bool rom_sgb_enabled() const noexcept;
     void bios_enable() noexcept;
     void bios_disable() noexcept;
 
@@ -277,6 +278,16 @@ private:
     std::vector<std::vector<uint8_t>> cgb_wram_bank; // 0x7000 
     std::vector<uint8_t> rom; // variable
     std::vector<std::vector<uint8_t>> cart_ram_banks;
+
+
+    // sgb
+    std::vector<u8> sgb_packet; // 111
+    bool sgb_transfer_active;
+    u32 packet_count;
+    u32 packet_len;
+    u32 bit_count;
+
+    std::vector<u8> sgb_pal; // 0x1000
 
     bool cart_ram_dirty = false;
     int frame_count = 0;

@@ -25,6 +25,7 @@ void Cpu::save_state(std::ofstream &fp)
     file_write_var(fp,serial_cnt);
     file_write_var(fp,interrupt_req);
     file_write_var(fp,interrupt_fire);
+    file_write_var(fp,is_sgb);
 }
 
 
@@ -53,7 +54,8 @@ void Cpu::load_state(std::ifstream &fp)
     file_read_var(fp,serial_cyc);
     file_read_var(fp,serial_cnt);
     file_read_var(fp,interrupt_req);
-    file_read_var(fp,interrupt_fire);	
+    file_read_var(fp,interrupt_fire);
+    file_read_var(fp,is_sgb);	
 }
 
 }

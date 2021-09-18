@@ -115,24 +115,24 @@ void GameboyDisplayViewer::draw_tiles()
 
 void GameboyDisplayViewer::draw_palette()
 {
-    ImGui::Begin("cgb palette");
+    ImGui::Begin("palette");
     ImDrawList* draw_list = ImGui::GetWindowDrawList();
     auto p = ImGui::GetCursorScreenPos();
-	for(int cgb_pal = 0; cgb_pal < 8; cgb_pal++)
-	{
-		for(int color_num = 0; color_num < 4; color_num++)
-		{
-            // smash a colored box here somehow...
-            // think we need to conver it to float first
-            // i cant find the api call to draw the box
+
+    for(int cgb_pal = 0; cgb_pal < 8; cgb_pal++)
+    {
+        for(int color_num = 0; color_num < 4; color_num++)
+        {
+
             float sz = 20.0;
             float x = (p.x + (color_num * sz));
             float y = (p.y + (cgb_pal * sz));
-            //uint32_t col = palette_bg[(cgb_pal*4)+color_num];
+
             draw_list->AddRectFilled(ImVec2(x+4.0, y+4.0), ImVec2(x+sz, y + sz),  palette_bg[(cgb_pal*4)+color_num]);
             draw_list->AddRectFilled(ImVec2(x+4.0+(sz*5), y+4.0), ImVec2(x+(sz*6), y + sz),  palette_sp[(cgb_pal*4)+color_num]);
-		}
-	}
+        }
+    }
+    
     ImGui::End();        
 }
 
