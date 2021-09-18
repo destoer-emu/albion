@@ -1518,7 +1518,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 					if(packet_count == 1)
 					{
 						packet_len = sgb_packet[0] & 0b111;
-						printf("packet_len: %d\n",packet_len);
+						//printf("packet_len: %d\n",packet_len);
 					}
 
 
@@ -1532,7 +1532,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 						const u32 command = sgb_packet[0] >> 3;
 
 
-						printf("sgb command %x\n",command);
+						//printf("sgb command %x\n",command);
 
 						// for now just implement commands necessary to display a palette
 						switch(command)
@@ -1541,6 +1541,9 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 							{
 								const auto offset = is_set(io[IO_LCDC],4)?  0x0000 : 0x0800;
 								memcpy(&sgb_pal[0],&vram[0][offset],0x1000);
+
+								
+
 								break;
 							}
 
@@ -1549,8 +1552,17 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 							// repetadly writes freeze while it should render...
 							case MASK_EN:
 							{
-								printf("mode %d\n",sgb_packet[1]);
+								//printf("mode %d\n",sgb_packet[1]);
 								ppu.mask_en = static_cast<Ppu::mask_mode>(sgb_packet[1] & 0x3);
+								break;
+							}
+
+							case ATTR_SET:
+							{
+								if(is_set(sgb_packet[1],6))
+								{
+									ppu.mask_en = Ppu::mask_mode::cancel;
+								}
 								break;
 							}
 
@@ -1566,6 +1578,12 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 										ppu.dmg_pal[p][i]  = ppu.col_lut[c];
 									}
 								}
+
+								if(is_set(sgb_packet[9],6))
+								{
+									ppu.mask_en = Ppu::mask_mode::cancel;
+								}
+
 								break;
 							}
 							default:  break;

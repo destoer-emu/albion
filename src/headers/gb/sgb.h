@@ -11,5 +11,6 @@ static constexpr u8 MASK_EN = 0x17;
 
 static constexpr u8 CHR_TRN = 0x13;
 static constexpr u8 ATTR_TRN = 0x15;
+static constexpr u8 ATTR_SET = 0x16;
 static constexpr u8 PCT_TRN = 0x14;
 static constexpr u8 OBJ_TRN = 0x18;
