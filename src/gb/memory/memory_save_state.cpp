@@ -101,7 +101,6 @@ void Memory::load_state(std::ifstream &fp)
     file_read_var(fp,cgb_wram_bank_idx);
     file_read_var(fp,vram_bank);
     file_read_var(fp,ignore_oam_bug);
-    file_read_vec(fp,sgb_pal);
 
     file_read_vec(fp,sgb_pal);
     file_read_vec(fp,sgb_packet);

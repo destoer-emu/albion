@@ -1547,9 +1547,6 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 								break;
 							}
 
-
-							// MASK_EN does not work properly in castlevania why?
-							// repetadly writes freeze while it should render...
 							case MASK_EN:
 							{
 								//printf("mode %d\n",sgb_packet[1]);
