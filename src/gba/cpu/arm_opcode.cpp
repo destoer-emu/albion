@@ -650,7 +650,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
     {
         case 0x0: //and
         {
-            regs[rd] = logical_and(op1,op2,S);
+            regs[rd] = logical_and<S>(op1,op2);
             if(S)
             {
                 flag_c = shift_carry;
@@ -660,7 +660,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
         case 0x1: // eor
         {
-            regs[rd] = logical_eor(op1,op2,S);
+            regs[rd] = logical_eor<S>(op1,op2);
             if(S)
             {
                 flag_c = shift_carry;
@@ -670,44 +670,44 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
         case 0x2: // sub
         {
-            regs[rd] = sub(op1,op2,S);
+            regs[rd] = sub<S>(op1,op2);
             break;
         }
 
         case 0x3: // rsb
         {
-            regs[rd] = sub(op2,op1,S);
+            regs[rd] = sub<S>(op2,op1);
             break;
         }
 
         case 0x4: // add
         {
-            regs[rd] = add(op1,op2,S);
+            regs[rd] = add<S>(op1,op2);
             break;
         }
 
 
         case 0x5: // adc
         {
-            regs[rd] = adc(op1,op2,S);
+            regs[rd] = adc<S>(op1,op2);
             break;           
         }
 
         case 0x6: // sbc
         {
-            regs[rd] = sbc(op1,op2,S);
+            regs[rd] = sbc<S>(op1,op2);
             break;
         }
 
         case 0x7: // rsc
         {
-            regs[rd] = sbc(op2,op1,S);
+            regs[rd] = sbc<S>(op2,op1);
             break;
         }
 
         case 0x8: // tst (and without writeback)
         {
-            logical_and(op1,op2,S);
+            logical_and<S>(op1,op2);
             if(S)
             {
                 flag_c = shift_carry;
@@ -718,7 +718,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
         case 0x9: // teq
         {
-            logical_eor(op1,op2,S);
+            logical_eor<S>(op1,op2);
             if(S)
             {
                 flag_c = shift_carry;
@@ -728,19 +728,19 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
         case 0xa: // cmp
         {
-            sub(op1,op2,S);
+            sub<S>(op1,op2);
             break;
         }
 
         case 0xb: // cmn
         {
-            add(op1,op2,S);
+            add<S>(op1,op2);
             break;            
         }
 
         case 0xc: //orr
         {
-            regs[rd] = logical_or(op1,op2,S);
+            regs[rd] = logical_or<S>(op1,op2);
             if(S)
             {
                 flag_c = shift_carry;
@@ -764,7 +764,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
         case 0xe: // bic
         {
-            regs[rd] = bic(op1,op2,S);
+            regs[rd] = bic<S>(op1,op2);
             if(S)
             {
                 flag_c = shift_carry;

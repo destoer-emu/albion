@@ -620,11 +620,36 @@ inline bool add_overflow(T v1,T v2) noexcept
 #endif
 }
 
+// templates for common cpu funcs
+template u32 Cpu::add<true>(u32 v1, u32 v2);
+template u32 Cpu::add<false>(u32 v1, u32 v2);
 
-uint32_t Cpu::add(uint32_t v1, uint32_t v2, bool s)
+template u32 Cpu::adc<true>(u32 v1, u32 v2);
+template u32 Cpu::adc<false>(u32 v1, u32 v2);
+
+template u32 Cpu::sub<true>(u32 v1, u32 v2);
+template u32 Cpu::sub<false>(u32 v1, u32 v2);
+
+template u32 Cpu::sbc<true>(u32 v1, u32 v2);
+template u32 Cpu::sbc<false>(u32 v1, u32 v2);
+
+template u32 Cpu::logical_and<true>(u32 v1, u32 v2);
+template u32 Cpu::logical_and<false>(u32 v1, u32 v2);
+
+template u32 Cpu::logical_or<true>(u32 v1, u32 v2);
+template u32 Cpu::logical_or<false>(u32 v1, u32 v2);
+
+template u32 Cpu::logical_eor<true>(u32 v1, u32 v2);
+template u32 Cpu::logical_eor<false>(u32 v1, u32 v2);
+
+template u32 Cpu::bic<true>(u32 v1, u32 v2);
+template u32 Cpu::bic<false>(u32 v1, u32 v2);
+
+template<bool S>
+uint32_t Cpu::add(uint32_t v1, uint32_t v2)
 {
     const uint32_t ans = v1 + v2;
-    if(s)
+    if constexpr(S)
     {
 
         flag_v = add_overflow((int32_t)v1,(int32_t)v2);
@@ -636,15 +661,15 @@ uint32_t Cpu::add(uint32_t v1, uint32_t v2, bool s)
     return ans;
 }
 
-
-uint32_t Cpu::adc(uint32_t v1, uint32_t v2, bool s)
+template<bool S>
+uint32_t Cpu::adc(uint32_t v1, uint32_t v2)
 {
 
     const uint32_t v3 = flag_c;
 
     const uint32_t ans = v1 + v2 + v3;
 
-    if(s)
+    if constexpr(S)
     {
 
         // ^ as if both operations generate an inproper result we will get an expected sign
@@ -661,13 +686,13 @@ uint32_t Cpu::adc(uint32_t v1, uint32_t v2, bool s)
     return ans;
 }
 
-
-uint32_t Cpu::sub(uint32_t v1, uint32_t v2, bool s)
+template<bool S>
+uint32_t Cpu::sub(uint32_t v1, uint32_t v2)
 {
     
     const uint32_t ans = v1 - v2;
 
-    if(s)
+    if constexpr(S)
     {
         flag_v = sub_overflow((int32_t)v1,(int32_t)v2);
         flag_c = sub_overflow(v1,v2);
@@ -679,13 +704,14 @@ uint32_t Cpu::sub(uint32_t v1, uint32_t v2, bool s)
     return ans;
 }
 
-uint32_t Cpu::sbc(uint32_t v1, uint32_t v2, bool s)
+template<bool S>
+uint32_t Cpu::sbc(uint32_t v1, uint32_t v2)
 {
     // subtract one from ans if carry is not set
     const uint32_t v3 = !flag_c;
 
     const uint32_t ans = v1 - v2 - v3;
-    if(s)
+    if constexpr(S)
     {
         // ^ as if both operations generate an inproper result we will get an expected sign
         const int32_t ans_signed = v1 - v2;
@@ -701,12 +727,12 @@ uint32_t Cpu::sbc(uint32_t v1, uint32_t v2, bool s)
     return ans;
 }
 
-
-uint32_t Cpu::logical_and(uint32_t v1, uint32_t v2, bool s)
+template<bool S>
+uint32_t Cpu::logical_and(uint32_t v1, uint32_t v2)
 {
     const uint32_t ans = v1 & v2;
 
-    if(s)
+    if constexpr(S)
     {
         set_nz_flag(ans);
     }
@@ -714,30 +740,33 @@ uint32_t Cpu::logical_and(uint32_t v1, uint32_t v2, bool s)
     return ans;
 }
 
-uint32_t Cpu::logical_or(uint32_t v1, uint32_t v2, bool s)
+template<bool S>
+uint32_t Cpu::logical_or(uint32_t v1, uint32_t v2)
 {
     const uint32_t ans = v1 | v2;
-    if(s)
+    if constexpr(S)
     {
         set_nz_flag(ans);
     }
     return ans;
 }
 
-uint32_t Cpu::bic(uint32_t v1, uint32_t v2, bool s)
+template<bool S>
+uint32_t Cpu::bic(uint32_t v1, uint32_t v2)
 {
     const uint32_t ans = v1 & ~v2;
-    if(s)
+    if constexpr(S)
     {
         set_nz_flag(ans);
     }
     return ans;
 }
 
-uint32_t Cpu::logical_eor(uint32_t v1, uint32_t v2, bool s)
+template<bool S>
+uint32_t Cpu::logical_eor(uint32_t v1, uint32_t v2)
 {
     const uint32_t ans = v1 ^ v2;
-    if(s)
+    if constexpr(S)
     {
         set_nz_flag(ans);
     }

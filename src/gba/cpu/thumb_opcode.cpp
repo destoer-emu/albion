@@ -385,7 +385,7 @@ void Cpu::thumb_hi_reg_ops(uint16_t opcode)
     {
         case 0b00: // add
         {
-            regs[rd] = add(rd_val,rs_val,false);
+            regs[rd] = add<false>(rd_val,rs_val);
 
             if(rd == PC)
             {
@@ -397,7 +397,7 @@ void Cpu::thumb_hi_reg_ops(uint16_t opcode)
         case 0b01: // cmp
         {
             // do sub and discard result
-            sub(rd_val,rs_val,true);
+            sub<true>(rd_val,rs_val);
             break;
         }
 
@@ -436,7 +436,7 @@ void Cpu::thumb_alu(uint16_t opcode)
 
         case 0x0: // and
         {
-            regs[rd] = logical_and(regs[rd],regs[rs],true);
+            regs[rd] = logical_and<true>(regs[rd],regs[rs]);
             break;
         }
 
@@ -473,13 +473,13 @@ void Cpu::thumb_alu(uint16_t opcode)
 
         case 0x5: // adc
         {
-            regs[rd] = adc(regs[rd],regs[rs],true);
+            regs[rd] = adc<true>(regs[rd],regs[rs]);
             break;
         }
 
         case 0x6: // sbc
         {
-            regs[rd] = sbc(regs[rd],regs[rs],true);
+            regs[rd] = sbc<true>(regs[rd],regs[rs]);
             break;
         }
 
@@ -494,31 +494,31 @@ void Cpu::thumb_alu(uint16_t opcode)
 
         case 0x8: // tst
         {
-            logical_and(regs[rd],regs[rs],true);
+            logical_and<true>(regs[rd],regs[rs]);
             break;
         }
 
         case 0x9: // neg
         {
-            regs[rd] = sub(0,regs[rs],true);
+            regs[rd] = sub<true>(0,regs[rs]);
             break;
         }
 
         case 0xa: // cmp
         {
-            sub(regs[rd],regs[rs],true);
+            sub<true>(regs[rd],regs[rs]);
             break;
         }
 
         case 0xb: // cmn
         {
-            add(regs[rd],regs[rs],true);
+            add<true>(regs[rd],regs[rs]);
             break;
         }
 
         case 0xc: // orr
         {
-            regs[rd] = logical_or(regs[rd],regs[rs],true);
+            regs[rd] = logical_or<true>(regs[rd],regs[rs]);
             break;
         }
 
@@ -655,22 +655,22 @@ void Cpu::thumb_add_sub(uint16_t opcode)
     {
         case 0b00: // add reg
         { 
-            regs[rd] = add(regs[rs],regs[rn],true);
+            regs[rd] = add<true>(regs[rs],regs[rn]);
             break;
         }
         case 0b01: // sub reg
         { 
-            regs[rd] = sub(regs[rs],regs[rn],true);
+            regs[rd] = sub<true>(regs[rs],regs[rn]);
             break;
         }        
         case 0b10: // add imm
         { 
-            regs[rd] = add(regs[rs],rn,true);
+            regs[rd] = add<true>(regs[rs],rn);
             break;
         }        
         case 0b11: // sub imm
         { 
-            regs[rd] = sub(regs[rs],rn,true);
+            regs[rd] = sub<true>(regs[rs],rn);
             break;
         }        
     }
@@ -733,19 +733,19 @@ void Cpu::thumb_mcas_imm(uint16_t opcode)
 
         case 0b01: //cmp
         {
-            sub(regs[RD],imm,true);
+            sub<true>(regs[RD],imm);
             break;
         }
 
         case 0b10: // add
         {
-            regs[RD] = add(regs[RD],imm,true);
+            regs[RD] = add<true>(regs[RD],imm);
             break;
         }
 
         case 0b11: // sub
         {
-            regs[RD] = sub(regs[RD],imm,true);
+            regs[RD] = sub<true>(regs[RD],imm);
             break;
         }
     }

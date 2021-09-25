@@ -368,14 +368,31 @@ public:
 private:
 
     // cpu operations eg adds
-    uint32_t add(uint32_t v1, uint32_t v2, bool s);
-    uint32_t adc(uint32_t v1, uint32_t v2, bool s);
-    uint32_t bic(uint32_t v1, uint32_t v2, bool s);
-    uint32_t sub(uint32_t v1, uint32_t v2, bool s);
-    uint32_t sbc(uint32_t v1, uint32_t v2, bool s);
-    uint32_t logical_and(uint32_t v1, uint32_t v2, bool s);
-    uint32_t logical_or(uint32_t v1, uint32_t v2, bool s);
-    uint32_t logical_eor(uint32_t v1, uint32_t v2, bool s);
+    template<bool S>
+    uint32_t add(uint32_t v1, uint32_t v2);
+
+    template<bool S>
+    uint32_t adc(uint32_t v1, uint32_t v2);
+
+    template<bool S>
+    uint32_t bic(uint32_t v1, uint32_t v2);
+
+    template<bool S>
+    uint32_t sub(uint32_t v1, uint32_t v2);
+
+    template<bool S>
+    uint32_t sbc(uint32_t v1, uint32_t v2);
+
+    template<bool S>
+    uint32_t logical_and(uint32_t v1, uint32_t v2);
+
+    template<bool S>
+    uint32_t logical_or(uint32_t v1, uint32_t v2);
+
+    template<bool S>
+    uint32_t logical_eor(uint32_t v1, uint32_t v2);
+
+
     void do_mul_cycles(uint32_t mul_operand);
 
     bool cond_met(uint32_t cond)
@@ -495,5 +512,30 @@ private:
     // cpu pipeline
     uint32_t pipeline[2] = {0};
 };
+
+// templates for common cpu funcs
+extern template u32 Cpu::add<true>(u32 v1, u32 v2);
+extern template u32 Cpu::add<false>(u32 v1, u32 v2);
+
+extern template u32 Cpu::adc<true>(u32 v1, u32 v2);
+extern template u32 Cpu::adc<false>(u32 v1, u32 v2);
+
+extern template u32 Cpu::sub<true>(u32 v1, u32 v2);
+extern template u32 Cpu::sub<false>(u32 v1, u32 v2);
+
+extern template u32 Cpu::sbc<true>(u32 v1, u32 v2);
+extern template u32 Cpu::sbc<false>(u32 v1, u32 v2);
+
+extern template u32 Cpu::logical_and<true>(u32 v1, u32 v2);
+extern template u32 Cpu::logical_and<false>(u32 v1, u32 v2);
+
+extern template u32 Cpu::logical_or<true>(u32 v1, u32 v2);
+extern template u32 Cpu::logical_or<false>(u32 v1, u32 v2);
+
+extern template u32 Cpu::logical_eor<true>(u32 v1, u32 v2);
+extern template u32 Cpu::logical_eor<false>(u32 v1, u32 v2);
+
+extern template u32 Cpu::bic<true>(u32 v1, u32 v2);
+extern template u32 Cpu::bic<false>(u32 v1, u32 v2);
 
 }
