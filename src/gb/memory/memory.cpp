@@ -1,4 +1,5 @@
 #include <gb/gb.h>
+#include <gb/cpu.inl>
 #include <destoer-emu/lib.h>
 #include <destoer-emu/debug.h>
 #include <gb/sgb.h>

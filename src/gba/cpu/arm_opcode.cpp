@@ -1,5 +1,6 @@
 #include <gba/gba.h>
 #include <gba/arm_lut.h>
+#include <gba/cpu.inl>
 
 namespace gameboyadvance
 {

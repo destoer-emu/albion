@@ -1,5 +1,6 @@
 #include <gba/gba.h>
 #include <gba/thumb_lut.h>
+#include <gba/cpu.inl>
 
 
 // i need to properly handle pipeline effects
@@ -67,7 +68,7 @@ void Cpu::exec_thumb()
 void Cpu::execute_thumb_opcode(uint16_t instr)
 {
     // get the bits that determine the kind of instr it is
-    const uint8_t op = (instr >> 8) & 0xff;
+    const u32 op = instr >> 6;
 
     // call the function from our opcode table
     std::invoke(thumb_opcode_table[op],this,instr);  
@@ -425,13 +426,13 @@ void Cpu::thumb_hi_reg_ops(uint16_t opcode)
     }
 }
 
+template<const int OP>
 void Cpu::thumb_alu(uint16_t opcode)
 {
-    const auto op = (opcode >> 6) & 0xf;
     const auto rs = (opcode >> 3) & 0x7;
     const auto rd = opcode & 0x7;
 
-    switch(op)
+    switch(OP)
     {
 
         case 0x0: // and

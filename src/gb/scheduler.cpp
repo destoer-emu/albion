@@ -1,4 +1,5 @@
 #include<gb/gb.h>
+#include<gb/cpu.inl>
 
 
 // investiage oracle games audio cut out
