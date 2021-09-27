@@ -288,6 +288,24 @@ void Mem::init(std::string filename)
             }
         }
     }
+
+
+
+    region_ptr[static_cast<u32>(memory_region::bios)] = bios_rom.data();
+    region_ptr[static_cast<u32>(memory_region::wram_board)] = board_wram.data();
+    region_ptr[static_cast<u32>(memory_region::wram_chip)] = chip_wram.data();
+    region_ptr[static_cast<u32>(memory_region::io)] = nullptr;
+
+    region_ptr[static_cast<u32>(memory_region::pal)] = pal_ram.data();
+    region_ptr[static_cast<u32>(memory_region::vram)] = vram.data();
+    region_ptr[static_cast<u32>(memory_region::oam)] = oam.data();
+    region_ptr[static_cast<u32>(memory_region::rom)] = rom.data();
+
+    // TODO: will roms execute out of sram?
+    region_ptr[static_cast<u32>(memory_region::cart_backup)] = nullptr;
+
+    region_ptr[static_cast<u32>(memory_region::undefined)] = nullptr;
+
 }
 
 void Mem::switch_bios(bool in_bios)
@@ -1733,18 +1751,6 @@ uint32_t Mem::get_waitstates(uint32_t addr) const
         }
     }
 }
-
-
-template<typename access_type>
-void Mem::tick_mem_access(uint32_t addr)
-{
-    // only allow up to 32bit
-    static_assert(sizeof(access_type) <= 4);
-    cpu.cycle_tick(get_waitstates<access_type>(addr));
-}
-
-
-
 
 
 

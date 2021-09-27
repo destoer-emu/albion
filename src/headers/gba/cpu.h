@@ -232,6 +232,19 @@ private:
     uint32_t fetch_arm_opcode();
     uint16_t fetch_thumb_opcode();
 
+    // fetch speed hacks
+    void update_fetch_cache();
+
+    u16 fast_thumb_fetch();
+    u16 fast_thumb_fetch_opcode();
+    void fast_thumb_pipeline_fill();
+
+    u32 fast_arm_fetch();
+    u32 fast_arm_fetch_opcode();
+    void fast_arm_pipeline_fill();
+
+
+
     void arm_fill_pipeline();
     void thumb_fill_pipeline(); 
     void write_pc_arm(uint32_t v);
@@ -512,6 +525,10 @@ private:
 
     // cpu pipeline
     uint32_t pipeline[2] = {0};
+
+
+    u8 *fetch_ptr = nullptr;
+    u32 fetch_mask = 0;
 };
 
 

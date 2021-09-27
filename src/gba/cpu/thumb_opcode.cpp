@@ -11,6 +11,8 @@ namespace gameboyadvance
 
 
 // TODO: remove preftech hacks
+
+/*
 void Cpu::thumb_fill_pipeline()
 {
 
@@ -31,7 +33,6 @@ void Cpu::thumb_fill_pipeline()
     }
 }
 
-
 uint16_t Cpu::fetch_thumb_opcode()
 {
     const uint16_t opcode = pipeline[0];
@@ -51,16 +52,56 @@ uint16_t Cpu::fetch_thumb_opcode()
     }
     return opcode;
 }
+*/
+
+
+// fetch speed hacks
+
+void Cpu::fast_thumb_pipeline_fill()
+{
+    pipeline[0] = fast_thumb_fetch(); 
+    regs[PC] += ARM_HALF_SIZE;
+    pipeline[1] = fast_thumb_fetch();          
+}
+
+
+u16 Cpu::fast_thumb_fetch()
+{
+    u16 v = 0;
+
+    const u32 offset = regs[PC] & fetch_mask;
+    memcpy(&v,&fetch_ptr[offset],sizeof(v));
+
+    mem.tick_mem_access<u16>(regs[PC]);
+
+    return v;
+}
+
+u16 Cpu::fast_thumb_fetch_opcode()
+{
+    const u16 opcode = pipeline[0];
+    pipeline[0] = pipeline[1];
+    regs[PC] += ARM_HALF_SIZE; 
+    pc_actual += ARM_HALF_SIZE; 
+
+
+    pipeline[1] = fast_thumb_fetch();
+    
+    return opcode;
+}
+
 
 void Cpu::write_pc_thumb(uint32_t v)
 {
     regs[PC] = v & ~1;
-    thumb_fill_pipeline(); // fill the intitial cpu pipeline
+    //thumb_fill_pipeline(); // fill the intitial cpu pipeline
+    fast_thumb_pipeline_fill();
 }
 
 void Cpu::exec_thumb()
 {
-    const auto op = fetch_thumb_opcode();
+    //const auto op = fetch_thumb_opcode();
+    const auto op = fast_thumb_fetch_opcode();
 
     execute_thumb_opcode(op);
 }

@@ -592,6 +592,20 @@ void Cpu::read_stack_fd(uint32_t reg)
 }
 
 
+void Cpu::update_fetch_cache()
+{
+
+    const auto mem_region = static_cast<u32>(memory_region_table[(pc_actual >> 24) & 0xf]); 
+
+    fetch_ptr = mem.region_ptr[mem_region];
+    fetch_mask = mem.region_info[mem_region].mask;     
+    
+    if(!fetch_ptr)
+    {
+        printf("illegal exeuction region: %08x\n",regs[PC]);
+    }
+}
+
 // the handler will find out what fired for us!
 // just check irqs aernt masked
 void Cpu::service_interrupt()
@@ -674,8 +688,10 @@ void Cpu::write_pc(uint32_t v)
     {
         pc_actual = v & ~1;
         in_bios = pc_actual < 0x4000;
-        execute_rom = pc_actual >= 0x08000000 && pc_actual <= 0x0e000000;
         mem.switch_bios(in_bios);
+        execute_rom = pc_actual >= 0x08000000 && pc_actual <= 0x0e000000;
+
+        update_fetch_cache();
         write_pc_thumb(v);
     }
 
@@ -685,6 +701,8 @@ void Cpu::write_pc(uint32_t v)
         in_bios = pc_actual < 0x4000;
         mem.switch_bios(in_bios);
         execute_rom = pc_actual >= 0x08000000 && pc_actual <= 0x0e000000;
+
+        update_fetch_cache();
         write_pc_arm(v);
     } 
 

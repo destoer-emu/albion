@@ -5,6 +5,7 @@
 namespace gameboyadvance
 {
 
+
 // if there is a pipeline stall (whenever pc changes besides a fetch)
 // TODO remove prefetch hacks
 void Cpu::arm_fill_pipeline() // need to verify this...
@@ -28,12 +29,6 @@ void Cpu::arm_fill_pipeline() // need to verify this...
     }
 }
 
-void Cpu::write_pc_arm(uint32_t v)
-{
-    regs[PC] = v & ~3;
-    arm_fill_pipeline(); // fill the intitial cpu pipeline
-}
-
 
 uint32_t Cpu::fetch_arm_opcode()
 {
@@ -55,6 +50,54 @@ uint32_t Cpu::fetch_arm_opcode()
     return opcode;
 }
 
+
+
+// fetch speed hacks
+
+void Cpu::fast_arm_pipeline_fill()
+{
+    pipeline[0] = fast_arm_fetch(); 
+    regs[PC] += ARM_WORD_SIZE;
+    pipeline[1] = fast_arm_fetch();          
+}
+
+
+u32 Cpu::fast_arm_fetch()
+{
+    u32 v = 0;
+
+    const u32 offset = regs[PC] & fetch_mask;
+    memcpy(&v,&fetch_ptr[offset],sizeof(v));
+
+    mem.tick_mem_access<u32>(regs[PC]);
+
+    return v;
+}
+
+u32 Cpu::fast_arm_fetch_opcode()
+{
+    const u32 opcode = pipeline[0];
+    pipeline[0] = pipeline[1];
+    regs[PC] += ARM_WORD_SIZE; 
+    pc_actual += ARM_WORD_SIZE; 
+
+
+    pipeline[1] = fast_arm_fetch();
+    
+    return opcode;
+}
+
+
+void Cpu::write_pc_arm(uint32_t v)
+{
+    regs[PC] = v & ~3;
+    //arm_fill_pipeline(); // fill the intitial cpu pipeline
+    fast_arm_pipeline_fill();
+}
+
+
+
+
 void Cpu::execute_arm_opcode(uint32_t instr)
 {
     // get the bits that determine the kind of instr it is
@@ -66,7 +109,8 @@ void Cpu::execute_arm_opcode(uint32_t instr)
 
 void Cpu::exec_arm()
 {
-    const auto instr = fetch_arm_opcode();
+    //const auto instr = fetch_arm_opcode();
+    const auto instr = fast_arm_fetch_opcode();
 
     // if the condition is not met just
     // advance past the instr

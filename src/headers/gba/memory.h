@@ -90,6 +90,14 @@ public:
     template<typename access_type>
     void write_memt_no_debug(uint32_t addr, access_type v);
 
+    template<typename access_type>
+    void tick_mem_access(uint32_t addr)
+    {
+        // only allow up to 32bit
+        static_assert(sizeof(access_type) <= 4);
+        cpu.cycle_tick(get_waitstates<access_type>(addr));
+    }
+
 
 #ifdef DEBUG
     template<typename access_type>
@@ -242,16 +250,44 @@ public:
     std::vector<uint8_t> sram; // 0x8000
 
 
+    struct RegionData
+    {
+        RegionData(uint32_t m, uint32_t s)
+        {
+            mask = m;
+            size =s;
+        }
+
+        uint32_t mask;
+        uint32_t size;
+    };
+
+    // note this assumes that accesses are in bounds
+    // these masks wont work if the size is exceeded
+    // i.e in the case of vram
+    RegionData region_info[10]
+    {
+        {0x3fff,0x4000},
+        {0x3ffff,0x40000},
+        {0x7fff,0x8000},
+        {0x3ff,0x400},
+        {0x3ff,0x400},
+        {0x1ffff,0x18000},
+        {0x3ff,0x400},
+        {(32*1024*1024)-1,32*1024*1024},
+        {0,0}, // varies
+        {0,0}, // not valid
+    };
+
+    uint8_t* region_ptr[10];
+
+    std::vector<uint8_t*> page_table;
 private:
     Debug &debug;
     Cpu &cpu;
     Display &disp;
     Apu &apu;
     GBAScheduler &scheduler;
-
-
-    template<typename access_type>
-    void tick_mem_access(uint32_t addr);
 
 
     // read mem helpers
@@ -313,35 +349,6 @@ private:
 
     void write_timer_control(int timer,uint8_t v);
     uint8_t read_timer_counter(int timer, int idx);
-
-    struct RegionData
-    {
-        RegionData(uint32_t m, uint32_t s)
-        {
-            mask = m;
-            size =s;
-        }
-
-        uint32_t mask;
-        uint32_t size;
-    };
-
-    // note this assumes that accesses are in bounds
-    // these masks wont work if the size is exceeded
-    // i.e in the case of vram
-    RegionData region_info[10]
-    {
-        {0x3fff,0x4000},
-        {0x3ffff,0x40000},
-        {0x7fff,0x8000},
-        {0x3ff,0x400},
-        {0x3ff,0x400},
-        {0x1ffff,0x18000},
-        {0x3ff,0x400},
-        {(32*1024*1024)-1,32*1024*1024},
-        {0,0}, // varies
-        {0,0}, // not valid
-    };
 
 
     uint8_t *backing_vec[10] = {nullptr};
@@ -457,8 +464,6 @@ private:
 
     // main game rom
     std::vector<uint8_t> rom; // variable
-
-    std::vector<uint8_t*> page_table;
 };
 
 
