@@ -529,6 +529,7 @@ private:
 
     u8 *fetch_ptr = nullptr;
     u32 fetch_mask = 0;
+    u32 fetch_cycles = 0;
 };
 
 

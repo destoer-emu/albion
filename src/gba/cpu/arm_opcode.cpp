@@ -69,7 +69,7 @@ u32 Cpu::fast_arm_fetch()
     const u32 offset = regs[PC] & fetch_mask;
     memcpy(&v,&fetch_ptr[offset],sizeof(v));
 
-    mem.tick_mem_access<u32>(regs[PC]);
+    cycle_tick(fetch_cycles);
 
     return v;
 }

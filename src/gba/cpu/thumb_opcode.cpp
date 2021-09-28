@@ -72,7 +72,7 @@ u16 Cpu::fast_thumb_fetch()
     const u32 offset = regs[PC] & fetch_mask;
     memcpy(&v,&fetch_ptr[offset],sizeof(v));
 
-    mem.tick_mem_access<u16>(regs[PC]);
+    cycle_tick(fetch_cycles);
 
     return v;
 }

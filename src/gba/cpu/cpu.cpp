@@ -598,7 +598,8 @@ void Cpu::update_fetch_cache()
     const auto mem_region = static_cast<u32>(memory_region_table[(pc_actual >> 24) & 0xf]); 
 
     fetch_ptr = mem.region_ptr[mem_region];
-    fetch_mask = mem.region_info[mem_region].mask;     
+    fetch_mask = mem.region_info[mem_region].mask;
+    fetch_cycles = is_thumb? mem.get_waitstates<u16>(pc_actual) : mem.get_waitstates<u32>(pc_actual);     
     
     if(!fetch_ptr)
     {
