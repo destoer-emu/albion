@@ -1,5 +1,5 @@
 #pragma once
-#ifdef FRONTEND_ANDROID
+#ifdef FRONTEND_DESTOER
 
 // this will have to be changed when this actually compiles to phone
 #define SDL_MAIN_HANDLED
@@ -9,6 +9,6 @@
 #include <SDL2/SDL.h>
 #endif
 
-void android_ui();
+void destoer_ui();
 
 #endif

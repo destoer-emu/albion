@@ -11,8 +11,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 #set(FRONTEND "QT")
 #set(FRONTEND "SDL")
-set(FRONTEND "IMGUI")
-#set(FRONTEND "ANDROID")
+#set(FRONTEND "IMGUI")
+set(FRONTEND "DESTOER")
 
 # external frontend
 #set(FRONTEND "HEADLESS")
@@ -30,9 +30,9 @@ if(${FRONTEND} STREQUAL "SDL")
 endif()
 
 
-if(${FRONTEND} STREQUAL "ANDROID")
+if(${FRONTEND} STREQUAL "DESTOER")
 	add_definitions(-DAUDIO_ENABLE -DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL -DDEBUG)
-	add_definitions(-DFRONTEND_ANDROID)
+	add_definitions(-DFRONTEND_DESTOER)
 endif()
 
 if(${FRONTEND} STREQUAL "QT") # not supported yet come back to this
@@ -113,11 +113,13 @@ if(${FRONTEND} STREQUAL "SDL")
 	)
 endif()
 
-if(${FRONTEND} STREQUAL "ANDROID")
+if(${FRONTEND} STREQUAL "DESTOER")
 	file(GLOB frontend_files
-		"src/frontend/android/*.h"
-		"src/frontend/android/*.cpp"
+		"src/frontend/destoer/*.h"
+		"src/frontend/destoer/*.cpp"
 	)
+
+	include_directories("src/frontend/destoer")
 endif()
 
 

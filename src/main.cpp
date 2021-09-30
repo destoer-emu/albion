@@ -1,7 +1,7 @@
 #include <frontend/qt/qt_window.h>
 #include <frontend/sdl/sdl_window.h>
 #include <frontend/imgui/imgui_window.h>
-#include <frontend/android/android_window.h>
+#include <frontend/destoer/destoer_window.h>
 #include <destoer-emu/lib.h>
 #include <gba/gba.h>
 #include <gb/gb.h>
@@ -169,8 +169,8 @@ int main(int argc, char *argv[])
     window.mainloop(rom_name);
 #endif
 
-#ifdef FRONTEND_ANDROID
-    android_ui();
+#ifdef FRONTEND_DESTOER
+    destoer_ui();
 #endif
 
 #ifdef SDL_REQUIRED
