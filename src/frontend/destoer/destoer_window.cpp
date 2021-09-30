@@ -31,6 +31,9 @@ struct DestoerUI
     
     void draw_sprite(u32 x, u32 y, u32 sx, u32 xy, const u8 * src);
 
+    template<typename... Args>
+    void draw_button(u32 x, u32 y, u32 sx, u32 sy, std::string fmt,Args... args);
+
     current_window_t current_window;
 
 	SDL_Window * window = NULL;
@@ -188,12 +191,66 @@ void DestoerUI::draw_text(u32 x, u32 y, std::string fmt,Args... args)
     }
 }
 
+u32 centre_text_x(u32 x, u32 sx, u32 len)
+{
+    return x + ((sx / 2) - (len * 4));
+} 
+
+u32 centre_text_y(u32 y, u32 sy)
+{
+    return y + ((sy / 2) - 4);
+}
+
+template<typename... Args>
+void DestoerUI::draw_button(u32 x, u32 y, u32 sx, u32 sy, std::string fmt,Args... args)
+{
+    assert(x < SCREEN_WIDTH);
+    assert(y < SCREEN_HEIGHT);
+
+    // draw a dark grey button
+    // with a lighter grey outline
+
+
+    u32 sx_clipped = sx;
+    u32 sy_clipped = sy;
+
+	clip_sprite(x,y,sx_clipped,sy_clipped);
+
+    const u32 offset =  (y * SCREEN_WIDTH) + x;
+
+    const u32 DARK_GRAY = 0xff404040;
+    const u32 LIGHT_GRAY = 0xff606060;
+    
+	for(u32 y_sprite = 0; y_sprite < sy_clipped; y_sprite++)
+	{
+		for(u32 x_sprite = 0; x_sprite < sx_clipped; x_sprite++)
+		{
+			screen[offset + (y_sprite * SCREEN_WIDTH) + x_sprite] = DARK_GRAY;
+		}
+	}
+
+    // draw seperator
+    for(u32 x_sprite = 0; x_sprite < sx_clipped; x_sprite++)
+    {
+        screen[offset + (SCREEN_WIDTH * (sy_clipped - 1)) + x_sprite] = LIGHT_GRAY;
+    }
+
+    const auto str = fmt::format(fmt,args...);
+
+    // draw the centre text 
+    draw_text(centre_text_x(x,sx,str.size()), centre_text_y(y,sy),str);   
+}
+
 void DestoerUI::draw()
 {
     // clear screen to black
     std::fill(screen.begin(),screen.end(),0xff000000);
 
-    draw_text(0,0,"HELLO WORLD!");
+    const std::string  menu_title = "LOAD ROM";
+    draw_text(centre_text_x(0,SCREEN_WIDTH,menu_title.size()),0,menu_title);
+
+    draw_button(0,8,SCREEN_WIDTH,20,"click me 1");
+    draw_button(0,28,SCREEN_WIDTH,20,"click me 2");
 }
 
 void destoer_ui()
