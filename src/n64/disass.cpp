@@ -405,6 +405,19 @@ std::string disass_sll(u32 opcode, u64 pc)
     }
 }
 
+std::string disass_sllv(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto rt = get_rt(opcode);
+    const auto rd = get_rd(opcode);
+    const auto rs = get_rs(opcode);
+    
+    
+    return fmt::format("sllv {}, {}, {}",reg_names[rd],reg_names[rt],reg_names[rs]);
+}
+
+
 std::string disass_srl(u32 opcode, u64 pc)
 {
     UNUSED(pc);
@@ -417,6 +430,19 @@ std::string disass_srl(u32 opcode, u64 pc)
     
     return fmt::format("srl {}, {}, {}",reg_names[rd],reg_names[rt],shamt);
 }
+
+std::string disass_srlv(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto rt = get_rt(opcode);
+    const auto rd = get_rd(opcode);
+    const auto rs = get_rs(opcode);
+    
+    
+    return fmt::format("srlv {}, {}, {}",reg_names[rd],reg_names[rt],reg_names[rs]);
+}
+
 
 std::string disass_or(u32 opcode, u64 pc)
 {

@@ -1,6 +1,7 @@
 #pragma once
 #include <n64/cpu.h>
 #include <n64/mem.h>
+#include <n64/disass.h>
 #include <n64/debug.h>
 #include <n64/mips_lut.h>
 #include <destoer-emu/lib.h>

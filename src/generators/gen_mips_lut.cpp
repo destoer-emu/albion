@@ -231,6 +231,19 @@ void gen_r_lut(const char *prefix)
                 break;
             }
 
+            case 0b000110:
+            {
+                printf("srlv");
+                break;
+            }
+
+            case 0b000100:
+            {
+                printf("sllv");
+                break;
+            }
+
+
             case 0b100011:
             {
                 printf("subu");

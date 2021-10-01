@@ -35,7 +35,9 @@ std::string disass_bgezl(u32 opcode, u64 pc);
 std::string disass_beq(u32 opcode, u64 pc);
 
 std::string disass_sll(u32 opcode, u64 pc);
+std::string disass_sllv(u32 opcode, u64 pc);
 std::string disass_srl(u32 opcode, u64 pc);
+std::string disass_srlv(u32 opcode, u64 pc);
 std::string disass_or(u32 opcode, u64 pc);
 std::string disass_jr(u32 opcode, u64 pc);
 std::string disass_sltu(u32 opcode, u64 pc);
