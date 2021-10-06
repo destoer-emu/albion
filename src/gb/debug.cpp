@@ -40,7 +40,7 @@ void GBDebug::regs(const std::vector<Token> &args)
     UNUSED(args);
     auto &cpu = gb.cpu;
     print_console("CPU REGS\n\nPC:{:04x}\nAF:{:04x}\nBC:{:04x}\nDE:{:04x}\nHL:{:04x}\nSP:{:04x}\n"
-            ,cpu.read_pc(),cpu.read_af(),cpu.read_bc(),cpu.read_de(),cpu.read_hl(),cpu.read_sp());
+            ,cpu.pc,cpu.read_af(),cpu.bc,cpu.de,cpu.hl,cpu.sp);
 
     print_console("\nFLAGS\nC: {}\nH: {}\nN: {}\nZ: {}\n"
         ,cpu.read_flag_c(),cpu.read_flag_h(),cpu.read_flag_n(),cpu. read_flag_z());
@@ -54,20 +54,20 @@ void GBDebug::step_internal()
 
 uint64_t GBDebug::get_pc()
 {
-    return gb.cpu.read_pc();
+    return gb.cpu.pc;
 }
 
 void GBDebug::step(const std::vector<Token> &args)
 {
     UNUSED(args);
-    print_console("{:4x}: {}\n",gb.cpu.read_pc(),gb.disass.disass_op(gb.cpu.read_pc()));
+    print_console("{:4x}: {}\n",gb.cpu.pc,gb.disass.disass_op(gb.cpu.pc));
     step_internal();
 }
 
 
 std::string GBDebug::disass_instr(uint64_t addr)
 {
-    uint64_t bank = addr < 0x8000? gb.mem.get_bank() : 0;
+    uint64_t bank = addr < 0x8000? gb.mem.cart_rom_bank : 0;
     return fmt::format("{:x}:{:x} {}",bank,addr,gb.disass.disass_op(addr));    
 }
 

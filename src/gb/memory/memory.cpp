@@ -393,7 +393,7 @@ void Memory::unlock_vram()
 
 uint8_t Memory::read_bios(uint16_t addr) const noexcept
 {
-	if(cpu.get_cgb())
+	if(cpu.is_cgb)
 	{
 		if(addr < bios.size() && (addr < 0x100  || addr >= 0x200))
 		{
@@ -846,7 +846,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 
 		case IO_SC:
 		{
-			return io[IO_SC] | (cpu.get_cgb()? 0x7d : 0x7e);
+			return io[IO_SC] | (cpu.is_cgb? 0x7d : 0x7e);
 		}
 
 		case IO_STAT:
@@ -1011,7 +1011,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		case IO_HDMA1: case IO_HDMA2: case IO_HDMA3:
 		case IO_HDMA4:
 		{
-			if(!cpu.get_cgb())
+			if(!cpu.is_cgb)
 			{
 				return 0xff;
 			}
@@ -1037,7 +1037,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		// cgb vram bank unused on dmg
 		case IO_VBANK:
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				return io[IO_VBANK];
 			}
@@ -1047,7 +1047,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		
 		case IO_BGPD: 
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				return ppu.get_bgpd();
 			}
@@ -1056,7 +1056,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		
 		case IO_BGPI: 
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				return io[IO_BGPI];
 			}
@@ -1065,7 +1065,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 
 		case IO_SPPD:
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				return ppu.get_sppd();
 			}
@@ -1074,7 +1074,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 
 		case IO_SPPI: 
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				return io[IO_SPPI];
 			}
@@ -1083,7 +1083,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		
 		case IO_HDMA5: // verify
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				if(!hdma_active)
 				{
@@ -1101,7 +1101,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		case IO_RP:
 		{	
 			// stubbed
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				return io[IO_RP];
 			}
@@ -1111,7 +1111,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 
 		case IO_OPRI: // unknown
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				return io[IO_OPRI] | 0xfe;
 			}
@@ -1120,7 +1120,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 
 		case 0x72: // unknown
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				return io[0x72];
 			}
@@ -1129,7 +1129,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 
 		case 0x73: // unknown
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				return io[0x73];
 			}
@@ -1138,7 +1138,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 
 		case 0x74: // unknown
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				return io[0x74];
 			}
@@ -1147,7 +1147,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 
 		case 0x75: // unknown
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				return io[0x75];
 			}
@@ -1157,18 +1157,18 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 
 		case IO_PCM12:
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
-				return apu.psg.c1.get_output() | apu.psg.c2.get_output() << 4;
+				return apu.psg.channels[0].output | apu.psg.channels[1].output << 4;
 			}
 			return 0xff;
 		}
 
 		case IO_PCM34:
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
-				return apu.psg.c3.get_output() | apu.psg.c4.get_output() << 4;
+				return apu.psg.channels[2].output | apu.psg.channels[3].output << 4;
 			}
 			return 0xff;
 		}
@@ -1473,7 +1473,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			io[IO_JOYPAD] = v;
 
 			// transfer start
-			if(!sgb_transfer_active && !is_set(v,4) && !is_set(v,5) && cpu.get_sgb())
+			if(!sgb_transfer_active && !is_set(v,4) && !is_set(v,5) && cpu.is_sgb)
 			{
 				sgb_transfer_active = true;
 			}
@@ -1609,7 +1609,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 			// NOTE see src_serial from old emulator for full impl
 			if(is_set(v,7) && !is_set(io[IO_SC],7) && is_set(v,0))
 			{
-				if(cpu.get_cgb() && is_set(v,1))
+				if(cpu.is_cgb && is_set(v,1))
 				{
 					cpu.serial_cyc = 4;
 				}
@@ -1858,7 +1858,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// cgb ram bank number
 		case IO_SVBK:
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				cgb_wram_bank_idx = v & 0x7;
 				
@@ -1886,7 +1886,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		case IO_SPEED:
 		{
 			// not cgb return ff 
-			if(!cpu.get_cgb())
+			if(!cpu.is_cgb)
 			{
 				io[IO_SPEED] = 0xff;
 			}
@@ -1901,7 +1901,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		case IO_VBANK: // what vram bank are we writing to?
 		{
 			// not cgb 
-			if(!cpu.get_cgb())
+			if(!cpu.is_cgb)
 			{
 				io[IO_VBANK] = 0xff;
 			}
@@ -1921,7 +1921,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// change wether sprites sorted by oam order or x cord
 		case IO_OPRI: 
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				io[IO_OPRI] = v & 1;
 			}
@@ -1932,7 +1932,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		case IO_BGPI:
 		{
 			// not cgb return ff 
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				ppu.set_bg_pal_idx(v);
 				io[IO_BGPI] = v | 0x40;
@@ -1942,7 +1942,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 		case IO_BGPD: // finish later 
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				ppu.write_bgpd(v);
 			}
@@ -1952,7 +1952,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		case IO_SPPI: // sprite pallete index
 		{
 
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				ppu.set_sp_pal_idx(v);
 				io[IO_SPPI] = v | 0x40;
@@ -1962,7 +1962,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		
 		case IO_SPPD: // sprite pallete data
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{		
 				ppu.write_sppd(v);
 			}
@@ -1972,7 +1972,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// specifies src byte dest of dma
 		case IO_HDMA1:
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				dma_src &= 0xff;
 				dma_src |= v << 8;
@@ -1984,7 +1984,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// lo byte dma src
 		case IO_HDMA2:
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				v &= 0xf0;
 				dma_src &= ~0xff;
@@ -1998,7 +1998,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// high byte dma dst
 		case IO_HDMA3:
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				v &= 0x1f;
 				dma_dst &= 0xff;
@@ -2011,7 +2011,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// low byte dma dst
 		case IO_HDMA4:
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				v &= 0xf0;
 				dma_dst &= ~0xff;
@@ -2024,7 +2024,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		// cgb dma start
 		case IO_HDMA5: // <-- unsure on this behavior
 		{
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				io[IO_HDMA5] = v;
 				// if bit 7	is zero do a gdma
@@ -2057,7 +2057,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		case IO_RP:
 		{	
 			// stubbed
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				io[IO_RP] = v;
 			}

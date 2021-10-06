@@ -3,60 +3,24 @@
 namespace gameboy_psg
 {
 
-// CHANNEL 1,2,3 FREQUENCY
-
-FreqReg::FreqReg(int c) : freq_lower_mask(freq_lower_masks[c]), period_scale(freq_period_scales[c])
+void freq_write_lower(Channel &c, u8 v)
 {
-
+    c.freq = (c.freq & c.freq_lower_mask) | v;
 }
 
-int FreqReg::get_period() const noexcept
+void freq_write_higher(Channel &c, u8 v)
 {
-    return period;
+    c.freq = (c.freq & 0xff) | ((v & 0x7) << 8);
 }
 
-
-
-void FreqReg::freq_init(psg_mode mode) noexcept
+void freq_reload_period(Channel &c)
 {
-	freq = 0;
-	period = 0;
-    duty_idx = 0;  
-    period_factor = mode == psg_mode::gba? 4 : 1;  
+    c.period = (2048 - c.freq)*c.period_scale*c.period_factor;
 }
 
-void FreqReg::freq_write_lower(uint8_t v) noexcept
+void freq_trigger(Channel &c)
 {
-    freq = (freq & freq_lower_mask) | v;
-}
-
-void FreqReg::freq_write_higher(uint8_t v) noexcept
-{
-    freq = (freq & 0xff) | ((v & 0x7) << 8);    
-}
-
-void FreqReg::freq_reload_period() noexcept
-{
-    period = (2048 - freq)*period_scale*period_factor;
-}
-
-
-int FreqReg::get_duty_idx() const noexcept
-{
-    return duty_idx;
-}
-
-void FreqReg::reset_duty() noexcept
-{
-	duty_idx = 0;
-}
-
-// extra 6 cycle patch can make 09 pass on blarggs
-// https://forums.nesdev.com/viewtopic.php?f=20&t=13730
-void FreqReg::freq_trigger() noexcept
-{
-    // reload frequency peroid on trigger
-    freq_reload_period();
+    freq_reload_period(c);
 }
 
 }

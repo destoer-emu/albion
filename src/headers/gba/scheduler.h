@@ -25,22 +25,20 @@ enum class gba_event
 
 constexpr size_t EVENT_SIZE = 11;
 
-class GBAScheduler final : public Scheduler<EVENT_SIZE,gba_event>
+struct GBAScheduler final : public Scheduler<EVENT_SIZE,gba_event>
 {
-public:
     GBAScheduler(GBA &gba);
 
 
     void skip_to_event();
 
-protected:
-    void service_event(const EventNode<gba_event> & node) override;
-private:
-    
     Cpu &cpu;
     Display &disp;
     Apu &apu;
     Mem &mem;
+
+protected:
+    void service_event(const EventNode<gba_event> & node) override;
 };
 
 }

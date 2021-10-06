@@ -32,7 +32,7 @@ inline void Cpu::cycle_tick_t(uint32_t cycles) noexcept
 	scheduler.delay_tick(cycles);
 
 	// if we are using the fifo this needs to be ticked each time
-	if(ppu.using_fifo())
+	if(ppu.emulate_pixel_fifo)
 	{
 		scheduler.service_events();
 		ppu.update_graphics(cycles >> is_double); // handle the lcd emulation

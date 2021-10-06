@@ -23,7 +23,7 @@ void GB::reset(std::string rom_name, bool with_rom, bool use_bios)
 	cpu.init(use_bios);
     ppu.init();
     disass.init();
-	const auto mode = cpu.get_cgb()? gameboy_psg::psg_mode::cgb : gameboy_psg::psg_mode::dmg;
+	const auto mode = cpu.is_cgb? gameboy_psg::psg_mode::cgb : gameboy_psg::psg_mode::dmg;
 
 	apu.init(mode,use_bios);
 	throttle_emu = true;
@@ -31,7 +31,7 @@ void GB::reset(std::string rom_name, bool with_rom, bool use_bios)
 	{
 		mem.bios_enable();
 	}
-	//printf("cgb: %s\n",cpu.get_cgb()? "true" : "false");
+	//printf("cgb: %s\n",cpu.is_cgb? "true" : "false");
 }
 
 #ifdef DEBUG

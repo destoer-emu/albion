@@ -3,51 +3,47 @@
 namespace gameboy_psg
 { 
 
-// CHANNEL 1 & 2 SQAURE WAVE
+static constexpr int duty[4][8] = 
+{
+    {0,0,0,0,0,0,0,1},   // 12.5
+    {1,0,0,0,0,0,0,1},   // 25
+    {1,0,0,0,0,1,1,1},   // 50 
+    {0,1,1,1,1,1,1,0}    // 75
+};
 
-Square::Square(int c,Psg &p) : Channel(c,p), FreqReg(c)
+
+bool square_tick_period(Channel &c,u32 cycles)
 {
 
-}
+	c.period -= cycles;
 
-void Square::init() noexcept
-{
-	freq_init(psg.mode);
-	env_init();
-	cur_duty = 0;
-}
-
-void Square::write_cur_duty(uint8_t v) noexcept
-{
-    cur_duty = (v >> 6) & 0x3;    
-}
-
-bool Square::tick_period(uint32_t cycles) noexcept
-{
-	period -= cycles;
-
-	if(period <= 0)
+	if(c.period <= 0)
 	{
 		// advance the duty
-		duty_idx = (duty_idx + 1) & 0x7;
-		freq_reload_period();
+		c.duty_idx = (c.duty_idx + 1) & 0x7;
+		freq_reload_period(c);
 
 		// if channel and dac is enabled
 		// output is volume else nothing
-		output = (enabled() && dac_on())? volume : 0;
+		c.output = (c.enabled && c.dac_on)? c.volume : 0;
 
 
 		// if the duty is on a low posistion there is no output
 		// (vol is multiplied by duty but its only on or off)
-		output *= duty[cur_duty][duty_idx];
+		c.output *= duty[c.cur_duty][c.duty_idx];
 		return true;
 	}
 	return false;
 }
 
-void Square::duty_trigger() noexcept
+void duty_trigger(Channel &c)
 {
-	duty_idx = 0;
+    c.duty_idx = 0;
+}
+
+void write_cur_duty(Channel &c, u8 v)
+{
+    c.cur_duty = (v >> 6) & 0x3;
 }
 
 }

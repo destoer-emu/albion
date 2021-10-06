@@ -71,7 +71,7 @@ void Apu::tick(int cycles)
     }
 
 
-    if(psg.enabled())
+    if(psg.sound_enabled)
     {
         psg.tick_periods(cycles);   
     }
@@ -105,7 +105,7 @@ void Apu::push_samples(int cycles)
     }
 
 
-    if(!playback.is_playing() || !psg.enabled()) 
+    if(!playback.is_playing() || !psg.sound_enabled) 
     { 
         return; 
     }
@@ -124,12 +124,12 @@ void Apu::push_samples(int cycles)
     int volume = 50;
 
 
-
     float output[4];
-    output[0] = static_cast<float>(psg.c1.get_output()) / 100;
-    output[1] = static_cast<float>(psg.c2.get_output()) / 100;
-    output[2] = static_cast<float>(psg.c3.get_output()) / 100;
-    output[3] = static_cast<float>(psg.c4.get_output()) / 100;
+    for(int i = 0; i < 4; i++)
+    {
+        output[i] = static_cast<float>(psg.channels[i].output) / 100;
+    }
+
 
     const auto sound_select = psg.read_nr51();
     const auto nr50 = psg.read_nr50();

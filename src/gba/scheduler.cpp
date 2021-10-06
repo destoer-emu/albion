@@ -35,7 +35,7 @@ void GBAScheduler::service_event(const EventNode<gba_event> &node)
 
         case gba_event::c1_period_elapse:
         {
-            if(apu.psg.c1.tick_period(cycles_to_tick))
+            if(gameboy_psg::square_tick_period(apu.psg.channels[0],cycles_to_tick))
             {
                 apu.insert_chan1_period_event();
             }
@@ -44,7 +44,7 @@ void GBAScheduler::service_event(const EventNode<gba_event> &node)
 
         case gba_event::c2_period_elapse:
         {
-            if(apu.psg.c2.tick_period(cycles_to_tick))
+            if(gameboy_psg::square_tick_period(apu.psg.channels[1],cycles_to_tick))
             {
                 apu.insert_chan2_period_event();
             }
@@ -53,7 +53,7 @@ void GBAScheduler::service_event(const EventNode<gba_event> &node)
 
         case gba_event::c3_period_elapse:
         {
-            if(apu.psg.c3.tick_period(cycles_to_tick))
+            if(gameboy_psg::wave_tick_period(apu.psg.wave,apu.psg.channels[2],cycles_to_tick))
             {
                 apu.insert_chan3_period_event();
             }
@@ -62,7 +62,7 @@ void GBAScheduler::service_event(const EventNode<gba_event> &node)
 
         case gba_event::c4_period_elapse:
         {
-            if(apu.psg.c4.tick_period(cycles_to_tick))
+            if(gameboy_psg::noise_tick_period(apu.psg.noise,apu.psg.channels[3],cycles_to_tick))
             {
                 apu.insert_chan4_period_event();
             }

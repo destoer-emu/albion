@@ -447,7 +447,7 @@ void Cpu::handle_halt()
 	// else just service events
 
 	// still need to check that intr are not firing during this
-	while(ppu.using_fifo() &&  !interrupt_req)
+	while(ppu.emulate_pixel_fifo &&  !interrupt_req)
 	{
 		cycle_tick(1);
 	}

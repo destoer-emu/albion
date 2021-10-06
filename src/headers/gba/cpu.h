@@ -86,9 +86,8 @@ using ARM_OPCODE_LUT = std::array<ARM_OPCODE_FPTR,4096>;
 using THUMB_OPCODE_FPTR = void (Cpu::*)(uint16_t opcode);
 using THUMB_OPCODE_LUT = std::array<THUMB_OPCODE_FPTR,1024>;
 
-class Cpu final
+struct Cpu final
 {
-public:
     Cpu(GBA &gba);
     void init();
     void log_regs();
@@ -166,30 +165,13 @@ public:
         return pipeline[1];
     }
 
-    bool is_in_bios() const
-    {
-        return in_bios;
-    }
 
-    uint32_t get_pc() const 
-    {
-        return pc_actual;
-    }
-    uint32_t get_user_regs(int idx) const {return user_regs[idx];}
-    uint32_t get_current_regs(int idx) const {return regs[idx]; }
-    uint32_t get_status_regs(int idx) const {return status_banked[idx]; }
-    uint32_t get_fiq_regs(int idx) const {return fiq_banked[idx]; }
-    uint32_t get_high_regs(int idx, int idx2) const {return hi_banked[idx][idx2]; }
     uint32_t get_cpsr() const 
     {
         return (cpsr & ~0xf0000000) | (flag_z << Z_BIT) | 
         (flag_c << C_BIT) | (flag_n << N_BIT) | (flag_v << V_BIT);
     } 
 
-
-    cpu_mode get_mode() const { return arm_mode; }
-
-    bool is_cpu_thumb() const { return is_thumb; }
 
     // print all registers for debugging
     // if we go with a graphical debugger
@@ -223,7 +205,6 @@ public:
 
     uint32_t rom_wait_sequential_16 = 1;
     uint32_t rom_wait_sequential_32 = 1;
-private:
 
 
     void exec_thumb();
@@ -377,9 +358,6 @@ public:
     }
 
 
-
-
-private:
 
     // cpu operations eg adds
     template<const bool S>

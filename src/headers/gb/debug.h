@@ -7,9 +7,8 @@
 namespace gameboy
 {
 #ifdef DEBUG
-class GBDebug final : public Debug 
+struct GBDebug final : public Debug 
 {
-public:
     GBDebug(GB &gb);
 
 
@@ -30,8 +29,6 @@ public:
     void execute_command(const std::vector<Token> &args) override;
     void step_internal() override;
     uint64_t get_pc() override;
-
-private:
 
     using COMMAND_FUNC =  void (GBDebug::*)(const std::vector<Token>&);
     std::unordered_map<std::string,COMMAND_FUNC> func_table =
@@ -58,9 +55,8 @@ private:
 
 #else
 
-class GBDebug : public Debug 
+struct GBDebug : public Debug 
 {
-public:
     GBDebug(GB &gb) { UNUSED(gb); }
 };
 

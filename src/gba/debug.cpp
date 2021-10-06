@@ -49,14 +49,14 @@ void GBADebug::step_internal()
 
 uint64_t GBADebug::get_pc()
 {
-    return gba.cpu.get_pc();
+    return gba.cpu.pc_actual;
 }
 
 void GBADebug::step(const std::vector<Token> &args)
 {
     UNUSED(args);
-    const auto pc = gba.cpu.get_pc();
-    const auto instr = gba.cpu.is_cpu_thumb()? gba.disass.disass_thumb(pc) : gba.disass.disass_arm(pc);
+    const auto pc = gba.cpu.pc_actual;
+    const auto instr = gba.cpu.is_thumb? gba.disass.disass_thumb(pc) : gba.disass.disass_arm(pc);
     print_console("{:8x}: {}\n",pc,instr);
     step_internal();
 }
@@ -86,7 +86,7 @@ void GBADebug::disassemble_thumb(const std::vector<Token> &args)
 void GBADebug::disass(const std::vector<Token> &args)
 {
     UNUSED(args);
-    disass_thumb = gba.cpu.is_cpu_thumb();
+    disass_thumb = gba.cpu.is_thumb;
     disass_internal(args);
 }
 

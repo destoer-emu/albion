@@ -5,19 +5,14 @@
 namespace gameboyadvance
 {
 
-class Disass
+struct Disass
 {
-public:
     Disass(GBA &gba);
-
-    uint32_t get_pc() const { return pc; }
 
 
     std::string disass_arm(uint32_t pc);
     std::string disass_thumb(uint32_t pc);
 
-
-private:
     Mem &mem;
     Cpu &cpu;
     uint32_t pc; // pc for disassmebling instrs

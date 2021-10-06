@@ -18,9 +18,8 @@ enum class instr_state
 };
 
 
-class Cpu final
+struct Cpu final
 {
-public:
     Cpu(GB &gb);
 
     bool get_double() const;
@@ -69,8 +68,6 @@ public:
     void tima_reload() noexcept;
 
     void request_interrupt(int interrupt) noexcept;
-    bool get_cgb() const noexcept {return is_cgb;}
-    bool get_sgb() const noexcept {return is_sgb;}
 
     // oam bug
     void oam_bug_write(uint16_t v);
@@ -93,25 +90,6 @@ public:
     void tick_serial(int cycles) noexcept;
     void insert_new_serial_event() noexcept;
 
-    /* register reads for the debugger */
-
-    uint16_t read_pc() const noexcept { return pc; }
-    uint16_t read_sp() const noexcept { return sp; }
-
-
-    // register getters and setters
-    void write_bc(uint16_t data) noexcept
-    {
-        bc = data;
-    }
-
-
-    uint16_t read_bc() const noexcept
-    {
-        return bc;
-    }
-
-
     uint16_t read_af() const noexcept
     {
         return (a << 8) | carry << C | half << H
@@ -127,29 +105,6 @@ public:
         half = is_set(v,H);
         zero = is_set(v,Z);
         negative = is_set(v,N);
-    }
-
-    uint16_t read_de() const noexcept 
-    {
-        return de;
-    }
-
-
-    void write_de(uint16_t v) noexcept
-    {
-        de = v;
-    }
-
-
-    uint16_t read_hl() const noexcept
-    {
-        return hl;
-    }
-
-
-    void write_hl(uint16_t v) noexcept
-    {
-        hl = v;
     }
 
 
@@ -218,8 +173,6 @@ public:
     }
 #endif
 
-private:
-
     Memory &mem;
     Apu &apu;
     Ppu &ppu;
@@ -274,7 +227,6 @@ private:
     // interrupts
     void do_interrupts() noexcept;
 
-public:
     // instr helpers
 
     template<const int REG>
@@ -511,7 +463,6 @@ public:
     template<const int REG, const int BIT>
     void set_r8();
 
-private:
     // stack helpers
     uint8_t read_stackt() noexcept;
     void write_stackt(uint8_t v) noexcept;

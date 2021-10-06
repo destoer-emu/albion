@@ -18,9 +18,8 @@ enum class button
     r=8,l=9
 };
 
-class GBA
+struct GBA
 {
-public:
     GBA();
 
     void reset(std::string filename);

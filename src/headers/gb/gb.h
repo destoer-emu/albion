@@ -23,9 +23,8 @@ enum class button
     down = 3 
 };
 
-class GB
+struct GB
 {
-public:
     GB();
     void reset(std::string rom_name, bool with_rom=true, bool use_bios = false);
     void run();

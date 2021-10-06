@@ -7,7 +7,7 @@ namespace gameboy
 // of it instead of hardcoding a direct dump into the fifo
 void Ppu::sprite_fetch(Pixel_Obj *buf,bool use_fifo) noexcept
 {
-    const bool is_cgb = cpu.get_cgb();
+    const bool is_cgb = cpu.is_cgb;
 	
 	const uint8_t lcd_control = mem.io[IO_LCDC]; // get lcd control reg
 
@@ -250,7 +250,7 @@ void Ppu::sprite_fetch(Pixel_Obj *buf,bool use_fifo) noexcept
 void Ppu::tile_fetch(Pixel_Obj *buf, bool use_window) noexcept
 {
 
-    const bool is_cgb = cpu.get_cgb();
+    const bool is_cgb = cpu.is_cgb;
 	const uint8_t lcd_control = mem.io[IO_LCDC];
 
 	use_window = use_window && is_set(mem.io[IO_LCDC],5);
@@ -506,7 +506,7 @@ void Ppu::render_scanline() noexcept
 	}
 	
     const uint32_t offset = (current_line*SCREEN_WIDTH);
-    const bool is_cgb = cpu.get_cgb();
+    const bool is_cgb = cpu.is_cgb;
 	for(int x = SCREEN_WIDTH-1; x >= 0; x--)
 	{
 		const auto pixel = scanline_fifo[x+scx_offset];

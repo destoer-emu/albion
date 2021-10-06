@@ -126,7 +126,7 @@ void Cpu::exec_arm()
 void Cpu::arm_unknown(uint32_t opcode)
 {
     const auto op = ((opcode >> 4) & 0xf) | ((opcode >> 16) & 0xff0);
-    const auto err = fmt::format("[cpu-arm {:08x}] unknown opcode {:08x}:{:08x}\n{}\n",pc_actual,opcode,op,disass.disass_arm(get_pc()));
+    const auto err = fmt::format("[cpu-arm {:08x}] unknown opcode {:08x}:{:08x}\n{}\n",pc_actual,opcode,op,disass.disass_arm(pc_actual));
     debug.trace.print();
     throw std::runtime_error(err);
 }
@@ -139,14 +139,14 @@ void Cpu::log_regs()
         printf("%08x ",regs[i]);
     }
 
-    printf("%08x \n",get_pc() + (is_thumb? 2 : 4));
+    printf("%08x \n",pc_actual + (is_thumb? 2 : 4));
 }
 
 
 void Cpu::arm_swi(uint32_t opcode)
 {
 
-    //printf("swi %08x: %08x\n",get_pc(),opcode);
+    //printf("swi %08x: %08x\n",pc_actual,opcode);
 
     // nn is ignored by hardware
     UNUSED(opcode);

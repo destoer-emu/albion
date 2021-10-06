@@ -36,22 +36,22 @@ public:
 
 	void insert_chan1_period_event()
 	{
-		insert_period_event(psg.c1.get_period(),gba_event::c1_period_elapse);
+		insert_period_event(psg.channels[0].period,gba_event::c1_period_elapse);
 	}
 
 	void insert_chan2_period_event()
 	{
-		insert_period_event(psg.c2.get_period(),gba_event::c2_period_elapse);
+		insert_period_event(psg.channels[1].period,gba_event::c2_period_elapse);
 	}
 
 	void insert_chan3_period_event()
 	{
-		insert_period_event(psg.c3.get_period(),gba_event::c3_period_elapse);
+		insert_period_event(psg.channels[2].period,gba_event::c3_period_elapse);
 	}
 
 	void insert_chan4_period_event()
 	{
-		insert_period_event(psg.c4.get_period(),gba_event::c4_period_elapse);
+		insert_period_event(psg.channels[3].period,gba_event::c4_period_elapse);
 	}
 
 	void insert_period_event(int period, gba_event chan) noexcept

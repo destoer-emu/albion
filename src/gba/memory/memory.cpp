@@ -922,7 +922,7 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
 
         default: // here we will handle open bus when we have all our io regs done :)
         { 
-            //auto err = fmt::format("[io {:08x}] unhandled write at {:08x}:{:x}",cpu.get_pc(),addr,v);
+            //auto err = fmt::format("[io {:08x}] unhandled write at {:08x}:{:x}",cpu.pc_actual,addr,v);
             //throw std::runtime_error(err);
             break;
         }
@@ -970,7 +970,7 @@ uint8_t Mem::read_io_regs(uint32_t addr)
         case IO_KEYCNT+1: return mem_io.key_control.read(1);
 
 
-        case IO_VCOUNT: return disp.get_vcount();
+        case IO_VCOUNT: return disp.ly;
         case IO_VCOUNT+1: return 0;
 
         case IO_WININ: return disp.disp_io.win_cnt.read(static_cast<int>(window_source::zero));
@@ -1183,7 +1183,7 @@ uint8_t Mem::read_io_regs(uint32_t addr)
 
         default:
         {
-            //auto err = fmt::format("[io {:08x}] unhandled read at {:08x}",cpu.get_pc(),addr);
+            //auto err = fmt::format("[io {:08x}] unhandled read at {:08x}",cpu.pc_actual,addr);
             //std::cout << err << "\n";
             //throw std::runtime_error(err);
             // open bus
@@ -1265,7 +1265,7 @@ access_type Mem::read_mem_handler(uint32_t addr)
         case memory_region::bios: 
         {
             // cant read from bios when not executing in it
-            if(cpu.is_in_bios())
+            if(cpu.in_bios)
             {
                 return read_bios<access_type>(addr);
             }
@@ -1365,7 +1365,7 @@ access_type Mem::read_memt(uint32_t addr)
 #ifdef DEBUG
     if(debug.breakpoint_hit(addr,v,break_type::read))
     {
-        write_log(debug,"read breakpoint hit at {:08x}:{:08x}:{:08x}",addr,v,cpu.get_pc());
+        write_log(debug,"read breakpoint hit at {:08x}:{:08x}:{:08x}",addr,v,cpu.pc_actual);
         debug.halt();
     }
 #endif
@@ -1649,7 +1649,7 @@ void Mem::write_memt(uint32_t addr,access_type v)
 #ifdef DEBUG
     if(debug.breakpoint_hit(addr,v,break_type::write))
     {
-        write_log(debug,"write breakpoint hit at {:08x}:{:08x}:{:08x}",addr,v,cpu.get_pc());
+        write_log(debug,"write breakpoint hit at {:08x}:{:08x}:{:08x}",addr,v,cpu.pc_actual);
         debug.halt();
     }   
 #endif

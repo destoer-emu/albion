@@ -31,17 +31,17 @@ void Cpu::write_r16_group1(uint16_t v)
 
 	if constexpr(REG == 0) 
 	{
-		write_bc(v);
+		bc = v;
 	}
 
 	else if constexpr(REG == 1) 
 	{
-		write_de(v);
+		de = v;
 	}
 
 	else if constexpr(REG == 2)
 	{
-		write_hl(v);
+		hl = v;
 	}
 
 	else if constexpr(REG == 3)
@@ -86,7 +86,7 @@ void Cpu::write_r8(uint8_t v)
 
 	else if constexpr(REG == 6)
 	{
-		mem.write_memt(read_hl(),v);
+		mem.write_memt(hl,v);
 	}
 
 	else if constexpr(REG == 7)
@@ -131,7 +131,7 @@ uint8_t Cpu::read_r8()
 
 	else if constexpr(REG == 6)
 	{
-		return mem.read_memt(read_hl());
+		return mem.read_memt(hl);
 	}
 
 	else if constexpr(REG == 7)
@@ -147,17 +147,17 @@ uint16_t Cpu::read_r16_group3()
 
 	if constexpr(REG == 0)
 	{
-		return read_bc();
+		return bc;
 	}
 
 	else if constexpr(REG == 1)
 	{
-		return read_de();
+		return de;
 	}
 
 	else if constexpr(REG == 2)
 	{
-		return read_hl();
+		return hl;
 	}
 
 	else if constexpr(REG == 3)
@@ -174,17 +174,17 @@ uint16_t Cpu::read_r16_group1()
 
 	if constexpr(REG == 0) 
 	{
-		return read_bc();
+		return bc;
 	}
 
 	else if constexpr(REG == 1) 
 	{
-		return read_de();
+		return de;
 	}
 
 	else if constexpr(REG == 2)
 	{
-		return read_hl();
+		return hl;
 	}
 
 	else if constexpr(REG == 3)
@@ -201,17 +201,17 @@ void Cpu::write_r16_group3(uint16_t v)
 
 	if constexpr(REG == 0)
 	{
-		write_bc(v);
+		bc = v;
 	}
 
 	else if constexpr(REG == 1)
 	{
-		write_de(v);
+		de= v;
 	}
 
 	else if constexpr(REG == 2)
 	{
-		write_hl(v);
+		hl = v;
 	}
 
 	else if constexpr(REG == 3)
@@ -227,22 +227,22 @@ void Cpu::write_r16_group2(uint16_t v)
 
 	if constexpr(REG == 0)
 	{
-		write_bc(v);
+		bc = v;
 	}
 
 	else if constexpr(REG == 1)
 	{
-		write_de(v);
+		de = v;
 	}
 
 	else if constexpr(REG == 2)
 	{
-		write_hl(v);
+		hl = v;
 	}
 
 	else if constexpr(REG == 3)
 	{
-		write_hl(v);
+		hl = v;
 	}		
 }
 
@@ -253,22 +253,22 @@ uint16_t Cpu::read_r16_group2()
 
 	if constexpr(REG == 0)
 	{
-		return read_bc();
+		return bc;
 	}
 
 	else if constexpr(REG == 1)
 	{
-		return read_de();
+		return de;
 	}
 
 	else if constexpr(REG == 2)
 	{
-		return read_hl();
+		return hl;
 	}
 
 	else if constexpr(REG == 3)
 	{
-		return read_hl();
+		return hl;
 	}		
 }
 
@@ -763,7 +763,7 @@ void Cpu::ret_cond()
 template<const int REG>
 void Cpu::add_hl_r16()
 {
-	uint16_t dst = read_hl();
+	uint16_t dst = hl;
 	const uint16_t oper = read_r16_group1<REG>();
 
 	// deset negative
@@ -777,14 +777,14 @@ void Cpu::add_hl_r16()
 
 	dst += oper;
 	
-	write_hl(dst);
+	hl = dst;
 	cycle_tick_t(4); // internal
 }
 
 void Cpu::jp_hl()
 {
 	const uint16_t source = pc-1;
-	pc = read_hl();
+	pc = hl;
 	debug.trace.add(source,pc);	
 }
 
@@ -804,7 +804,7 @@ void Cpu::jp_cond()
 
 void Cpu::ld_hl_sp_i8()
 {
-	write_hl(instr_addi(static_cast<int8_t>(mem.read_memt(pc++))));
+	hl = instr_addi(static_cast<int8_t>(mem.read_memt(pc++)));
 	cycle_tick_t(4); // internal	
 }
 
@@ -867,7 +867,7 @@ void Cpu::daa()
 
 void Cpu::ld_sp_hl()
 {
-	sp = read_hl();
+	sp = hl;
 	cycle_tick_t(4); // internal
 }
 

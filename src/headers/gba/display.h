@@ -13,16 +13,11 @@ enum class display_mode
     visible,hblank,vblank
 };
 
-class Display
+struct Display
 {
-public:
     Display(GBA &gba);
     void init();
     void tick(int cycles);
-
-
-    int get_vcount() const { return ly; } 
-    int get_cycles() const { return cyc_cnt; }
 
     void update_vcount_compare();
 
@@ -41,7 +36,6 @@ public:
     bool new_vblank = false;
     DispIo disp_io;
     display_mode mode = display_mode::visible;
-private:
 
     struct TileData
     {

@@ -4,100 +4,107 @@
 namespace gameboy_psg
 {
 
-// SHARED CHANNEL FUNCTIONS
+// NOTE: noise has no frequency so its not used
+static constexpr s32 freq_period_scales[4] = {4,4,2,0};
+static constexpr s32 freq_lower_masks[4] = {~0xff,0x700,~0xff,0};
+static constexpr s32 max_lengths[] = {0x40,0x40,0x100,0x40};
+static constexpr s32 len_masks[] = {0x3f,0x3f,0xff,0x3f};
 
-bool Channel::enabled() const noexcept
+
+void init_channels(psg_mode mode, Channel *channels)
 {
-    return psg.chan_enabled(chan_number);
+    for(int i = 0; i < 4; i++)
+    {
+        channels[i] = {};
+        channels[i].period_factor = mode == psg_mode::gba? 4 : 1;
+        channels[i].period_scale = freq_period_scales[i];
+        channels[i].freq_lower_mask = freq_lower_masks[i];
+        channels[i].max_len = max_lengths[i];
+        channels[i].len_mask = len_masks[i];
+    }
 }
 
-void Channel::disable_chan() noexcept
+void enable_chan(Channel &c)
 {
-    psg.disable_chan(chan_number);
+    c.enabled = true;
 }
 
-void Channel::enable_chan() noexcept
+void disable_chan(Channel &c)
 {
-    psg.enable_chan(chan_number);
+    c.enabled = false;
 }
 
-void Channel::tick_lengthc() noexcept
+void tick_lengthc(Channel &c)
 {
-    if(length_enabled)
+    if(c.length_enabled)
     {
         // tick the length counter if zero deset it
         // only decrement if not zero
-        if(lengthc != 0 && --lengthc == 0)
+        if(c.lengthc != 0 && --c.lengthc == 0)
         {
-            disable_chan();
+            disable_chan(c);
         }
     }
 }
 
-void Channel::reset_length() noexcept
+void tick_length_counters_internal(Channel *channels)
 {
-    lengthc = 0;
-}
-
-Channel::Channel(int c, Psg &p) : psg(p), chan_number(c),
-    max_len(max_lengths[c]),len_mask(len_masks[c]), dac_reg(psg.get_dac_ref(c)), dac_mask(dac_masks[c])
-{
-
-} 
-
-void Channel::init_channel() noexcept
-{
-    lengthc = 0;
-    length_enabled = false;
-    output = 0;
-    length_extra_tick = false;
-}
-
-int Channel::get_output() const noexcept 
-{
-    return output;
-}
-
-void Channel::length_trigger() noexcept
-{
-
-    enable_chan();
-
-    if(!lengthc)
+    for(int i = 0; i < 4; i++)
     {
-        lengthc = max_len;
+        tick_lengthc(channels[i]);
+    }
+}
+
+void length_trigger(Channel &c)
+{
+    enable_chan(c);
+
+    if(!c.lengthc)
+    {
+        c.lengthc = c.max_len;
+
 
         // disable the chan length
         // if the value enables the length this will cause an extra tick :P
         // disable chan in NRX4
-        length_enabled = false; 
-    }             
+        c.length_enabled = false; 
+    }
 }
 
-// also handles trigger effects
-void Channel::length_write(uint8_t v) noexcept
+void check_dac(Channel &c)
 {
-    const auto sequencer_step = psg.get_sequencer_step();
+    if(!c.dac_on)
+    {
+        disable_chan(c);
+    }
+}
 
+void write_lengthc(Channel &c, u8 v)
+{
+    c.lengthc = c.max_len - (v & c.len_mask);
+}
+
+void length_write(Channel &c, u8 v, u8 seq_step)
+{
     // if previously clear and now is enabled 
     // + next step doesent clock, clock the length counter
-    if(!length_enabled && is_set(v,6)  && (sequencer_step & 1))
+    if(!c.length_enabled && is_set(v,6)  && (seq_step & 1))
     {
         // if non zero decremt
-        if(lengthc)
+        if(c.lengthc)
         {
-            if(!--lengthc)
+            if(!--c.lengthc)
             {
                 // if now zero it goes off if trigger is clear
                 if(!is_set(v,7))
                 {
-                    disable_chan();
+                    disable_chan(c);
                 }
 
                 // else it becomes max len - 1
                 else
                 {
-                    lengthc = max_len - 1;
+                    c.lengthc = c.max_len - 1;
                 }
             }
             
@@ -105,27 +112,7 @@ void Channel::length_write(uint8_t v) noexcept
     }
 
 
-    length_enabled = is_set(v,6);
-}
-
-
-// length counter write = max len - bits in reg
-void Channel::write_lengthc(uint8_t v) noexcept
-{
-    lengthc = max_len - (v & len_mask);
-}
-
-bool Channel::dac_on() const noexcept
-{
-    return (dac_reg & dac_mask);    
-}
-
-void Channel::check_dac() noexcept
-{
-    if(!dac_on())
-    {
-        disable_chan();
-    }
+    c.length_enabled = is_set(v,6);    
 }
 
 }

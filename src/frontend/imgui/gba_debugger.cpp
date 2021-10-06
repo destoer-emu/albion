@@ -163,8 +163,8 @@ void ImguiMainWindow::gba_draw_cpu_info()
 {
     ImGui::Begin("Gba cpu");
 
-    ImGui::Text("current instr: %s",gba.cpu.is_cpu_thumb()? "thumb" : "arm"); ImGui::SameLine();
-    ImGui::Text(",current mode: %s",mode_names[static_cast<int>(gba.cpu.get_mode())]);
+    ImGui::Text("current instr: %s",gba.cpu.is_thumb? "thumb" : "arm"); ImGui::SameLine();
+    ImGui::Text(",current mode: %s",mode_names[static_cast<int>(gba.cpu.arm_mode)]);
 
     ImGui::BeginChild("gba cpu left pane", ImVec2(150, 0), true);
     gba_draw_registers_child();
@@ -224,7 +224,7 @@ void ImguiMainWindow::gba_draw_registers_child()
         {
             for(int i = 0; i < 16; i++)
             {
-                ImGui::Text("%-3s: %08x ",user_regs_names[i],gba.cpu.get_user_regs(i));    
+                ImGui::Text("%-3s: %08x ",user_regs_names[i],gba.cpu.user_regs[i]);    
             }
             break;
         }
@@ -233,7 +233,7 @@ void ImguiMainWindow::gba_draw_registers_child()
         {
             for(int i = 0; i < 16; i++)
             {
-                ImGui::Text("%-3s: %08x ",user_regs_names[i],gba.cpu.get_current_regs(i));    
+                ImGui::Text("%-3s: %08x ",user_regs_names[i],gba.cpu.regs[i]);    
             }
             break;
         }
@@ -242,7 +242,7 @@ void ImguiMainWindow::gba_draw_registers_child()
         {
             for(int i = 0; i < 5; i++)
             {
-                ImGui::Text("%s: %08x ",status_banked_names[i],gba.cpu.get_status_regs(i));    
+                ImGui::Text("%s: %08x ",status_banked_names[i],gba.cpu.status_banked[i]);    
             }
             break;
         }
@@ -251,8 +251,8 @@ void ImguiMainWindow::gba_draw_registers_child()
         {
             for(int i = 0; i < 5; i++)
             {
-                ImGui::Text("%s: %08x ", hi_banked_names[i][0], gba.cpu.get_high_regs(i, 0));
-                ImGui::Text("%s: %08x ", hi_banked_names[i][1], gba.cpu.get_high_regs(i, 1));
+                ImGui::Text("%s: %08x ", hi_banked_names[i][0], gba.cpu.hi_banked[i][0]);
+                ImGui::Text("%s: %08x ", hi_banked_names[i][1], gba.cpu.hi_banked[i][1]);
 			}
 			break;
 		}
@@ -261,7 +261,7 @@ void ImguiMainWindow::gba_draw_registers_child()
 		{
 			for (int i = 0; i < 5; i++)
 			{
-				ImGui::Text("%-7s: %08x ", fiq_banked_names[i], gba.cpu.get_fiq_regs(i));
+				ImGui::Text("%-7s: %08x ", fiq_banked_names[i], gba.cpu.fiq_banked[i]);
 			}
 			break;
 		}

@@ -6,9 +6,8 @@ namespace gameboyadvance
 {
 
 
-class Flash
+struct Flash
 {
-public:
     Flash();
     void init(size_t size, const std::string &rom_name);
 
@@ -18,7 +17,6 @@ public:
     uint8_t read_flash(uint32_t addr);
 
     void save_ram();
-private:
 
     void do_flash_operation(uint32_t addr, uint8_t v);
 

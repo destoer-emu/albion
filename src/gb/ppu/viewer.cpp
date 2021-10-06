@@ -17,7 +17,7 @@ std::vector<uint32_t> Ppu::render_bg(bool higher) noexcept
 	const uint8_t lcd_control = mem.io[IO_LCDC]; // get lcd control reg
 	int background_mem = higher ? 0x1c00 : 0x1800;
 
-	bool is_cgb = cpu.get_cgb();
+	const bool is_cgb = cpu.is_cgb;
 
 	// for each line
 	for(int tile_y = 0; tile_y < 32; tile_y++)
@@ -150,7 +150,7 @@ std::vector<uint32_t> Ppu::render_bg(bool higher) noexcept
 
 void Ppu::render_palette(uint32_t *palette_bg,uint32_t *palette_sp) noexcept
 {
-	if(cpu.get_cgb())
+	if(cpu.is_cgb)
 	{
 		for(int cgb_pal = 0; cgb_pal < 8; cgb_pal++)
 		{
@@ -180,7 +180,7 @@ std::vector<uint32_t> Ppu::render_tiles() noexcept
 
 	std::vector<uint32_t> tiles(384*8*8*2);
 
-	int banks = cpu.get_cgb()? 2 : 1;
+	int banks = cpu.is_cgb? 2 : 1;
 
 
 	for(int bank = 0; bank < banks; bank++)

@@ -7,9 +7,8 @@
 namespace gameboyadvance
 {
 #ifdef DEBUG
-class GBADebug final : public Debug 
+struct GBADebug final : public Debug 
 {
-public:
     GBADebug(GBA &gba);
 
 

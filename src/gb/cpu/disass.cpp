@@ -663,7 +663,7 @@ bool Disass::get_symbol(uint16_t addr,std::string &sym)
     if(addr < 0x8000)
     {
         // TODO: handle mbc1 funny banking
-        const auto bank = addr < 0x4000 ? 0 : mem.get_bank();
+        const auto bank = addr < 0x4000 ? 0 : mem.cart_rom_bank;
         auto &m = rom_sym_table[bank]; 
         if(m.count(addr))
         {

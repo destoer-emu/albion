@@ -3,7 +3,7 @@
 namespace gameboy_psg
 {
 
-Psg::Psg() : c1{0,*this}, c2{1,*this}, c3{2,*this},c4{3,*this}
+Psg::Psg()
 {
 
 }
@@ -12,11 +12,15 @@ void Psg::init(psg_mode mode, bool use_bios)
 {
     this->mode = mode;
     
+
+
+
     // init every channel
-    c1.init(); c1.sweep_init();
-    c2.init();
-    c3.init(mode);
-    c4.init();
+    init_channels(mode,channels);
+    init_sweep(sweep);
+    init_noise(noise);
+    init_wave(wave,mode);
+
 
     enable_sound();
     if(!use_bios)
@@ -97,7 +101,7 @@ void Psg::advance_sequencer() noexcept
 		case 2: // sweep generator + lengthc
 		{
 			tick_length_counters();
-			c1.clock_sweep();
+			clock_sweep(*this);
 			break;
 		}
 			
@@ -115,7 +119,7 @@ void Psg::advance_sequencer() noexcept
 		case 6:  // clock the sweep generator + lengthc
 		{
 			tick_length_counters();
-			c1.clock_sweep();
+			clock_sweep(*this);
 			break;
 		}
 			
@@ -135,32 +139,24 @@ void Psg::reset_sequencer() noexcept
     sequencer_step = 0;
 }
 
-int Psg::get_sequencer_step() const noexcept
-{
-    return sequencer_step;
-}
-
 void Psg::tick_length_counters() noexcept
 {
-    c1.tick_lengthc();
-    c2.tick_lengthc();
-    c3.tick_lengthc();
-    c4.tick_lengthc();
+    tick_length_counters_internal(channels);
 }
 
 void Psg::clock_envelopes() noexcept
 {
-    c1.clock_envelope();
-    c2.clock_envelope();
-    c4.clock_envelope();
+    clock_envelope(channels[0]);
+    clock_envelope(channels[1]);
+    clock_envelope(channels[3]);
 }
 
 void Psg::tick_periods(uint32_t cycles) noexcept
 {
-    c1.tick_period(cycles);
-    c2.tick_period(cycles);
-    c3.tick_period(cycles);
-    c4.tick_period(cycles);    
+    square_tick_period(channels[0],cycles);
+    square_tick_period(channels[1],cycles);
+    wave_tick_period(wave,channels[2],cycles);
+    noise_tick_period(noise,channels[3],cycles);    
 }
 
 void Psg::enable_sound() noexcept
@@ -172,17 +168,19 @@ void Psg::enable_sound() noexcept
     // if on cgb
     if(mode != psg_mode::dmg)
     {
-        c1.reset_length();
-        c2.reset_length();
-        c3.reset_length();
-        c4.reset_length();
+        for(int i = 0; i < 4; i++)
+        {
+            channels[i].lengthc = 0;
+        }
     }
 
     sequencer_step = 0;
 
-    c1.reset_duty();
-    c2.reset_duty();
-    c3.reset_duty();
+    // reset every duty (NOTE: noise has a dummy one)
+    for(int i = 0; i < 4; i++)
+    {
+        channels[i].duty_idx = 0;
+    }
 }
 
 void Psg::disable_sound() noexcept
@@ -224,7 +222,7 @@ void Psg::write_nr10(uint8_t v) noexcept
 {	
     if(sound_enabled)
     {
-        c1.sweep_write(v);
+        sweep_write(sweep,channels[0],v);
         nr10 = v | 128;
     }
 }
@@ -240,11 +238,11 @@ void Psg::write_nr11(uint8_t v) noexcept
     {
         // bottom 6 bits are length data 
         // set the internal counter to 64 - bottom 6 bits of data
-        c1.write_lengthc(v);
+        write_lengthc(channels[0],v);
         // can only be written while on both versions
         if(sound_enabled)
         {
-            c1.write_cur_duty(v);
+            write_cur_duty(channels[0],v);
             nr11 = v;
         }
     }    
@@ -260,8 +258,10 @@ void Psg::write_nr12(uint8_t v) noexcept
     if(sound_enabled)
     {
         nr12 = v;
-        c1.check_dac();
-        c1.env_write(v);
+        channels[0].dac_on = dac_masks[0] & nr12;
+
+        check_dac(channels[0]);
+        env_write(channels[0],v);
     }
 }
 
@@ -274,7 +274,7 @@ void Psg::write_nr13(uint8_t v) noexcept
 {
     if(sound_enabled)
     {
-        c1.freq_write_lower(v);
+        freq_write_lower(channels[0],v);
         nr13 = v;
     }    
 }
@@ -283,25 +283,25 @@ void Psg::write_nr14(uint8_t v) noexcept
 {
     if(sound_enabled)
     {
-        c1.freq_write_higher(v);
+        freq_write_higher(channels[0],v);
         
 
         if(is_set(v,7)) // trigger
         {
-            c1.length_trigger();
-            c1.freq_trigger();
-            c1.env_trigger();
-            c1.sweep_trigger();
-            c1.duty_trigger();
+            length_trigger(channels[0]);
+            freq_trigger(channels[0]);
+            env_trigger(channels[0]);
+            sweep_trigger(sweep,channels[0]);
+            duty_trigger(channels[0]);
         }
 
 
-        c1.length_write(v);
+        length_write(channels[0],v,sequencer_step);
         nr14 = v;
 
         // after all the trigger events have happend
         // if the dac is off switch channel off				
-        c1.check_dac();
+        check_dac(channels[0]);
     }    
 }
 
@@ -314,10 +314,10 @@ void Psg::write_nr21(uint8_t v) noexcept
 {
     if(sound_enabled || mode == psg_mode::dmg)
     {
-        c2.write_lengthc(v);
+        write_lengthc(channels[1],v);
         if(sound_enabled)
         {
-            c2.write_cur_duty(v);
+            write_cur_duty(channels[1],v);
             nr21 = v;
         }
     }    
@@ -333,8 +333,10 @@ void Psg::write_nr22(uint8_t v) noexcept
     if(sound_enabled)
     {
         nr22 = v;
-        c2.check_dac();	
-        c2.env_write(v);
+        channels[1].dac_on = dac_masks[1] & nr22;
+
+        check_dac(channels[1]);	
+        env_write(channels[1],v);
     }    
 }
 
@@ -348,7 +350,7 @@ void Psg::write_nr23(uint8_t v) noexcept
     if(sound_enabled)
     {
         nr23 = v;
-        c2.freq_write_lower(v);
+        freq_write_lower(channels[1],v);
     }    
 }
 
@@ -356,22 +358,22 @@ void Psg::write_nr24(uint8_t v) noexcept
 {
     if(sound_enabled)
     {
-        c2.freq_write_higher(v);
+        freq_write_higher(channels[1],v);
 
 
         if(is_set(v,7)) // trigger
         {
-            c2.length_trigger();
-            c2.freq_trigger();
-            c2.env_trigger();
-            c2.duty_trigger();
+            length_trigger(channels[1]);
+            freq_trigger(channels[1]);
+            env_trigger(channels[1]);
+            duty_trigger(channels[1]);
         }
 
-        c2.length_write(v);
+        length_write(channels[1],v,sequencer_step);
         nr24 = v;
 
 
-        c2.check_dac();	
+        check_dac(channels[1]);	
     }    
 }
 
@@ -387,12 +389,14 @@ void Psg::write_nr30(uint8_t v) noexcept
     
         if(mode == psg_mode::gba)
         {
-            c3.dimension = is_set(v,5);
-            c3.bank_idx = is_set(v,6);            
+            wave.dimension = is_set(v,5);
+            wave.bank_idx = is_set(v,6);            
         }
 
         nr30 = v | 127;
-        c3.check_dac();
+
+        channels[2].dac_on = dac_masks[2] & nr30;
+        check_dac(channels[2]);
     }    
 }
 
@@ -402,7 +406,7 @@ uint8_t Psg::read_nr30() const noexcept
 
     if(mode == psg_mode::gba)
     {
-        return base | c3.dimension << 5 | c3.bank_idx << 6;
+        return base | wave.dimension << 5 | wave.bank_idx << 6;
     }
 
     return base;
@@ -412,7 +416,7 @@ void Psg::write_nr31(uint8_t v) noexcept
 {
     if(sound_enabled || mode == psg_mode::dmg)
     {
-        c3.write_lengthc(v);
+        write_lengthc(channels[2],v);
         nr31 = v;
     }    
 }
@@ -421,7 +425,7 @@ void Psg::write_nr32(uint8_t v) noexcept
 {
     if(sound_enabled)
     {
-        c3.write_vol(v);
+        wave_write_vol(channels[2],v);
         nr32 = v | 159;
     }    
 }
@@ -435,7 +439,7 @@ void Psg::write_nr33(uint8_t v) noexcept
 {
     if(sound_enabled)
     {
-        c3.freq_write_lower(v);
+        freq_write_lower(channels[2],v);
         nr33 = v;
     }    
 }
@@ -444,20 +448,20 @@ void Psg::write_nr34(uint8_t v) noexcept
 {
     if(sound_enabled)
     {
-        c3.freq_write_higher(v);
+        freq_write_higher(channels[2],v);
 
         if(is_set(v,7)) // trigger
         {
-            c3.length_trigger();
-            c3.freq_trigger();
-            c3.wave_trigger();
-            c3.vol_trigger();
+            length_trigger(channels[2]);
+            freq_trigger(channels[2]);
+            wave_trigger(channels[2]);
+            wave_vol_trigger(channels[2]);
         }
 
-        c3.length_write(v);
+        length_write(channels[2],v,sequencer_step);
         nr34 = v | (16 + 32 + 8);
 
-        c3.check_dac();	
+        check_dac(channels[2]);	
     }
 }
 
@@ -470,7 +474,7 @@ void Psg::write_nr41(uint8_t v) noexcept
 {
     if(sound_enabled || mode == psg_mode::dmg)
     {
-        c4.write_lengthc(v);
+        write_lengthc(channels[3],v);
         nr41 = v | 192;
     }
 }
@@ -480,8 +484,9 @@ void Psg::write_nr42(uint8_t v) noexcept
     if(sound_enabled)
     {
         nr42 = v;
-        c4.check_dac();
-        c4.env_write(v);
+        channels[3].dac_on = dac_masks[3] & nr42;
+        check_dac(channels[3]);
+        env_write(channels[3],v);
     }
 }
 
@@ -495,7 +500,7 @@ void Psg::write_nr43(uint8_t v) noexcept
     if(sound_enabled)
     {
         nr43 = v;
-        c4.noise_write(v);
+        noise_write(noise,v);
     }
 }
 
@@ -511,15 +516,15 @@ void Psg::write_nr44(uint8_t v) noexcept
     {
         if(is_set(v,7)) // trigger
         {
-            c4.length_trigger();
-            c4.env_trigger();
-            c4.noise_trigger();
+            length_trigger(channels[3]);
+            env_trigger(channels[3]);
+            noise_trigger(noise);
         }
 
-        c4.length_write(v);		
+        length_write(channels[3],v,sequencer_step);		
         nr44 = v | 63;
 
-        c4.check_dac();	
+        check_dac(channels[3]);	
     }
 }
 
@@ -561,7 +566,11 @@ uint8_t Psg::read_nr51() const noexcept
 
 uint8_t Psg::read_nr52() const noexcept
 {
-    return nr52;
+    return (nr52 & 0xf0) | 
+        channels[0].enabled << 0 |
+        channels[1].enabled << 1 |
+        channels[2].enabled << 2 |
+        channels[3].enabled << 3;
 }
 
 
@@ -585,12 +594,12 @@ void Psg::write_wave_table(int idx, uint8_t v) noexcept
     {
         if(mode == psg_mode::gba)
         {
-            c3.wave_table[!c3.bank_idx][(c3.get_duty_idx() / 2)] = v;
+            wave.table[!wave.bank_idx][(channels[2].duty_idx / 2)] = v;
         }
 
         else if(mode == psg_mode::cgb)
         {
-            c3.wave_table[0][(c3.get_duty_idx() / 2)] = v;
+            wave.table[0][(channels[2].duty_idx / 2)] = v;
         }
     }
 
@@ -598,12 +607,12 @@ void Psg::write_wave_table(int idx, uint8_t v) noexcept
     {
         if(mode == psg_mode::gba)
         {
-            c3.wave_table[!c3.bank_idx][idx] = v;	
+            wave.table[!wave.bank_idx][idx] = v;	
         }
 
         else
         {
-            c3.wave_table[0][idx] = v;
+            wave.table[0][idx] = v;
         }
     }
 }
@@ -619,12 +628,12 @@ uint8_t Psg::read_wave_table(int idx) const noexcept
         // todo
         if(mode == psg_mode::cgb)
         {
-            return c3.wave_table[0][c3.get_duty_idx() / 2];
+            return wave.table[0][channels[2].duty_idx / 2];
         }
 
         else if(mode == psg_mode::gba)
         {
-            return c3.wave_table[!c3.bank_idx][c3.get_duty_idx() / 2];
+            return wave.table[!wave.bank_idx][channels[2].duty_idx / 2];
         }
 
         else
@@ -636,28 +645,13 @@ uint8_t Psg::read_wave_table(int idx) const noexcept
     // if its off allow "free reign" over it
     if(mode != psg_mode::gba)
     {
-        return c3.wave_table[0][idx];
+        return wave.table[0][idx];
     }
 
     else
     {
-        return c3.wave_table[!c3.bank_idx][idx];
+        return wave.table[!wave.bank_idx][idx];
     }    
-}
-
-
-const uint8_t &Psg::get_dac_ref(int idx) const noexcept
-{
-    assert(idx < 4);
-    // //static constexpr uint16_t dac_regs[] = {IO_NR12,IO_NR22,IO_NR30,IO_NR42};	
-    switch(idx)
-    {
-        case 0: return nr12;
-        case 1: return nr22;
-        case 2: return nr30;
-        case 3: return nr42;
-    }
-    assert(false);
 }
 
 void Psg::save_state(std::ofstream &fp)

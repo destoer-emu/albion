@@ -4,27 +4,15 @@
 namespace gameboy_psg
 {
 
-//CHANNEL 3 WAVE
-
-//09 of blarggs test will be off due to the apu operating
-// 2 cycles at a time
-
-Wave::Wave(int c,Psg &p) :  Channel(c,p), FreqReg(c)
+void init_wave(Wave &w,psg_mode mode)
 {
+	w = {};
 
-}
+    w.mode = mode;
 
-void Wave::init(psg_mode mode) noexcept
-{
-	this->mode = mode;
-	init_channel();
-	freq_init(mode);
-	bank_idx = false;
-	dimension = false;
-
-	if(mode == psg_mode::cgb)
-	{
-		static constexpr uint8_t wave_ram_initial[] =
+    if(mode == psg_mode::cgb)
+    {
+        static constexpr u8 WAVE_RAM_INITIAL[] = 
 		{
 			0x00, 0xFF, 0x00, 0xFF,
 			0x00, 0xFF, 0x00, 0xFF, 
@@ -34,65 +22,76 @@ void Wave::init(psg_mode mode) noexcept
 
 		for(int i = 0; i < 16; i++)
 		{
-			wave_table[0][i] = wave_ram_initial[i];
+			w.table[0][i] = WAVE_RAM_INITIAL[i];
 		}
-	}
+    }
 }
 
-
-void Wave::wave_trigger() noexcept
+void wave_trigger(Channel &c)
 {
-	reset_duty();
+    // reset duty
+    c.duty_idx = 0;
 }
 
-bool Wave::tick_period(uint32_t cycles) noexcept
+void wave_vol_trigger(Channel &c)
+{
+    c.volume = c.volume_load;
+}
+
+void wave_write_vol(Channel &c, u8 v)
+{
+    c.volume_load = (v >> 5) & 0x3;
+    c.volume = c.volume_load;
+}
+
+bool wave_tick_period(Wave &w, Channel &c, u32 cycles)
 {
 	// handle wave ticking (square 3)	
-	period -= cycles;
+	c.period -= cycles;
 		
 	// reload timer and goto the next sample in the wave table
-	if(period <= 0)
+	if(c.period <= 0)
 	{
 		// duty is the wave table index for wave channel 
 		
 		// check by here for the 2nd bank
-		if(dimension)
+		if(w.dimension)
 		{
 			// about to overflow switch to over bank
-			if(duty_idx == 0x1f)
+			if(c.duty_idx == 0x1f)
 			{
-				bank_idx = !bank_idx;
+				w.bank_idx = !w.bank_idx;
 			}
 		}
 
-		duty_idx  = (duty_idx + 1) & 0x1f; 
+		c.duty_idx  = (c.duty_idx + 1) & 0x1f; 
 
 		// dac is enabled
-		if(dac_on() && enabled())
+		if(c.dac_on && c.enabled)
 		{
-			int pos = duty_idx / 2;
+			int pos = c.duty_idx / 2;
 
-			uint8_t byte;
-			if(mode != psg_mode::gba)
+			u8 byte;
+			if(w.mode != psg_mode::gba)
 			{
-				byte = wave_table[0][pos];
+				byte = w.table[0][pos];
 			}
 
 			else
 			{
-				byte = wave_table[bank_idx][pos];
+				byte = w.table[w.bank_idx][pos];
 			}
 				
-			if(!is_set(duty_idx,0)) // access the high nibble first
+			if(!is_set(c.duty_idx,0)) // access the high nibble first
 			{
 				byte >>= 4;
 			}
 				
 			byte &= 0xf;
 				
-			if(volume)
+			if(c.volume)
 			{
-				byte >>= volume - 1;
+				byte >>= c.volume - 1;
 			}
 				
 			else
@@ -100,32 +99,21 @@ bool Wave::tick_period(uint32_t cycles) noexcept
 				byte = 0;
 			}
 
-			output = byte;
+			c.output = byte;
 		}
 			
 		else
 		{ 
-			output = 0;
+			c.output = 0;
 		}
 
 		// reload the timer
 		// period (2048-frequency)*2 (in cpu cycles)
-		freq_reload_period();
+		freq_reload_period(c);
 		return true;			
 	}
 	return false;
 }
 
-
-void Wave::vol_trigger() noexcept
-{
-    volume = volume_load;
-}
-
-void Wave::write_vol(uint8_t v) noexcept
-{
-    volume_load = (v >> 5) & 0x3;
-    volume = volume_load;    
-}
 
 }

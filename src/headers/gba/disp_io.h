@@ -23,9 +23,8 @@ struct RefPoint
     int32_t int_ref_point_x;
     int32_t int_ref_point_y;
 
-private:
-    void write(int idx, uint8_t v, int32_t &ref_point, int32_t &int_ref_point);
 
+    void write(int idx, uint8_t v, int32_t &ref_point, int32_t &int_ref_point);
 };
 
 

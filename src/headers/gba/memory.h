@@ -43,9 +43,8 @@ static constexpr memory_region memory_region_table[0x10] =
 
 // not really happy with the impl 
 // so think of a better way to model it
-class Mem final
+struct Mem final
 {
-public:
     Mem(GBA &gba);
     void init(std::string filename);
 
@@ -282,7 +281,7 @@ public:
     uint8_t* region_ptr[10];
 
     std::vector<uint8_t*> page_table;
-private:
+
     Debug &debug;
     Cpu &cpu;
     Display &disp;

@@ -24,22 +24,20 @@ enum class gameboy_event
 
 constexpr size_t EVENT_SIZE = 10;
 
-class GameboyScheduler final : public Scheduler<EVENT_SIZE,gameboy_event>
+struct GameboyScheduler final : public Scheduler<EVENT_SIZE,gameboy_event>
 {
-public:
     GameboyScheduler(GB &gb);
 
     bool is_double() const;
     void skip_to_event();
 
-protected:
-    void service_event(const EventNode<gameboy_event> & node) override;
-private:
-    
     Cpu &cpu;
     Ppu &ppu;
     Apu &apu;
     Memory &mem;
+
+protected:
+    void service_event(const EventNode<gameboy_event> & node) override;
 };
 
 }

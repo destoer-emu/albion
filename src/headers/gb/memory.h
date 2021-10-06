@@ -13,9 +13,8 @@ namespace gameboy
 // function pointers have virtual checks
 // even though runtime polymorphism is used nowhere if i dont add final
 // nice one C++
-class Memory final
+struct Memory final
 {
-public:
     Memory(GB &gb);
     void init(std::string rom_name, bool with_rom=true, bool use_bios=false);
 
@@ -154,10 +153,6 @@ public:
 
     void do_hdma() noexcept;
 
-    int get_bank() const noexcept
-    {
-        return cart_rom_bank;
-    } 
 
     // serial tests
     emu_test test_result = emu_test::running;
@@ -173,7 +168,6 @@ public:
 
     // oam dma 
     bool oam_dma_active = false; // indicate a dma is active and to lock memory
-private:
 
     Cpu &cpu;
     Ppu &ppu;

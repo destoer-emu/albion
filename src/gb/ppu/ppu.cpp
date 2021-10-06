@@ -224,7 +224,7 @@ void Ppu::write_stat() noexcept
 {
 	// stat write glitch
 	// behaves as if 0xff for 1 cycle on dmg
-	if(!cpu.get_cgb())
+	if(!cpu.is_cgb)
 	{
 		const auto backup = mem.io[IO_STAT];
 		mem.io[IO_STAT] = 0xff;
@@ -367,7 +367,7 @@ void Ppu::switch_hblank() noexcept
 	mode = ppu_mode::hblank;
 
 	// on cgb do hdma (handler will check if its active)
-	if(cpu.get_cgb())
+	if(cpu.is_cgb)
 	{
 		mem.do_hdma();
 	}
@@ -653,7 +653,7 @@ bool Ppu::push_pixel() noexcept
 
 	const auto pixel = sprite_priority? sp : bg;
 
-	const uint32_t full_color = cpu.get_cgb()? get_cgb_color(pixel.colour_num, pixel.cgb_pal, pixel.source) :
+	const uint32_t full_color = cpu.is_cgb? get_cgb_color(pixel.colour_num, pixel.cgb_pal, pixel.source) :
 		get_dmg_color(pixel.colour_num,pixel.source);
 
 	screen[(current_line*SCREEN_WIDTH)+x_cord] = full_color;
@@ -826,7 +826,7 @@ void Ppu::read_sprites() noexcept
 			objects[no_sprites].attr = mem.oam[(addr+3)];
 
 			// priority by oam index in cgb update here
-			if(cpu.get_cgb())
+			if(cpu.is_cgb)
 			{
 				objects[no_sprites].priority = no_sprites;
 			}
@@ -855,7 +855,7 @@ void Ppu::read_sprites() noexcept
 	// in dmg we need to update the priority by here instead as it
 	// is now in correct order 
 	// todo respect opri
-	if(!cpu.get_cgb())
+	if(!cpu.is_cgb)
 	{
 		for(size_t i = 0; i < no_sprites; i++)
 		{
@@ -871,7 +871,7 @@ bool Ppu::sprite_win(const Pixel_Obj &sp, const Pixel_Obj &bg) noexcept
 {
 
 	// in cgb if lcdc bit 0 is deset sprites draw over anything
-	const bool draw_over_everything = !is_set(mem.io[IO_LCDC],0) && cpu.get_cgb();
+	const bool draw_over_everything = !is_set(mem.io[IO_LCDC],0) && cpu.is_cgb;
 
 	// dont display pixels with colour id zero as its allways transparent
 	// the colour itself dosent matter we only care about the id

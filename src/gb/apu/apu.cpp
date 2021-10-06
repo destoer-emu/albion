@@ -27,7 +27,7 @@ void Apu::init(gameboy_psg::psg_mode mode, bool use_bios) noexcept
 
 void Apu::tick(uint32_t cycles) noexcept
 {
-    if(!psg.enabled())
+    if(!psg.sound_enabled)
     {
         return;
     }
@@ -82,17 +82,17 @@ void Apu::push_samples(uint32_t cycles) noexcept
 		}
 
 	
-		// left output
+
         float output[4];
-        output[0] = static_cast<float>(psg.c1.get_output()) / 100;
-        output[1] = static_cast<float>(psg.c2.get_output()) / 100;
-        output[2] = static_cast<float>(psg.c3.get_output()) / 100;
-        output[3] = static_cast<float>(psg.c4.get_output()) / 100;
+        for(int i = 0; i < 4; i++)
+        {
+            output[i] = static_cast<float>(psg.channels[i].output) / 100;
+        }
 
 		const auto sound_select = psg.read_nr51();
         const auto nr50 = psg.read_nr50();
 
-        // mix left and right channels
+        // left output
         float f0 = 0;
         int volume = 16*((nr50 & 7)+1);
         for(int i = 0; i < 4; i++)

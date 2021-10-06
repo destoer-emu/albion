@@ -24,9 +24,8 @@ struct Obj // struct for holding sprites on a scanline
     uint8_t x_pos = 0;
 };
 
-class Ppu
+struct Ppu
 {
-public:
     Ppu(GB &gb);
 
 
@@ -35,11 +34,6 @@ public:
 
     int get_next_ppu_event() const noexcept;
     void insert_new_ppu_event() noexcept;
-
-    bool using_fifo() const noexcept
-    { 
-        return emulate_pixel_fifo; 
-    }
 
 
     std::vector<uint32_t> screen; // 160 by 144
@@ -115,7 +109,6 @@ public:
     };
 
     mask_mode mask_en;
-private:
 
     Cpu &cpu;
     Memory &mem;

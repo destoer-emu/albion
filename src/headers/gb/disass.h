@@ -6,15 +6,13 @@
 namespace gameboy
 {
 
-class Disass
+struct Disass
 {
-public:
     Disass(GB &gb);
     void init() noexcept;
     std::string disass_op(uint16_t addr) noexcept;
     uint32_t get_op_sz(uint16_t addr) noexcept;
 
-private:
     Memory &mem;
 
 
@@ -24,9 +22,6 @@ private:
     std::vector<std::unordered_map<uint16_t,std::string>> rom_sym_table;
     std::unordered_map<uint16_t,std::string> mem_sym_table;
     bool sym_file_loaded;
-
-
-
 };
 
 }

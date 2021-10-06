@@ -54,9 +54,8 @@ struct DmaReg
 
 
 
-class Dma
+struct Dma
 {
-public: 
     Dma(GBA &gba);
     void init();
 
@@ -74,7 +73,7 @@ public:
     int active_dma;
     std::array<DmaReg,4> dma_regs{0,1,2,3};
 
-private:
+
     Mem &mem;
     Cpu &cpu;
     GBAScheduler &scheduler;

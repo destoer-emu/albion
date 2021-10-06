@@ -163,12 +163,12 @@ void ImguiMainWindow::gameboy_draw_cpu_info()
 void ImguiMainWindow::gameboy_draw_regs_child()
 {
     // print regs
-    ImGui::Text("pc: %04x",gb.cpu.read_pc());
+    ImGui::Text("pc: %04x",gb.cpu.pc);
     ImGui::Text("af: %04x",gb.cpu.read_af());
-    ImGui::Text("bc: %04x",gb.cpu.read_bc());
-    ImGui::Text("de: %04x",gb.cpu.read_de());
-    ImGui::Text("hl: %04x",gb.cpu.read_hl());
-    ImGui::Text("sp: %04x",gb.cpu.read_sp());          
+    ImGui::Text("bc: %04x",gb.cpu.bc);
+    ImGui::Text("de: %04x",gb.cpu.de);
+    ImGui::Text("hl: %04x",gb.cpu.hl);
+    ImGui::Text("sp: %04x",gb.cpu.sp);          
 }
 
 #endif
