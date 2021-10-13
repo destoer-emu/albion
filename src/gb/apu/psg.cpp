@@ -654,6 +654,52 @@ uint8_t Psg::read_wave_table(int idx) const noexcept
     }    
 }
 
+void channel_save_state(Channel &c, std::ofstream &fp)
+{
+	file_write_var(fp,c);
+}
+
+void sweep_save_state(Sweep &s, std::ofstream &fp)
+{
+	file_write_var(fp,s);
+}
+
+void wave_save_state(Wave &w, std::ofstream &fp)
+{
+	file_write_var(fp,w);
+}
+
+void noise_save_state(Noise &n, std::ofstream &fp)
+{
+	file_write_var(fp,n);
+}
+
+void channel_load_state(Channel &c, std::ifstream &fp)
+{
+	file_read_var(fp,c);
+    c.duty_idx &= 7;
+    c.cur_duty &= 3;
+}
+
+void sweep_load_state(Sweep &s, std::ifstream &fp)
+{
+	file_read_var(fp,s);
+}
+
+void wave_load_state(Wave &w, std::ifstream &fp)
+{
+	file_read_var(fp,w);
+}
+
+void noise_load_state(Noise &n, std::ifstream &fp)
+{
+	file_read_var(fp,n);
+    n.divisor_idx &= 7;
+}
+
+
+
+
 void Psg::save_state(std::ofstream &fp)
 {
 	file_write_var(fp,mode);
@@ -695,6 +741,16 @@ void Psg::save_state(std::ofstream &fp)
 	file_write_var(fp,nr50);
 	file_write_var(fp,nr51);
 	file_write_var(fp,nr52);
+
+    // save channel data
+    for(int i = 0; i < 4; i++)
+    {
+        channel_save_state(channels[i],fp);
+    }
+
+    wave_save_state(wave,fp);
+    noise_save_state(noise,fp);
+    sweep_save_state(sweep,fp);
 }
 
 void Psg::load_state(std::ifstream &fp)
@@ -738,6 +794,17 @@ void Psg::load_state(std::ifstream &fp)
 	file_read_var(fp,nr50);
 	file_read_var(fp,nr51);
 	file_read_var(fp,nr52);
+
+    // load in channel data
+    for(int i = 0; i < 4; i++)
+    {
+        channel_load_state(channels[i],fp);
+    }
+
+    wave_load_state(wave,fp);
+    noise_load_state(noise,fp);
+    sweep_load_state(sweep,fp);
+
 }
 
 }
