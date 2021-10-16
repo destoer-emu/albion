@@ -36,7 +36,6 @@ void instr_sllv(N64 &n64, u32 opcode)
     n64.cpu.regs[rd] = sign_extend_mips<s64,s32>(n64.cpu.regs[rt] << (n64.cpu.regs[rs] & 0b11111));    
 }
 
-
 void instr_srl(N64 &n64, u32 opcode)
 {
     const auto rt = get_rt(opcode);

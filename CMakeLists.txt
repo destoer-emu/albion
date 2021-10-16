@@ -70,7 +70,7 @@ file(GLOB src_files
 	"src/gba/ppu/*.cpp"
 	"src/gba/apu/*.cpp"
 	"src/gba/headers/gba/*.h"
-	"src/n64/*.cpp"
+	"src/n64/n64.cpp"
 	"src/n64/*.h"
 	"src/frontend/gb/*.cpp"
 	"src/frontend/gb/*.h"
