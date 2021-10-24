@@ -179,6 +179,14 @@ void gen_regimm_lut(const char *prefix)
                 break;
             }
 
+            // bgezal
+            case 0b10001:
+            {
+                printf("bgezal");
+                break;
+            }
+
+
             default:
             {
                 printf("unknown_regimm");
@@ -240,6 +248,12 @@ void gen_r_lut(const char *prefix)
             case 0b000100:
             {
                 printf("sllv");
+                break;
+            }
+
+            case 0b100110:
+            {
+                printf("xor");
                 break;
             }
 

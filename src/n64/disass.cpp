@@ -257,6 +257,25 @@ std::string disass_bgezl(u32 opcode, u64 pc)
     return fmt::format("bgezl {}, {:x}",reg_names[rs],addr);
 }
 
+std::string disass_bgezal(u32 opcode, u64 pc)
+{
+    const auto rs = get_rs(opcode);
+
+    const auto imm = opcode & 0xffff;
+
+    const auto addr = compute_branch_addr(pc,imm);
+
+    if(rs == 0)
+    {
+        return fmt::format("bal {}, {:x}",reg_names[rs],addr);
+    }
+
+    else
+    {
+        return fmt::format("bgezl {}, {:x}",reg_names[rs],addr);
+    }
+}
+
 
 std::string disass_bnel(u32 opcode, u64 pc)
 {
@@ -454,6 +473,19 @@ std::string disass_or(u32 opcode, u64 pc)
 
     return fmt::format("or {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);    
 }
+
+std::string disass_xor(u32 opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto rt = get_rt(opcode);
+    const auto rd = get_rd(opcode);
+    const auto rs = get_rs(opcode);
+
+    return fmt::format("xor {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);    
+}
+
+
 
 std::string disass_jr(u32 opcode, u64 pc)
 {
