@@ -3,12 +3,12 @@
 namespace gameboyadvance
 {
 
-class Cpu;
-class Mem;
-class Apu;
-class Display;
-class Disass;
-class GBA;
-class GBAScheduler;
+struct Cpu;
+struct Mem;
+struct Apu;
+struct Display;
+struct Disass;
+struct GBA;
+struct GBAScheduler;
 
 }

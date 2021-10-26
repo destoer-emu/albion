@@ -298,14 +298,14 @@ struct Memory final
 
     bool ignore_oam_bug = false;
 
-    typedef struct
+    struct MemoryTable
     {
         READ_MEM_FPTR read_memf = nullptr;
         WRITE_MEM_FPTR write_memf = nullptr;	
-    }Memory_table;
+    };
 
     // memory access function pointers
-    std::array<Memory_table,0x10> memory_table;   
+    std::array<MemoryTable,0x10> memory_table;   
 };
 
 }

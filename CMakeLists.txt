@@ -175,7 +175,7 @@ if(WIN32)
 	
     include_directories("C:/SDL2-2.0.14/include")
 else()
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -march=native -pthread -Ofast -fomit-frame-pointer -Wsuggest-final-types ")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -march=native -pthread -Ofast -fomit-frame-pointer -Wno-missing-braces")
 if(${FRONTEND} STREQUAL "HEADLESS")
 
 else ()
@@ -187,8 +187,6 @@ if(${FRONTEND} STREQUAL "IMGUI")
 endif()
 
 endif()
-
-
 
 if(${FRONTEND} STREQUAL "QT") 
 	if(WIN32)

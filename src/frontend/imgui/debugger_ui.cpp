@@ -254,7 +254,7 @@ void ImguiMainWindow::draw_memory()
     }
 
     ImGui::SameLine();
-    ImGui::Text("edit: %x",base_addr + (y * 0x10) + x); ImGui::SameLine();
+    ImGui::Text("edit: %zx",base_addr + (y * 0x10) + x); ImGui::SameLine();
     static char input[3] = {0};
     ImGui::PushItemWidth(20.0);
     if(ImGui::InputText(" ", input, IM_ARRAYSIZE(input),ImGuiInputTextFlags_EnterReturnsTrue | 
@@ -298,7 +298,7 @@ void ImguiMainWindow::draw_memory()
         {
             ImGui::BeginTable("offsets",0x11, ImGuiTableFlags_SizingFixedFit);
             ImGui::TableNextColumn();
-            ImGui::Text("%08x: ",(base_addr+i*0x10)); 
+            ImGui::Text("%08zx: ",(base_addr+i*0x10)); 
         
 
             for(int j = 0; j < 0x10; j++)

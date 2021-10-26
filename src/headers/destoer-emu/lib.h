@@ -332,3 +332,72 @@ inline bool did_overflow(T v1, U v2, X ans) noexcept
 {
     return  is_set((v1 ^ ans) & (v2 ^ ans),(sizeof(T)*8)-1); 
 }
+
+
+
+/*
+thanks yaed for suggesting use of compilier builtins
+*/
+
+template<typename T>
+inline bool sadd_overflow(T v1, T v2) noexcept
+{
+    using signed_type_in = typename std::make_signed<T>::type;
+    auto sv1 = static_cast<signed_type_in>(v1);
+    auto sv2 = static_cast<signed_type_in>(v2);
+
+#ifdef _MSC_VER
+	const auto ans = sv1 + sv2;
+	return did_overflow(sv1, sv2, ans);  
+#else
+    return __builtin_add_overflow(sv1,sv2,&sv1);
+#endif  
+}
+
+
+template<typename T>
+inline bool uadd_overflow(T v1, T v2) noexcept
+{
+    using unsigned_type_in = typename std::make_unsigned<T>::type;
+    auto uv1 = static_cast<unsigned_type_in>(v1);
+    auto uv2 = static_cast<unsigned_type_in>(v2);
+    
+#ifdef _MSC_VER
+	const auto ans = uv1 + uv2;
+	return ans < uv1;
+#else
+    return __builtin_add_overflow(uv1,uv2,&uv1);
+#endif  
+}
+
+
+template<typename T>
+inline bool sub_overflow(T v1,T v2) noexcept
+{
+    using signed_type_in = typename std::make_signed<T>::type;
+    auto sv1 = static_cast<signed_type_in>(v1);
+    auto sv2 = static_cast<signed_type_in>(v2);
+
+#ifdef _MSC_VER
+    const auto ans = sv1 - sv2;
+    // negate 2nd operand so we can pretend
+    // this is like an additon
+    return did_overflow(sv1,~sv2, ans);
+#else
+    return __builtin_sub_overflow(sv1,sv2,&sv1);
+#endif    
+}
+
+
+template<typename T>
+inline bool usub_overflow(T v1,T v2) noexcept
+{
+    using unsigned_type_in = typename std::make_unsigned<T>::type;
+    auto uv1 = static_cast<unsigned_type_in>(v1);
+    auto uv2 = static_cast<unsigned_type_in>(v2);
+#ifdef _MSC_VER
+    return uv1 <= uv2;
+#else
+    return __builtin_sub_overflow(uv1,uv2,&uv1);
+#endif  
+}

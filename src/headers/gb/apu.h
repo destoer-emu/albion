@@ -7,7 +7,7 @@
 
 namespace gameboy_psg
 {
-class Psg;
+struct Psg;
 
 enum psg_mode
 {
@@ -334,7 +334,6 @@ struct Apu
 	gameboy_psg::Psg psg;
 	GbPlayback playback;
 
-	// needs to go in with the psg class
 	bool is_cgb;
 
 	void insert_period_event(int period, gameboy_event chan) noexcept

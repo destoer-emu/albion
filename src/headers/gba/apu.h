@@ -10,9 +10,8 @@
 namespace gameboyadvance
 {
     
-class Apu
+struct Apu
 {
-public:
     Apu(GBA &gba);
 
     void init();
@@ -73,7 +72,6 @@ public:
 
     GbaPlayback playback;
     gameboy_psg::Psg psg;
-private:
 
     Mem &mem;
     Cpu &cpu;

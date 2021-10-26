@@ -4,12 +4,12 @@
 namespace gameboy
 {
 
-class Memory;
-class Cpu; 
+struct Memory;
+struct Cpu; 
 using EXEC_INSTR_FPTR = void (Cpu::*)(void);
-class Ppu;
-class Disass;
-class Apu;
-class GameboyScheduler;
-class GB;
+struct Ppu;
+struct Disass;
+struct Apu;
+struct GameboyScheduler;
+struct GB;
 }

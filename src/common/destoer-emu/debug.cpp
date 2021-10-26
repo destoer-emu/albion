@@ -165,7 +165,7 @@ void Debug::draw_console()
     for (size_t i = 0; i < console.size(); i++)
     {         
         const auto str = console[(i+console_idx) & (console.size() - 1)];
-        ImGui::Text(str.c_str());
+        ImGui::Text("%s",str.c_str());
     }
     
     if(update)

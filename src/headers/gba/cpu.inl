@@ -7,65 +7,27 @@ namespace gameboyadvance
 // common arithmetic and logical operations
 
 
-/*
-thanks yaed for suggesting use of compilier builtins
-*/
-
-
-template <typename T>
-inline bool sub_overflow(T v1,T v2) noexcept
+// NOTE: arm sets Carry flag on no borrow where as x86 does on borrow
+// so we are going to invert it
+template<typename T>
+inline bool arm_usub_overflow(T v1,T v2) noexcept
 {
-    if constexpr(std::is_signed<T>())
-    {
-#ifdef _MSC_VER
-        const T ans = v1 - v2;
-        // negate 2nd operand so we can pretend
-        // this is like an additon
-	    return did_overflow(v1,~v2, ans);
-#else
-        return __builtin_sub_overflow_p(v1,v2,v1);
-#endif
-    }
-
-    else
-    {
-        // on arm the the carry flag is set if there is no borrow
-        // this is different to x86 so we cant use builtins here
-        return v1 >= v2;
-    }
+    return !usub_overflow(v1,v2);
 }
 
 
-template <typename T>
-inline bool add_overflow(T v1,T v2) noexcept
-{
-#ifdef _MSC_VER
-	const T ans = v1 + v2;
-    if constexpr(std::is_signed<T>())
-    {
-	    return did_overflow(v1, v2, ans);
-    }
-
-    else
-    {
-        return ans < v1;
-    }
-#else
-    return __builtin_add_overflow_p(v1,v2,v1);
-#endif
-}
 
 // templates for common cpu funcs
 
 template<const bool S>
-uint32_t Cpu::add(uint32_t v1, uint32_t v2)
+u32 Cpu::add(u32 v1, u32 v2)
 {
-    const uint32_t ans = v1 + v2;
+    const u32 ans = v1 + v2;
     if constexpr(S)
     {
 
-        flag_v = add_overflow((int32_t)v1,(int32_t)v2);
-        flag_c = add_overflow(v1,v2); 
+        flag_v = sadd_overflow(v1,v2);
+        flag_c = uadd_overflow(v1,v2);
 
         set_nz_flag(ans);
     }
@@ -74,23 +36,23 @@ uint32_t Cpu::add(uint32_t v1, uint32_t v2)
 }
 
 template<const bool S>
-uint32_t Cpu::adc(uint32_t v1, uint32_t v2)
+u32 Cpu::adc(u32 v1, u32 v2)
 {
 
-    const uint32_t v3 = flag_c;
+    const u32 v3 = flag_c;
 
-    const uint32_t ans = v1 + v2 + v3;
+    const u32 ans = v1 + v2 + v3;
 
     if constexpr(S)
     {
 
         // ^ as if both operations generate an inproper result we will get an expected sign
-        const int32_t ans_signed = v1 + v2;
-        flag_v = add_overflow((int32_t)v1,(int32_t)v2) ^ add_overflow(ans_signed,(int32_t)v3);
+        const s32 ans_signed = v1 + v2;
+        flag_v = sadd_overflow(v1,v2) ^ sadd_overflow(ans_signed,(s32)v3);
 
         // if either operation overflows we need to set the carry
-        const uint32_t ans_unsigned = v1 + v2;
-        flag_c = add_overflow(v1,v2) || add_overflow(ans_unsigned,v3);
+        const u32 ans_unsigned = v1 + v2;
+        flag_c = uadd_overflow(v1,v2) || uadd_overflow(ans_unsigned,v3);
 
         set_nz_flag(ans);
     }
@@ -99,15 +61,15 @@ uint32_t Cpu::adc(uint32_t v1, uint32_t v2)
 }
 
 template<const bool S>
-uint32_t Cpu::sub(uint32_t v1, uint32_t v2)
+u32 Cpu::sub(u32 v1, u32 v2)
 {
     
-    const uint32_t ans = v1 - v2;
+    const u32 ans = v1 - v2;
 
     if constexpr(S)
     {
-        flag_v = sub_overflow((int32_t)v1,(int32_t)v2);
-        flag_c = sub_overflow(v1,v2);
+        flag_v = sub_overflow(v1,v2);
+        flag_c = arm_usub_overflow(v1,v2);
 
         set_nz_flag(ans);
     }
@@ -117,21 +79,21 @@ uint32_t Cpu::sub(uint32_t v1, uint32_t v2)
 }
 
 template<const bool S>
-uint32_t Cpu::sbc(uint32_t v1, uint32_t v2)
+u32 Cpu::sbc(u32 v1, u32 v2)
 {
     // subtract one from ans if carry is not set
-    const uint32_t v3 = !flag_c;
+    const u32 v3 = !flag_c;
 
-    const uint32_t ans = v1 - v2 - v3;
+    const u32 ans = v1 - v2 - v3;
     if constexpr(S)
     {
         // ^ as if both operations generate an inproper result we will get an expected sign
-        const int32_t ans_signed = v1 - v2;
-        flag_v = sub_overflow((int32_t)v1,(int32_t)v2) ^ sub_overflow(ans_signed,(int32_t)v3);
+        const s32 ans_signed = v1 - v2;
+        flag_v = sub_overflow(v1,v2) ^ sub_overflow(ans_signed,(s32)v3);
 
         // if both operations overflow we need to set the carry
-        const uint32_t ans_unsigned = v1 - v2;
-        flag_c = sub_overflow(v1,v2) && sub_overflow(ans_unsigned,v3);
+        const u32 ans_unsigned = v1 - v2;
+        flag_c = arm_usub_overflow(v1,v2) && arm_usub_overflow(ans_unsigned,v3);
 
         set_nz_flag(ans);
     }
@@ -140,9 +102,9 @@ uint32_t Cpu::sbc(uint32_t v1, uint32_t v2)
 }
 
 template<const bool S>
-uint32_t Cpu::logical_and(uint32_t v1, uint32_t v2)
+u32 Cpu::logical_and(u32 v1, u32 v2)
 {
-    const uint32_t ans = v1 & v2;
+    const u32 ans = v1 & v2;
 
     if constexpr(S)
     {
@@ -153,9 +115,9 @@ uint32_t Cpu::logical_and(uint32_t v1, uint32_t v2)
 }
 
 template<const bool S>
-uint32_t Cpu::logical_or(uint32_t v1, uint32_t v2)
+u32 Cpu::logical_or(u32 v1, u32 v2)
 {
-    const uint32_t ans = v1 | v2;
+    const u32 ans = v1 | v2;
     if constexpr(S)
     {
         set_nz_flag(ans);
@@ -164,9 +126,9 @@ uint32_t Cpu::logical_or(uint32_t v1, uint32_t v2)
 }
 
 template<const bool S>
-uint32_t Cpu::bic(uint32_t v1, uint32_t v2)
+u32 Cpu::bic(u32 v1, u32 v2)
 {
-    const uint32_t ans = v1 & ~v2;
+    const u32 ans = v1 & ~v2;
     if constexpr(S)
     {
         set_nz_flag(ans);
@@ -175,9 +137,9 @@ uint32_t Cpu::bic(uint32_t v1, uint32_t v2)
 }
 
 template<const bool S>
-uint32_t Cpu::logical_eor(uint32_t v1, uint32_t v2)
+u32 Cpu::logical_eor(u32 v1, u32 v2)
 {
-    const uint32_t ans = v1 ^ v2;
+    const u32 ans = v1 ^ v2;
     if constexpr(S)
     {
         set_nz_flag(ans);
@@ -188,21 +150,21 @@ uint32_t Cpu::logical_eor(uint32_t v1, uint32_t v2)
 // flag helpers
 
 // set zero flag based on arg
-inline void Cpu::set_zero_flag(uint32_t v)
+inline void Cpu::set_zero_flag(u32 v)
 {
-   flag_z =  v == 0;
+   flag_z = v == 0;
 }
 
 
-inline void Cpu::set_negative_flag(uint32_t v)
+inline void Cpu::set_negative_flag(u32 v)
 {
-    flag_n = is_set(v,31);
+    flag_n = static_cast<s32>(v) < 0;
 }
 
 
 // both are set together commonly
 // so add a shortcut
-inline void Cpu::set_nz_flag(uint32_t v)
+inline void Cpu::set_nz_flag(u32 v)
 {
     set_zero_flag(v);
     set_negative_flag(v);
@@ -212,21 +174,21 @@ inline void Cpu::set_nz_flag(uint32_t v)
 
 
 // set zero flag based on arg
-inline void Cpu::set_zero_flag_long(uint64_t v)
+inline void Cpu::set_zero_flag_long(u64 v)
 {
     flag_z = v == 0;
 }
 
 
-inline void Cpu::set_negative_flag_long(uint64_t v)
+inline void Cpu::set_negative_flag_long(u64 v)
 {
-    flag_n = is_set(v,63);  
+    flag_n = static_cast<s64>(v) < 0;  
 }
 
 
 // both are set together commonly
 // so add a shortcut
-inline void Cpu::set_nz_flag_long(uint64_t v)
+inline void Cpu::set_nz_flag_long(u64 v)
 {
     set_zero_flag_long(v);
     set_negative_flag_long(v);
