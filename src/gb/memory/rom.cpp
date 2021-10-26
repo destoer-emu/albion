@@ -18,7 +18,7 @@ void fix_checksums(std::vector<uint8_t> &rom)
     rom[0x14d] = x;
 
     // global
-    uint16_t c = 0;
+    u16 c = 0;
     for(size_t i = 0; i < rom.size(); i++)
     {
         if(i != 0x14e && i != 0x14f)
@@ -81,9 +81,9 @@ void convert_isx(std::vector<uint8_t> &rom)
                 }
 
 
-                const auto addr = read_var<uint16_t>(len,rom) & 0x3fff;        
+                const auto addr = read_var<u16>(len,rom) & 0x3fff;        
                 
-                auto data_len = read_var<uint16_t>(len,rom);
+                auto data_len = read_var<u16>(len,rom);
 
                 if(data_len + len >= rom.size())
                 {
@@ -111,12 +111,12 @@ void convert_isx(std::vector<uint8_t> &rom)
             // symbol
             case 0x4:
             {
-                const auto number = read_var<uint16_t>(len,rom);
+                const auto number = read_var<u16>(len,rom);
                 for(int i = 0; i < number; i++)
                 {
                     const auto sym_len = read_var<uint8_t>(len,rom);
                     len += sym_len + 1; // flag
-                    uint16_t bank = read_var<uint8_t>(len,rom);
+                    u16 bank = read_var<uint8_t>(len,rom);
                     if(bank > 0x80)
                     {
                         bank |= read_var<uint8_t>(len,rom) << 8;
@@ -135,13 +135,13 @@ void convert_isx(std::vector<uint8_t> &rom)
 
             case 0x13:
             {
-                const auto number = read_var<uint16_t>(len,rom);
+                const auto number = read_var<u16>(len,rom);
                 /* // dont know what this is for
                 for(int i = 0; i < number; i++)
                 {
                     const auto bank = read_var<uint8_t>(len,rom);
-                    const auto start = read_var<uint16_t>(len,rom);
-                    const auto end = read_var<uint16_t>(len,rom);
+                    const auto start = read_var<u16>(len,rom);
+                    const auto end = read_var<u16>(len,rom);
                     const auto type = read_var<uint8_t>(len,rom);
                     printf("%x:%x:%x:%x\n",bank,start,end,type);
                 }
@@ -152,7 +152,7 @@ void convert_isx(std::vector<uint8_t> &rom)
 
             case 0x14: // symbol extended binary
             {
-                const auto number = read_var<uint16_t>(len,rom);
+                const auto number = read_var<u16>(len,rom);
                 for(int i = 0; i < number; i++)
                 {
                     // exta byte on symbol here?
@@ -325,8 +325,8 @@ void RomInfo::init(std::vector<uint8_t> &rom, std::string romname)
 
 
     // get the number of ram banks
-    uint32_t ram_type = rom[0x149];
-    constexpr uint32_t ram_table[6] = {0,1,1,4,16,8};
+    u32 ram_type = rom[0x149];
+    constexpr u32 ram_table[6] = {0,1,1,4,16,8};
 
     if(ram_type > 5)
     {

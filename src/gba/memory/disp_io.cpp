@@ -18,17 +18,17 @@ void RefPoint::init()
 }
 
 
-void RefPoint::write_x(int idx, uint8_t v)
+void RefPoint::write_x(int idx, u8 v)
 {
     write(idx,v,ref_point_x,int_ref_point_x);
 }
 
-void RefPoint::write_y(int idx, uint8_t v)
+void RefPoint::write_y(int idx, u8 v)
 {
     write(idx,v,ref_point_y,int_ref_point_y);
 }
 
-void RefPoint::write(int idx, uint8_t v, int32_t &ref_point, int32_t &int_ref_point)
+void RefPoint::write(int idx, u8 v, int32_t &ref_point, int32_t &int_ref_point)
 {
     auto ref_arr = reinterpret_cast<char*>(&ref_point);
     ref_arr[idx] = v;
@@ -68,7 +68,7 @@ void BgCnt::init()
     screen_size = 0;
 }
 
-void BgCnt::write(int idx, uint8_t v)
+void BgCnt::write(int idx, u8 v)
 {
     switch(idx)
     {
@@ -93,7 +93,7 @@ void BgCnt::write(int idx, uint8_t v)
     }
 }
 
-uint8_t BgCnt::read(int idx) const
+u8 BgCnt::read(int idx) const
 {
     switch(idx)
     {
@@ -126,7 +126,7 @@ void BgOffset::init()
 }
 
 // write only
-void BgOffset::write(int idx, uint8_t v)
+void BgOffset::write(int idx, u8 v)
 {
     switch(idx)
     {
@@ -164,7 +164,7 @@ void DispCnt::init()
     windowing_enabled = false;
 }
 
-uint8_t DispCnt::read(int idx) const
+u8 DispCnt::read(int idx) const
 {
     switch(idx)
     {
@@ -186,7 +186,7 @@ uint8_t DispCnt::read(int idx) const
     return 0;
 }
 
-void DispCnt::write(int idx, uint8_t v)
+void DispCnt::write(int idx, u8 v)
 {
     switch(idx)
     {
@@ -242,7 +242,7 @@ void DispStat::init()
 }
 
 
-uint8_t DispStat::read(int idx) const
+u8 DispStat::read(int idx) const
 {
     switch(idx)
     {
@@ -264,7 +264,7 @@ uint8_t DispStat::read(int idx) const
     return 0;
 }
 
-void DispStat::write(int idx, uint8_t v)
+void DispStat::write(int idx, u8 v)
 {
     switch(idx)
     {
@@ -301,7 +301,7 @@ void BldCnt::init()
     special_effect = 0;
 }
 
-void BldCnt::write(int idx, uint8_t v)
+void BldCnt::write(int idx, u8 v)
 {
     switch(idx)
     {
@@ -326,7 +326,7 @@ void BldCnt::write(int idx, uint8_t v)
     }
 }
 
-uint8_t BldCnt::read(int idx) const
+u8 BldCnt::read(int idx) const
 {
     switch(idx)
     {
@@ -363,7 +363,7 @@ void Mosaic::init()
 }
 
 
-void Mosaic::write(int idx, uint8_t v)
+void Mosaic::write(int idx, u8 v)
 {
     switch(idx)
     {
@@ -398,27 +398,27 @@ void ScalingParam::init()
 }
 
 
-void ScalingParam::write_a(int idx,uint8_t v)
+void ScalingParam::write_a(int idx,u8 v)
 {
     write(idx,v,a);
 }
 
-void ScalingParam::write_b(int idx,uint8_t v)
+void ScalingParam::write_b(int idx,u8 v)
 {
     write(idx,v,b);
 }
 
-void ScalingParam::write_c(int idx,uint8_t v)
+void ScalingParam::write_c(int idx,u8 v)
 {
     write(idx,v,c);
 }
 
-void ScalingParam::write_d(int idx,uint8_t v)
+void ScalingParam::write_d(int idx,u8 v)
 {
     write(idx,v,d);
 }
 
-void ScalingParam::write(int idx, uint8_t v,int16_t &param)
+void ScalingParam::write(int idx, u8 v,int16_t &param)
 {
     switch(idx)
     {
@@ -447,7 +447,7 @@ void WindowDimensionH::init()
     x1 = 0;
 }
 
-void WindowDimensionH::write(int idx, uint8_t v)
+void WindowDimensionH::write(int idx, u8 v)
 {
     if(v > SCREEN_WIDTH)
     {
@@ -473,7 +473,7 @@ void WindowDimensionV::init()
     y1 = 0;
 }
 
-void WindowDimensionV::write(int idx, uint8_t v)
+void WindowDimensionV::write(int idx, u8 v)
 {
     switch(idx)
     {
@@ -496,7 +496,7 @@ void WinCnt::init()
 }
 
 
-uint8_t WinCnt::read(int window) const
+u8 WinCnt::read(int window) const
 {
     const auto &w = win_arr[window];
 
@@ -505,7 +505,7 @@ uint8_t WinCnt::read(int window) const
         | w.obj_enable | w.special_enable;
 }
 
-void WinCnt::write(int window,uint8_t v)
+void WinCnt::write(int window,u8 v)
 {
     auto &w = win_arr[window];
 

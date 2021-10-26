@@ -5,7 +5,7 @@ namespace gameboy
 {
 
 // m cycle tick
-inline void Cpu::cycle_tick(uint32_t cycles) noexcept
+inline void Cpu::cycle_tick(u32 cycles) noexcept
 {
 	//  convert to t cycles and tick
 	cycle_tick_t(cycles * 4);
@@ -13,7 +13,7 @@ inline void Cpu::cycle_tick(uint32_t cycles) noexcept
 
 
 // t cycle tick
-inline void Cpu::cycle_tick_t(uint32_t cycles) noexcept
+inline void Cpu::cycle_tick_t(u32 cycles) noexcept
 {
 /*
 	// timers act at constant speed
@@ -41,7 +41,7 @@ inline void Cpu::cycle_tick_t(uint32_t cycles) noexcept
 }
 
 
-inline void Cpu::write_stackt(uint8_t v) noexcept
+inline void Cpu::write_stackt(u8 v) noexcept
 {
 	oam_bug_write(sp);
 	// need to ignore oam triggers for this one
@@ -56,7 +56,7 @@ inline void Cpu::write_stackwt(uint16_t v) noexcept
 }
 
 // unticked only used by interrupts
-inline void Cpu::write_stack(uint8_t v) noexcept
+inline void Cpu::write_stack(u8 v) noexcept
 {
 	mem.write_mem(--sp,v); // write to stack
 }
@@ -67,7 +67,7 @@ inline void Cpu::write_stackw(uint16_t v) noexcept
 	write_stack((v & 0x00ff));
 }
 
-inline uint8_t Cpu::read_stackt() noexcept
+inline u8 Cpu::read_stackt() noexcept
 {	
 	return mem.read_memt_no_oam_bug(sp++);
 }

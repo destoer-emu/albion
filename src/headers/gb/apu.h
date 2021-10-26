@@ -105,11 +105,11 @@ struct Noise
 	int clock_shift = 0;
 	int counter_width = 0;
 	int divisor_idx = 0; // indexes into divisors table
-	uint16_t shift_reg = 0; // 15 bit reg
+	u16 shift_reg = 0; // 15 bit reg
 };
 
 void init_noise(Noise &noise);
-void noise_write(Noise &n,uint8_t v);
+void noise_write(Noise &n,u8 v);
 void noise_trigger(Noise &n);
 void noise_reload_period(Channel &c,Noise &n);
 bool noise_tick_period(Noise &n,Channel &c, u32 cycles);
@@ -136,7 +136,7 @@ struct Psg
 
 	void reset_sequencer() noexcept;
 	void advance_sequencer() noexcept;
-	void tick_periods(uint32_t cycles) noexcept;
+	void tick_periods(u32 cycles) noexcept;
 	void enable_sound() noexcept;
 	void disable_sound() noexcept;
 
@@ -165,82 +165,82 @@ struct Psg
 	Wave wave;
 
 
-	void write_wave_table(int idx, uint8_t v) noexcept;
-	uint8_t read_wave_table(int idx) const noexcept;
+	void write_wave_table(int idx, u8 v) noexcept;
+	u8 read_wave_table(int idx) const noexcept;
 
 	// register access
 
 	// nr1x
-	void write_nr10(uint8_t v) noexcept;
-	uint8_t read_nr10() const noexcept;
-	void nr1_freq_writeback(uint16_t v) noexcept;
+	void write_nr10(u8 v) noexcept;
+	u8 read_nr10() const noexcept;
+	void nr1_freq_writeback(u16 v) noexcept;
 
-	void write_nr11(uint8_t v) noexcept;
-	uint8_t read_nr11() const noexcept;
+	void write_nr11(u8 v) noexcept;
+	u8 read_nr11() const noexcept;
 
-	void write_nr12(uint8_t v) noexcept;
-	uint8_t read_nr12() const noexcept;
+	void write_nr12(u8 v) noexcept;
+	u8 read_nr12() const noexcept;
 
-	void write_nr13(uint8_t v) noexcept;
+	void write_nr13(u8 v) noexcept;
 	// write only
 
-	void write_nr14(uint8_t v) noexcept;
-	uint8_t read_nr14() const noexcept;
+	void write_nr14(u8 v) noexcept;
+	u8 read_nr14() const noexcept;
 
 	// nr2x
-	void write_nr21(uint8_t v) noexcept;
-	uint8_t read_nr21() const noexcept;
+	void write_nr21(u8 v) noexcept;
+	u8 read_nr21() const noexcept;
 
-	void write_nr22(uint8_t v) noexcept;
-	uint8_t read_nr22() const noexcept;
+	void write_nr22(u8 v) noexcept;
+	u8 read_nr22() const noexcept;
 
-	void write_nr23(uint8_t v) noexcept;
+	void write_nr23(u8 v) noexcept;
 	// write only
 
-	void write_nr24(uint8_t v) noexcept;
-	uint8_t read_nr24() const noexcept;
+	void write_nr24(u8 v) noexcept;
+	u8 read_nr24() const noexcept;
 	
 	// nr3x
-	void write_nr30(uint8_t v) noexcept;
-	uint8_t read_nr30() const noexcept;
+	void write_nr30(u8 v) noexcept;
+	u8 read_nr30() const noexcept;
 
-	void write_nr31(uint8_t v) noexcept;
+	void write_nr31(u8 v) noexcept;
 	// write only
 
-	void write_nr32(uint8_t v) noexcept;
-	uint8_t read_nr32() const noexcept;
+	void write_nr32(u8 v) noexcept;
+	u8 read_nr32() const noexcept;
 
-	void write_nr33(uint8_t v) noexcept;
+	void write_nr33(u8 v) noexcept;
 	// write only
 
-	void write_nr34(uint8_t v) noexcept;
-	uint8_t read_nr34() const noexcept;
+	void write_nr34(u8 v) noexcept;
+	u8 read_nr34() const noexcept;
 
 	// nr4x
 
-	void write_nr41(uint8_t v) noexcept;
+	void write_nr41(u8 v) noexcept;
 	// write only
 
-	void write_nr42(uint8_t v) noexcept;
-	uint8_t read_nr42() const noexcept;
+	void write_nr42(u8 v) noexcept;
+	u8 read_nr42() const noexcept;
 
-	void write_nr43(uint8_t v) noexcept;
-	uint8_t read_nr43() const noexcept;
+	void write_nr43(u8 v) noexcept;
+	u8 read_nr43() const noexcept;
 
-	void write_nr44(uint8_t v) noexcept;
-	uint8_t read_nr44() const noexcept;
+	void write_nr44(u8 v) noexcept;
+	u8 read_nr44() const noexcept;
 
 
 	// nr5x
-	void write_nr50(uint8_t v) noexcept;
-	uint8_t read_nr50() const noexcept;
+	void write_nr50(u8 v) noexcept;
+	u8 read_nr50() const noexcept;
 
-	void write_nr51(uint8_t v) noexcept;
-	uint8_t read_nr51() const noexcept;
+	void write_nr51(u8 v) noexcept;
+	u8 read_nr51() const noexcept;
 
-	//void write_nr52(uint8_t v) noexcept;
+	//void write_nr52(u8 v) noexcept;
 	// ^ handled in the memory function 
-	uint8_t read_nr52() const noexcept;
+	u8 read_nr52() const noexcept;
 
 	psg_mode mode;
 
@@ -256,35 +256,35 @@ struct Psg
 	// backing regs
 
 	// nr1x
-	uint8_t nr10;
-	uint8_t nr11;
-	uint8_t nr12;
-	uint8_t nr13;
-	uint8_t nr14;
+	u8 nr10;
+	u8 nr11;
+	u8 nr12;
+	u8 nr13;
+	u8 nr14;
 
 	// nr2x
-	uint8_t nr21;
-	uint8_t nr22;
-	uint8_t nr23;
-	uint8_t nr24;
+	u8 nr21;
+	u8 nr22;
+	u8 nr23;
+	u8 nr24;
 
 	// nr3x
-	uint8_t nr30;
-	uint8_t nr31;
-	uint8_t nr32;
-	uint8_t nr33;
-	uint8_t nr34;
+	u8 nr30;
+	u8 nr31;
+	u8 nr32;
+	u8 nr33;
+	u8 nr34;
 
 	// nr4x
-	uint8_t nr41;
-	uint8_t nr42;
-	uint8_t nr43;
-	uint8_t nr44;	
+	u8 nr41;
+	u8 nr42;
+	u8 nr43;
+	u8 nr44;	
 
 	// nr5x
-	uint8_t nr50;
-	uint8_t nr51;
-	uint8_t nr52;
+	u8 nr50;
+	u8 nr51;
+	u8 nr52;
 };
 
 }
@@ -299,11 +299,11 @@ struct Apu
 
 	void insert_new_sample_event() noexcept;
 
-	void push_samples(uint32_t cycles) noexcept;
+	void push_samples(u32 cycles) noexcept;
 
 	void init(gameboy_psg::psg_mode mode, bool use_bios) noexcept;
 
-	void tick(uint32_t cycles) noexcept;
+	void tick(u32 cycles) noexcept;
 
 	void disable_sound() noexcept;
 	void enable_sound() noexcept;

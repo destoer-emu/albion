@@ -241,7 +241,7 @@ void Display::tick(int cycles)
 
 void Display::insert_new_ppu_event()
 {
-    uint32_t cycles = 0;
+    u32 cycles = 0;
     if(cyc_cnt >= 1232)
     {
         printf("%d\n",cyc_cnt);

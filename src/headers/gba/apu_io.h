@@ -10,14 +10,14 @@ struct SoundCnt
     SoundCnt(ApuIo &apu_io);
     void init();
 
-    void write_l(int idx,uint8_t v);
-    uint8_t read_l(int idx) const;
+    void write_l(int idx,u8 v);
+    u8 read_l(int idx) const;
 
-    void write_h(int idx, uint8_t v);
-    uint8_t read_h(int idx) const;
+    void write_h(int idx, u8 v);
+    u8 read_h(int idx) const;
 
-    void write_x(int idx, uint8_t v);
-    uint8_t read_x(int idx);
+    void write_x(int idx, u8 v);
+    u8 read_x(int idx);
 
     // sound cnt L
     int vol_right;
@@ -76,7 +76,7 @@ struct ApuIo
     SoundCnt sound_cnt{*this};
     SoundFifo fifo_a;
     SoundFifo fifo_b;
-    uint16_t soundbias = 0;
+    u16 soundbias = 0;
 };
 
 }

@@ -6,22 +6,22 @@ namespace gameboyadvance
 // TODO: implement lazy evaluation
 
 // renderer helper functions
-uint16_t Display::read_bg_palette(uint32_t pal_num,uint32_t idx)
+u16 Display::read_bg_palette(u32 pal_num,u32 idx)
 {
-    return handle_read<uint16_t>(mem.pal_ram,(0x20*pal_num)+idx*2);        
+    return handle_read<u16>(mem.pal_ram,(0x20*pal_num)+idx*2);        
 }
 
 
-uint16_t Display::read_obj_palette(uint32_t pal_num,uint32_t idx)
+u16 Display::read_obj_palette(u32 pal_num,u32 idx)
 {
     // 0x200 base for sprites into pal ram
-    return handle_read<uint16_t>(mem.pal_ram,0x200+(0x20*pal_num)+(idx*2));        
+    return handle_read<u16>(mem.pal_ram,0x200+(0x20*pal_num)+(idx*2));        
 }
 
 
 // TODO: specialise this with lambda to only bother drawing 2nd target when we actually need to
 // do a blend
-void Display::draw_tile(uint32_t x,const TileData &p)
+void Display::draw_tile(u32 x,const TileData &p)
 {
     // 1st target is empty
     if(scanline[x].t1.source == pixel_source::bd)
@@ -36,10 +36,10 @@ void Display::draw_tile(uint32_t x,const TileData &p)
     }
 }
 
-void Display::read_tile(TileData *tile,unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
-    uint32_t y,bool x_flip, bool y_flip)
+void Display::read_tile(TileData *tile,unsigned int bg,bool col_256,u32 base,u32 pal_num,u32 tile_num, 
+    u32 y,bool x_flip, bool y_flip)
 {
-    uint32_t tile_y = y & 7;
+    u32 tile_y = y & 7;
     tile_y = y_flip? tile_y ^ 7 : tile_y;
 
 
@@ -49,7 +49,7 @@ void Display::read_tile(TileData *tile,unsigned int bg,bool col_256,uint32_t bas
     if(col_256)
     {
         // each tile accounts for 8 vertical pixels but is 64 bytes long
-        const uint32_t addr = base+(tile_num*0x40) + (tile_y * 8); 
+        const u32 addr = base+(tile_num*0x40) + (tile_y * 8); 
 
         int x_pix = x_flip? 7 : 0;
         const int x_step = x_flip? -1 : +1;
@@ -72,7 +72,7 @@ void Display::read_tile(TileData *tile,unsigned int bg,bool col_256,uint32_t bas
     {
 
         // each tile accounts for 8 vertical pixels but is 32 bytes long
-        const uint32_t addr = base+(tile_num*0x20) + (tile_y * 4); 
+        const u32 addr = base+(tile_num*0x20) + (tile_y * 4); 
 
         int x_pix = x_flip? 3 : 0;
         const int x_step = x_flip? -1 : +1;
@@ -92,8 +92,8 @@ void Display::read_tile(TileData *tile,unsigned int bg,bool col_256,uint32_t bas
             // read out the color indexs from the tile
             const uint8_t tile_data = mem.vram[addr+x_pix];
 
-            const uint32_t idx1 = (tile_data >> shift_one) & 0xf;
-            const uint32_t idx2 = (tile_data >> shift_two) & 0xf;
+            const u32 idx1 = (tile_data >> shift_one) & 0xf;
+            const u32 idx2 = (tile_data >> shift_two) & 0xf;
 
             tile[x] = DEAD_TILE;
             if(idx1)
@@ -146,7 +146,7 @@ void Display::render_affine(int id)
     auto &ref_point_x = ref_point.int_ref_point_x;
     auto &ref_point_y = ref_point.int_ref_point_y;
 
-    for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
+    for(u32 x = 0; x < SCREEN_WIDTH; x++)
     {
         if(!bg_window_enabled(id,x))
         {
@@ -213,7 +213,7 @@ void Display::render_affine(int id)
         const auto tile_y = y_affine & 7;
 
         // each tile accounts for 8 vertical pixels but is 64 bytes long
-        const uint32_t addr = bg_tile_data_base+(tile_num*0x40) + (tile_y * 8); 
+        const u32 addr = bg_tile_data_base+(tile_num*0x40) + (tile_y * 8); 
         
         // affine is allways 8bpp
         const uint8_t tile_data = mem.vram[addr+tile_x];
@@ -270,12 +270,12 @@ void Display::render_text(int id)
         return;
     }
 
-    uint32_t old_entry = 0xffffffff;
+    u32 old_entry = 0xffffffff;
 
     const auto &cnt = disp_io.bg_cnt[id];
-    const uint32_t bg_tile_data_base = cnt.char_base_block * 0x4000;
-    uint32_t bg_map_base =  cnt.screen_base_block * 0x800;
-    const uint32_t size = cnt.screen_size;  
+    const u32 bg_tile_data_base = cnt.char_base_block * 0x4000;
+    u32 bg_map_base =  cnt.screen_base_block * 0x800;
+    const u32 size = cnt.screen_size;  
 
 
     // 256 color one pal 8bpp? or 16 color 16 pal 4bpp 
@@ -284,22 +284,22 @@ void Display::render_text(int id)
 
 
 
-    const uint32_t scroll_x = disp_io.bg_offset_x[id].offset;
-    const uint32_t scroll_y = disp_io.bg_offset_y[id].offset;
+    const u32 scroll_x = disp_io.bg_offset_x[id].offset;
+    const u32 scroll_y = disp_io.bg_offset_y[id].offset;
 
     // modulo for x and y should probably depend on the size of bg map
-    const uint32_t line = (ly + scroll_y) & 511;
+    const u32 line = (ly + scroll_y) & 511;
 
     // what is the start tiles
-    uint32_t map_x = scroll_x / 8; 
-    const uint32_t map_y = line / 8;
+    u32 map_x = scroll_x / 8; 
+    const u32 map_y = line / 8;
 
 
     // add the current y offset to the base for this line
     // 32 by 32 map so it wraps around again at 32 
     bg_map_base += (map_y & 0x1f) * 64; // (2 * 32);
             
-    uint32_t  pixels_drawn = 0;
+    u32  pixels_drawn = 0;
 
     
     // call a function that does not do window checks if it is clear that the entire line has this bg enabled
@@ -307,17 +307,17 @@ void Display::render_text(int id)
 
 
     TileData tile_data[8];
-    for(uint32_t x = 0; x < SCREEN_WIDTH; x += pixels_drawn)
+    for(u32 x = 0; x < SCREEN_WIDTH; x += pixels_drawn)
     {
         // 8 for each map but each map takes 2 bytes
         // its 32 by 32 so we want it to wrap back around
         // at that point
-        uint32_t bg_map_offset = (map_x++ & 0x1f) * 2; 
+        u32 bg_map_offset = (map_x++ & 0x1f) * 2; 
    
 
         
 
-        uint32_t x_pos = (x + scroll_x) & 511;
+        u32 x_pos = (x + scroll_x) & 511;
 
         // if we are at greater than 256 x or y
         // we will be in a higher map than the initial
@@ -353,9 +353,9 @@ void Display::render_text(int id)
         }
 
         // read out the bg entry and rip all the information we need about the tile
-        const uint32_t bg_map_entry = handle_read<uint16_t>(mem.vram,bg_map_base+bg_map_offset);
+        const u32 bg_map_entry = handle_read<u16>(mem.vram,bg_map_base+bg_map_offset);
 
-        uint32_t tile_offset;
+        u32 tile_offset;
         if(x == 0)
         {
             tile_offset = x_pos & 7;
@@ -374,8 +374,8 @@ void Display::render_text(int id)
             const bool x_flip = is_set(bg_map_entry,10);
             const bool y_flip = is_set(bg_map_entry,11);
 
-            const uint32_t tile_num = bg_map_entry & 0x3ff; 
-            const uint32_t pal_num = (bg_map_entry >> 12) & 0xf;
+            const u32 tile_num = bg_map_entry & 0x3ff; 
+            const u32 pal_num = (bg_map_entry >> 12) & 0xf;
 
 
             // render a full tile but then just lie and say we rendered less
@@ -384,7 +384,7 @@ void Display::render_text(int id)
         }
 
 
-        uint32_t end = pixels_drawn;
+        u32 end = pixels_drawn;
 
         // we are going to overdraw we need to clip
         // how much we are drawing
@@ -397,7 +397,7 @@ void Display::render_text(int id)
         // dont bother to do window checks
         if(bg_window_trivial)
         {
-            for(uint32_t i = 0; i < end; i++)
+            for(u32 i = 0; i < end; i++)
             {
                 draw_tile(x+i,tile_data[i+tile_offset]); 
             }
@@ -405,7 +405,7 @@ void Display::render_text(int id)
 
         else
         {
-            for(uint32_t i = 0; i < end; i++)
+            for(u32 i = 0; i < end; i++)
             {
                 if(bg_window_enabled(id,x+i))
                 {
@@ -543,7 +543,7 @@ void Display::merge_layers()
 
             // lower priority is higher, sprite wins even if its equal
             const bool obj_win1 = (sprite_enable) && 
-                (b1.source == pixel_source::bd || sprite_priority[x] <= disp_io.bg_cnt[static_cast<uint32_t>(b1.source)].priority);
+                (b1.source == pixel_source::bd || sprite_priority[x] <= disp_io.bg_cnt[static_cast<u32>(b1.source)].priority);
 
             auto &p1 = obj_win1? s : b1;
 
@@ -565,7 +565,7 @@ void Display::merge_layers()
             // lower priority is higher, sprite wins even if its equal
             // if obj has allready won then we dont care
             const bool obj_win2 = (!obj_win1 && sprite_enable) &&  
-                (b2.source == pixel_source::bd || sprite_priority[x] <= disp_io.bg_cnt[static_cast<uint32_t>(b2.source)].priority);
+                (b2.source == pixel_source::bd || sprite_priority[x] <= disp_io.bg_cnt[static_cast<u32>(b2.source)].priority);
 
             auto &p2 = obj_win2? s : b2;
 
@@ -676,16 +676,16 @@ void Display::cache_window()
     {
         const bool win0_wrap = disp_io.win0h.x1 > disp_io.win0h.x2;
 
-        const uint32_t end = win0_wrap? SCREEN_WIDTH : disp_io.win0h.x2;
+        const u32 end = win0_wrap? SCREEN_WIDTH : disp_io.win0h.x2;
 
-        for(uint32_t x = disp_io.win0h.x1; x < end; x++)
+        for(u32 x = disp_io.win0h.x1; x < end; x++)
         {
             window[x] = window_source::zero;
         }
 
         if(win0_wrap)
         {
-            for(uint32_t x = 0; x < disp_io.win0h.x2; x++)
+            for(u32 x = 0; x < disp_io.win0h.x2; x++)
             {
                 window[x] = window_source::zero;
             }
@@ -697,9 +697,9 @@ void Display::cache_window()
     {
         const bool win1_wrap = disp_io.win1h.x1 > disp_io.win1h.x2;
 
-        const uint32_t end = win1_wrap? SCREEN_WIDTH : disp_io.win1h.x2;
+        const u32 end = win1_wrap? SCREEN_WIDTH : disp_io.win1h.x2;
 
-        for(uint32_t x = disp_io.win1h.x1; x < end; x++)
+        for(u32 x = disp_io.win1h.x1; x < end; x++)
         {
             if(window[x] != window_source::zero)
             {
@@ -709,7 +709,7 @@ void Display::cache_window()
 
         if(win1_wrap)
         {
-            for(uint32_t x = 0; x < disp_io.win1h.x2; x++)
+            for(u32 x = 0; x < disp_io.win1h.x2; x++)
             {
                 if(window[x] != window_source::zero)
                 {
@@ -904,11 +904,11 @@ void Display::render()
             }
             
 
-            for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
+            for(u32 x = 0; x < SCREEN_WIDTH; x++)
             {
                 if(bg_window_enabled(2,x))
                 {
-                    const uint32_t c = convert_color(handle_read<uint16_t>(mem.vram,(ly*SCREEN_WIDTH*2)+x*2));
+                    const u32 c = convert_color(handle_read<u16>(mem.vram,(ly*SCREEN_WIDTH*2)+x*2));
                     screen[(ly*SCREEN_WIDTH)+x] = c;
                 }
             }
@@ -924,13 +924,13 @@ void Display::render()
                 break;
             }
             
-            for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
+            for(u32 x = 0; x < SCREEN_WIDTH; x++)
             {
                 if(bg_window_enabled(2,x))
                 {
                     const uint8_t idx = mem.vram[(ly*SCREEN_WIDTH)+x];
-                    const uint16_t color = handle_read<uint16_t>(mem.pal_ram,(idx*2));
-                    const uint32_t c = convert_color(color);
+                    const u16 color = handle_read<u16>(mem.pal_ram,(idx*2));
+                    const u32 c = convert_color(color);
                     screen[(ly*SCREEN_WIDTH)+x] = c;
                 }
             }
@@ -940,9 +940,9 @@ void Display::render()
 /*
         case 0x5: // same as mode 3 but lower screen size?
         {
-            for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
+            for(u32 x = 0; x < SCREEN_WIDTH; x++)
             {
-                uint32_t c = convert_color(handle_read<uint16_t>(mem.vram,(ly*SCREEN_WIDTH*2)+x*2));
+                u32 c = convert_color(handle_read<u16>(mem.vram,(ly*SCREEN_WIDTH*2)+x*2));
                 screen[ly][x] = c;
             }
             break;            

@@ -15,7 +15,7 @@ void HaltCnt::init()
     state = power_state::normal;
 }
 
-void HaltCnt::write(uint8_t v)
+void HaltCnt::write(u8 v)
 {
     state = is_set(v,7) ? power_state::stop : power_state::halt;
 }
@@ -39,7 +39,7 @@ void Timer::init()
     enable = false;
 }
 
-uint8_t Timer::read_counter(int idx) const
+u8 Timer::read_counter(int idx) const
 {
     switch(idx)
     {
@@ -57,7 +57,7 @@ uint8_t Timer::read_counter(int idx) const
 }
 
 // actually writes the reload but is at the same addr
-void Timer::write_counter(int idx, uint8_t v)
+void Timer::write_counter(int idx, u8 v)
 {
     switch(idx)
     {
@@ -75,12 +75,12 @@ void Timer::write_counter(int idx, uint8_t v)
     }
 }
 
-uint8_t Timer::read_control() const
+u8 Timer::read_control() const
 {
     return scale | (count_up << 2) | (irq << 6) | (enable << 7);
 }
 
-void Timer::write_control(uint8_t v)
+void Timer::write_control(u8 v)
 {
     scale = v & 0x3;
     count_up = is_set(v,2);

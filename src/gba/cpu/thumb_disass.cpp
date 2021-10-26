@@ -6,12 +6,12 @@
 namespace gameboyadvance
 {
 
-std::string Disass::disass_thumb(uint32_t program_counter)
+std::string Disass::disass_thumb(u32 program_counter)
 {
     pc = program_counter; 
-    uint16_t opcode = mem.read_mem<uint16_t>(pc);
+    u16 opcode = mem.read_mem<u16>(pc);
     pc += 2;
-    uint32_t op = get_thumb_opcode_bits(opcode);
+    u32 op = get_thumb_opcode_bits(opcode);
 
     return std::invoke(disass_thumb_table[op],this,opcode);
 }
@@ -152,9 +152,9 @@ void Disass::init_thumb_disass_table()
 }
 
 
-std::string Disass::disass_thumb_load_store_sp(uint16_t opcode)
+std::string Disass::disass_thumb_load_store_sp(u16 opcode)
 {
-    uint32_t nn = (opcode & 0xff) * 4;
+    u32 nn = (opcode & 0xff) * 4;
     int rd = (opcode >> 8) & 0x7;
     bool l = is_set(opcode,11);
 
@@ -163,7 +163,7 @@ std::string Disass::disass_thumb_load_store_sp(uint16_t opcode)
     return fmt::format("{} {}, [sp,#0x{:x}]",instr,user_regs_names[rd],nn);
 }
 
-std::string Disass::disass_thumb_sp_add(uint16_t opcode)
+std::string Disass::disass_thumb_sp_add(u16 opcode)
 {
     bool u = !is_set(opcode,7);
     int nn = (opcode & 127) * 4;
@@ -180,13 +180,13 @@ std::string Disass::disass_thumb_sp_add(uint16_t opcode)
     }
 }
 
-std::string Disass::disass_thumb_swi(uint16_t opcode)
+std::string Disass::disass_thumb_swi(u16 opcode)
 {
-    uint8_t nn = opcode & 0xff;
+    u8 nn = opcode & 0xff;
     return fmt::format("swi #0x{:x}",nn);
 }
 
-std::string Disass::disass_thumb_load_store_reg(uint16_t opcode)
+std::string Disass::disass_thumb_load_store_reg(u16 opcode)
 {
     int op = (opcode >> 10) & 0x3;
     int ro = (opcode >> 6) & 0x7;
@@ -201,9 +201,9 @@ std::string Disass::disass_thumb_load_store_reg(uint16_t opcode)
     return fmt::format("{} {}",names[op],addr_str);
 }
 
-std::string Disass::disass_thumb_get_rel_addr(uint16_t opcode)
+std::string Disass::disass_thumb_get_rel_addr(u16 opcode)
 {
-    uint32_t offset = (opcode & 0xff) * 4;
+    u32 offset = (opcode & 0xff) * 4;
     int rd = (opcode >> 8) & 0x7;
     bool pc = !is_set(opcode,11);
 
@@ -220,15 +220,15 @@ std::string Disass::disass_thumb_get_rel_addr(uint16_t opcode)
     }
 }
 
-std::string Disass::disass_thumb_branch(uint16_t opcode)
+std::string Disass::disass_thumb_branch(u16 opcode)
 {
     int32_t offset = sign_extend<int32_t>(opcode & 0x7ff,11) * 2;
-    uint32_t res = pc+offset+ARM_HALF_SIZE;
+    u32 res = pc+offset+ARM_HALF_SIZE;
 
     return fmt::format("b #0x{:08x}",res);
 }
 
-std::string Disass::disass_thumb_load_store_half(uint16_t opcode)
+std::string Disass::disass_thumb_load_store_half(u16 opcode)
 {
     int nn = ((opcode >> 6) & 0x1f) * 2;
     int rb = (opcode >> 3) & 0x7;
@@ -240,7 +240,7 @@ std::string Disass::disass_thumb_load_store_half(uint16_t opcode)
         user_regs_names[rb],nn);    
 }
 
-std::string Disass::disass_thumb_load_store_sbh(uint16_t opcode)
+std::string Disass::disass_thumb_load_store_sbh(u16 opcode)
 {
     int ro = (opcode >> 6) & 0x7;
     int rb = (opcode >> 3) & 0x7;
@@ -256,7 +256,7 @@ std::string Disass::disass_thumb_load_store_sbh(uint16_t opcode)
     return fmt::format("{} {}",names[op],addr_str);
 }
 
-std::string Disass::disass_thumb_ldst_imm(uint16_t opcode)
+std::string Disass::disass_thumb_ldst_imm(u16 opcode)
 {
     int op = (opcode >> 11) & 3;
 
@@ -300,7 +300,7 @@ std::string Disass::disass_thumb_ldst_imm(uint16_t opcode)
 }
 
 // hi reg ops/branch exchange
-std::string Disass::disass_thumb_hi_reg_ops(uint16_t opcode)
+std::string Disass::disass_thumb_hi_reg_ops(u16 opcode)
 {
     int rd = opcode & 0x7;
     int rs = (opcode >> 3) & 0x7;
@@ -345,13 +345,13 @@ std::string Disass::disass_thumb_hi_reg_ops(uint16_t opcode)
     exit(1);
 }
 
-std::string Disass::disass_thumb_push_pop(uint16_t opcode)
+std::string Disass::disass_thumb_push_pop(u16 opcode)
 {
     bool pop = is_set(opcode,11);
 
     bool lr = is_set(opcode,8);
 
-    uint8_t reg_range = opcode & 0xff;
+    u8 reg_range = opcode & 0xff;
 
     std::string reg_str = "{";
 
@@ -396,12 +396,12 @@ std::string Disass::disass_thumb_push_pop(uint16_t opcode)
 
 }
 
-std::string Disass::disass_thumb_multiple_load_store(uint16_t opcode)
+std::string Disass::disass_thumb_multiple_load_store(u16 opcode)
 {
     int rb = (opcode >> 8) & 0x7;
     std::string instr = is_set(opcode,11)? "ldmia" : "stmia";
 
-    uint8_t reg_range = opcode & 0xff;
+    u8 reg_range = opcode & 0xff;
 
     std::string reg_str = "{";
 
@@ -423,7 +423,7 @@ std::string Disass::disass_thumb_multiple_load_store(uint16_t opcode)
 
 }
 
-std::string Disass::disass_thumb_add_sub(uint16_t opcode)
+std::string Disass::disass_thumb_add_sub(u16 opcode)
 {
     int rd = opcode & 0x7;
     int rs = (opcode >> 3) & 0x7;
@@ -457,7 +457,7 @@ std::string Disass::disass_thumb_add_sub(uint16_t opcode)
     exit(1);
 }
 
-std::string Disass::disass_thumb_alu(uint16_t opcode)
+std::string Disass::disass_thumb_alu(u16 opcode)
 {
     int op = (opcode >> 6) & 0xf;
     int rs = (opcode >> 3) & 0x7;
@@ -476,14 +476,14 @@ std::string Disass::disass_thumb_alu(uint16_t opcode)
 }
 
 // the final addr calc on this is incorrect!
-std::string Disass::disass_thumb_long_bl(uint16_t opcode)
+std::string Disass::disass_thumb_long_bl(u16 opcode)
 {
 
     bool first = !is_set(opcode,11);
 
     // 4 byte instr made up of two "sub ops"
     int32_t offset1 = opcode & 0x7ff;
-    uint16_t opcode2 = mem.read_mem<uint16_t>(pc);
+    u16 opcode2 = mem.read_mem<u16>(pc);
     pc += ARM_HALF_SIZE;
     int offset2 = opcode2 & 0x7ff;
 
@@ -491,13 +491,13 @@ std::string Disass::disass_thumb_long_bl(uint16_t opcode)
     offset1 <<= 12;
     offset1 = sign_extend<int32_t>(offset1,23);
 
-    uint32_t addr = (offset2 << 1) + (pc + offset1);
+    u32 addr = (offset2 << 1) + (pc + offset1);
     return fmt::format("bl #0x{:08x} ; {}",addr, first? "first" : "second");
 
 }
 
 
-std::string Disass::disass_thumb_mcas_imm(uint16_t opcode)
+std::string Disass::disass_thumb_mcas_imm(u16 opcode)
 {
     const static char *names[4] = {"mov","cmp","add","sub"};
 
@@ -505,13 +505,13 @@ std::string Disass::disass_thumb_mcas_imm(uint16_t opcode)
 
     int rd = (opcode >> 8) & 0x7;
 
-    uint8_t imm = opcode & 0xff;
+    u8 imm = opcode & 0xff;
 
 
     return fmt::format("{} {}, #0x{:02x}",names[op],user_regs_names[rd],imm);
 }
 
-std::string Disass::disass_thumb_ldr_pc(uint16_t opcode)
+std::string Disass::disass_thumb_ldr_pc(u16 opcode)
 {
     int rd = (opcode >> 8) & 0x7;
 
@@ -521,7 +521,7 @@ std::string Disass::disass_thumb_ldr_pc(uint16_t opcode)
     return fmt::format("ldr {}, [pc,#0x{:x}]",user_regs_names[rd],offset);
 }
 
-std::string Disass::disass_thumb_mov_reg_shift(uint16_t opcode)
+std::string Disass::disass_thumb_mov_reg_shift(u16 opcode)
 {
     int rd = opcode & 0x7;
     int rs = (opcode >> 3) & 0x7;
@@ -535,19 +535,19 @@ std::string Disass::disass_thumb_mov_reg_shift(uint16_t opcode)
 }
 
 
-std::string Disass::disass_thumb_cond_branch(uint16_t opcode)
+std::string Disass::disass_thumb_cond_branch(u16 opcode)
 {
     int8_t offset = opcode & 0xff;
-    uint32_t addr = (pc+2) + offset*2;
+    u32 addr = (pc+2) + offset*2;
     int cond = (opcode >> 8) & 0xf;
 
     return fmt::format("b{} #0x{:08x}",suf_array[cond],addr);
 }
 
-std::string Disass::disass_thumb_unknown(uint16_t opcode)
+std::string Disass::disass_thumb_unknown(u16 opcode)
 {
     /*
-    uint8_t op = get_thumb_opcode_bits(opcode);
+    u8 op = get_thumb_opcode_bits(opcode);
     printf("[disass-thumb]%08x:unknown opcode %04x:%x\n",pc,opcode,op);
     cpu->print_regs();
     exit(1);

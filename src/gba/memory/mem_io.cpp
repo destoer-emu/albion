@@ -15,7 +15,7 @@ void KeyCnt::init()
     irq_cond = false; // 0 at least one is pressed, 1 all pressed
 }
 
-uint8_t KeyCnt::read(int idx) const
+u8 KeyCnt::read(int idx) const
 {
     switch(idx)
     {
@@ -32,7 +32,7 @@ uint8_t KeyCnt::read(int idx) const
     return 0;
 }
 
-void KeyCnt::write(int idx, uint8_t v)
+void KeyCnt::write(int idx, u8 v)
 {
     switch(idx)
     {
@@ -72,7 +72,7 @@ void SioCnt::init()
 }
 
 
-void SioCnt::write(int idx, uint8_t v)
+void SioCnt::write(int idx, u8 v)
 {
     switch(idx)
     {
@@ -96,7 +96,7 @@ void SioCnt::write(int idx, uint8_t v)
 }
 
 
-uint8_t SioCnt::read(int idx) const
+u8 SioCnt::read(int idx) const
 {
     switch(idx)
     {
@@ -142,7 +142,7 @@ void WaitCnt::init()
 }
 
 
-void WaitCnt::write(int idx, uint8_t v)
+void WaitCnt::write(int idx, u8 v)
 {
     switch(idx)
     {
@@ -168,7 +168,7 @@ void WaitCnt::write(int idx, uint8_t v)
 }
 
 
-uint8_t WaitCnt::read(int idx)
+u8 WaitCnt::read(int idx)
 {
     switch(idx)
     {

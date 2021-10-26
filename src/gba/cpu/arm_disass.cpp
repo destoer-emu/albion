@@ -275,7 +275,7 @@ std::string Disass::disass_arm_hds_data_transfer(uint32_t opcode)
         bool w = is_set(opcode,21);
         if(i)
         {
-            uint8_t imm = opcode & 0xf;
+            u8 imm = opcode & 0xf;
             imm |= (opcode >> 4) & 0xf0;
             addr_str = fmt::format("[{},{}#0x{:02x}]{}",user_regs_names[rn],
                 u? "" : "-",imm,w? "!" : "");
@@ -293,7 +293,7 @@ std::string Disass::disass_arm_hds_data_transfer(uint32_t opcode)
     {
         if(i)
         {
-            uint8_t imm = opcode & 0xf;
+            u8 imm = opcode & 0xf;
             imm |= (opcode >> 8) & 0xf;
             addr_str = fmt::format("[{}], {}#0x{:02x}",user_regs_names[rn],
                 u? "" : "-",imm);

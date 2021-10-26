@@ -113,7 +113,7 @@ void Cpu::update_intr_fire() noexcept
 	interrupt_fire = interrupt_req && interrupt_enable;
 }
 
-uint8_t Cpu::fetch_opcode() noexcept
+u8 Cpu::fetch_opcode() noexcept
 {
 	// need to fetch this before we do the tick
 	// just incase we are executing from somewhere volatile
@@ -249,7 +249,7 @@ void Cpu::tima_inc() noexcept
 bool Cpu::internal_tima_bit_set() const noexcept
 {
 
-	const uint8_t freq = mem.io[IO_TMC] & 0x3;
+	const u8 freq = mem.io[IO_TMC] & 0x3;
 	const int bit = freq_arr[freq];
 
 	return is_set(internal_timer,bit);
@@ -258,7 +258,7 @@ bool Cpu::internal_tima_bit_set() const noexcept
 int Cpu::get_next_timer_event() const noexcept
 {
 	// find what happens next
-	const uint8_t freq = mem.io[IO_TMC] & 0x3;
+	const u8 freq = mem.io[IO_TMC] & 0x3;
 	const int timer_bit = freq_arr[freq];
 
 	const int sequencer_bit = is_double? 13 : 12;
@@ -304,7 +304,7 @@ void Cpu::insert_new_timer_event() noexcept
 	scheduler.insert(timer_event,false); 
 }
 
-void Cpu::update_timers(uint32_t cycles) noexcept
+void Cpu::update_timers(u32 cycles) noexcept
 {
 
 	// internal timer actions occur on a falling edge
@@ -316,7 +316,7 @@ void Cpu::update_timers(uint32_t cycles) noexcept
 
 
 	// note bit is + 1 as we are checking the next one over has changed
-	const uint8_t freq = mem.io[IO_TMC] & 0x3;
+	const u8 freq = mem.io[IO_TMC] & 0x3;
 	const int timer_bit = freq_arr[freq]+1;
 
 
@@ -490,7 +490,7 @@ void Cpu::request_interrupt(int interrupt) noexcept
 
 void Cpu::do_interrupts() noexcept
 {
-	const uint16_t source = pc;
+	const u16 source = pc;
 
 	// interrupt has fired disable ime
 	interrupt_enable = false;
@@ -556,7 +556,7 @@ void Cpu::do_interrupts() noexcept
 // https://gbdev.io/pandocs/#sprite-ram-bug
 // todo trigger on read and writes along with interrupts
 // this is still buggy for effect tests
-uint32_t Cpu::get_cur_oam_row() const
+u32 Cpu::get_cur_oam_row() const
 {
 	// ok so get the row off the scheduler
 	// oam is 20 by 8 rows
@@ -579,7 +579,7 @@ uint32_t Cpu::get_cur_oam_row() const
 	return row; 
 }
 
-bool Cpu::oam_should_corrupt(uint16_t v) const noexcept
+bool Cpu::oam_should_corrupt(u16 v) const noexcept
 {
 	// only affects dmg (i think the tests have to be forced to dmg...)
 	if(is_cgb)
@@ -604,7 +604,7 @@ bool Cpu::oam_should_corrupt(uint16_t v) const noexcept
 }
 
 // eqiv to an increment
-void Cpu::oam_bug_write(uint16_t v)
+void Cpu::oam_bug_write(u16 v)
 {
 	scheduler.service_events();
 	if(!oam_should_corrupt(v))
@@ -622,22 +622,22 @@ void Cpu::oam_bug_write(uint16_t v)
 	}
 
 	// first word overwritten with corruption
-	const uint16_t addr = row*8;
+	const u16 addr = row*8;
 
 	const auto addr_prev = (row-1)*8;
-	const auto a = handle_read<uint16_t>(mem.oam,addr);
-	const auto b = handle_read<uint16_t>(mem.oam,addr_prev);
-	const auto c = handle_read<uint16_t>(mem.oam,addr_prev + 4);
+	const auto a = handle_read<u16>(mem.oam,addr);
+	const auto b = handle_read<u16>(mem.oam,addr_prev);
+	const auto c = handle_read<u16>(mem.oam,addr_prev + 4);
 
-	const uint16_t corruption = ((a ^ c) & (b ^ c)) ^ c;
+	const u16 corruption = ((a ^ c) & (b ^ c)) ^ c;
 
-	handle_write<uint16_t>(mem.oam,addr,corruption);
+	handle_write<u16>(mem.oam,addr,corruption);
 
 	// last 3 words overwritten with ones from previous row
 	memcpy(&mem.oam[addr+2],&mem.oam[addr_prev + 2],6);
 }
 
-void Cpu::oam_bug_read(uint16_t v)
+void Cpu::oam_bug_read(u16 v)
 {
 	scheduler.service_events();
 	if(!oam_should_corrupt(v))
@@ -655,23 +655,23 @@ void Cpu::oam_bug_read(uint16_t v)
 	}
 
 	// first word overwritten with corruption
-	const uint16_t addr = row*8;
+	const u16 addr = row*8;
 
 	const auto addr_prev = (row-1)*8;
-	const auto a = handle_read<uint16_t>(mem.oam,addr);
-	const auto b = handle_read<uint16_t>(mem.oam,addr_prev);
-	const auto c = handle_read<uint16_t>(mem.oam,addr_prev + 4);
+	const auto a = handle_read<u16>(mem.oam,addr);
+	const auto b = handle_read<u16>(mem.oam,addr_prev);
+	const auto c = handle_read<u16>(mem.oam,addr_prev + 4);
 
-	const uint16_t corruption = b | (a & c);
+	const u16 corruption = b | (a & c);
 
-	handle_write<uint16_t>(mem.oam,addr,corruption);
+	handle_write<u16>(mem.oam,addr,corruption);
 
 	// last 3 words overwritten with ones from previous row
 	memcpy(&mem.oam[addr+2],&mem.oam[addr_prev + 2],6);
 
 }
 
-void Cpu::oam_bug_read_increment(uint16_t v)
+void Cpu::oam_bug_read_increment(u16 v)
 {
 	scheduler.service_events();
 	if(!oam_should_corrupt(v))
@@ -688,16 +688,16 @@ void Cpu::oam_bug_read_increment(uint16_t v)
 	}
 
 	// first word overwritten with corruption
-	const uint16_t addr = row*8;
+	const u16 addr = row*8;
 
 	const auto addr_prev = (row-1)*8;
-	const auto a = handle_read<uint16_t>(mem.oam,(row-2)*8);
-	const auto b = handle_read<uint16_t>(mem.oam,addr_prev);
-	const auto c = handle_read<uint16_t>(mem.oam,addr);	
-	const auto d = handle_read<uint16_t>(mem.oam,addr_prev+4);
+	const auto a = handle_read<u16>(mem.oam,(row-2)*8);
+	const auto b = handle_read<u16>(mem.oam,addr_prev);
+	const auto c = handle_read<u16>(mem.oam,addr);	
+	const auto d = handle_read<u16>(mem.oam,addr_prev+4);
 
-	const uint16_t corruption = (b & (a | c | d)) | (a & c & d);
-	handle_write<uint16_t>(mem.oam,addr_prev,corruption);
+	const u16 corruption = (b & (a | c | d)) | (a & c & d);
+	handle_write<u16>(mem.oam,addr_prev,corruption);
 	memcpy(&mem.oam[addr+2],&mem.oam[addr_prev + 2],6);
 	memcpy(&mem.oam[((row-2)*8)+2],&mem.oam[addr_prev + 2],6);
 

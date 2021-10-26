@@ -11,7 +11,7 @@ enum class rom_type
 
 struct RomInfo
 {
-    void init(std::vector<uint8_t> &rom, std::string romname);
+    void init(std::vector<u8> &rom, std::string romname);
 
     unsigned int no_ram_banks = 0;
     unsigned int no_rom_banks = 0;

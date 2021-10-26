@@ -22,15 +22,15 @@ struct DmaReg
     DmaReg(int reg);
     void init();
 
-    uint32_t src;
-    uint32_t dst;
-    uint16_t word_count;
+    u32 src;
+    u32 dst;
+    u16 word_count;
     
     // internal copies reloaded upon enable
     // or upon repeat
-    uint32_t src_shadow;
-    uint32_t dst_shadow;
-    uint16_t word_count_shadow;
+    u32 src_shadow;
+    u32 dst_shadow;
+    u16 word_count_shadow;
 
 
     int dst_cnt; // 0 = inc, 1 = dec, 3 = inc/reload
@@ -61,12 +61,12 @@ struct Dma
 
     void handle_dma(dma_type req_type);
 
-    void write_source(int reg_num,int idx, uint8_t v);
-    void write_dest(int reg_num,int idx, uint8_t v);
-    void write_count(int reg_num,int idx, uint8_t v);
+    void write_source(int reg_num,int idx, u8 v);
+    void write_dest(int reg_num,int idx, u8 v);
+    void write_count(int reg_num,int idx, u8 v);
 
-    void write_control(int reg_num,int idx, uint8_t v);
-    uint8_t read_control(int reg_num,int idx);
+    void write_control(int reg_num,int idx, u8 v);
+    u8 read_control(int reg_num,int idx);
 
     void turn_off_video_capture();
 
@@ -92,7 +92,7 @@ struct Dma
     };
 
     std::array<bool,4> dma_request;
-    uint32_t req_count = 0;
+    u32 req_count = 0;
 };
 
 };

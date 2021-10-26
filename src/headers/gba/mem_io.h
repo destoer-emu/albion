@@ -9,10 +9,10 @@ struct KeyCnt
     KeyCnt();
     void init();
 
-    uint8_t read(int idx) const;
-    void write(int idx, uint8_t v);
+    u8 read(int idx) const;
+    void write(int idx, u8 v);
 
-    uint16_t key_cnt; // what button do we care about
+    u16 key_cnt; // what button do we care about
     bool irq_enable_flag; // enable irq
     bool irq_cond; // 0 at least one is pressed, 1 all pressed
 };
@@ -23,8 +23,8 @@ struct SioCnt
     SioCnt();
     void init();
 
-    uint8_t read(int idx) const;
-    void write(int idx, uint8_t v);
+    u8 read(int idx) const;
+    void write(int idx, u8 v);
 
     int shift_clock;
     int internal_shift_clock;
@@ -41,8 +41,8 @@ struct WaitCnt
     WaitCnt();
     void init();
 
-    void write(int idx, uint8_t v);
-    uint8_t read(int idx);
+    void write(int idx, u8 v);
+    u8 read(int idx);
 
     int sram_cnt;
     int wait01;
@@ -61,11 +61,11 @@ struct MemIo
 {
     MemIo();
     void init();
-    uint16_t keyinput;    
+    u16 keyinput;    
     KeyCnt key_control;
     WaitCnt wait_cnt;
     SioCnt siocnt;
-    uint8_t postflg;
+    u8 postflg;
 };
 
 

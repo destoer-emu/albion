@@ -4,37 +4,37 @@ namespace gameboyadvance
 {
 
 // template instantsation for our memory reads
-template uint8_t Mem::read_mem<uint8_t>(uint32_t addr);
-template uint16_t Mem::read_mem<uint16_t>(uint32_t addr);
-template uint32_t Mem::read_mem<uint32_t>(uint32_t addr);
+template u8 Mem::read_mem<u8>(u32 addr);
+template u16 Mem::read_mem<u16>(u32 addr);
+template u32 Mem::read_mem<u32>(u32 addr);
 
-template uint8_t Mem::read_memt<uint8_t>(uint32_t addr);
-template uint16_t Mem::read_memt<uint16_t>(uint32_t addr);
-template uint32_t Mem::read_memt<uint32_t>(uint32_t addr);
+template u8 Mem::read_memt<u8>(u32 addr);
+template u16 Mem::read_memt<u16>(u32 addr);
+template u32 Mem::read_memt<u32>(u32 addr);
 
-template uint8_t Mem::read_memt_no_debug<uint8_t>(uint32_t addr);
-template uint16_t Mem::read_memt_no_debug<uint16_t>(uint32_t addr);
-template uint32_t Mem::read_memt_no_debug<uint32_t>(uint32_t addr);
+template u8 Mem::read_memt_no_debug<u8>(u32 addr);
+template u16 Mem::read_memt_no_debug<u16>(u32 addr);
+template u32 Mem::read_memt_no_debug<u32>(u32 addr);
 
 
-template void Mem::write_mem<uint8_t>(uint32_t addr, uint8_t v);
-template void Mem::write_mem<uint16_t>(uint32_t addr, uint16_t v);
-template void Mem::write_mem<uint32_t>(uint32_t addr, uint32_t v);
+template void Mem::write_mem<u8>(u32 addr, u8 v);
+template void Mem::write_mem<u16>(u32 addr, u16 v);
+template void Mem::write_mem<u32>(u32 addr, u32 v);
 
-template void Mem::write_memt<uint8_t>(uint32_t addr, uint8_t v);
-template void Mem::write_memt<uint16_t>(uint32_t addr, uint16_t v);
-template void Mem::write_memt<uint32_t>(uint32_t addr, uint32_t v);
+template void Mem::write_memt<u8>(u32 addr, u8 v);
+template void Mem::write_memt<u16>(u32 addr, u16 v);
+template void Mem::write_memt<u32>(u32 addr, u32 v);
 
-template void Mem::write_memt_no_debug<uint8_t>(uint32_t addr, uint8_t v);
-template void Mem::write_memt_no_debug<uint16_t>(uint32_t addr, uint16_t v);
-template void Mem::write_memt_no_debug<uint32_t>(uint32_t addr, uint32_t v);
+template void Mem::write_memt_no_debug<u8>(u32 addr, u8 v);
+template void Mem::write_memt_no_debug<u16>(u32 addr, u16 v);
+template void Mem::write_memt_no_debug<u32>(u32 addr, u32 v);
 
-template bool Mem::fast_memcpy<uint16_t>(uint32_t src, uint32_t dst, uint32_t n);
-template bool Mem::fast_memcpy<uint32_t>(uint32_t src, uint32_t dst, uint32_t n);
+template bool Mem::fast_memcpy<u16>(u32 src, u32 dst, u32 n);
+template bool Mem::fast_memcpy<u32>(u32 src, u32 dst, u32 n);
 
-template uint32_t Mem::get_waitstates<uint32_t>(uint32_t addr) const;
-template uint32_t Mem::get_waitstates<uint16_t>(uint32_t addr) const;
-template uint32_t Mem::get_waitstates<uint8_t>(uint32_t addr) const;
+template u32 Mem::get_waitstates<u32>(u32 addr) const;
+template u32 Mem::get_waitstates<u16>(u32 addr) const;
+template u32 Mem::get_waitstates<u8>(u32 addr) const;
 
 
 Mem::Mem(GBA &gba) : dma{gba}, debug(gba.debug), cpu(gba.cpu), 
@@ -174,7 +174,7 @@ void Mem::init(std::string filename)
     // account for out of range open bus
     for(int i = ((rom_size-1) & ~1); i < 32*1024*1024; i += 2)
     {
-        handle_write<uint16_t>(rom,i,(i / 2) & 0xffff);
+        handle_write<u16>(rom,i,(i / 2) & 0xffff);
     }
 
 
@@ -204,7 +204,7 @@ void Mem::init(std::string filename)
     page_table.resize(16384);
     for(size_t i = 0; i < page_table.size(); i++)
     {
-        uint32_t base = i * 0x4000;
+        u32 base = i * 0x4000;
 
         const auto mem_region = memory_region_table[(base >> 24) & 0xf];
 
@@ -362,7 +362,7 @@ void Mem::frame_end()
 }
 
 
-void Mem::write_timer_control(int timer,uint8_t v)
+void Mem::write_timer_control(int timer,u8 v)
 {
     
     auto &t = cpu.cpu_io.timers[timer];
@@ -382,7 +382,7 @@ void Mem::write_timer_control(int timer,uint8_t v)
 }
 
 
-uint8_t Mem::read_timer_counter(int timer, int idx)
+u8 Mem::read_timer_counter(int timer, int idx)
 {
     const auto event_type = static_cast<gba_event>(timer+static_cast<int>(gba_event::timer0));
     const auto active = scheduler.is_active(event_type);
@@ -398,7 +398,7 @@ uint8_t Mem::read_timer_counter(int timer, int idx)
     return cpu.cpu_io.timers[timer].read_counter(idx);
 }
 
-void Mem::write_io_regs(uint32_t addr,uint8_t v)
+void Mem::write_io_regs(u32 addr,u8 v)
 {
     // io not mirrored bar one undocumented register
     if(addr >= 0x04000400)
@@ -931,7 +931,7 @@ void Mem::write_io_regs(uint32_t addr,uint8_t v)
 
 
 
-uint8_t Mem::read_io_regs(uint32_t addr)
+u8 Mem::read_io_regs(u32 addr)
 {
     // todo optimise this
     if(addr >= 0x04000400)
@@ -1232,7 +1232,7 @@ void Mem::check_joypad_intr()
 
 
 template<typename access_type>
-uint32_t align_addr(uint32_t addr)
+u32 align_addr(u32 addr)
 {
     // only allow up to 32bit
     static_assert(sizeof(access_type) <= 4);
@@ -1248,13 +1248,13 @@ uint32_t align_addr(uint32_t addr)
 
 
 template<typename access_type>
-access_type Mem::read_mem_handler(uint32_t addr)
+access_type Mem::read_mem_handler(u32 addr)
 {
     const auto page = addr >> 14;
     if(page_table[page] != nullptr)
     {
         access_type v;
-        const uint8_t *buf = page_table[page] + (addr & (0x4000-1));
+        const u8 *buf = page_table[page] + (addr & (0x4000-1));
         memcpy(&v,buf,sizeof(v));
         return v;
     }
@@ -1323,7 +1323,7 @@ access_type Mem::read_mem_handler(uint32_t addr)
                     }
 
                     // handle non 8 bit accesses
-                    uint32_t ans = sram[addr & 0x7fff];
+                    u32 ans = sram[addr & 0x7fff];
                     // some of these dont work nicely...
                     if constexpr(sizeof(access_type) > 1)
                     {
@@ -1351,7 +1351,7 @@ access_type Mem::read_mem_handler(uint32_t addr)
 
  // read mem unticked
 template<typename access_type>
-access_type Mem::read_mem(uint32_t addr)
+access_type Mem::read_mem(u32 addr)
 {
     addr = align_addr<access_type>(addr);   
     return read_mem_handler<access_type>(addr);
@@ -1359,7 +1359,7 @@ access_type Mem::read_mem(uint32_t addr)
 
 
 template<typename access_type>
-access_type Mem::read_memt(uint32_t addr)
+access_type Mem::read_memt(u32 addr)
 {
     const auto v = read_memt_no_debug<access_type>(addr);
 #ifdef DEBUG
@@ -1375,14 +1375,14 @@ access_type Mem::read_memt(uint32_t addr)
 
 // timed memory access
 template<typename access_type>
-access_type Mem::read_memt_no_debug(uint32_t addr)
+access_type Mem::read_memt_no_debug(u32 addr)
 {
     const auto v = read_mem<access_type>(addr);
     tick_mem_access<access_type>(addr);
     return v;
 }
 
-bool Mem::is_eeprom(uint32_t addr) const
+bool Mem::is_eeprom(u32 addr) const
 {
     return cart_type == save_type::eeprom
         && (addr >= 0x0DFFFF00 || ((rom_size < 32*1024*1024) && (addr >= 0x0D000000))) 
@@ -1390,7 +1390,7 @@ bool Mem::is_eeprom(uint32_t addr) const
 }
 
 
-uint8_t Mem::read_eeprom()
+u8 Mem::read_eeprom()
 {
     // return garbage
     if(eeprom_idx < 4)
@@ -1418,7 +1418,7 @@ uint8_t Mem::read_eeprom()
 
 
 
-void Mem::write_eeprom(uint8_t v)
+void Mem::write_eeprom(u8 v)
 {
     // ok check for an active dma3 xfer
     // then we will use the word size to get the addr length
@@ -1548,7 +1548,7 @@ void Mem::write_eeprom(uint8_t v)
 // write mem
  // write mem unticked
 template<typename access_type>
-void Mem::write_mem(uint32_t addr,access_type v)
+void Mem::write_mem(u32 addr,access_type v)
 {
     addr = align_addr<access_type>(addr);
 
@@ -1635,7 +1635,7 @@ void Mem::write_mem(uint32_t addr,access_type v)
 
 
 template<typename access_type>
-void Mem::write_memt_no_debug(uint32_t addr, access_type v)
+void Mem::write_memt_no_debug(u32 addr, access_type v)
 {
     write_mem<access_type>(addr,v);
     tick_mem_access<access_type>(addr);    
@@ -1644,7 +1644,7 @@ void Mem::write_memt_no_debug(uint32_t addr, access_type v)
 
 // ticked access
 template<typename access_type>
-void Mem::write_memt(uint32_t addr,access_type v)
+void Mem::write_memt(u32 addr,access_type v)
 {
 #ifdef DEBUG
     if(debug.breakpoint_hit(addr,v,break_type::write))
@@ -1717,7 +1717,7 @@ void Mem::update_wait_states()
 
 
 template<typename access_type>
-uint32_t Mem::get_waitstates(uint32_t addr) const
+u32 Mem::get_waitstates(u32 addr) const
 {
     static_assert(sizeof(access_type) <= 4);
 
@@ -1755,20 +1755,20 @@ uint32_t Mem::get_waitstates(uint32_t addr) const
 
 
 template<>
-uint8_t Mem::read_io<uint8_t>(uint32_t addr)
+u8 Mem::read_io<u8>(u32 addr)
 {
     return read_io_regs(addr);
 }
 
 template<>
-uint16_t Mem::read_io<uint16_t>(uint32_t addr)
+u16 Mem::read_io<u16>(u32 addr)
 {
     return read_io_regs(addr)
         | read_io_regs(addr+1) << 8;
 }
 
 template<>
-uint32_t Mem::read_io<uint32_t>(uint32_t addr)
+u32 Mem::read_io<u32>(u32 addr)
 {
     return read_io_regs(addr)
         | read_io_regs(addr+1) << 8
@@ -1779,14 +1779,14 @@ uint32_t Mem::read_io<uint32_t>(uint32_t addr)
 
 
 template<typename access_type>
-access_type Mem::read_oam(uint32_t addr)
+access_type Mem::read_oam(u32 addr)
 {
     //return oam[addr & 0x3ff];
     return handle_read<access_type>(oam,addr&0x3ff);   
 }
 
 template<typename access_type>
-access_type Mem::read_vram(uint32_t addr)
+access_type Mem::read_vram(u32 addr)
 {
     //return vram[addr-0x06000000];
     addr = addr & 0x1FFFF;
@@ -1800,28 +1800,28 @@ access_type Mem::read_vram(uint32_t addr)
 }
 
 template<typename access_type>
-access_type Mem::read_pal_ram(uint32_t addr)
+access_type Mem::read_pal_ram(u32 addr)
 {
     //return pal_ram[addr & 0x3ff];
     return handle_read<access_type>(pal_ram,addr&0x3ff);
 }
 
 template<typename access_type>
-access_type Mem::read_board_wram(uint32_t addr)
+access_type Mem::read_board_wram(u32 addr)
 {
     //return board_wram[addr & 0x3ffff];
     return handle_read<access_type>(board_wram,addr&0x3ffff);
 }
 
 template<typename access_type>
-access_type Mem::read_chip_wram(uint32_t addr)
+access_type Mem::read_chip_wram(u32 addr)
 {
     //return chip_wram[addr & 0x7fff];
     return handle_read<access_type>(chip_wram,addr&0x7fff);
 }
 
 template<typename access_type>
-access_type Mem::read_bios(uint32_t addr)
+access_type Mem::read_bios(u32 addr)
 {
     //return bios_rom[addr];
     return handle_read<access_type>(bios_rom,addr&0x3fff);
@@ -1830,7 +1830,7 @@ access_type Mem::read_bios(uint32_t addr)
 
 // as io has side effects we need to write to it byte by byte
 template<>
-void Mem::write_io<uint8_t>(uint32_t addr,uint8_t v)
+void Mem::write_io<u8>(u32 addr,u8 v)
 {
     //io[addr & 0x3ff] = v;
     write_io_regs(addr,v);
@@ -1838,7 +1838,7 @@ void Mem::write_io<uint8_t>(uint32_t addr,uint8_t v)
 
 
 template<>
-void Mem::write_io<uint16_t>(uint32_t addr,uint16_t v)
+void Mem::write_io<u16>(u32 addr,u16 v)
 {
     //io[addr & 0x3ff] = v;
     write_io_regs(addr,v&0x000000ff);
@@ -1847,7 +1847,7 @@ void Mem::write_io<uint16_t>(uint32_t addr,uint16_t v)
 
 
 template<>
-void Mem::write_io<uint32_t>(uint32_t addr,uint32_t v)
+void Mem::write_io<u32>(u32 addr,u32 v)
 {
     //io[addr & 0x3ff] = v;
     write_io_regs(addr,v&0x000000ff);
@@ -1859,11 +1859,11 @@ void Mem::write_io<uint32_t>(uint32_t addr,uint32_t v)
 
 
 template<typename access_type>
-void Mem::write_oam(uint32_t addr,access_type v)
+void Mem::write_oam(u32 addr,access_type v)
 {
     UNUSED(v);
     // 8bit write restricted
-    if constexpr(!std::is_same<access_type,uint8_t>())
+    if constexpr(!std::is_same<access_type,u8>())
     {
         //oam[addr & 0x3ff] = v;
         handle_write<access_type>(oam,addr&0x3ff,v);
@@ -1873,7 +1873,7 @@ void Mem::write_oam(uint32_t addr,access_type v)
 
 
 template<typename access_type>
-void Mem::write_vram(uint32_t addr,access_type v)
+void Mem::write_vram(u32 addr,access_type v)
 {
     addr = addr & 0x1FFFF;
     if(addr > 0x17fff)
@@ -1883,7 +1883,7 @@ void Mem::write_vram(uint32_t addr,access_type v)
     }
 
     // 8bit write does weird stuff depending on address
-    if constexpr(std::is_same<access_type,uint8_t>())
+    if constexpr(std::is_same<access_type,u8>())
     {
         const bool is_bitmap = disp.disp_io.disp_cnt.bg_mode >= 3;
         // data written to upper and lower halfword
@@ -1910,13 +1910,13 @@ void Mem::write_vram(uint32_t addr,access_type v)
 }
 
 template<typename access_type>
-void Mem::write_pal_ram(uint32_t addr,access_type v)
+void Mem::write_pal_ram(u32 addr,access_type v)
 {
     addr &= 0x3ff;
 
     // 8bit write causes data to wrote to both bytes
     // of the accessed halfword
-    if constexpr(std::is_same<access_type,uint8_t>())
+    if constexpr(std::is_same<access_type,u8>())
     {
         pal_ram[addr & ~1] = v;
         pal_ram[(addr & ~1) + 1] = v;
@@ -1930,27 +1930,27 @@ void Mem::write_pal_ram(uint32_t addr,access_type v)
 }
 
 template<typename access_type>
-void Mem::write_board_wram(uint32_t addr,access_type v)
+void Mem::write_board_wram(u32 addr,access_type v)
 {
     //return board_wram[addr & 0x3ffff] = v;
     handle_write<access_type>(board_wram,addr&0x3ffff,v);
 }
 
 template<typename access_type>
-void Mem::write_chip_wram(uint32_t addr,access_type v)
+void Mem::write_chip_wram(u32 addr,access_type v)
 {
     //chip_wram[addr & 0x7fff] = v;
     handle_write<access_type>(chip_wram,addr&0x7fff,v);
 }
 
 
-uint32_t Mem::align_addr_to_region(uint32_t addr) const
+u32 Mem::align_addr_to_region(u32 addr) const
 {
     const auto region = static_cast<int>(memory_region_table[(addr >> 24) & 0xf]);
     return addr & region_info[region].mask;
 }
 
-bool Mem::can_fast_memcpy(uint32_t dst, uint32_t src, uint32_t bytes) const
+bool Mem::can_fast_memcpy(u32 dst, u32 src, u32 bytes) const
 {
     const auto src_reg = memory_region_table[(src >> 24) & 0xf];
     const auto dst_reg = memory_region_table[(dst >> 24) & 0xf];
@@ -1990,7 +1990,7 @@ bool Mem::can_fast_memcpy(uint32_t dst, uint32_t src, uint32_t bytes) const
 }
 
 template<typename access_type>
-bool Mem::fast_memcpy(uint32_t dst, uint32_t src, uint32_t n)
+bool Mem::fast_memcpy(u32 dst, u32 src, u32 n)
 {
     static_assert(sizeof(access_type) >= 2);
 
@@ -2010,8 +2010,8 @@ bool Mem::fast_memcpy(uint32_t dst, uint32_t src, uint32_t n)
     const auto src_reg = memory_region_table[(src >> 24) & 0xf];
     const auto dst_reg = memory_region_table[(dst >> 24) & 0xf];
 
-    uint8_t *src_ptr = backing_vec[static_cast<size_t>(src_reg)];
-    uint8_t *dst_ptr = backing_vec[static_cast<size_t>(dst_reg)];
+    u8 *src_ptr = backing_vec[static_cast<size_t>(src_reg)];
+    u8 *dst_ptr = backing_vec[static_cast<size_t>(dst_reg)];
 
     assert(src_ptr != nullptr);
     assert(dst_ptr != nullptr);

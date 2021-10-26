@@ -47,7 +47,7 @@ struct Disass
     };
 
     using ARM_DISASS_FPTR = std::string (Disass::*)(uint32_t opcode);
-    using THUMB_DISASS_FPTR = std::string (Disass::*)(uint16_t opcode);
+    using THUMB_DISASS_FPTR = std::string (Disass::*)(u16 opcode);
     std::vector<ARM_DISASS_FPTR> disass_arm_table;
     std::vector<THUMB_DISASS_FPTR> disass_thumb_table;
     void init_arm_disass_table();
@@ -70,26 +70,26 @@ struct Disass
     std::string disass_arm_swi(uint32_t opcode);
 
     // thumb disassembling
-    std::string disass_thumb_ldr_pc(uint16_t opcode);
-    std::string disass_thumb_mov_reg_shift(uint16_t opcode);
-    std::string disass_thumb_unknown(uint16_t opcode);
-    std::string disass_thumb_cond_branch(uint16_t opcode);
-    std::string disass_thumb_mcas_imm(uint16_t opcode);
-    std::string disass_thumb_long_bl(uint16_t opcode);
-    std::string disass_thumb_alu(uint16_t opcode);
-    std::string disass_thumb_add_sub(uint16_t opcode);
-    std::string disass_thumb_multiple_load_store(uint16_t opcode);
-    std::string disass_thumb_hi_reg_ops(uint16_t opcode);
-    std::string disass_thumb_ldst_imm(uint16_t opcode);
-    std::string disass_thumb_push_pop(uint16_t opcode);
-    std::string disass_thumb_load_store_sbh(uint16_t opcode);
-    std::string disass_thumb_load_store_half(uint16_t opcode);
-    std::string disass_thumb_branch(uint16_t opcode);
-    std::string disass_thumb_get_rel_addr(uint16_t opcode);
-    std::string disass_thumb_load_store_reg(uint16_t opcode);
-    std::string disass_thumb_swi(uint16_t opcode);
-    std::string disass_thumb_sp_add(uint16_t opcode);
-    std::string disass_thumb_load_store_sp(uint16_t opcode);
+    std::string disass_thumb_ldr_pc(u16 opcode);
+    std::string disass_thumb_mov_reg_shift(u16 opcode);
+    std::string disass_thumb_unknown(u16 opcode);
+    std::string disass_thumb_cond_branch(u16 opcode);
+    std::string disass_thumb_mcas_imm(u16 opcode);
+    std::string disass_thumb_long_bl(u16 opcode);
+    std::string disass_thumb_alu(u16 opcode);
+    std::string disass_thumb_add_sub(u16 opcode);
+    std::string disass_thumb_multiple_load_store(u16 opcode);
+    std::string disass_thumb_hi_reg_ops(u16 opcode);
+    std::string disass_thumb_ldst_imm(u16 opcode);
+    std::string disass_thumb_push_pop(u16 opcode);
+    std::string disass_thumb_load_store_sbh(u16 opcode);
+    std::string disass_thumb_load_store_half(u16 opcode);
+    std::string disass_thumb_branch(u16 opcode);
+    std::string disass_thumb_get_rel_addr(u16 opcode);
+    std::string disass_thumb_load_store_reg(u16 opcode);
+    std::string disass_thumb_swi(u16 opcode);
+    std::string disass_thumb_sp_add(u16 opcode);
+    std::string disass_thumb_load_store_sp(u16 opcode);
 };
 
 }

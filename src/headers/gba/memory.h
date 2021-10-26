@@ -50,7 +50,7 @@ struct Mem final
 
 
     template<typename access_type>
-    bool fast_memcpy(uint32_t dst, uint32_t src, uint32_t n);
+    bool fast_memcpy(u32 dst, u32 src, u32 n);
 
     void save_cart_ram();
 
@@ -62,35 +62,35 @@ struct Mem final
     // will have to specialize the pointer for each type...
 
     template<typename access_type>
-    uint32_t get_waitstates(uint32_t addr) const;
+    u32 get_waitstates(u32 addr) const;
 
     template<typename access_type>
-    access_type read_mem(uint32_t addr);
+    access_type read_mem(u32 addr);
     template<typename access_type>
-    access_type read_mem_handler(uint32_t addr);
+    access_type read_mem_handler(u32 addr);
 
     template<typename access_type>
-    access_type read_memt(uint32_t addr);
+    access_type read_memt(u32 addr);
 
 
     template<typename access_type>
-    access_type read_memt_no_debug(uint32_t addr);
+    access_type read_memt_no_debug(u32 addr);
 
 
     // read mem
     //access handler for reads (for non io mapped mem)
     // need checks for endianess here for completeness
     template<typename access_type>
-    void write_mem(uint32_t addr,access_type v);
+    void write_mem(u32 addr,access_type v);
 
     template<typename access_type>    
-    void write_memt(uint32_t addr,access_type v);
+    void write_memt(u32 addr,access_type v);
 
     template<typename access_type>
-    void write_memt_no_debug(uint32_t addr, access_type v);
+    void write_memt_no_debug(u32 addr, access_type v);
 
     template<typename access_type>
-    void tick_mem_access(uint32_t addr)
+    void tick_mem_access(u32 addr)
     {
         // only allow up to 32bit
         static_assert(sizeof(access_type) <= 4);
@@ -100,105 +100,105 @@ struct Mem final
 
 #ifdef DEBUG
     template<typename access_type>
-    using WRITE_MEM_FPTR = void (Mem::*)(uint32_t addr,access_type data);
+    using WRITE_MEM_FPTR = void (Mem::*)(u32 addr,access_type data);
 
-    WRITE_MEM_FPTR<uint32_t> write_u32_fptr = &Mem::write_memt_no_debug<uint32_t>;
-    WRITE_MEM_FPTR<uint16_t> write_u16_fptr = &Mem::write_memt_no_debug<uint16_t>;
-    WRITE_MEM_FPTR<uint8_t> write_u8_fptr  = &Mem::write_memt_no_debug<uint8_t>;
+    WRITE_MEM_FPTR<u32> write_u32_fptr = &Mem::write_memt_no_debug<u32>;
+    WRITE_MEM_FPTR<u16> write_u16_fptr = &Mem::write_memt_no_debug<u16>;
+    WRITE_MEM_FPTR<u8> write_u8_fptr  = &Mem::write_memt_no_debug<u8>;
 
 
     template<typename access_type>
-    using READ_MEM_FPTR = access_type (Mem::*)(uint32_t addr);
+    using READ_MEM_FPTR = access_type (Mem::*)(u32 addr);
 
-    READ_MEM_FPTR<uint32_t> read_u32_fptr = &Mem::read_memt_no_debug<uint32_t>;
-    READ_MEM_FPTR<uint16_t> read_u16_fptr = &Mem::read_memt_no_debug<uint16_t>;
-    READ_MEM_FPTR<uint8_t> read_u8_fptr = &Mem::read_memt_no_debug<uint8_t>;
+    READ_MEM_FPTR<u32> read_u32_fptr = &Mem::read_memt_no_debug<u32>;
+    READ_MEM_FPTR<u16> read_u16_fptr = &Mem::read_memt_no_debug<u16>;
+    READ_MEM_FPTR<u8> read_u8_fptr = &Mem::read_memt_no_debug<u8>;
 
 
     void change_breakpoint_enable(bool enabled)
     {
         if(enabled)
         {
-            read_u32_fptr = &Mem::read_memt<uint32_t>;
-            read_u16_fptr = &Mem::read_memt<uint16_t>;
-            read_u8_fptr = &Mem::read_memt<uint8_t>;
+            read_u32_fptr = &Mem::read_memt<u32>;
+            read_u16_fptr = &Mem::read_memt<u16>;
+            read_u8_fptr = &Mem::read_memt<u8>;
             
-            write_u32_fptr = &Mem::write_memt<uint32_t>;
-            write_u16_fptr = &Mem::write_memt<uint16_t>;
-            write_u8_fptr  = &Mem::write_memt<uint8_t>;
+            write_u32_fptr = &Mem::write_memt<u32>;
+            write_u16_fptr = &Mem::write_memt<u16>;
+            write_u8_fptr  = &Mem::write_memt<u8>;
         }
 
         else
         {
-            read_u32_fptr = &Mem::read_memt_no_debug<uint32_t>;
-            read_u16_fptr = &Mem::read_memt_no_debug<uint16_t>;
-            read_u8_fptr = &Mem::read_memt_no_debug<uint8_t>;
+            read_u32_fptr = &Mem::read_memt_no_debug<u32>;
+            read_u16_fptr = &Mem::read_memt_no_debug<u16>;
+            read_u8_fptr = &Mem::read_memt_no_debug<u8>;
             
-            write_u32_fptr = &Mem::write_memt_no_debug<uint32_t>;
-            write_u16_fptr = &Mem::write_memt_no_debug<uint16_t>;
-            write_u8_fptr  = &Mem::write_memt_no_debug<uint8_t>;
+            write_u32_fptr = &Mem::write_memt_no_debug<u32>;
+            write_u16_fptr = &Mem::write_memt_no_debug<u16>;
+            write_u8_fptr  = &Mem::write_memt_no_debug<u8>;
         }
     }
 #endif
 
     // wrapper to optimise away debug check
-    void write_u8(uint32_t addr , uint8_t v)
+    void write_u8(u32 addr , u8 v)
     {
         #ifdef DEBUG
             std::invoke(write_u8_fptr,this,addr,v);
         #else
-            write_memt<uint8_t>(addr,v);
+            write_memt<u8>(addr,v);
         #endif
     }
 
-    void write_u16(uint32_t addr , uint16_t v)
+    void write_u16(u32 addr , u16 v)
     {
         #ifdef DEBUG
             std::invoke(write_u16_fptr,this,addr,v);
         #else
-            write_memt_no_debug<uint16_t>(addr,v);
+            write_memt_no_debug<u16>(addr,v);
         #endif
     }
 
-    void write_u32(uint32_t addr, uint32_t v)
+    void write_u32(u32 addr, u32 v)
     {
         #ifdef DEBUG
             std::invoke(write_u32_fptr,this,addr,v);
         #else
-            write_memt_no_debug<uint32_t>(addr,v);
+            write_memt_no_debug<u32>(addr,v);
         #endif
     }
 
-    uint8_t read_u8(uint32_t addr)
+    u8 read_u8(u32 addr)
     {
         #ifdef DEBUG
             return std::invoke(read_u8_fptr,this,addr);
         #else
-            return read_memt_no_debug<uint8_t>(addr);
+            return read_memt_no_debug<u8>(addr);
         #endif
     }
 
-    uint16_t read_u16(uint32_t addr)
+    u16 read_u16(u32 addr)
     {
         #ifdef DEBUG
             return std::invoke(read_u16_fptr,this,addr);
         #else
-            return read_memt_no_debug<uint16_t>(addr);
+            return read_memt_no_debug<u16>(addr);
         #endif
     }
 
-    uint32_t read_u32(uint32_t addr)
+    u32 read_u32(u32 addr)
     {
         #ifdef DEBUG
             return std::invoke(read_u32_fptr,this,addr);
         #else
-            return read_memt_no_debug<uint32_t>(addr);
+            return read_memt_no_debug<u32>(addr);
         #endif
     }
 
     // gba is locked to little endian
     template<typename access_type>
-    access_type read_rom(uint32_t addr)
+    access_type read_rom(u32 addr)
     {
         //return rom[addr - <whatever page start>];
         return handle_read<access_type>(rom,addr&0x1FFFFFF);        
@@ -216,19 +216,19 @@ struct Mem final
     // io regs
     // we split this across various regs
     // but this is how much it would take up
-    //std::vector<uint8_t> io; // 0x400 
+    //std::vector<u8> io; // 0x400 
     MemIo mem_io;
 
     // video ram
-    std::vector<uint8_t> vram; // 0x18000
+    std::vector<u8> vram; // 0x18000
 
     // display memory
 
     // bg/obj pallette ram
-    std::vector<uint8_t> pal_ram; // 0x400
+    std::vector<u8> pal_ram; // 0x400
 
     // object attribute map
-    std::vector<uint8_t> oam; // 0x400 
+    std::vector<u8> oam; // 0x400 
 
     // inited by main constructor
     Dma dma;
@@ -237,28 +237,28 @@ struct Mem final
 
     // general memory
     // bios code
-    std::vector<uint8_t> bios_rom; // 0x4000
+    std::vector<u8> bios_rom; // 0x4000
 
     // on board work ram
-    std::vector<uint8_t> board_wram; // 0x40000
+    std::vector<u8> board_wram; // 0x40000
 
     // on chip wram
-    std::vector<uint8_t> chip_wram; // 0x8000
+    std::vector<u8> chip_wram; // 0x8000
 
     // cart save ram
-    std::vector<uint8_t> sram; // 0x8000
+    std::vector<u8> sram; // 0x8000
 
 
     struct RegionData
     {
-        RegionData(uint32_t m, uint32_t s)
+        RegionData(u32 m, u32 s)
         {
             mask = m;
             size =s;
         }
 
-        uint32_t mask;
-        uint32_t size;
+        u32 mask;
+        u32 size;
     };
 
     // note this assumes that accesses are in bounds
@@ -278,9 +278,9 @@ struct Mem final
         {0,0}, // not valid
     };
 
-    uint8_t* region_ptr[10];
+    u8* region_ptr[10];
 
-    std::vector<uint8_t*> page_table;
+    std::vector<u8*> page_table;
 
     Debug &debug;
     Cpu &cpu;
@@ -291,68 +291,68 @@ struct Mem final
 
     // read mem helpers
     template<typename access_type>
-    access_type read_bios(uint32_t addr);
+    access_type read_bios(u32 addr);
 
     template<typename access_type>
-    access_type read_board_wram(uint32_t addr);
+    access_type read_board_wram(u32 addr);
 
     template<typename access_type>
-    access_type read_chip_wram(uint32_t addr);
+    access_type read_chip_wram(u32 addr);
 
     template<typename access_type>
-    access_type read_io(uint32_t addr);
+    access_type read_io(u32 addr);
     
     // underlying handler for read_io
-    uint8_t read_io_regs(uint32_t addr);
+    u8 read_io_regs(u32 addr);
 
     template<typename access_type>
-    access_type read_pal_ram(uint32_t addr);
+    access_type read_pal_ram(u32 addr);
 
     template<typename access_type>
-    access_type read_vram(uint32_t addr);
+    access_type read_vram(u32 addr);
 
     template<typename access_type>
-    access_type read_oam(uint32_t addr);
+    access_type read_oam(u32 addr);
 
-    uint8_t read_eeprom();
+    u8 read_eeprom();
 
     // write mem helpers
     template<typename access_type>
-    void write_board_wram(uint32_t addr,access_type v);
+    void write_board_wram(u32 addr,access_type v);
 
     template<typename access_type>
-    void write_chip_wram(uint32_t addr,access_type v);
+    void write_chip_wram(u32 addr,access_type v);
 
     template<typename access_type>
-    void write_io(uint32_t addr,access_type v);
+    void write_io(u32 addr,access_type v);
 
     // underlying handler for write_io
-    void write_io_regs(uint32_t addr,uint8_t v);
+    void write_io_regs(u32 addr,u8 v);
 
     template<typename access_type>
-    void write_pal_ram(uint32_t addr,access_type v);
+    void write_pal_ram(u32 addr,access_type v);
 
     template<typename access_type>
-    void write_vram(uint32_t addr,access_type v);
+    void write_vram(u32 addr,access_type v);
 
     template<typename access_type>
-    void write_oam(uint32_t addr,access_type v);
+    void write_oam(u32 addr,access_type v);
 
 
 
-    void write_eeprom(uint8_t v);
+    void write_eeprom(u8 v);
 
-    bool is_eeprom(uint32_t addr) const;
+    bool is_eeprom(u32 addr) const;
 
     void update_wait_states();
 
-    void write_timer_control(int timer,uint8_t v);
-    uint8_t read_timer_counter(int timer, int idx);
+    void write_timer_control(int timer,u8 v);
+    u8 read_timer_counter(int timer, int idx);
 
 
-    uint8_t *backing_vec[10] = {nullptr};
-    bool can_fast_memcpy(uint32_t dst, uint32_t src,uint32_t n) const;
-    uint32_t align_addr_to_region(uint32_t addr) const;
+    u8 *backing_vec[10] = {nullptr};
+    bool can_fast_memcpy(u32 dst, u32 src,u32 n) const;
+    u32 align_addr_to_region(u32 addr) const;
 
 
 
@@ -391,7 +391,7 @@ struct Mem final
         save_type::flash
     };
 
-    static constexpr uint32_t save_sizes[CART_TYPE_SIZE] = 
+    static constexpr u32 save_sizes[CART_TYPE_SIZE] = 
     {
         0x2000, // is eeprom size done by heurstic?
         0x8000,
@@ -450,54 +450,54 @@ struct Mem final
         read_active
     };
 
-    std::vector<uint8_t> eeprom; // 0x2000
+    std::vector<u8> eeprom; // 0x2000
     int addr_size;
     int eeprom_idx;
     int eeprom_command;
-    uint32_t eeprom_addr;
+    u32 eeprom_addr;
     uint64_t eeprom_data;
     eeprom_state state;
-    uint32_t rom_size;
+    u32 rom_size;
 
     // external memory
 
     // main game rom
-    std::vector<uint8_t> rom; // variable
+    std::vector<u8> rom; // variable
 };
 
 
 // template instantsation for our memory reads
-extern template uint8_t Mem::read_mem<uint8_t>(uint32_t addr);
-extern template uint16_t Mem::read_mem<uint16_t>(uint32_t addr);
-extern template uint32_t Mem::read_mem<uint32_t>(uint32_t addr);
+extern template u8 Mem::read_mem<u8>(u32 addr);
+extern template u16 Mem::read_mem<u16>(u32 addr);
+extern template u32 Mem::read_mem<u32>(u32 addr);
 
-extern template uint8_t Mem::read_memt<uint8_t>(uint32_t addr);
-extern template uint16_t Mem::read_memt<uint16_t>(uint32_t addr);
-extern template uint32_t Mem::read_memt<uint32_t>(uint32_t addr);
+extern template u8 Mem::read_memt<u8>(u32 addr);
+extern template u16 Mem::read_memt<u16>(u32 addr);
+extern template u32 Mem::read_memt<u32>(u32 addr);
 
-extern template uint8_t Mem::read_memt_no_debug<uint8_t>(uint32_t addr);
-extern template uint16_t Mem::read_memt_no_debug<uint16_t>(uint32_t addr);
-extern template uint32_t Mem::read_memt_no_debug<uint32_t>(uint32_t addr);
+extern template u8 Mem::read_memt_no_debug<u8>(u32 addr);
+extern template u16 Mem::read_memt_no_debug<u16>(u32 addr);
+extern template u32 Mem::read_memt_no_debug<u32>(u32 addr);
 
 // and for writes
-extern template void Mem::write_mem<uint8_t>(uint32_t addr, uint8_t v);
-extern template void Mem::write_mem<uint16_t>(uint32_t addr, uint16_t v);
-extern template void Mem::write_mem<uint32_t>(uint32_t addr, uint32_t v);
+extern template void Mem::write_mem<u8>(u32 addr, u8 v);
+extern template void Mem::write_mem<u16>(u32 addr, u16 v);
+extern template void Mem::write_mem<u32>(u32 addr, u32 v);
 
-extern template void Mem::write_memt<uint8_t>(uint32_t addr, uint8_t v);
-extern template void Mem::write_memt<uint16_t>(uint32_t addr, uint16_t v);
-extern template void Mem::write_memt<uint32_t>(uint32_t addr, uint32_t v);
+extern template void Mem::write_memt<u8>(u32 addr, u8 v);
+extern template void Mem::write_memt<u16>(u32 addr, u16 v);
+extern template void Mem::write_memt<u32>(u32 addr, u32 v);
 
-extern template void Mem::write_memt_no_debug<uint8_t>(uint32_t addr, uint8_t v);
-extern template void Mem::write_memt_no_debug<uint16_t>(uint32_t addr, uint16_t v);
-extern template void Mem::write_memt_no_debug<uint32_t>(uint32_t addr, uint32_t v);
-
-
-extern template bool Mem::fast_memcpy<uint16_t>(uint32_t src, uint32_t dst, uint32_t n);
-extern template bool Mem::fast_memcpy<uint32_t>(uint32_t src, uint32_t dst, uint32_t n);
+extern template void Mem::write_memt_no_debug<u8>(u32 addr, u8 v);
+extern template void Mem::write_memt_no_debug<u16>(u32 addr, u16 v);
+extern template void Mem::write_memt_no_debug<u32>(u32 addr, u32 v);
 
 
-extern template uint32_t Mem::get_waitstates<uint32_t>(uint32_t addr) const;
-extern template uint32_t Mem::get_waitstates<uint16_t>(uint32_t addr) const;
-extern template uint32_t Mem::get_waitstates<uint8_t>(uint32_t addr) const;
+extern template bool Mem::fast_memcpy<u16>(u32 src, u32 dst, u32 n);
+extern template bool Mem::fast_memcpy<u32>(u32 src, u32 dst, u32 n);
+
+
+extern template u32 Mem::get_waitstates<u32>(u32 addr) const;
+extern template u32 Mem::get_waitstates<u16>(u32 addr) const;
+extern template u32 Mem::get_waitstates<u8>(u32 addr) const;
 }

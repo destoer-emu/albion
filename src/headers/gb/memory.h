@@ -28,14 +28,14 @@ struct Memory final
 
     bool is_lcd_enabled() const noexcept;
 
-    void tick_dma(uint32_t cycles) noexcept;
+    void tick_dma(u32 cycles) noexcept;
 
     void lock_vram();
     void unlock_vram();
 
-    using WRITE_MEM_FPTR = void (Memory::*)(uint16_t addr,uint8_t data) noexcept;
-    using READ_MEM_FPTR = uint8_t (Memory::*)(uint16_t addr) const noexcept;
-    using READ_MEM_MUT_FPTR = uint8_t (Memory::*)(uint16_t addr) noexcept;
+    using WRITE_MEM_FPTR = void (Memory::*)(u16 addr,u8 data) noexcept;
+    using READ_MEM_FPTR = u8 (Memory::*)(u16 addr) const noexcept;
+    using READ_MEM_MUT_FPTR = u8 (Memory::*)(u16 addr) noexcept;
 #ifdef DEBUG
 
     WRITE_MEM_FPTR write_mem_fptr;
@@ -66,22 +66,22 @@ struct Memory final
 
 
     // public access functions
-    inline uint8_t read_mem(uint16_t addr) const noexcept
+    inline u8 read_mem(u16 addr) const noexcept
     {
         return std::invoke(read_mem_fptr,this,addr);
     }
 
-    inline void write_mem(uint16_t addr, uint8_t v) noexcept
+    inline void write_mem(u16 addr, u8 v) noexcept
     {
         std::invoke(write_mem_fptr,this,addr,v);
     }
 
-    uint8_t read_iot(uint16_t addr) noexcept
+    u8 read_iot(u16 addr) noexcept
     {
         return std::invoke(read_iot_fptr,this,addr);
     }
 
-    void write_iot(uint16_t addr,uint8_t v) noexcept
+    void write_iot(u16 addr,u8 v) noexcept
     {
        std::invoke(write_iot_fptr,this,addr,v);
     }
@@ -89,54 +89,54 @@ struct Memory final
 
 #else
     // public access functions
-    inline uint8_t read_mem(uint16_t addr) const noexcept
+    inline u8 read_mem(u16 addr) const noexcept
     {
         return read_mem_no_debug(addr);
     }
 
-    inline void write_mem(uint16_t addr, uint8_t v) noexcept
+    inline void write_mem(u16 addr, u8 v) noexcept
     {
         write_mem_no_debug(addr,v);
     }
 
-    uint8_t read_iot(uint16_t addr) noexcept
+    u8 read_iot(u16 addr) noexcept
     {
         return read_iot_no_debug(addr);
     }
 
-    void write_iot(uint16_t addr,uint8_t v) noexcept
+    void write_iot(u16 addr,u8 v) noexcept
     {
         write_iot_no_debug(addr,v);
     }
 
 #endif
 
-    uint16_t read_word(uint16_t addr) noexcept;
-    void write_word(uint16_t addr, uint16_t v) noexcept;
-    uint8_t read_iot_no_debug(uint16_t addr) noexcept;
+    u16 read_word(u16 addr) noexcept;
+    void write_word(u16 addr, u16 v) noexcept;
+    u8 read_iot_no_debug(u16 addr) noexcept;
 
     // memory accesses (timed)
-    uint8_t read_memt(uint16_t addr) noexcept;
-    uint8_t read_memt_no_oam_bug(uint16_t addr) noexcept;
-    void write_memt(uint16_t addr, uint8_t v) noexcept;
-    void write_memt_no_oam_bug(uint16_t addr, uint8_t v) noexcept;
-    uint16_t read_wordt(uint16_t addr) noexcept;
-    void write_wordt(uint16_t addr, uint16_t v) noexcept;
-    void write_io(uint16_t addr,uint8_t v) noexcept;
-    void write_iot_no_debug(uint16_t addr,uint8_t v) noexcept;
+    u8 read_memt(u16 addr) noexcept;
+    u8 read_memt_no_oam_bug(u16 addr) noexcept;
+    void write_memt(u16 addr, u8 v) noexcept;
+    void write_memt_no_oam_bug(u16 addr, u8 v) noexcept;
+    u16 read_wordt(u16 addr) noexcept;
+    void write_wordt(u16 addr, u16 v) noexcept;
+    void write_io(u16 addr,u8 v) noexcept;
+    void write_iot_no_debug(u16 addr,u8 v) noexcept;
 
     // public underlying memory for direct access
     // required for handling io and vram
-    std::vector<uint8_t> io; // 0x100
-    std::vector<std::vector<uint8_t>> vram; // 0x4000
-    std::vector<uint8_t> oam; // 0xa0
-    std::array<uint8_t*,16> page_table;
+    std::vector<u8> io; // 0x100
+    std::vector<std::vector<u8>> vram; // 0x4000
+    std::vector<u8> oam; // 0xa0
+    std::array<u8*,16> page_table;
 
     // direct write access no side affects
-    void raw_write(uint16_t addr, uint8_t v) noexcept;
-    void raw_write_word(uint16_t addr, uint16_t v) noexcept;
-    uint8_t raw_read(uint16_t addr) const noexcept;
-    uint16_t raw_read_word(uint16_t addr) const noexcept;
+    void raw_write(u16 addr, u8 v) noexcept;
+    void raw_write_word(u16 addr, u16 v) noexcept;
+    u8 raw_read(u16 addr) const noexcept;
+    u16 raw_read_word(u16 addr) const noexcept;
 
     void update_page_table_bank();
     void update_page_table_sram();
@@ -176,78 +176,78 @@ struct Memory final
     GBDebug &debug;
 
 #ifdef DEBUG
-    uint8_t read_mem_debug(uint16_t addr) const noexcept;
-    void write_mem_debug(uint16_t addr, uint8_t v) noexcept;
-    uint8_t read_iot_debug(uint16_t addr) noexcept;
-    void write_iot_debug(uint16_t addr, uint8_t v) noexcept;
+    u8 read_mem_debug(u16 addr) const noexcept;
+    void write_mem_debug(u16 addr, u8 v) noexcept;
+    u8 read_iot_debug(u16 addr) noexcept;
+    void write_iot_debug(u16 addr, u8 v) noexcept;
 #endif
 
-    uint8_t read_mem_no_debug(uint16_t addr) const noexcept;
-    void write_mem_no_debug(uint16_t addr, uint8_t v) noexcept;
+    u8 read_mem_no_debug(u16 addr) const noexcept;
+    void write_mem_no_debug(u16 addr, u8 v) noexcept;
 
-    void do_dma(uint8_t v) noexcept;
+    void do_dma(u8 v) noexcept;
 
     void init_mem_table() noexcept;
     void init_banking_table() noexcept;
 
     // read mem underyling
-    uint8_t read_oam(uint16_t addr) const noexcept;
-    uint8_t read_vram(uint16_t addr) const noexcept;
-    uint8_t read_cart_ram(uint16_t addr) const noexcept;
-    uint8_t read_io(uint16_t addr) const noexcept; 
-    uint8_t read_rom_bank(uint16_t addr) const noexcept;
-    uint8_t read_bank_zero(uint16_t addr) const noexcept;
-    uint8_t read_wram_low(uint16_t addr) const noexcept;
-    uint8_t read_wram_high(uint16_t addr) const noexcept;
-    uint8_t read_hram(uint16_t addr) const noexcept;
+    u8 read_oam(u16 addr) const noexcept;
+    u8 read_vram(u16 addr) const noexcept;
+    u8 read_cart_ram(u16 addr) const noexcept;
+    u8 read_io(u16 addr) const noexcept; 
+    u8 read_rom_bank(u16 addr) const noexcept;
+    u8 read_bank_zero(u16 addr) const noexcept;
+    u8 read_wram_low(u16 addr) const noexcept;
+    u8 read_wram_high(u16 addr) const noexcept;
+    u8 read_hram(u16 addr) const noexcept;
 
     // write mem underlying
-    void write_oam(uint16_t addr,uint8_t v) noexcept;
-    void write_vram(uint16_t addr,uint8_t v) noexcept;
-    void write_wram_low(uint16_t addr,uint8_t v) noexcept;
-    void write_wram_high(uint16_t addr,uint8_t v) noexcept;
-    void write_hram(uint16_t addr,uint8_t v) noexcept;
-    void write_cart_ram(uint16_t addr, uint8_t v) noexcept;
+    void write_oam(u16 addr,u8 v) noexcept;
+    void write_vram(u16 addr,u8 v) noexcept;
+    void write_wram_low(u16 addr,u8 v) noexcept;
+    void write_wram_high(u16 addr,u8 v) noexcept;
+    void write_hram(u16 addr,u8 v) noexcept;
+    void write_cart_ram(u16 addr, u8 v) noexcept;
 
     // banking functions (when writes go to the rom area)
-    void ram_bank_enable(uint16_t address, uint8_t v) noexcept;
-    void banking_unused(uint16_t addr, uint8_t v) noexcept;
+    void ram_bank_enable(u16 address, u8 v) noexcept;
+    void banking_unused(u16 addr, u8 v) noexcept;
 
     // read out of the bios
-    uint8_t read_bios(uint16_t addr) const noexcept;
+    u8 read_bios(u16 addr) const noexcept;
 
     void oam_dma_disable() noexcept;
     void oam_dma_enable() noexcept;
 
-    uint8_t read_oam_dma(uint16_t addr) const noexcept;
+    u8 read_oam_dma(u16 addr) const noexcept;
 
-    void write_blocked(uint16_t addr, uint8_t v) noexcept;
-    uint8_t read_blocked(uint16_t addr) const noexcept;
+    void write_blocked(u16 addr, u8 v) noexcept;
+    u8 read_blocked(u16 addr) const noexcept;
 
 
 
     // mbc1
-    void change_lo_rom_bank_mbc1(uint16_t address, uint8_t v) noexcept;
-    void mbc1_banking_change(uint16_t address, uint8_t v) noexcept; 
-    void change_mode_mbc1(uint16_t address, uint8_t v) noexcept;
+    void change_lo_rom_bank_mbc1(u16 address, u8 v) noexcept;
+    void mbc1_banking_change(u16 address, u8 v) noexcept; 
+    void change_mode_mbc1(u16 address, u8 v) noexcept;
     void change_hi_rom_bank_mbc1() noexcept;
     void ram_bank_change_mbc1() noexcept;   
-    uint8_t read_rom_lower_mbc1(uint16_t addr) const noexcept;
+    u8 read_rom_lower_mbc1(u16 addr) const noexcept;
 
     // mbc3
-    void change_rom_bank_mbc3(uint16_t address,uint8_t v) noexcept;
-    void mbc3_ram_bank_change(uint16_t address,uint8_t v) noexcept;
+    void change_rom_bank_mbc3(u16 address,u8 v) noexcept;
+    void mbc3_ram_bank_change(u16 address,u8 v) noexcept;
 
     // mbc2
-    void lower_bank_write_mbc2(uint16_t address, uint8_t v) noexcept;
-    void write_cart_ram_mbc2(uint16_t addr, uint8_t v) noexcept;
-    uint8_t read_cart_ram_mbc2(uint16_t addr) const noexcept;
+    void lower_bank_write_mbc2(u16 address, u8 v) noexcept;
+    void write_cart_ram_mbc2(u16 addr, u8 v) noexcept;
+    u8 read_cart_ram_mbc2(u16 addr) const noexcept;
 
     //mbc5
-    void mbc5_ram_bank_change(uint16_t address,uint8_t data) noexcept;
-    void change_hi_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept;
-    void change_lo_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept;
-    void ram_bank_enable_mbc5(uint16_t address, uint8_t v) noexcept;
+    void mbc5_ram_bank_change(u16 address,u8 data) noexcept;
+    void change_hi_rom_bank_mbc5(u16 address,u8 data) noexcept;
+    void change_lo_rom_bank_mbc5(u16 address,u8 data) noexcept;
+    void ram_bank_enable_mbc5(u16 address, u8 v) noexcept;
 
 
     // cgb
@@ -267,11 +267,11 @@ struct Memory final
     int mbc1_bank2 = 0;
 
 	// underlying memory
-    std::vector<uint8_t> bios;
-    std::vector<uint8_t> wram; // 0x1000
-    std::vector<std::vector<uint8_t>> cgb_wram_bank; // 0x7000 
-    std::vector<uint8_t> rom; // variable
-    std::vector<std::vector<uint8_t>> cart_ram_banks;
+    std::vector<u8> bios;
+    std::vector<u8> wram; // 0x1000
+    std::vector<std::vector<u8>> cgb_wram_bank; // 0x7000 
+    std::vector<u8> rom; // variable
+    std::vector<std::vector<u8>> cart_ram_banks;
 
 
     // sgb

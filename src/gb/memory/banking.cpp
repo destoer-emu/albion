@@ -4,7 +4,7 @@ namespace gameboy
 {
 
 // 0x0000 - 0x1fff
-void Memory::ram_bank_enable(uint16_t address, uint8_t v) noexcept 
+void Memory::ram_bank_enable(u16 address, u8 v) noexcept 
 {
 	UNUSED(address);
 	// no ram banks present dont enable them
@@ -19,7 +19,7 @@ void Memory::ram_bank_enable(uint16_t address, uint8_t v) noexcept
 }
 
 // whole 8 bits matter for mbc5
-void Memory::ram_bank_enable_mbc5(uint16_t address, uint8_t v) noexcept 
+void Memory::ram_bank_enable_mbc5(u16 address, u8 v) noexcept 
 {
 	UNUSED(address);
 	// no ram banks present dont enable them
@@ -39,10 +39,10 @@ void Memory::ram_bank_enable_mbc5(uint16_t address, uint8_t v) noexcept
 // 0x2000 - 0x3fff
 
 // mbc1 low rom bank change sets lower 5 bits of bank index
-void Memory::change_lo_rom_bank_mbc1(uint16_t address, uint8_t v) noexcept 
+void Memory::change_lo_rom_bank_mbc1(u16 address, u8 v) noexcept 
 {
 	UNUSED(address);
-	const uint8_t data = ((v & 0x1f) == 0) ? 1 : (v & 0x1f);
+	const u8 data = ((v & 0x1f) == 0) ? 1 : (v & 0x1f);
 	cart_rom_bank = (cart_rom_bank & ~0x1f) | data;
 	
 	// bank greater than the current number of rom banks wraps back round
@@ -56,7 +56,7 @@ void Memory::change_lo_rom_bank_mbc1(uint16_t address, uint8_t v) noexcept
 // 0x4000 - 0x5fff
 
 // write bank two register
-void Memory::mbc1_banking_change(uint16_t address, uint8_t v) noexcept 
+void Memory::mbc1_banking_change(u16 address, u8 v) noexcept 
 {
 	UNUSED(address);
 	
@@ -74,7 +74,7 @@ void Memory::mbc1_banking_change(uint16_t address, uint8_t v) noexcept
 }
 
 // 0x6000 - 0x7fff
-void Memory::change_mode_mbc1(uint16_t address, uint8_t v) noexcept
+void Memory::change_mode_mbc1(u16 address, u8 v) noexcept
 {
 	UNUSED(address);
 	
@@ -96,7 +96,7 @@ void Memory::change_mode_mbc1(uint16_t address, uint8_t v) noexcept
 
 // a well programmed game should not cause this to be called 
 // but many will
-void Memory::banking_unused(uint16_t address, uint8_t v) noexcept 
+void Memory::banking_unused(u16 address, u8 v) noexcept 
 {
 	UNUSED(address); UNUSED(v);
 	return;
@@ -150,7 +150,7 @@ void Memory::ram_bank_change_mbc1() noexcept
 // this is the outlier and both registers are accessible
 // on alternating on the 9th bit being set of addr
 //0x0000 - 0x4000
-void Memory::lower_bank_write_mbc2(uint16_t address, uint8_t v) noexcept
+void Memory::lower_bank_write_mbc2(u16 address, u8 v) noexcept
 {
 	// ram bank enable
 	// 
@@ -176,7 +176,7 @@ void Memory::lower_bank_write_mbc2(uint16_t address, uint8_t v) noexcept
 
 // mbc3 ( lower 7 bits of rom bank index set here)
 // 0x2000 - 0x4000
-void Memory::change_rom_bank_mbc3(uint16_t address,uint8_t v) noexcept
+void Memory::change_rom_bank_mbc3(u16 address,u8 v) noexcept
 {
 	UNUSED(address);
 	cart_rom_bank = v & 127;
@@ -194,7 +194,7 @@ void Memory::change_rom_bank_mbc3(uint16_t address,uint8_t v) noexcept
 }
 
 // 0x4000 - 0x6000
-void Memory::mbc3_ram_bank_change(uint16_t address,uint8_t v) noexcept
+void Memory::mbc3_ram_bank_change(u16 address,u8 v) noexcept
 {
 	UNUSED(address);
 	// change the ram bank
@@ -224,7 +224,7 @@ void Memory::mbc3_ram_bank_change(uint16_t address,uint8_t v) noexcept
 // mbc5
 
 // 0x2000 - 0x3000 (lower 8 bits)
-void Memory::change_lo_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept
+void Memory::change_lo_rom_bank_mbc5(u16 address,u8 data) noexcept
 {
 	UNUSED(address);
 	cart_rom_bank = (cart_rom_bank & ~0xff) | data;
@@ -239,7 +239,7 @@ void Memory::change_lo_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept
 
 
 //mbc5 (9th bit) (03000 - 0x3fff)
-void Memory::change_hi_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept
+void Memory::change_hi_rom_bank_mbc5(u16 address,u8 data) noexcept
 {
 	UNUSED(address);
 	cart_rom_bank = (cart_rom_bank & 0xff) |  (data & 1) << 8;
@@ -252,7 +252,7 @@ void Memory::change_hi_rom_bank_mbc5(uint16_t address,uint8_t data) noexcept
 
 // 0x4000 - 0x6000
 // mbc5
-void Memory::mbc5_ram_bank_change(uint16_t address,uint8_t data) noexcept
+void Memory::mbc5_ram_bank_change(u16 address,u8 data) noexcept
 {
 	UNUSED(address);
 	cart_ram_bank = data & 0xf;

@@ -11,8 +11,8 @@ struct RefPoint
     void init();
 
     // write only
-    void write_x(int idx, uint8_t v);
-    void write_y(int idx, uint8_t v);
+    void write_x(int idx, u8 v);
+    void write_y(int idx, u8 v);
 
     // bg reference point registers
     // 28bit signed write only
@@ -24,7 +24,7 @@ struct RefPoint
     int32_t int_ref_point_y;
 
 
-    void write(int idx, uint8_t v, int32_t &ref_point, int32_t &int_ref_point);
+    void write(int idx, u8 v, int32_t &ref_point, int32_t &int_ref_point);
 };
 
 
@@ -33,8 +33,8 @@ struct BgCnt
     BgCnt();
     void init();
 
-    void write(int idx, uint8_t v);
-    uint8_t read(int idx) const;
+    void write(int idx, u8 v);
+    u8 read(int idx) const;
 
 
     unsigned int priority;
@@ -68,8 +68,8 @@ struct WinCnt
         bool special_enable = false;        
     };
 
-    uint8_t read(int window) const;
-    void write(int window, uint8_t v);
+    u8 read(int window) const;
+    void write(int window, u8 v);
 
 
     WinCnt();
@@ -85,9 +85,9 @@ struct BgOffset
     void init();
 
     // write only
-    void write(int idx, uint8_t v);
+    void write(int idx, u8 v);
 
-    uint16_t offset;
+    u16 offset;
 };
 
 struct DispCnt
@@ -95,8 +95,8 @@ struct DispCnt
     DispCnt();
     void init();
 
-    uint8_t read(int idx) const;
-    void write(int idx, uint8_t v);
+    u8 read(int idx) const;
+    void write(int idx, u8 v);
 
     int bg_mode;
     int display_frame;
@@ -116,7 +116,7 @@ struct Mosaic
     Mosaic();
     void init();
 
-    void write(int idx, uint8_t v);
+    void write(int idx, u8 v);
 
     int bg_h_size;
     int bg_v_size;
@@ -141,8 +141,8 @@ struct BldCnt
     BldCnt();
     void init();
 
-    void write(int idx, uint8_t v);
-    uint8_t read(int idx) const;
+    void write(int idx, u8 v);
+    u8 read(int idx) const;
 
     
 
@@ -158,8 +158,8 @@ struct DispStat
     DispStat();
     void init();
 
-    uint8_t read(int idx) const;
-    void write(int idx, uint8_t v);
+    u8 read(int idx) const;
+    void write(int idx, u8 v);
 
 
     bool vblank;
@@ -180,10 +180,10 @@ struct ScalingParam
     void init();
 
     // write only
-    void write_a(int idx,uint8_t v);
-    void write_b(int idx,uint8_t v);
-    void write_c(int idx,uint8_t v);
-    void write_d(int idx,uint8_t v);
+    void write_a(int idx,u8 v);
+    void write_b(int idx,u8 v);
+    void write_c(int idx,u8 v);
+    void write_d(int idx,u8 v);
 
     int16_t a; //dx
     int16_t b; //dmx
@@ -191,7 +191,7 @@ struct ScalingParam
     int16_t d; //dmy
 
 private:
-    void write(int idx, uint8_t v, int16_t &param);
+    void write(int idx, u8 v, int16_t &param);
 };
 
 struct WindowDimensionH
@@ -199,10 +199,10 @@ struct WindowDimensionH
     WindowDimensionH();
     void init();
 
-    void write(int idx, uint8_t v);
+    void write(int idx, u8 v);
 
-    uint8_t x2; // rightmost + 1
-    uint8_t x1; // leftmost
+    u8 x2; // rightmost + 1
+    u8 x1; // leftmost
 };
 
 
@@ -212,10 +212,10 @@ struct WindowDimensionV
     void init();
 
 
-    void write(int idx, uint8_t v);
+    void write(int idx, u8 v);
 
-    uint8_t y2; // bottommost + 1
-    uint8_t y1; // leftmost
+    u8 y2; // bottommost + 1
+    u8 y1; // leftmost
 };
 
 struct DispIo

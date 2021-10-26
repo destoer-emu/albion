@@ -5,7 +5,7 @@ namespace gameboyadvance
 
 // bios hle (very unfinished - no games will boot under it)
 
-void Cpu::swi(uint32_t function)
+void Cpu::swi(u32 function)
 {
     switch(function)
     {
@@ -93,7 +93,7 @@ void Cpu::swi(uint32_t function)
 
             else
             {
-                if(!mem.fast_memcpy<uint32_t>(dst,src,cnt))
+                if(!mem.fast_memcpy<u32>(dst,src,cnt))
                 {
                     for(size_t i = 0; i < cnt; i++)
                     {

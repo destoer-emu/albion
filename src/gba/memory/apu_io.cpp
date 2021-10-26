@@ -43,7 +43,7 @@ void SoundCnt::init()
 
 
 
-void SoundCnt::write_h(int idx, uint8_t v)
+void SoundCnt::write_h(int idx, u8 v)
 {
     switch(idx)
     {
@@ -81,7 +81,7 @@ void SoundCnt::write_h(int idx, uint8_t v)
     }
 }
 
-uint8_t SoundCnt::read_h(int idx) const
+u8 SoundCnt::read_h(int idx) const
 {
     switch(idx)
     {
@@ -131,7 +131,7 @@ void SoundFifo::write(int8_t v)
 int8_t SoundFifo::read()
 {
 
-    uint8_t res = 0;
+    u8 res = 0;
 
     if(len > 0)
     {

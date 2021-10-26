@@ -25,7 +25,7 @@ void Cpu::exec_instr_debug()
 
 
 template<const int REG>
-void Cpu::write_r16_group1(uint16_t v)
+void Cpu::write_r16_group1(u16 v)
 {
 	static_assert(REG <= 3,"register not valid for group");
 
@@ -51,7 +51,7 @@ void Cpu::write_r16_group1(uint16_t v)
 }
 
 template<const int REG>
-void Cpu::write_r8(uint8_t v)
+void Cpu::write_r8(u8 v)
 {
 	static_assert(REG <= 7);
 	if constexpr(REG == 0)
@@ -96,7 +96,7 @@ void Cpu::write_r8(uint8_t v)
 }
 
 template<const int REG>
-uint8_t Cpu::read_r8()
+u8 Cpu::read_r8()
 {
 	static_assert(REG <= 7);
 	if constexpr(REG == 0)
@@ -141,7 +141,7 @@ uint8_t Cpu::read_r8()
 }
 
 template<const int REG>
-uint16_t Cpu::read_r16_group3()
+u16 Cpu::read_r16_group3()
 {
 	static_assert(REG <= 3);
 
@@ -168,7 +168,7 @@ uint16_t Cpu::read_r16_group3()
 
 
 template<const int REG>
-uint16_t Cpu::read_r16_group1()
+u16 Cpu::read_r16_group1()
 {
 	static_assert(REG <= 3,"register not valid for group");
 
@@ -195,7 +195,7 @@ uint16_t Cpu::read_r16_group1()
 
 
 template<const int REG>
-void Cpu::write_r16_group3(uint16_t v)
+void Cpu::write_r16_group3(u16 v)
 {
 	static_assert(REG <= 3);
 
@@ -221,7 +221,7 @@ void Cpu::write_r16_group3(uint16_t v)
 }
 
 template<const int REG>
-void Cpu::write_r16_group2(uint16_t v)
+void Cpu::write_r16_group2(u16 v)
 {
 	static_assert(REG <= 3);
 
@@ -247,7 +247,7 @@ void Cpu::write_r16_group2(uint16_t v)
 }
 
 template<const int REG>
-uint16_t Cpu::read_r16_group2()
+u16 Cpu::read_r16_group2()
 {
 	static_assert(REG <= 3);
 
@@ -322,7 +322,7 @@ void Cpu::nop()
 
 void Cpu::jp()
 {
-	const uint16_t source = pc-1;
+	const u16 source = pc-1;
 	pc = mem.read_wordt(pc);
 	cycle_tick_t(4); // internal
 	debug.trace.add(source,pc);	
@@ -361,8 +361,8 @@ void Cpu::ld_ffu8_a()
 
 void Cpu::call()
 {
-	const uint16_t source = pc-1;
-	uint16_t v = mem.read_wordt(pc);
+	const u16 source = pc-1;
+	u16 v = mem.read_wordt(pc);
 	pc += 2;
 	cycle_tick_t(4); // internal
 	write_stackwt(pc);
@@ -392,7 +392,7 @@ void Cpu::jr()
 
 void Cpu::ret()
 {
-	const uint16_t source = pc-1;
+	const u16 source = pc-1;
 	pc = read_stackwt();	
 	cycle_tick_t(4); // internal
 	debug.trace.add(source,pc);	
@@ -411,7 +411,7 @@ void Cpu::di()
 template<const int REG>
 void Cpu::push()
 {
-	const uint16_t reg = read_r16_group3<REG>();
+	const u16 reg = read_r16_group3<REG>();
 	cycle_tick_t(4); // internal
 	write_stackwt(reg);
 }
@@ -425,7 +425,7 @@ void Cpu::pop()
 template<const int REG>
 void Cpu::dec_r16()
 {
-	const uint16_t reg = read_r16_group1<REG>();
+	const u16 reg = read_r16_group1<REG>();
 	oam_bug_write(reg);
 	cycle_tick_t(4); // internal
 	write_r16_group1<REG>(reg-1);		
@@ -434,7 +434,7 @@ void Cpu::dec_r16()
 template<const int REG>
 void Cpu::inc_r16()
 {
-	const uint16_t reg = read_r16_group1<REG>();
+	const u16 reg = read_r16_group1<REG>();
 	oam_bug_write(reg);
 	cycle_tick_t(4); // internal
 	write_r16_group1<REG>(reg+1);	
@@ -447,7 +447,7 @@ void Cpu::inc_r16()
 template<const int REG>
 void Cpu::ld_a_r16()
 {
-	const uint16_t reg = read_r16_group2<REG>();
+	const u16 reg = read_r16_group2<REG>();
 	a = mem.read_memt(reg);
 
 	// ldi
@@ -463,12 +463,12 @@ void Cpu::ld_a_r16()
 	}
 }
 
-void Cpu::set_zero(uint8_t v)
+void Cpu::set_zero(u8 v)
 {
 	zero = !v;
 }
 
-void Cpu::instr_or(uint8_t v)
+void Cpu::instr_or(u8 v)
 {
 	a |= v;
 	// reset flags
@@ -481,7 +481,7 @@ void Cpu::instr_or(uint8_t v)
 template<const int REG>
 void Cpu::or_r8()
 {
-	const uint8_t v = read_r8<REG>();
+	const u8 v = read_r8<REG>();
 	instr_or(v);
 }
 
@@ -501,7 +501,7 @@ void Cpu::ld_a_ffu8()
 	a = mem.read_iot(0xff00+mem.read_memt(pc++));
 }
 
-void Cpu::instr_cp(uint8_t v)
+void Cpu::instr_cp(u8 v)
 {
 
 	negative = true;
@@ -518,7 +518,7 @@ void Cpu::instr_cp(uint8_t v)
 template<const int REG>
 void Cpu::cp_r8()
 {
-	const uint8_t v = read_r8<REG>();
+	const u8 v = read_r8<REG>();
 	instr_cp(v);
 }
 
@@ -539,7 +539,7 @@ void Cpu::ld_a_u16()
 }
 
 
-void Cpu::instr_and(uint8_t v)
+void Cpu::instr_and(u8 v)
 {
 	// set only the half carry flag
 	half = true;
@@ -565,7 +565,7 @@ void Cpu::and_r8()
 template<const int COND>
 void Cpu::call_cond()
 {
-	const uint16_t source = pc-1;
+	const u16 source = pc-1;
 	const auto v = mem.read_wordt(pc);
 	pc += 2;
 	if(cond<COND>())
@@ -580,7 +580,7 @@ void Cpu::call_cond()
 template<const int REG>
 void Cpu::dec_r8()
 {
-	uint8_t reg = read_r8<REG>();
+	u8 reg = read_r8<REG>();
     reg -= 1;
 
     // the N flag
@@ -596,7 +596,7 @@ void Cpu::dec_r8()
 template<const int REG>
 void Cpu::inc_r8()
 {
-	uint8_t reg = read_r8<REG>();
+	u8 reg = read_r8<REG>();
 
 	// deset negative
 	negative = false;
@@ -612,7 +612,7 @@ void Cpu::inc_r8()
 	write_r8<REG>(reg);
 }
 
-void Cpu::instr_xor(uint8_t v)
+void Cpu::instr_xor(u8 v)
 {
 	// reset flags
 	negative = false;
@@ -626,7 +626,7 @@ void Cpu::instr_xor(uint8_t v)
 template<const int REG>
 void Cpu::xor_r8()
 {
-	const uint8_t reg = read_r8<REG>();
+	const u8 reg = read_r8<REG>();
 	instr_xor(reg);
 }
 
@@ -638,7 +638,7 @@ void Cpu::xor_u8()
 template<const int REG>
 void Cpu::ld_r16_a()
 {
-	const uint16_t reg = read_r16_group2<REG>();
+	const u16 reg = read_r16_group2<REG>();
 	mem.write_memt(reg,a);
 
 	// ldi
@@ -654,7 +654,7 @@ void Cpu::ld_r16_a()
 	}
 }
 
-void Cpu::instr_add(uint8_t v)
+void Cpu::instr_add(u8 v)
 {
 	// deset negative
 	negative = false;
@@ -675,7 +675,7 @@ void Cpu::instr_add(uint8_t v)
 template<const int REG>
 void Cpu::add_r8()
 {
-	const uint8_t reg = read_r8<REG>();
+	const u8 reg = read_r8<REG>();
 	instr_add(reg);
 }
 
@@ -685,7 +685,7 @@ void Cpu::add_u8()
 }
 
 
-void Cpu::instr_sub(uint8_t v)
+void Cpu::instr_sub(u8 v)
 {
 	// set negative
 	negative = true;
@@ -704,7 +704,7 @@ void Cpu::instr_sub(uint8_t v)
 template<const int REG>
 void Cpu::sub_r8()
 {
-	const uint8_t reg = read_r8<REG>();
+	const u8 reg = read_r8<REG>();
 	instr_sub(reg);
 }
 
@@ -715,9 +715,9 @@ void Cpu::sub_u8()
 
 
 // n + carry flag to a
-void Cpu::instr_adc(uint8_t v)
+void Cpu::instr_adc(u8 v)
 {
-	const uint8_t reg = a;
+	const u8 reg = a;
 	
 	const int carry_val = carry ? 1 : 0;
 	
@@ -738,7 +738,7 @@ void Cpu::instr_adc(uint8_t v)
 template<const int REG>
 void Cpu::adc_r8()
 {
-	const uint8_t reg = read_r8<REG>();
+	const u8 reg = read_r8<REG>();
 	instr_adc(reg);	
 }
 
@@ -750,7 +750,7 @@ void Cpu::adc_u8()
 template<const int COND>
 void Cpu::ret_cond()
 {
-	const uint16_t source = pc-1;
+	const u16 source = pc-1;
 	cycle_tick_t(4); // internal
 	if(cond<COND>())
 	{
@@ -763,8 +763,8 @@ void Cpu::ret_cond()
 template<const int REG>
 void Cpu::add_hl_r16()
 {
-	uint16_t dst = hl;
-	const uint16_t oper = read_r16_group1<REG>();
+	u16 dst = hl;
+	const u16 oper = read_r16_group1<REG>();
 
 	// deset negative
 	negative = false;
@@ -783,7 +783,7 @@ void Cpu::add_hl_r16()
 
 void Cpu::jp_hl()
 {
-	const uint16_t source = pc-1;
+	const u16 source = pc-1;
 	pc = hl;
 	debug.trace.add(source,pc);	
 }
@@ -791,7 +791,7 @@ void Cpu::jp_hl()
 template<const int COND>
 void Cpu::jp_cond()
 {
-	const uint16_t source = pc-1;
+	const u16 source = pc-1;
 	const auto v =  mem.read_wordt(pc);
 	pc += 2;
 	if(cond<COND>())
@@ -810,7 +810,7 @@ void Cpu::ld_hl_sp_i8()
 
 
 // for the sp add opcodes
-uint16_t Cpu::instr_addi(int8_t v)
+u16 Cpu::instr_addi(int8_t v)
 {
 	// deset negative & zero
 	negative = false;
@@ -927,9 +927,9 @@ void Cpu::add_sp_i8()
 	cycle_tick_t(8); // internal delay (unsure)	
 }
 
-void Cpu::instr_sbc(uint8_t v)
+void Cpu::instr_sbc(u8 v)
 {
-	const uint8_t reg = a;
+	const u8 reg = a;
 
 	const int carry_val = carry;
 	
@@ -950,7 +950,7 @@ void Cpu::instr_sbc(uint8_t v)
 template<const int REG>
 void Cpu::sbc_r8()
 {
-	const uint8_t reg = read_r8<REG>();
+	const u8 reg = read_r8<REG>();
 	instr_sbc(reg);
 }
 
@@ -961,7 +961,7 @@ void Cpu::sbc_u8()
 
 void Cpu::reti()
 {
-	const uint16_t source = pc-1;
+	const u16 source = pc-1;
 	pc = read_stackwt();	
 	cycle_tick_t(4);// internal
 	interrupt_enable = true; // re-enable interrupts
@@ -972,7 +972,7 @@ void Cpu::reti()
 template<const int ADDR, const int OP>
 void Cpu::rst()
 {
-	const uint16_t source = pc-1;
+	const u16 source = pc-1;
 	if(mem.read_mem(ADDR) == OP)
 	{
 		// if oam dma is active then we there is a chance this wont loop
@@ -1034,14 +1034,14 @@ void Cpu::exec_instr_no_debug()
 
 void Cpu::cb_opcode()
 {
-	const uint8_t cbop = mem.read_memt(pc++);
+	const u8 cbop = mem.read_memt(pc++);
 	std::invoke(cb_table[cbop],this);
 }
 
 template<const int REG>
 void Cpu::srl()
 {
-	uint8_t reg = read_r8<REG>();
+	u8 reg = read_r8<REG>();
 	half = false;
 	negative = false;
 
@@ -1055,7 +1055,7 @@ void Cpu::srl()
 	write_r8<REG>(reg);
 }
 
-uint8_t Cpu::instr_rrc(uint8_t v)
+u8 Cpu::instr_rrc(u8 v)
 {
 	carry = is_set(v,0);
 	
@@ -1083,7 +1083,7 @@ void Cpu::rrc_r8()
 	write_r8<REG>(instr_rrc(read_r8<REG>()));
 }
 
-uint8_t Cpu::instr_rr(uint8_t v)
+u8 Cpu::instr_rr(u8 v)
 {
 	const bool set = is_set(v,0);
 	
@@ -1118,7 +1118,7 @@ void Cpu::rra()
 }
 
 
-uint8_t Cpu::instr_rlc(uint8_t v)
+u8 Cpu::instr_rlc(u8 v)
 {
 	carry = is_set(v,7);
 		
@@ -1150,7 +1150,7 @@ void Cpu::rlc_r8()
 template<const int REG>
 void Cpu::instr_swap()
 {
-	const uint8_t reg = read_r8<REG>();
+	const u8 reg = read_r8<REG>();
 
 	// reset flags
 	negative = false;
@@ -1162,7 +1162,7 @@ void Cpu::instr_swap()
 	write_r8<REG>(((reg & 0x0f) << 4 | (reg & 0xf0) >> 4));	
 }
 
-uint8_t Cpu::instr_rl(uint8_t v)
+u8 Cpu::instr_rl(u8 v)
 {
 	const bool cond = is_set(v,7); // cache if 7 bit is set
 	
@@ -1201,7 +1201,7 @@ void Cpu::rla()
 template<const int REG>
 void Cpu::sla_r8()
 {
-	uint8_t reg = read_r8<REG>();
+	u8 reg = read_r8<REG>();
 	// reset flags
 	half = false;
 	negative = false;
@@ -1218,7 +1218,7 @@ void Cpu::sla_r8()
 template<const int REG>
 void Cpu::sra_r8()
 {
-	uint8_t reg = read_r8<REG>();
+	u8 reg = read_r8<REG>();
 	negative = false;
 	half = false;
 	

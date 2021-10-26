@@ -391,7 +391,7 @@ void Memory::unlock_vram()
 }
 
 
-uint8_t Memory::read_bios(uint16_t addr) const noexcept
+u8 Memory::read_bios(u16 addr) const noexcept
 {
 	if(cpu.is_cgb)
 	{
@@ -437,14 +437,14 @@ void Memory::bios_disable() noexcept
 	memory_table[0x3].read_memf = &Memory::read_bank_zero;
 }
 
-void Memory::raw_write_word(uint16_t addr, uint16_t v) noexcept
+void Memory::raw_write_word(u16 addr, u16 v) noexcept
 {
 	raw_write(addr,v & 0xff);
 	raw_write(addr+1,(v >> 8) & 0xff);
 }
 
 
-void Memory::raw_write(uint16_t addr, uint8_t v) noexcept
+void Memory::raw_write(u16 addr, u8 v) noexcept
 {
 	switch((addr & 0xf000) >> 12)
 	{
@@ -529,12 +529,12 @@ void Memory::raw_write(uint16_t addr, uint8_t v) noexcept
 	}
 }
 
-uint16_t Memory::raw_read_word(uint16_t addr) const noexcept
+u16 Memory::raw_read_word(u16 addr) const noexcept
 {
 	return raw_read(addr) | raw_read(addr+1) << 8;
 }
 
-uint8_t Memory::raw_read(uint16_t addr) const noexcept
+u8 Memory::raw_read(u16 addr) const noexcept
 {
 	switch((addr & 0xf000) >> 12)
 	{
@@ -630,9 +630,9 @@ uint8_t Memory::raw_read(uint16_t addr) const noexcept
 
 // read mem
 #ifdef DEBUG
-uint8_t Memory::read_mem_debug(uint16_t addr) const noexcept
+u8 Memory::read_mem_debug(u16 addr) const noexcept
 {
-	const uint8_t value = read_mem_no_debug(addr);
+	const u8 value = read_mem_no_debug(addr);
 	if(debug.breakpoint_hit(addr,value,break_type::read))
 	{
 		// halt until told otherwhise :)
@@ -644,12 +644,12 @@ uint8_t Memory::read_mem_debug(uint16_t addr) const noexcept
 #endif
 
 
-uint8_t Memory::read_mem_no_debug(uint16_t addr) const noexcept
+u8 Memory::read_mem_no_debug(u16 addr) const noexcept
 {
 	const auto idx = (addr & 0xf000) >> 12;
 	if(page_table[idx] != nullptr)
 	{
-		const uint8_t *buf = page_table[idx] + (addr & 0xfff);
+		const u8 *buf = page_table[idx] + (addr & 0xfff);
 		return *buf;
 	}
 	
@@ -660,7 +660,7 @@ uint8_t Memory::read_mem_no_debug(uint16_t addr) const noexcept
 // write_mem
 
 #ifdef DEBUG
-void Memory::write_mem_debug(uint16_t addr, uint8_t v) noexcept
+void Memory::write_mem_debug(u16 addr, u8 v) noexcept
 {
 	if(debug.breakpoint_hit(addr,v,break_type::write))
 	{
@@ -673,43 +673,43 @@ void Memory::write_mem_debug(uint16_t addr, uint8_t v) noexcept
 }
 #endif
 
-void Memory::write_mem_no_debug(uint16_t addr, uint8_t v) noexcept
+void Memory::write_mem_no_debug(u16 addr, u8 v) noexcept
 {
 	std::invoke(memory_table[(addr & 0xf000) >> 12].write_memf,this,addr,v);	
 }
 
 
-uint16_t Memory::read_word(uint16_t addr) noexcept
+u16 Memory::read_word(u16 addr) noexcept
 {
     return read_mem(addr) | (read_mem(addr+1) << 8);
 }
 
 
-void Memory::write_word(uint16_t addr, uint16_t v) noexcept
+void Memory::write_word(u16 addr, u16 v) noexcept
 {
     write_mem(addr+1,(v&0xff00)>>8);
     write_mem(addr,(v&0x00ff));
 }
 
 // maybe should have an eqiv for optimisation purposes where we know it cant trigger
-uint8_t Memory::read_memt_no_oam_bug(uint16_t addr) noexcept
+u8 Memory::read_memt_no_oam_bug(u16 addr) noexcept
 {
 	ignore_oam_bug = true;
-	uint8_t v = read_mem(addr);
+	u8 v = read_mem(addr);
 	ignore_oam_bug = false;
 	cpu.cycle_tick(1); // tick for the memory access 
     return v;
 }
 
 // memory accesses (timed)
-uint8_t Memory::read_memt(uint16_t addr) noexcept
+u8 Memory::read_memt(u16 addr) noexcept
 {
-    uint8_t v = read_mem(addr);
+    u8 v = read_mem(addr);
 	cpu.cycle_tick(1); // tick for the memory access 
     return v;
 }
 
-void Memory::write_memt_no_oam_bug(uint16_t addr, uint8_t v) noexcept
+void Memory::write_memt_no_oam_bug(u16 addr, u8 v) noexcept
 {
 	ignore_oam_bug = true;
     write_mem(addr,v);
@@ -718,7 +718,7 @@ void Memory::write_memt_no_oam_bug(uint16_t addr, uint8_t v) noexcept
 }
 
 
-void Memory::write_memt(uint16_t addr, uint8_t v) noexcept
+void Memory::write_memt(u16 addr, u8 v) noexcept
 {
 	
     write_mem(addr,v);
@@ -726,13 +726,13 @@ void Memory::write_memt(uint16_t addr, uint8_t v) noexcept
 }
 
 
-uint16_t Memory::read_wordt(uint16_t addr) noexcept
+u16 Memory::read_wordt(u16 addr) noexcept
 {
     return read_memt(addr) | (read_memt(addr+1) << 8);
 }
 
 
-void Memory::write_wordt(uint16_t addr, uint16_t v) noexcept
+void Memory::write_wordt(u16 addr, u16 v) noexcept
 {
     write_memt(addr+1,(v&0xff00)>>8);
     write_memt(addr,(v&0x00ff));
@@ -741,7 +741,7 @@ void Memory::write_wordt(uint16_t addr, uint16_t v) noexcept
 
 // read mem underyling
 // object attribute map 0xfe00 - 0xfe9f
-uint8_t Memory::read_oam(uint16_t addr) const noexcept
+u8 Memory::read_oam(u16 addr) const noexcept
 {
 	if(!ignore_oam_bug)
 	{
@@ -769,7 +769,7 @@ uint8_t Memory::read_oam(uint16_t addr) const noexcept
 }
 
 // video ram 0x8000 - 0xa000
-uint8_t Memory::read_vram(uint16_t addr) const noexcept
+u8 Memory::read_vram(u16 addr) const noexcept
 {
 	scheduler.service_events();
     // vram is used in pixel transfer cannot access
@@ -785,7 +785,7 @@ uint8_t Memory::read_vram(uint16_t addr) const noexcept
 }
 
 // cart  memory 0xa000 - 0xc000
-uint8_t Memory::read_cart_ram(uint16_t addr) const noexcept
+u8 Memory::read_cart_ram(u16 addr) const noexcept
 { 
     if(enable_ram && cart_ram_bank != CART_RAM_BANK_INVALID)
     {
@@ -800,7 +800,7 @@ uint8_t Memory::read_cart_ram(uint16_t addr) const noexcept
 
 // only bottom 4 bits are readable
 // cart  memory 0xa000 - 0xc000
-uint8_t Memory::read_cart_ram_mbc2(uint16_t addr) const noexcept
+u8 Memory::read_cart_ram_mbc2(u16 addr) const noexcept
 {
     if(enable_ram) // fixed for 512by4 bits
     {
@@ -815,7 +815,7 @@ uint8_t Memory::read_cart_ram_mbc2(uint16_t addr) const noexcept
 
 
 // 0xff00 io regs (has side affects)
-uint8_t Memory::read_io(uint16_t addr) const noexcept
+u8 Memory::read_io(u16 addr) const noexcept
 {
 	//printf("%x\n",addr & 0xff);
     switch(addr & 0xff)
@@ -824,7 +824,7 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 		case IO_JOYPAD:
 		{		
 			// read from mem
-			const uint8_t req = io[IO_JOYPAD];
+			const u8 req = io[IO_JOYPAD];
 			// we want to test if bit 5 and 4 are set 
 			// so we can determine what the game is interested
 			// in reading
@@ -1182,9 +1182,9 @@ uint8_t Memory::read_io(uint16_t addr) const noexcept
 }
 
 #ifdef DEBUG
-uint8_t Memory::read_iot_debug(uint16_t addr) noexcept
+u8 Memory::read_iot_debug(u16 addr) noexcept
 {
-	const uint8_t value = read_iot_no_debug(addr);
+	const u8 value = read_iot_no_debug(addr);
 	if(debug.breakpoint_hit(addr,value,break_type::read))
 	{
 		// halt until told otherwhise :)
@@ -1195,24 +1195,24 @@ uint8_t Memory::read_iot_debug(uint16_t addr) noexcept
 }
 #endif
 
-uint8_t Memory::read_iot_no_debug(uint16_t addr) noexcept
+u8 Memory::read_iot_no_debug(u16 addr) noexcept
 {
 	scheduler.service_events();
-    uint8_t v = read_io(addr);
+    u8 v = read_io(addr);
 	cpu.cycle_tick(1); // tick for mem access
     return v;
 }
 
 // for now we will just return the rom
 // 0x4000 - 0x8000 return current rom bank
-uint8_t Memory::read_rom_bank(uint16_t addr) const noexcept
+u8 Memory::read_rom_bank(u16 addr) const noexcept
 {  
 	return rom[cart_rom_bank * 0x4000 + (addr & 0x3fff)];
 }
 
 
 
-uint8_t Memory::read_rom_lower_mbc1(uint16_t addr) const noexcept
+u8 Memory::read_rom_lower_mbc1(u16 addr) const noexcept
 {
 	if(rom_banking) // in rom banking its allways bank zero
 	{
@@ -1230,27 +1230,27 @@ uint8_t Memory::read_rom_lower_mbc1(uint16_t addr) const noexcept
 }
 
 //0x0000 - 0x4000 return rom bank zero
-uint8_t Memory::read_bank_zero(uint16_t addr) const noexcept
+u8 Memory::read_bank_zero(u16 addr) const noexcept
 {
     return rom[addr];
 }
 
 // 0xc000 && 0xe000 (echo ram)
 // return wram non banked
-uint8_t Memory::read_wram_low(uint16_t addr) const noexcept
+u8 Memory::read_wram_low(u16 addr) const noexcept
 {
     return wram[addr&0xfff];
 }
 
 // 0xd000
 // return banked wram this is fixed on dmg
-uint8_t Memory::read_wram_high(uint16_t addr) const noexcept
+u8 Memory::read_wram_high(u16 addr) const noexcept
 {
     return cgb_wram_bank[cgb_wram_bank_idx][addr&0xfff];
 }
 
 // 0xf000 various
-uint8_t Memory::read_hram(uint16_t addr) const noexcept
+u8 Memory::read_hram(u16 addr) const noexcept
 {
 	scheduler.service_events();
     // io regs
@@ -1281,7 +1281,7 @@ uint8_t Memory::read_hram(uint16_t addr) const noexcept
 
 // write mem underlying
 // object attribute map 0xfe00 - 0xfea0
-void Memory::write_oam(uint16_t addr,uint8_t v) noexcept
+void Memory::write_oam(u16 addr,u8 v) noexcept
 {
 	if(!ignore_oam_bug)
 	{
@@ -1308,7 +1308,7 @@ void Memory::write_oam(uint16_t addr,uint8_t v) noexcept
 }
 
 //video ram 0x8000 - 0xa000
-void Memory::write_vram(uint16_t addr,uint8_t v) noexcept
+void Memory::write_vram(u16 addr,u8 v) noexcept
 {
 	scheduler.service_events();
     // vram is used in pixel transfer cannot access
@@ -1319,11 +1319,11 @@ void Memory::write_vram(uint16_t addr,uint8_t v) noexcept
 }
 
 
-void Memory::do_dma(uint8_t v) noexcept
+void Memory::do_dma(u8 v) noexcept
 {
 	scheduler.service_events();
 	io[IO_DMA] = v; // write to the dma reg
-	uint16_t dma_address = v << 8;
+	u16 dma_address = v << 8;
 	// transfer is from 0xfe00 to 0xfea0
 			
 	/*// must be page aligned revisit later
@@ -1352,7 +1352,7 @@ void Memory::do_dma(uint8_t v) noexcept
 }
 
 // this needs work
-void Memory::tick_dma(uint32_t cycles) noexcept
+void Memory::tick_dma(u32 cycles) noexcept
 {
     // not active do nothing!
     if(!oam_dma_active) 
@@ -1374,18 +1374,18 @@ void Memory::tick_dma(uint32_t cycles) noexcept
 
 // todo on ppu modes swich out the vram and oam access ptrs
 // to remove uneeded checks
-void Memory::write_blocked(uint16_t addr, uint8_t v) noexcept
+void Memory::write_blocked(u16 addr, u8 v) noexcept
 {
 	UNUSED(addr); UNUSED(v);
 }
 
-uint8_t Memory::read_blocked(uint16_t addr) const noexcept
+u8 Memory::read_blocked(u16 addr) const noexcept
 {
 	UNUSED(addr);
 	return 0xff;
 }
 
-uint8_t Memory::read_oam_dma(uint16_t addr) const noexcept
+u8 Memory::read_oam_dma(u16 addr) const noexcept
 {
 	UNUSED(addr);
 	scheduler.service_events();
@@ -1463,7 +1463,7 @@ void Memory::oam_dma_enable() noexcept
 }
 
 // io memory has side affects 0xff00
-void Memory::write_io(uint16_t addr,uint8_t v) noexcept
+void Memory::write_io(u16 addr,u8 v) noexcept
 {
     switch(addr & 0xff)
     {
@@ -1743,7 +1743,7 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 		{
 			ppu.ppu_write();
 
-			const uint8_t lcdc_old = io[IO_LCDC];
+			const u8 lcdc_old = io[IO_LCDC];
 
 			io[IO_LCDC] = v;
 
@@ -2252,9 +2252,9 @@ void Memory::write_io(uint16_t addr,uint8_t v) noexcept
 
 void Memory::do_gdma() noexcept
 {
-	const uint16_t source = dma_src & 0xfff0;
+	const u16 source = dma_src & 0xfff0;
 	
-	const uint16_t dest = (dma_dst & 0x1ff0) | 0x8000;
+	const u16 dest = (dma_dst & 0x1ff0) | 0x8000;
 	
 	// hdma5 stores how many 16 byte incremnts we have to transfer
 	const int len = ((io[IO_HDMA5] & 0x7f) + 1) * 0x10;
@@ -2281,9 +2281,9 @@ void Memory::do_hdma() noexcept
 		return;
 	}
 
-	const uint16_t source = (dma_src & 0xfff0) + hdma_len_ticked*0x10;
+	const u16 source = (dma_src & 0xfff0) + hdma_len_ticked*0x10;
 
-	const uint16_t dest = ((dma_dst & 0x1ff0) | 0x8000) + hdma_len_ticked*0x10;
+	const u16 dest = ((dma_dst & 0x1ff0) | 0x8000) + hdma_len_ticked*0x10;
 
 	/*if(!(source <= 0x7ff0 || ( source >= 0xa000 && source <= 0xdff0)))
 	{
@@ -2319,7 +2319,7 @@ void Memory::do_hdma() noexcept
 
 
 #ifdef DEBUG
-void Memory::write_iot_debug(uint16_t addr, uint8_t v) noexcept
+void Memory::write_iot_debug(u16 addr, u8 v) noexcept
 {
 	if(debug.breakpoint_hit(addr,v,break_type::write))
 	{
@@ -2332,7 +2332,7 @@ void Memory::write_iot_debug(uint16_t addr, uint8_t v) noexcept
 }
 #endif
 
-void Memory::write_iot_no_debug(uint16_t addr,uint8_t v) noexcept
+void Memory::write_iot_no_debug(u16 addr,u8 v) noexcept
 {
 	
 	scheduler.service_events();
@@ -2341,21 +2341,21 @@ void Memory::write_iot_no_debug(uint16_t addr,uint8_t v) noexcept
 }
 
 // wram zero bank 0xc000 - 0xd000
-void Memory::write_wram_low(uint16_t addr,uint8_t v) noexcept
+void Memory::write_wram_low(u16 addr,u8 v) noexcept
 {
     wram[addr&0xfff] = v;
 }
 
 // banked wram 0xd000 - 0xe000
 // also at 0xe000 - 0xfe00 in echo ram
-void Memory::write_wram_high(uint16_t addr,uint8_t v) noexcept
+void Memory::write_wram_high(u16 addr,u8 v) noexcept
 {
     cgb_wram_bank[cgb_wram_bank_idx][addr&0xfff] = v;
 }
 
 // high ram 0xf000
 // we bundle io into this but the hram section is at 0xff80-ffff
-void Memory::write_hram(uint16_t addr,uint8_t v) noexcept
+void Memory::write_hram(u16 addr,u8 v) noexcept
 {
 	scheduler.service_events();
     // io regs
@@ -2397,7 +2397,7 @@ void Memory::frame_end()
 	}
 }
 
-void Memory::write_cart_ram(uint16_t addr, uint8_t v) noexcept
+void Memory::write_cart_ram(u16 addr, u8 v) noexcept
 {
     if(enable_ram && cart_ram_bank != CART_RAM_BANK_INVALID)
     {
@@ -2407,7 +2407,7 @@ void Memory::write_cart_ram(uint16_t addr, uint8_t v) noexcept
 }
 
 // only bottom 4 bits are readable
-void Memory::write_cart_ram_mbc2(uint16_t addr, uint8_t v) noexcept
+void Memory::write_cart_ram_mbc2(u16 addr, u8 v) noexcept
 {
     if(enable_ram) // fixed for 512by4 bits
     {

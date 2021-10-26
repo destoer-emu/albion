@@ -9,7 +9,7 @@ void Ppu::sprite_fetch(Pixel_Obj *buf,bool use_fifo) noexcept
 {
     const bool is_cgb = cpu.is_cgb;
 	
-	const uint8_t lcd_control = mem.io[IO_LCDC]; // get lcd control reg
+	const u8 lcd_control = mem.io[IO_LCDC]; // get lcd control reg
 
 	const int y_size = is_set(lcd_control,2) ? 16 : 8;
 
@@ -27,7 +27,7 @@ void Ppu::sprite_fetch(Pixel_Obj *buf,bool use_fifo) noexcept
 		// sprite that we draw fully
 		int pixel_start = 7; 
 
-		uint8_t x_pos = objects[cur_sprite].x_pos;
+		u8 x_pos = objects[cur_sprite].x_pos;
 
 		if(use_fifo)
 		{
@@ -79,11 +79,11 @@ void Ppu::sprite_fetch(Pixel_Obj *buf,bool use_fifo) noexcept
 		
 		
 		// sprite takes 4 bytes in the sprite attributes table
-		const uint8_t sprite_index = objects[i].index;
-		uint8_t y_pos = mem.oam[sprite_index];
+		const u8 sprite_index = objects[i].index;
+		u8 y_pos = mem.oam[sprite_index];
 		// lowest bit of tile index ignored for 16 pixel sprites
-		const uint8_t sprite_location = y_size == 16? mem.oam[(sprite_index+2)] & ~1 : mem.oam[(sprite_index+2)];
-		const uint8_t attributes = mem.oam[(sprite_index+3)];
+		const u8 sprite_location = y_size == 16? mem.oam[(sprite_index+2)] & ~1 : mem.oam[(sprite_index+2)];
+		const u8 attributes = mem.oam[(sprite_index+3)];
 		
 		const bool y_flip = is_set(attributes,6);
 		const bool x_flip = is_set(attributes,5);
@@ -97,7 +97,7 @@ void Ppu::sprite_fetch(Pixel_Obj *buf,bool use_fifo) noexcept
 		}
 		
 		y_pos -= 16;
-		uint8_t line = scanline - y_pos; 
+		u8 line = scanline - y_pos; 
 		
 		// read the sprite backwards in y axis
 		if(y_flip)
@@ -106,14 +106,14 @@ void Ppu::sprite_fetch(Pixel_Obj *buf,bool use_fifo) noexcept
 		}
 		
 		line *= 2; // each line of sprite data is two bytes
-		uint16_t data_address = ((sprite_location * 16 )) + line; // in realitly this is offset into vram at 0x8000
+		u16 data_address = ((sprite_location * 16 )) + line; // in realitly this is offset into vram at 0x8000
 
 		// if in cgb and attr has bit 3 set 
 		// read from the 2nd vram bank
 		const int vram_bank = (is_cgb && is_set(attributes,3))? 1 : 0;
 
-		const uint8_t data1 = mem.vram[vram_bank][data_address];
-		const uint8_t data2 = mem.vram[vram_bank][data_address+1];
+		const u8 data1 = mem.vram[vram_bank][data_address];
+		const u8 data2 = mem.vram[vram_bank][data_address+1];
 		
 
 		// if xflipped we need to read from start to end
@@ -251,7 +251,7 @@ void Ppu::tile_fetch(Pixel_Obj *buf, bool use_window) noexcept
 {
 
     const bool is_cgb = cpu.is_cgb;
-	const uint8_t lcd_control = mem.io[IO_LCDC];
+	const u8 lcd_control = mem.io[IO_LCDC];
 
 	use_window = use_window && is_set(mem.io[IO_LCDC],5);
 
@@ -272,11 +272,11 @@ void Ppu::tile_fetch(Pixel_Obj *buf, bool use_window) noexcept
 	const int scanline = current_line;
 	
 	// which of the 32 horizontal tiles are we currently drawing
-	uint8_t x_pos = tile_cord;
+	u8 x_pos = tile_cord;
 
 	// ypos is used to calc which of the 32 vertical tiles 
 	// the current scanline is drawing	
-	uint8_t y_pos = scanline;
+	u8 y_pos = scanline;
 
 	unsigned int background_mem = 0;
 
@@ -343,7 +343,7 @@ void Ppu::tile_fetch(Pixel_Obj *buf, bool use_window) noexcept
 	if(is_cgb) // we are drawing in cgb mode 
 	{
 		// bg attributes allways in bank 1
-		const uint8_t attr = mem.vram[1][tile_address];
+		const u8 attr = mem.vram[1][tile_address];
 		cgb_pal = attr & 0x7; // get the pal number
 				
 				
@@ -366,8 +366,8 @@ void Ppu::tile_fetch(Pixel_Obj *buf, bool use_window) noexcept
 	const unsigned int line = y_flip? (7 - y_pos) * 2 : y_pos*2;
 		
 			
-	const uint8_t data1 = mem.vram[vram_bank][tile_location+line];
-	const uint8_t data2 = mem.vram[vram_bank][tile_location+line+1];
+	const u8 data1 = mem.vram[vram_bank][tile_location+line];
+	const u8 data2 = mem.vram[vram_bank][tile_location+line+1];
 	
 	// pixel 0 in the tile is bit 7 of data1 and data2
 	// pixel 1 is bit 6 etc
@@ -394,24 +394,24 @@ void Ppu::tile_fetch(Pixel_Obj *buf, bool use_window) noexcept
 }
 
 
-uint32_t Ppu::get_dmg_color(int color_num, pixel_source source) const noexcept
+u32 Ppu::get_dmg_color(int color_num, pixel_source source) const noexcept
 {
 	const auto source_idx = static_cast<int>(source);
 
 	const int color_address = + source_idx + 0xff47;	
-	const uint8_t palette = mem.io[color_address & 0xff];
+	const u8 palette = mem.io[color_address & 0xff];
 	const int color_idx = (palette >> (color_num * 2)) & 3; 
 	
 	return dmg_pal[source_idx][color_idx];
 }
 
-uint32_t Ppu::get_cgb_color(int color_num, int cgb_pal, pixel_source source) const noexcept
+u32 Ppu::get_cgb_color(int color_num, int cgb_pal, pixel_source source) const noexcept
 {
 
 	// each  rgb value takes two bytes in the pallete for cgb
 	const int offset = (cgb_pal*8) + (color_num * 2); 
 
-	uint16_t col;
+	u16 col;
 	if(source <= pixel_source::tile)	
 	{
 		memcpy(&col,&bg_pal[offset],sizeof(col));
@@ -491,7 +491,7 @@ void Ppu::render_scanline() noexcept
 		}
 
 		// is there a cleaner way to achieve this?
-		const uint8_t win_offset = mem.io[IO_WX] < 7? 0 : mem.io[IO_WX] - 7;
+		const u8 win_offset = mem.io[IO_WX] < 7? 0 : mem.io[IO_WX] - 7;
 
 		for(tile_cord = win_offset; tile_cord < 176; tile_cord += 8)
 		{
@@ -505,13 +505,13 @@ void Ppu::render_scanline() noexcept
 		sprite_fetch(&scanline_fifo[scx_offset],false);
 	}
 	
-    const uint32_t offset = (current_line*SCREEN_WIDTH);
+    const u32 offset = (current_line*SCREEN_WIDTH);
     const bool is_cgb = cpu.is_cgb;
 	for(int x = SCREEN_WIDTH-1; x >= 0; x--)
 	{
 		const auto pixel = scanline_fifo[x+scx_offset];
         
-        const uint32_t full_color = is_cgb? get_cgb_color(pixel.colour_num, pixel.cgb_pal, pixel.source) :
+        const u32 full_color = is_cgb? get_cgb_color(pixel.colour_num, pixel.cgb_pal, pixel.source) :
             get_dmg_color(pixel.colour_num,pixel.source);
 
 		screen[offset+x] = full_color;

@@ -19,9 +19,9 @@ void Cpu::thumb_fill_pipeline()
     if(execute_rom)
     {
         const auto wait = rom_wait_sequential_16;
-        pipeline[0] = mem.read_rom<uint16_t>(regs[PC]); cycle_tick(wait);
+        pipeline[0] = mem.read_rom<u16>(regs[PC]); cycle_tick(wait);
         regs[PC] += ARM_HALF_SIZE;
-        pipeline[1] = mem.read_rom<uint16_t>(regs[PC]); cycle_tick(wait);
+        pipeline[1] = mem.read_rom<u16>(regs[PC]); cycle_tick(wait);
 
     }
 
@@ -33,9 +33,9 @@ void Cpu::thumb_fill_pipeline()
     }
 }
 
-uint16_t Cpu::fetch_thumb_opcode()
+u16 Cpu::fetch_thumb_opcode()
 {
-    const uint16_t opcode = pipeline[0];
+    const u16 opcode = pipeline[0];
     pipeline[0] = pipeline[1];
     regs[PC] += ARM_HALF_SIZE; 
     pc_actual += ARM_HALF_SIZE; 
@@ -43,7 +43,7 @@ uint16_t Cpu::fetch_thumb_opcode()
     if(execute_rom)
     {
         const auto wait = rom_wait_sequential_16;
-        pipeline[1] = mem.read_rom<uint16_t>(regs[PC]); cycle_tick(wait);     
+        pipeline[1] = mem.read_rom<u16>(regs[PC]); cycle_tick(wait);     
     }
 
     else
@@ -91,7 +91,7 @@ u16 Cpu::fast_thumb_fetch_opcode()
 }
 
 
-void Cpu::write_pc_thumb(uint32_t v)
+void Cpu::write_pc_thumb(u32 v)
 {
     regs[PC] = v & ~1;
     //thumb_fill_pipeline(); // fill the intitial cpu pipeline
@@ -106,7 +106,7 @@ void Cpu::exec_thumb()
     execute_thumb_opcode(op);
 }
 
-void Cpu::execute_thumb_opcode(uint16_t instr)
+void Cpu::execute_thumb_opcode(u16 instr)
 {
     // get the bits that determine the kind of instr it is
     const u32 op = instr >> 6;
@@ -117,18 +117,18 @@ void Cpu::execute_thumb_opcode(uint16_t instr)
 
 
 
-void Cpu::thumb_unknown(uint16_t opcode)
+void Cpu::thumb_unknown(u16 opcode)
 {
-    uint8_t op = get_thumb_opcode_bits(opcode);
+    const u8 op = get_thumb_opcode_bits(opcode);
     auto err = fmt::format("[cpu-thumb {:08x}] unknown opcode {:04x}:{:x}\n{}\n",regs[PC],opcode,op,disass.disass_thumb(pc_actual));
     debug.trace.print();
     throw std::runtime_error(err);
 }
 
 template<const int RD, const bool L>
-void Cpu::thumb_load_store_sp(uint16_t opcode)
+void Cpu::thumb_load_store_sp(u16 opcode)
 {
-    const uint32_t nn = (opcode & 0xff) * 4;
+    const u32 nn = (opcode & 0xff) * 4;
     const auto addr = regs[SP] + nn;
 
     if constexpr(L)
@@ -145,15 +145,15 @@ void Cpu::thumb_load_store_sp(uint16_t opcode)
 }
 
 
-void Cpu::thumb_sp_add(uint16_t opcode)
+void Cpu::thumb_sp_add(u16 opcode)
 {
     const bool u = !is_set(opcode,7);
-    const uint32_t nn = (opcode & 127) * 4;
+    const u32 nn = (opcode & 127) * 4;
 
     regs[SP] += u? nn : -nn; 
 }
 
-void Cpu::thumb_swi(uint16_t opcode)
+void Cpu::thumb_swi(u16 opcode)
 {
 
     //printf("swi %08x: %08x\n",get_pc(),opcode);
@@ -185,9 +185,9 @@ void Cpu::thumb_swi(uint16_t opcode)
 }
 
 template<const int RD, const bool IS_PC>
-void Cpu::thumb_get_rel_addr(uint16_t opcode)
+void Cpu::thumb_get_rel_addr(u16 opcode)
 {
-    const uint32_t offset = (opcode & 0xff) * 4;
+    const u32 offset = (opcode & 0xff) * 4;
 
     if constexpr(IS_PC)
     {
@@ -201,7 +201,7 @@ void Cpu::thumb_get_rel_addr(uint16_t opcode)
 }
 
 template<const int OP>
-void Cpu::thumb_load_store_sbh(uint16_t opcode)
+void Cpu::thumb_load_store_sbh(u16 opcode)
 {
     const auto ro = (opcode >> 6) & 0x7;
     const auto rb = (opcode >> 3) & 0x7;
@@ -219,7 +219,7 @@ void Cpu::thumb_load_store_sbh(uint16_t opcode)
 
         case 1: // ldsb
         {
-            regs[rd] = sign_extend<uint32_t>(mem.read_u8(addr),8);
+            regs[rd] = sign_extend<u32>(mem.read_u8(addr),8);
             internal_cycle(); // internal cycle for reg writeback
             break;
         }
@@ -237,12 +237,12 @@ void Cpu::thumb_load_store_sbh(uint16_t opcode)
         {
             if(!(addr & 1)) // is aligned
             {
-                regs[rd] = sign_extend<uint32_t>(mem.read_u16(addr),16);
+                regs[rd] = sign_extend<u32>(mem.read_u16(addr),16);
             }
 
             else // unaligned
             {
-                regs[rd] = sign_extend<uint32_t>(mem.read_u8(addr),8);
+                regs[rd] = sign_extend<u32>(mem.read_u8(addr),8);
             }
             internal_cycle(); // internal cycle for reg writeback
             break;
@@ -251,7 +251,7 @@ void Cpu::thumb_load_store_sbh(uint16_t opcode)
 }
 
 template<const int OP>
-void Cpu::thumb_load_store_reg(uint16_t opcode)
+void Cpu::thumb_load_store_reg(u16 opcode)
 {
     const auto ro = (opcode >> 6) & 0x7;
     const auto rb = (opcode >> 3) & 0x7;
@@ -291,7 +291,7 @@ void Cpu::thumb_load_store_reg(uint16_t opcode)
 }
 
 
-void Cpu::thumb_branch(uint16_t opcode)
+void Cpu::thumb_branch(u16 opcode)
 {
     const auto offset = sign_extend<int32_t>(opcode & 0x7ff,11) * 2;
     
@@ -319,7 +319,7 @@ void Cpu::thumb_branch(uint16_t opcode)
 }
 
 template<const int L>
-void Cpu::thumb_load_store_half(uint16_t opcode)
+void Cpu::thumb_load_store_half(u16 opcode)
 {
     const auto nn = ((opcode >> 6) & 0x1f) * 2;
     const auto rb = (opcode >> 3) & 0x7;
@@ -341,9 +341,9 @@ void Cpu::thumb_load_store_half(uint16_t opcode)
 }
 
 template<const bool POP, const bool IS_LR>
-void Cpu::thumb_push_pop(uint16_t opcode)
+void Cpu::thumb_push_pop(u16 opcode)
 {
-    const uint8_t reg_range = opcode & 0xff;
+    const u8 reg_range = opcode & 0xff;
 
     // todo (emtpy r list timings here)
     if constexpr(POP)
@@ -388,7 +388,7 @@ void Cpu::thumb_push_pop(uint16_t opcode)
             regs[SP] -= ARM_WORD_SIZE;
         }
 
-        uint32_t addr = regs[SP];
+        u32 addr = regs[SP];
         for(int i = 0; i < 8; i++)
         {
             if(is_set(reg_range,i))
@@ -407,7 +407,7 @@ void Cpu::thumb_push_pop(uint16_t opcode)
 }
 
 template<const int OP>
-void Cpu::thumb_hi_reg_ops(uint16_t opcode)
+void Cpu::thumb_hi_reg_ops(u16 opcode)
 {
     auto rd = opcode & 0x7;
     auto rs = (opcode >> 3) & 0x7;
@@ -468,7 +468,7 @@ void Cpu::thumb_hi_reg_ops(uint16_t opcode)
 }
 
 template<const int OP>
-void Cpu::thumb_alu(uint16_t opcode)
+void Cpu::thumb_alu(u16 opcode)
 {
     const auto rs = (opcode >> 3) & 0x7;
     const auto rd = opcode & 0x7;
@@ -591,7 +591,7 @@ void Cpu::thumb_alu(uint16_t opcode)
 }
 
 template<const int RB, const bool L>
-void Cpu::thumb_multiple_load_store(uint16_t opcode)
+void Cpu::thumb_multiple_load_store(u16 opcode)
 {
     const auto reg_range = opcode & 0xff;
 
@@ -646,7 +646,7 @@ void Cpu::thumb_multiple_load_store(uint16_t opcode)
 }
 
 template<const int OP>
-void Cpu::thumb_ldst_imm(uint16_t opcode)
+void Cpu::thumb_ldst_imm(u16 opcode)
 {
     const auto imm = (opcode >> 6) & 0x1f;
     const auto rb = (opcode >> 3) & 0x7;
@@ -664,7 +664,7 @@ void Cpu::thumb_ldst_imm(uint16_t opcode)
 
         case 0b01: // ldr
         {
-            uint32_t addr = regs[rb]+imm*4;
+            u32 addr = regs[rb]+imm*4;
             regs[rd] = mem.read_u32(addr);
             regs[rd] = rotr(regs[rd],(addr&3)*8);
             internal_cycle(); // cycle for register writeback
@@ -687,7 +687,7 @@ void Cpu::thumb_ldst_imm(uint16_t opcode)
 }
 
 template<const int OP>
-void Cpu::thumb_add_sub(uint16_t opcode)
+void Cpu::thumb_add_sub(u16 opcode)
 {    
     const auto rd = opcode & 0x7;
     const auto rs = (opcode >> 3) & 0x7;
@@ -719,7 +719,7 @@ void Cpu::thumb_add_sub(uint16_t opcode)
 }
 
 template<const bool FIRST>
-void Cpu::thumb_long_bl(uint16_t opcode)
+void Cpu::thumb_long_bl(u16 opcode)
 {
     int32_t offset = opcode & 0x7ff; // offset is 11 bits
 
@@ -735,7 +735,7 @@ void Cpu::thumb_long_bl(uint16_t opcode)
     else // 2nd instr
     {
         // tmp = next instr addr
-        const uint32_t tmp = pc_actual;
+        const u32 tmp = pc_actual;
         // pc = lr + offsetlow << 1
         write_pc((regs[LR] + (offset << 1)));
         // lr = tmp | 1
@@ -746,7 +746,7 @@ void Cpu::thumb_long_bl(uint16_t opcode)
 }
 
 template<const int TYPE>
-void Cpu::thumb_mov_reg_shift(uint16_t opcode)
+void Cpu::thumb_mov_reg_shift(u16 opcode)
 {
     const auto rd = opcode & 0x7;
     const auto rs = (opcode >> 3) & 0x7;
@@ -760,9 +760,9 @@ void Cpu::thumb_mov_reg_shift(uint16_t opcode)
 }
 
 template<const int OP, const int RD>
-void Cpu::thumb_mcas_imm(uint16_t opcode)
+void Cpu::thumb_mcas_imm(u16 opcode)
 {
-    const uint8_t imm = opcode & 0xff;
+    const u8 imm = opcode & 0xff;
 
     switch(OP)
     {
@@ -794,26 +794,26 @@ void Cpu::thumb_mcas_imm(uint16_t opcode)
 }
 
 template<const int COND>
-void Cpu::thumb_cond_branch(uint16_t opcode)
+void Cpu::thumb_cond_branch(u16 opcode)
 {
     if(cond_met_constexpr<COND>())
     {
         // 1st cycle is branch calc overlayed with pipeline
         const int8_t offset = opcode & 0xff;
-        const uint32_t addr = regs[PC] + offset*2;
+        const u32 addr = regs[PC] + offset*2;
         write_pc(addr);  
     }
 }
 
 template<const int RD>
-void Cpu::thumb_ldr_pc(uint16_t opcode)
+void Cpu::thumb_ldr_pc(u16 opcode)
 {
     // 0 - 1020 in offsets of 4
-    const uint32_t offset = (opcode & 0xff) * 4;
+    const u32 offset = (opcode & 0xff) * 4;
 
     // pc will have bit two deset to ensure word alignment
     // pc is + 4 ahead of current instr
-    const uint32_t addr = (regs[PC] & ~2) + offset;
+    const u32 addr = (regs[PC] & ~2) + offset;
 
     regs[RD] = mem.read_u32(addr);
 

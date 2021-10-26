@@ -25,7 +25,7 @@ void Apu::init(gameboy_psg::psg_mode mode, bool use_bios) noexcept
     insert_new_sample_event(); 
 }
 
-void Apu::tick(uint32_t cycles) noexcept
+void Apu::tick(u32 cycles) noexcept
 {
     if(!psg.sound_enabled)
     {
@@ -67,7 +67,7 @@ void Apu::insert_new_sample_event() noexcept
     scheduler.insert(event,false);
 }
 
-void Apu::push_samples(uint32_t cycles) noexcept
+void Apu::push_samples(u32 cycles) noexcept
 {
 	// handle audio output 
     down_sample_cnt -= cycles;

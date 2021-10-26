@@ -151,7 +151,7 @@ void Psg::clock_envelopes() noexcept
     clock_envelope(channels[3]);
 }
 
-void Psg::tick_periods(uint32_t cycles) noexcept
+void Psg::tick_periods(u32 cycles) noexcept
 {
     square_tick_period(channels[0],cycles);
     square_tick_period(channels[1],cycles);
@@ -218,7 +218,7 @@ void Psg::disable_sound() noexcept
     sound_enabled = false;     
 }
 
-void Psg::write_nr10(uint8_t v) noexcept
+void Psg::write_nr10(u8 v) noexcept
 {	
     if(sound_enabled)
     {
@@ -227,12 +227,12 @@ void Psg::write_nr10(uint8_t v) noexcept
     }
 }
 
-uint8_t Psg::read_nr10() const noexcept
+u8 Psg::read_nr10() const noexcept
 {
     return nr10;
 }
 
-void Psg::write_nr11(uint8_t v) noexcept
+void Psg::write_nr11(u8 v) noexcept
 {
     if(sound_enabled || mode == psg_mode::dmg)
     {
@@ -248,12 +248,12 @@ void Psg::write_nr11(uint8_t v) noexcept
     }    
 }
 
-uint8_t Psg::read_nr11() const noexcept
+u8 Psg::read_nr11() const noexcept
 {
     return (nr11 & (128 + 64)) | (0xff-(128+64));
 }
 
-void Psg::write_nr12(uint8_t v) noexcept
+void Psg::write_nr12(u8 v) noexcept
 {
     if(sound_enabled)
     {
@@ -265,12 +265,12 @@ void Psg::write_nr12(uint8_t v) noexcept
     }
 }
 
-uint8_t Psg::read_nr12() const noexcept
+u8 Psg::read_nr12() const noexcept
 {
     return nr12;
 }
 
-void Psg::write_nr13(uint8_t v) noexcept
+void Psg::write_nr13(u8 v) noexcept
 {
     if(sound_enabled)
     {
@@ -279,7 +279,7 @@ void Psg::write_nr13(uint8_t v) noexcept
     }    
 }
 
-void Psg::write_nr14(uint8_t v) noexcept
+void Psg::write_nr14(u8 v) noexcept
 {
     if(sound_enabled)
     {
@@ -305,12 +305,12 @@ void Psg::write_nr14(uint8_t v) noexcept
     }    
 }
 
-uint8_t Psg::read_nr14() const noexcept
+u8 Psg::read_nr14() const noexcept
 {
     return (nr14 & (64)) | (0xff-64);  
 }
 
-void Psg::write_nr21(uint8_t v) noexcept
+void Psg::write_nr21(u8 v) noexcept
 {
     if(sound_enabled || mode == psg_mode::dmg)
     {
@@ -323,12 +323,12 @@ void Psg::write_nr21(uint8_t v) noexcept
     }    
 }
 
-uint8_t Psg::read_nr21() const noexcept
+u8 Psg::read_nr21() const noexcept
 {
     return (nr21 & (128 + 64)) | (0xff-(128+64));	
 }
 
-void Psg::write_nr22(uint8_t v) noexcept
+void Psg::write_nr22(u8 v) noexcept
 {
     if(sound_enabled)
     {
@@ -340,12 +340,12 @@ void Psg::write_nr22(uint8_t v) noexcept
     }    
 }
 
-uint8_t Psg::read_nr22() const noexcept
+u8 Psg::read_nr22() const noexcept
 {
     return nr22;
 }
 
-void Psg::write_nr23(uint8_t v) noexcept
+void Psg::write_nr23(u8 v) noexcept
 {
     if(sound_enabled)
     {
@@ -354,7 +354,7 @@ void Psg::write_nr23(uint8_t v) noexcept
     }    
 }
 
-void Psg::write_nr24(uint8_t v) noexcept
+void Psg::write_nr24(u8 v) noexcept
 {
     if(sound_enabled)
     {
@@ -377,12 +377,12 @@ void Psg::write_nr24(uint8_t v) noexcept
     }    
 }
 
-uint8_t Psg::read_nr24() const noexcept
+u8 Psg::read_nr24() const noexcept
 {
     return (nr24 & (64)) | (0xff-64);	  
 }
 
-void Psg::write_nr30(uint8_t v) noexcept
+void Psg::write_nr30(u8 v) noexcept
 {
     if(sound_enabled)
     {
@@ -400,9 +400,9 @@ void Psg::write_nr30(uint8_t v) noexcept
     }    
 }
 
-uint8_t Psg::read_nr30() const noexcept
+u8 Psg::read_nr30() const noexcept
 {
-    const uint8_t base = (nr30 & (128)) | (0xff-128);
+    const u8 base = (nr30 & (128)) | (0xff-128);
 
     if(mode == psg_mode::gba)
     {
@@ -412,7 +412,7 @@ uint8_t Psg::read_nr30() const noexcept
     return base;
 }
 
-void Psg::write_nr31(uint8_t v) noexcept
+void Psg::write_nr31(u8 v) noexcept
 {
     if(sound_enabled || mode == psg_mode::dmg)
     {
@@ -421,7 +421,7 @@ void Psg::write_nr31(uint8_t v) noexcept
     }    
 }
 
-void Psg::write_nr32(uint8_t v) noexcept
+void Psg::write_nr32(u8 v) noexcept
 {
     if(sound_enabled)
     {
@@ -430,12 +430,12 @@ void Psg::write_nr32(uint8_t v) noexcept
     }    
 }
 
-uint8_t Psg::read_nr32() const noexcept
+u8 Psg::read_nr32() const noexcept
 {
     return (nr32 & (64 + 32)) | (0xff-(64+32));
 }
 
-void Psg::write_nr33(uint8_t v) noexcept
+void Psg::write_nr33(u8 v) noexcept
 {
     if(sound_enabled)
     {
@@ -444,7 +444,7 @@ void Psg::write_nr33(uint8_t v) noexcept
     }    
 }
 
-void Psg::write_nr34(uint8_t v) noexcept
+void Psg::write_nr34(u8 v) noexcept
 {
     if(sound_enabled)
     {
@@ -465,12 +465,12 @@ void Psg::write_nr34(uint8_t v) noexcept
     }
 }
 
-uint8_t Psg::read_nr34() const noexcept
+u8 Psg::read_nr34() const noexcept
 {
     return (nr34 & (64)) | (0xff-64);
 }
 
-void Psg::write_nr41(uint8_t v) noexcept
+void Psg::write_nr41(u8 v) noexcept
 {
     if(sound_enabled || mode == psg_mode::dmg)
     {
@@ -479,7 +479,7 @@ void Psg::write_nr41(uint8_t v) noexcept
     }
 }
 
-void Psg::write_nr42(uint8_t v) noexcept
+void Psg::write_nr42(u8 v) noexcept
 {
     if(sound_enabled)
     {
@@ -490,12 +490,12 @@ void Psg::write_nr42(uint8_t v) noexcept
     }
 }
 
-uint8_t Psg::read_nr42() const noexcept
+u8 Psg::read_nr42() const noexcept
 {
     return nr42;
 }
 
-void Psg::write_nr43(uint8_t v) noexcept
+void Psg::write_nr43(u8 v) noexcept
 {
     if(sound_enabled)
     {
@@ -504,13 +504,13 @@ void Psg::write_nr43(uint8_t v) noexcept
     }
 }
 
-uint8_t Psg::read_nr43() const noexcept
+u8 Psg::read_nr43() const noexcept
 {
     return nr43;
 }
 
 
-void Psg::write_nr44(uint8_t v) noexcept
+void Psg::write_nr44(u8 v) noexcept
 {
     if(sound_enabled)
     {
@@ -528,7 +528,7 @@ void Psg::write_nr44(uint8_t v) noexcept
     }
 }
 
-uint8_t Psg::read_nr44() const noexcept
+u8 Psg::read_nr44() const noexcept
 {
     return (nr44 & (64)) | (0xff-64);	
 }
@@ -536,7 +536,7 @@ uint8_t Psg::read_nr44() const noexcept
 
 
 
-void Psg::write_nr50(uint8_t v) noexcept
+void Psg::write_nr50(u8 v) noexcept
 {
     if(sound_enabled)
     {
@@ -544,12 +544,12 @@ void Psg::write_nr50(uint8_t v) noexcept
     }
 }
 
-uint8_t Psg::read_nr50() const noexcept
+u8 Psg::read_nr50() const noexcept
 {
     return nr50;
 }
     
-void Psg::write_nr51(uint8_t v) noexcept
+void Psg::write_nr51(u8 v) noexcept
 {
     if(sound_enabled)
     {
@@ -557,14 +557,14 @@ void Psg::write_nr51(uint8_t v) noexcept
     }
 }
 
-uint8_t Psg::read_nr51() const noexcept
+u8 Psg::read_nr51() const noexcept
 {
     return nr51;
 }
 
 
 
-uint8_t Psg::read_nr52() const noexcept
+u8 Psg::read_nr52() const noexcept
 {
     return (nr52 & 0xf0) | 
         channels[0].enabled << 0 |
@@ -574,7 +574,7 @@ uint8_t Psg::read_nr52() const noexcept
 }
 
 
-void Psg::nr1_freq_writeback(uint16_t v) noexcept
+void Psg::nr1_freq_writeback(u16 v) noexcept
 {
     // write back low 8
     nr13 = v & 0xff;
@@ -585,7 +585,7 @@ void Psg::nr1_freq_writeback(uint16_t v) noexcept
     nr14 |= (v >> 8) & 0x7; // and write them out    
 }
 
-void Psg::write_wave_table(int idx, uint8_t v) noexcept
+void Psg::write_wave_table(int idx, u8 v) noexcept
 {
     assert(idx < 0x20);
 
@@ -617,7 +617,7 @@ void Psg::write_wave_table(int idx, uint8_t v) noexcept
     }
 }
 
-uint8_t Psg::read_wave_table(int idx) const noexcept
+u8 Psg::read_wave_table(int idx) const noexcept
 {
     assert(idx < 0x20);
 

@@ -77,7 +77,7 @@ inline uint32_t get_arm_opcode_bits(uint32_t instr)
     return ((instr >> 4) & 0xf) | ((instr >> 16) & 0xff0);    
 }
 
-inline uint8_t get_thumb_opcode_bits(uint16_t instr)
+inline u8 get_thumb_opcode_bits(uint16_t instr)
 {
     return ((instr >> 8) & 0xff);    
 }
@@ -87,7 +87,7 @@ inline uint8_t get_thumb_opcode_bits(uint16_t instr)
 // by a shift value * 2
 inline uint32_t get_arm_operand2_imm(uint32_t opcode)
 {
-    uint8_t imm = opcode & 0xff;
+    u8 imm = opcode & 0xff;
     const int shift = (opcode >> 8) & 0xf;
     return rotr(imm,shift*2);   
 }

@@ -56,7 +56,7 @@ void DmaReg::init()
 // theres def a faster way to handle this masking but we wont worry about it for now
 
 
-void Dma::write_source(int reg_num,int idx, uint8_t v)
+void Dma::write_source(int reg_num,int idx, u8 v)
 {
     auto &r = dma_regs[reg_num];
 
@@ -77,7 +77,7 @@ void Dma::write_source(int reg_num,int idx, uint8_t v)
     //printf("dma source written! %08x:%08x\n",r.src,cpu.get_pc());
 }
 
-void Dma::write_dest(int reg_num, int idx, uint8_t v)
+void Dma::write_dest(int reg_num, int idx, u8 v)
 {
     auto &r = dma_regs[reg_num];
 
@@ -97,7 +97,7 @@ void Dma::write_dest(int reg_num, int idx, uint8_t v)
 
 }
 
-void Dma::write_count(int reg_num,int idx, uint8_t v)
+void Dma::write_count(int reg_num,int idx, u8 v)
 {
     auto &r = dma_regs[reg_num];
 
@@ -111,7 +111,7 @@ void Dma::write_count(int reg_num,int idx, uint8_t v)
     r.word_count &= r.max_count - 1;    
 }
 
-uint8_t Dma::read_control(int reg_num,int idx)
+u8 Dma::read_control(int reg_num,int idx)
 {
     auto &r = dma_regs[reg_num];
 
@@ -132,7 +132,7 @@ uint8_t Dma::read_control(int reg_num,int idx)
     return 0;
 }
 
-void Dma::write_control(int reg_num,int idx, uint8_t v)
+void Dma::write_control(int reg_num,int idx, u8 v)
 {
     auto &r = dma_regs[reg_num];
 
@@ -294,12 +294,12 @@ bool Dma::do_fast_dma(int reg_num)
 
     if(r.is_word)
     {
-        success = mem.fast_memcpy<uint32_t>(r.dst_shadow,r.src_shadow,r.word_count_shadow);        
+        success = mem.fast_memcpy<u32>(r.dst_shadow,r.src_shadow,r.word_count_shadow);        
     }
 
     else
     {
-        success = mem.fast_memcpy<uint16_t>(r.dst_shadow,r.src_shadow,r.word_count_shadow); 
+        success = mem.fast_memcpy<u16>(r.dst_shadow,r.src_shadow,r.word_count_shadow); 
     }
 
     if(success)

@@ -8,7 +8,7 @@ void init_noise(Noise &noise)
 	noise = {};
 }
 
-void noise_write(Noise &n,uint8_t v)
+void noise_write(Noise &n,u8 v)
 {
     n.divisor_idx = v & 0x7;
     n.counter_width = is_set(v,3);

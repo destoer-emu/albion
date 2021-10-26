@@ -9,12 +9,12 @@ namespace gameboy
 // only used by the some frontends but its
 // not code dependant on a frontend so its best placed here
 
-std::vector<uint32_t> Ppu::render_bg(bool higher) noexcept
+std::vector<u32> Ppu::render_bg(bool higher) noexcept
 {
 
-	std::vector<uint32_t> bg_map(256*256);
+	std::vector<u32> bg_map(256*256);
 
-	const uint8_t lcd_control = mem.io[IO_LCDC]; // get lcd control reg
+	const u8 lcd_control = mem.io[IO_LCDC]; // get lcd control reg
 	int background_mem = higher ? 0x1c00 : 0x1800;
 
 	const bool is_cgb = cpu.is_cgb;
@@ -56,7 +56,7 @@ std::vector<uint32_t> Ppu::render_bg(bool higher) noexcept
 			if(is_cgb) // we are drawing in cgb mode 
 			{
 				// bg attributes allways in bank 1
-				const uint8_t attr = mem.vram[1][bg_location];
+				const u8 attr = mem.vram[1][bg_location];
 				cgb_pal = attr & 0x7; // get the pal number
 											
 				x_flip = is_set(attr,5);
@@ -78,10 +78,10 @@ std::vector<uint32_t> Ppu::render_bg(bool higher) noexcept
 				const int line = y_flip? (7 - y) * 2 : y*2;
 
 				// 2 bytes per line in vram
-				uint16_t data_address = tile_location + line;
+				u16 data_address = tile_location + line;
 
-				const uint8_t data1 = mem.vram[vram_bank][data_address];
-				const uint8_t data2 = mem.vram[vram_bank][data_address+1];
+				const u8 data1 = mem.vram[vram_bank][data_address];
+				const u8 data2 = mem.vram[vram_bank][data_address+1];
 
 
 				int color_bit = x_flip? 0 : 7;
@@ -98,7 +98,7 @@ std::vector<uint32_t> Ppu::render_bg(bool higher) noexcept
 
 					if(!is_cgb)
 					{
-						const uint32_t full_color = get_dmg_color(color_num,pixel_source::tile);
+						const u32 full_color = get_dmg_color(color_num,pixel_source::tile);
 						bg_map[buf_offset + (y * 256) + x] = full_color;
 					}
 
@@ -106,7 +106,7 @@ std::vector<uint32_t> Ppu::render_bg(bool higher) noexcept
 					else
 					{
 						// dont care about the priority here just smash it
-						const uint32_t full_color = get_cgb_color(color_num,cgb_pal, pixel_source::tile);
+						const u32 full_color = get_cgb_color(color_num,cgb_pal, pixel_source::tile);
 						bg_map[buf_offset + (y * 256) + x] = full_color;
 					}
 					
@@ -119,13 +119,13 @@ std::vector<uint32_t> Ppu::render_bg(bool higher) noexcept
 
 	// now render a black box over the viewing area
 
-	const uint8_t scy = mem.io[IO_SCY];
-	const uint8_t scx = mem.io[IO_SCX];
+	const u8 scy = mem.io[IO_SCY];
+	const u8 scx = mem.io[IO_SCX];
 
 	// draw x bounds
 	// draw two vertical lines to indicate scx start
 	// and scx + screen width
-	for(uint32_t y = 0; y < SCREEN_HEIGHT; y++)
+	for(u32 y = 0; y < SCREEN_HEIGHT; y++)
 	{
 		const int y_offset = ((scy + y) & 0xff) * 256;
 
@@ -136,7 +136,7 @@ std::vector<uint32_t> Ppu::render_bg(bool higher) noexcept
 	// draw y bounds
 	// draw two horizontal lines to indicate scy start
 	// and scy + screen HEIGHT
-	for(uint32_t x = 0; x < SCREEN_WIDTH; x++)
+	for(u32 x = 0; x < SCREEN_WIDTH; x++)
 	{
 		const int x_offset = (scx + x) & 0xff; 
 
@@ -148,7 +148,7 @@ std::vector<uint32_t> Ppu::render_bg(bool higher) noexcept
 	return bg_map;
 }
 
-void Ppu::render_palette(uint32_t *palette_bg,uint32_t *palette_sp) noexcept
+void Ppu::render_palette(u32 *palette_bg,u32 *palette_sp) noexcept
 {
 	if(cpu.is_cgb)
 	{
@@ -175,10 +175,10 @@ void Ppu::render_palette(uint32_t *palette_bg,uint32_t *palette_sp) noexcept
 	}
 }
 
-std::vector<uint32_t> Ppu::render_tiles() noexcept
+std::vector<u32> Ppu::render_tiles() noexcept
 {
 
-	std::vector<uint32_t> tiles(384*8*8*2);
+	std::vector<u32> tiles(384*8*8*2);
 
 	int banks = cpu.is_cgb? 2 : 1;
 
@@ -202,10 +202,10 @@ std::vector<uint32_t> Ppu::render_tiles() noexcept
 				{
 
 					// 2 bytes per line in vram
-					const uint16_t data_address = (tile_num * 16) + (y * 2);
+					const u16 data_address = (tile_num * 16) + (y * 2);
 
-					const uint8_t data1 = mem.vram[bank][data_address];
-					const uint8_t data2 = mem.vram[bank][data_address+1];
+					const u8 data1 = mem.vram[bank][data_address];
+					const u8 data2 = mem.vram[bank][data_address+1];
 
 					// for each pixel in the line of the tile
 					for(int x = 7; x >= 0; x--)
@@ -216,7 +216,7 @@ std::vector<uint32_t> Ppu::render_tiles() noexcept
 						color_num |= is_set(data1,x);
 
 
-						const uint32_t full_color = get_dmg_color(color_num,pixel_source::tile);
+						const u32 full_color = get_dmg_color(color_num,pixel_source::tile);
 						tiles[buf_offset + (y * 0x80 * 2) + (7-x)] = full_color;
 										
 					}

@@ -223,8 +223,8 @@ void Cpu::exec_instr_no_debug()
 #ifdef DEBUG
 void Cpu::exec_instr_debug()
 {
-    const uint32_t pc = pc_actual;
-    const uint32_t v = pipeline[0];
+    const u32 pc = pc_actual;
+    const u32 v = pipeline[0];
 	if(debug.breakpoint_hit(pc,v,break_type::execute))
 	{
 		// halt until told otherwhise :)
@@ -379,7 +379,7 @@ void Cpu::load_registers(cpu_mode mode)
         case cpu_mode::user:
         {
             // load user registers back into registers
-            memcpy(regs,user_regs,sizeof(uint32_t) * 15);
+            memcpy(regs,user_regs,sizeof(u32) * 15);
             break;
         }
 
@@ -387,10 +387,10 @@ void Cpu::load_registers(cpu_mode mode)
         case cpu_mode::fiq:
         {
             // load bottom 8 user regs
-            memcpy(regs,user_regs,sizeof(uint32_t)*8);
+            memcpy(regs,user_regs,sizeof(u32)*8);
 
             // load fiq banked 
-            memcpy(&regs[8],fiq_banked,sizeof(uint32_t)*5);
+            memcpy(&regs[8],fiq_banked,sizeof(u32)*5);
             regs[SP] = hi_banked[idx][0];
             regs[LR] = hi_banked[idx][1];
 
@@ -405,7 +405,7 @@ void Cpu::load_registers(cpu_mode mode)
         case cpu_mode::undefined:
         {
             // load first 13 user regs back to reg
-            memcpy(regs,user_regs,sizeof(uint32_t)*13);
+            memcpy(regs,user_regs,sizeof(u32)*13);
 
             // load hi regs
             regs[SP] = hi_banked[idx][0];
@@ -425,7 +425,7 @@ void Cpu::load_registers(cpu_mode mode)
 }
 
 
-void Cpu::set_cpsr(uint32_t v)
+void Cpu::set_cpsr(u32 v)
 {
     cpsr = v;
 
@@ -453,7 +453,7 @@ void Cpu::store_registers(cpu_mode mode)
         case cpu_mode::user:
         {
             // store user registers back into registers
-            memcpy(user_regs,regs,sizeof(uint32_t) * 15);
+            memcpy(user_regs,regs,sizeof(u32) * 15);
             break;
         }
 
@@ -461,11 +461,11 @@ void Cpu::store_registers(cpu_mode mode)
         case cpu_mode::fiq:
         {
             // store bottom 8 user regs
-            memcpy(user_regs,regs,sizeof(uint32_t)*8);
+            memcpy(user_regs,regs,sizeof(u32)*8);
 
 
             // store fiq banked 
-            memcpy(fiq_banked,&regs[8],sizeof(uint32_t)*5);
+            memcpy(fiq_banked,&regs[8],sizeof(u32)*5);
             hi_banked[idx][0] = regs[SP];
             hi_banked[idx][1] = regs[LR];
 
@@ -480,7 +480,7 @@ void Cpu::store_registers(cpu_mode mode)
         case cpu_mode::undefined:
         {
             // write back first 13 regs to user
-            memcpy(user_regs,regs,sizeof(uint32_t)*13);
+            memcpy(user_regs,regs,sizeof(u32)*13);
 
 
             // store hi regs
@@ -500,7 +500,7 @@ void Cpu::store_registers(cpu_mode mode)
 }
 
 
-cpu_mode Cpu::cpu_mode_from_bits(uint32_t v)
+cpu_mode Cpu::cpu_mode_from_bits(u32 v)
 {
     switch(v)
     {
@@ -537,7 +537,7 @@ m is:
     4. 
 */
 // all cycles from this are internal
-void Cpu::do_mul_cycles(uint32_t mul_operand)
+void Cpu::do_mul_cycles(u32 mul_operand)
 {
 
     auto cycles = 4;
@@ -579,13 +579,13 @@ void Cpu::request_interrupt(interrupt i)
 
 // must decrement before and after for total number of pushed regs
 // just like stmfd does
-void Cpu::write_stack_fd(uint32_t reg)
+void Cpu::write_stack_fd(u32 reg)
 {
     mem.write_u32(regs[SP],regs[reg]);
     regs[SP] += ARM_WORD_SIZE;
 }
 
-void Cpu::read_stack_fd(uint32_t reg)
+void Cpu::read_stack_fd(u32 reg)
 {
     regs[reg] = mem.read_u32(regs[SP]);
     regs[SP] += ARM_WORD_SIZE;
@@ -660,7 +660,7 @@ void Cpu::service_interrupt()
 */
 }
 
-void Cpu::write_pc(uint32_t v)
+void Cpu::write_pc(u32 v)
 {    
 /*
     // return from user irq hanlder

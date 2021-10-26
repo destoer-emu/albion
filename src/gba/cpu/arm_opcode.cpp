@@ -16,9 +16,9 @@ void Cpu::arm_fill_pipeline() // need to verify this...
     if(execute_rom)
     {
         const auto wait = rom_wait_sequential_32;
-        pipeline[0] = mem.read_rom<uint32_t>(regs[PC]); cycle_tick(wait);
+        pipeline[0] = mem.read_rom<u32>(regs[PC]); cycle_tick(wait);
         regs[PC] += ARM_WORD_SIZE;
-        pipeline[1] = mem.read_rom<uint32_t>(regs[PC]); cycle_tick(wait);
+        pipeline[1] = mem.read_rom<u32>(regs[PC]); cycle_tick(wait);
     }
 
     else
@@ -30,16 +30,16 @@ void Cpu::arm_fill_pipeline() // need to verify this...
 }
 
 
-uint32_t Cpu::fetch_arm_opcode()
+u32 Cpu::fetch_arm_opcode()
 {
-    const uint32_t opcode = pipeline[0];
+    const u32 opcode = pipeline[0];
     pipeline[0] = pipeline[1];
     regs[PC] += ARM_WORD_SIZE; 
     pc_actual += ARM_WORD_SIZE;
     if(execute_rom)
     {
         const auto wait = rom_wait_sequential_32;
-        pipeline[1] = mem.read_rom<uint32_t>(regs[PC]);
+        pipeline[1] = mem.read_rom<u32>(regs[PC]);
         cycle_tick(wait);
     }
 
@@ -88,7 +88,7 @@ u32 Cpu::fast_arm_fetch_opcode()
 }
 
 
-void Cpu::write_pc_arm(uint32_t v)
+void Cpu::write_pc_arm(u32 v)
 {
     regs[PC] = v & ~3;
     //arm_fill_pipeline(); // fill the intitial cpu pipeline
@@ -98,7 +98,7 @@ void Cpu::write_pc_arm(uint32_t v)
 
 
 
-void Cpu::execute_arm_opcode(uint32_t instr)
+void Cpu::execute_arm_opcode(u32 instr)
 {
     // get the bits that determine the kind of instr it is
     const auto op = get_arm_opcode_bits(instr);
@@ -123,7 +123,7 @@ void Cpu::exec_arm()
 
 
 
-void Cpu::arm_unknown(uint32_t opcode)
+void Cpu::arm_unknown(u32 opcode)
 {
     const auto op = ((opcode >> 4) & 0xf) | ((opcode >> 16) & 0xff0);
     const auto err = fmt::format("[cpu-arm {:08x}] unknown opcode {:08x}:{:08x}\n{}\n",pc_actual,opcode,op,disass.disass_arm(pc_actual));
@@ -143,7 +143,7 @@ void Cpu::log_regs()
 }
 
 
-void Cpu::arm_swi(uint32_t opcode)
+void Cpu::arm_swi(u32 opcode)
 {
 
     //printf("swi %08x: %08x\n",pc_actual,opcode);
@@ -175,7 +175,7 @@ void Cpu::arm_swi(uint32_t opcode)
 // mul timings need to be worked on
 // double check where internal cycles go here
 template<bool S, bool A, bool U>
-void Cpu::arm_mull(uint32_t opcode)
+void Cpu::arm_mull(u32 opcode)
 {
     const auto rm = opcode & 0xf;
     const auto rs = (opcode >> 8) & 0xf;
@@ -242,7 +242,7 @@ void Cpu::arm_mull(uint32_t opcode)
 
 // neeeds a more accurate timings fix
 template<const bool S, const bool A>
-void Cpu::arm_mul(uint32_t opcode)
+void Cpu::arm_mul(u32 opcode)
 {
     // first is s cycle from pipeline rest is internal
     // dependant on the input
@@ -274,7 +274,7 @@ void Cpu::arm_mul(uint32_t opcode)
 }
 
 template<const bool B>
-void Cpu::arm_swap(uint32_t opcode)
+void Cpu::arm_swap(u32 opcode)
 {
     const auto rm = opcode & 0xf;
     const auto rd = (opcode >> 12) & 0xf;
@@ -282,7 +282,7 @@ void Cpu::arm_swap(uint32_t opcode)
 
 
     // swp works propely even if rm and rn are the same
-    uint32_t tmp; 
+    u32 tmp; 
 
     // rd = [rn], [rn] = rm
     if constexpr(B)
@@ -306,15 +306,15 @@ void Cpu::arm_swap(uint32_t opcode)
 // <--- double check this code as its the most likely error source
 // need timings double checked on this
 template<const bool S, const bool P, const bool U, const bool W, const bool L>
-void Cpu::arm_block_data_transfer(uint32_t opcode)
+void Cpu::arm_block_data_transfer(u32 opcode)
 {
     const auto rn = (opcode >> 16) & 0xf;
     const auto rlist = opcode & 0xffff;
 
 
 
-    uint32_t addr = regs[rn];
-    uint32_t old_base = regs[rn];
+    u32 addr = regs[rn];
+    u32 old_base = regs[rn];
     UNUSED(old_base);
 
     bool base_writeback_hit = false;
@@ -480,7 +480,7 @@ void Cpu::arm_block_data_transfer(uint32_t opcode)
 
 // need to handle instr variants and timings on these
 template<const bool L>
-void Cpu::arm_branch(uint32_t opcode)
+void Cpu::arm_branch(u32 opcode)
 {
     //1st cycle calc branch addr (this is overlayed with the initial pipeline)
     // fetch which we have allready done before we have even entered this func
@@ -524,13 +524,13 @@ void Cpu::arm_branch(uint32_t opcode)
 // TODO handle effects of directly writing the thumb bit 
 // double checking timings
 template<const bool MSR, const bool SPSR, const bool I>
-void Cpu::arm_psr(uint32_t opcode)
+void Cpu::arm_psr(u32 opcode)
 {
     // msr
     if constexpr(MSR)
     {
         // msr mask
-        uint32_t mask = 0;
+        u32 mask = 0;
 
         if(is_set(opcode,19)) mask |= 0xff000000;
         if(is_set(opcode,18)) mask |= 0x00ff0000;
@@ -609,7 +609,7 @@ void Cpu::arm_psr(uint32_t opcode)
 
 // look what the internal cycles are here
 template<const bool S,const bool I, const int OP>
-void Cpu::arm_data_processing(uint32_t opcode)
+void Cpu::arm_data_processing(u32 opcode)
 {
     // 1st cycle is handled due to pipeline
 
@@ -623,8 +623,8 @@ void Cpu::arm_data_processing(uint32_t opcode)
     // incase of a zero shift
     bool shift_carry = flag_c;
 
-    uint32_t op1 = regs[rn];
-    uint32_t op2;
+    u32 op1 = regs[rn];
+    u32 op2;
 
     // ror shifted immediate in increments of two
     if constexpr(I)
@@ -649,10 +649,10 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
         // immediate is allways register rm
         const auto rm = opcode & 0xf;
-        uint32_t imm = regs[rm];
+        u32 imm = regs[rm];
 
 
-        uint32_t shift_ammount = 0;
+        u32 shift_ammount = 0;
         // shift ammount is a register
         if(is_set(opcode,4))
         {
@@ -859,7 +859,7 @@ void Cpu::arm_data_processing(uint32_t opcode)
 
 
 // bx 
-void Cpu::arm_branch_and_exchange(uint32_t opcode)
+void Cpu::arm_branch_and_exchange(u32 opcode)
 {
     // 1st cycle is address calc overlayed with pipeline fetch
     const auto rn = opcode & 0xf;
@@ -875,7 +875,7 @@ void Cpu::arm_branch_and_exchange(uint32_t opcode)
 // halfword doubleword signed data transfer
 // <-- handle instr timings
 template<const bool P, const bool U, const bool I, const bool L, const bool W>
-void Cpu::arm_hds_data_transfer(uint32_t opcode)
+void Cpu::arm_hds_data_transfer(u32 opcode)
 {
     const auto rn = (opcode >> 16) & 0xf;
     const auto rd = (opcode >> 12) & 0xf;
@@ -886,7 +886,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
     auto addr = regs[rn];
 
-    uint32_t offset;
+    u32 offset;
 
     if constexpr(!I) 
     {
@@ -896,7 +896,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
     else
     {
-        uint8_t imm = opcode & 0xf;
+        u8 imm = opcode & 0xf;
         imm |= (opcode >> 4) & 0xf0;
         offset = imm;
     }
@@ -939,7 +939,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
             case 2: // ldrsb
             {
-                regs[rd] = sign_extend<uint32_t>(mem.read_u8(addr),8);
+                regs[rd] = sign_extend<u32>(mem.read_u8(addr),8);
                 internal_cycle(); // internal cycle for writeback
                 if(is_pc)
                 {
@@ -953,13 +953,13 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
                 if(!(addr & 1))
                 {
-                    regs[rd] = sign_extend<uint32_t>(mem.read_u16(addr),16);
+                    regs[rd] = sign_extend<u32>(mem.read_u16(addr),16);
                 }
 
                 // unaligned
                 else
                 {
-                    regs[rd] = sign_extend<uint32_t>(mem.read_u8(addr),8);
+                    regs[rd] = sign_extend<u32>(mem.read_u8(addr),8);
                 }
 
 
@@ -1029,7 +1029,7 @@ void Cpu::arm_hds_data_transfer(uint32_t opcode)
 
 // ldr , str
 template<const bool L, const bool W, const bool P, const bool I>
-void Cpu::arm_single_data_transfer(uint32_t opcode)
+void Cpu::arm_single_data_transfer(u32 opcode)
 {
 
     // 1st cycle is address calc (overlayed with pipeline)
@@ -1043,7 +1043,7 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
     const auto rd = (opcode >> 12) & 0xf;
     const auto rn = (opcode >> 16) & 0xf;
 
-    uint32_t offset;
+    u32 offset;
 
     if constexpr(I)
     {
@@ -1114,7 +1114,7 @@ void Cpu::arm_single_data_transfer(uint32_t opcode)
 
     else // str 
     {
-        uint32_t v = regs[rd];
+        u32 v = regs[rd];
 
         // due to prefetch pc is now higher
         // (pc+12)

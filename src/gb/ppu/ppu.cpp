@@ -64,7 +64,7 @@ void Ppu::init() noexcept
 	/*
 		// calc header checksum from 134 to 143 for name
 		uint8_t checksum = 0;
-		for(uint16_t i = 0x134; i < 0x143; i++)
+		for(u16 i = 0x134; i < 0x143; i++)
 		{
 			checksum += mem.read_mem(i);
 		}
@@ -391,7 +391,7 @@ void Ppu::switch_hblank() noexcept
 
 }
 
-void Ppu::update_graphics(uint32_t cycles) noexcept
+void Ppu::update_graphics(u32 cycles) noexcept
 {
 
 	// lcd is off nothing to do
@@ -580,10 +580,10 @@ void Ppu::ppu_write() noexcept
 	}
 }
 
-uint32_t Ppu::calc_pixel_transfer_end() noexcept
+u32 Ppu::calc_pixel_transfer_end() noexcept
 {
 	// does not handle the sprite delay
-	uint32_t cycles = 252; // base
+	u32 cycles = 252; // base
 	cycles += mem.io[IO_SCX] % 8; // scx delay
 
 	// is the window drawn on this line?
@@ -653,7 +653,7 @@ bool Ppu::push_pixel() noexcept
 
 	const auto pixel = sprite_priority? sp : bg;
 
-	const uint32_t full_color = cpu.is_cgb? get_cgb_color(pixel.colour_num, pixel.cgb_pal, pixel.source) :
+	const u32 full_color = cpu.is_cgb? get_cgb_color(pixel.colour_num, pixel.cgb_pal, pixel.source) :
 		get_dmg_color(pixel.colour_num,pixel.source);
 
 	screen[(current_line*SCREEN_WIDTH)+x_cord] = full_color;
@@ -729,14 +729,14 @@ void Ppu::tick_fetcher() noexcept
 }	
 	
 
-void Ppu::draw_scanline(uint32_t cycles) noexcept 
+void Ppu::draw_scanline(u32 cycles) noexcept 
 {
 	// is sprite drawing enabled?
 	const bool obj_enabled = is_set(mem.io[IO_LCDC],1);
 	
 
 	// advance the fetcher and the fifo
-	for(uint32_t i = 0; i < cycles; i++) // 1 pixel pushed per cycle
+	for(u32 i = 0; i < cycles; i++) // 1 pixel pushed per cycle
 	{
 	
 		// just started drawing window
@@ -815,7 +815,7 @@ void Ppu::read_sprites() noexcept
 	cur_sprite = 0;
 	for(size_t sprite = 0; sprite < 40; sprite++) // should fetch all these as soon as we leave oam search
 	{
-        const uint16_t addr = sprite*4;
+        const u16 addr = sprite*4;
 		const uint8_t y_pos = mem.oam[addr & 0xff];
 		if( scanline -(y_size - 16) < y_pos  && scanline + 16 >= y_pos )
 		{

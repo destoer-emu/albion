@@ -12,13 +12,13 @@ struct Flash
     void init(size_t size, const std::string &rom_name);
 
 
-    void write_flash(uint32_t addr, uint8_t v);
+    void write_flash(u32 addr, u8 v);
 
-    uint8_t read_flash(uint32_t addr);
+    u8 read_flash(u32 addr);
 
     void save_ram();
 
-    void do_flash_operation(uint32_t addr, uint8_t v);
+    void do_flash_operation(u32 addr, u8 v);
 
     enum class flash_command_state
     {
@@ -45,7 +45,7 @@ struct Flash
     flash_command_state command_state;
     flash_operation operation;
 
-    std::vector<uint8_t> ram;
+    std::vector<u8> ram;
 };
 
 

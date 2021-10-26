@@ -5,8 +5,8 @@
 
 namespace gameboyadvance
 {
-static constexpr uint32_t SCREEN_WIDTH = 240;
-static constexpr uint32_t SCREEN_HEIGHT = 160;
+static constexpr u32 SCREEN_WIDTH = 240;
+static constexpr u32 SCREEN_HEIGHT = 160;
 
 enum class display_mode
 {
@@ -24,15 +24,15 @@ struct Display
     void insert_new_ppu_event();
 
 
-    void render_palette(uint32_t *palette, size_t size);
-    void render_map(int id, std::vector<uint32_t> &map);
+    void render_palette(u32 *palette, size_t size);
+    void render_map(int id, std::vector<u32> &map);
 
-    uint32_t convert_color(uint16_t color)
+    u32 convert_color(u16 color)
     {
         return col_lut[deset_bit(color,15)];
     }
 
-    std::vector<uint32_t> screen;
+    std::vector<u32> screen;
     bool new_vblank = false;
     DispIo disp_io;
     display_mode mode = display_mode::visible;
@@ -41,13 +41,13 @@ struct Display
     {
         TileData() {}
 
-        TileData(uint16_t c, pixel_source s)
+        TileData(u16 c, pixel_source s)
         {
             color = c;
             source = s;
         }
 
-        uint16_t color = 0;
+        u16 color = 0;
         pixel_source source = pixel_source::bd;
     };
 
@@ -71,13 +71,13 @@ struct Display
     bool is_bg_window_trivial(int id);
 
     // renderer helper functions
-    uint16_t read_bg_palette(uint32_t pal_num,uint32_t idx);
-    uint16_t read_obj_palette(uint32_t pal_num,uint32_t idx);
+    u16 read_bg_palette(u32 pal_num,u32 idx);
+    u16 read_obj_palette(u32 pal_num,u32 idx);
 
-    void read_tile(TileData *tile,unsigned int bg,bool col_256,uint32_t base,uint32_t pal_num,uint32_t tile_num, 
-        uint32_t y,bool x_flip, bool y_flip);
+    void read_tile(TileData *tile,unsigned int bg,bool col_256,u32 base,u32 pal_num,u32 tile_num, 
+        u32 y,bool x_flip, bool y_flip);
     
-    void draw_tile(uint32_t x,const TileData &p);
+    void draw_tile(u32 x,const TileData &p);
 
     unsigned int cyc_cnt = 0; // current number of elapsed cycles
     unsigned int ly = 0; // current number of cycles
@@ -101,21 +101,21 @@ struct Display
     std::vector<TileData> sprite_line;
     std::vector<bool> sprite_semi_transparent;
     std::vector<window_source> window;
-    std::vector<uint32_t> oam_priority;
-    std::vector<uint32_t> sprite_priority;
+    std::vector<u32> oam_priority;
+    std::vector<u32> sprite_priority;
 
 
-    using ColorLut = std::array<uint32_t,32768>;
+    using ColorLut = std::array<u32,32768>;
     constexpr ColorLut pop_color_lut()
     {
         ColorLut lut{};
 
-        for(uint16_t c = 0; c < lut.size(); c++)
+        for(u16 c = 0; c < lut.size(); c++)
         {
 
-            const uint32_t R = c & 0x1f;
-            const uint32_t G = (c >> 5) & 0x1f;
-            const uint32_t B = (c >> 10) & 0x1f;
+            const u32 R = c & 0x1f;
+            const u32 G = (c >> 5) & 0x1f;
+            const u32 B = (c >> 10) & 0x1f;
 
             // default to standard colors until we add proper correction
             lut[c] =  B << 19 |  G << 11 | R << 3 | 0xFF000000;

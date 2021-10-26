@@ -653,7 +653,7 @@ void Disass::load_sym_file(const std::string name)
 }
 
 
-bool Disass::get_symbol(uint16_t addr,std::string &sym)
+bool Disass::get_symbol(u16 addr,std::string &sym)
 {
     if(!sym_file_loaded)
     {
@@ -695,9 +695,9 @@ bool Disass::get_symbol(uint16_t addr,std::string &sym)
 
 // not sure if its worth just adding a size field
 // and having a bunch of extra bytes in the exe
-uint32_t Disass::get_op_sz(uint16_t addr) noexcept
+u32 Disass::get_op_sz(u16 addr) noexcept
 {
-    uint8_t opcode = mem.read_mem(addr++);
+    u8 opcode = mem.read_mem(addr++);
 
     bool is_cb = opcode == 0xcb;
 
@@ -710,10 +710,10 @@ uint32_t Disass::get_op_sz(uint16_t addr) noexcept
 
 
 
-std::string Disass::disass_op(uint16_t addr) noexcept
+std::string Disass::disass_op(u16 addr) noexcept
 {
 
-    uint8_t opcode = mem.read_mem(addr++);
+    u8 opcode = mem.read_mem(addr++);
 
     
     if(opcode == 0xcb)
@@ -776,7 +776,7 @@ std::string Disass::disass_op(uint16_t addr) noexcept
             case disass_type::op_i8:
             {
                 const auto operand = static_cast<int8_t>(mem.read_mem(addr++));
-                const uint16_t v = addr+operand;
+                const u16 v = addr+operand;
                 std::string symbol = "";
                 if(get_symbol(v,symbol))
                 {

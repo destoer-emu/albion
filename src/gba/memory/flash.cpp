@@ -38,7 +38,7 @@ void Flash::init(size_t size, const std::string &rom_name)
 }
 
 
-void Flash::write_flash(uint32_t addr, uint8_t v)
+void Flash::write_flash(u32 addr, u8 v)
 {
     addr &= 0xffff;
 
@@ -167,7 +167,7 @@ void Flash::write_flash(uint32_t addr, uint8_t v)
     }
 }
 
-void Flash::do_flash_operation(uint32_t addr, uint8_t v)
+void Flash::do_flash_operation(u32 addr, u8 v)
 {
     // can these be triggered in tandem or
     // is this state shared?
@@ -225,7 +225,7 @@ void Flash::do_flash_operation(uint32_t addr, uint8_t v)
 
 // investigate what happens when we don non 8 bit accesses on flash
 // do they work on real hardware?
-uint8_t Flash::read_flash(uint32_t addr)
+u8 Flash::read_flash(u32 addr)
 {
     addr &= 0xffff;
 

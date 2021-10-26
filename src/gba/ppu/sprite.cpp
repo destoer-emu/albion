@@ -25,14 +25,14 @@ void Display::render_sprites(int mode)
 
     // have to traverse it in forward order
     // even though reverse is easier to handle most cases
-    for(uint32_t i = 0; i < 128; i++)
+    for(u32 i = 0; i < 128; i++)
     {
         int obj_idx = i * 8;
         
 
-        const auto attr0 = handle_read<uint16_t>(mem.oam,obj_idx);
-        const auto attr1 = handle_read<uint16_t>(mem.oam,obj_idx+2);
-        const auto attr2 = handle_read<uint16_t>(mem.oam,obj_idx+4);
+        const auto attr0 = handle_read<u16>(mem.oam,obj_idx);
+        const auto attr1 = handle_read<u16>(mem.oam,obj_idx+2);
+        const auto attr2 = handle_read<u16>(mem.oam,obj_idx+4);
 
         const bool affine = is_set(attr0,8);
 
@@ -88,11 +88,11 @@ void Display::render_sprites(int mode)
         const auto y_sprite_size = y_size;
         const bool double_size = is_set(attr0,9) && affine;
 
-        uint32_t y_cord = attr0 & 0xff;
+        u32 y_cord = attr0 & 0xff;
 
         // current x cords greater than screen width are handled in the decode loop
         // by ignoring them until they are in range
-        uint32_t x_cord = attr1 & 511;
+        u32 x_cord = attr1 & 511;
 
         // bounding box even if double isnt going to draw outside 
         // because of how we operate on it
@@ -130,7 +130,7 @@ void Display::render_sprites(int mode)
         else
         {
             // by definiton it is allways greater than ly before it overflows
-            uint8_t y_end = (y_cord + y_size) & 0xff;
+            u8 y_end = (y_cord + y_size) & 0xff;
             line_overlap = y_end >= ly && y_end < SCREEN_HEIGHT; 
         }
 
@@ -167,7 +167,7 @@ void Display::render_sprites(int mode)
         const bool y_flip = is_set(attr1,13) && !affine;
 
 
-        const uint32_t aff_param = (attr1 >> 9) & 31;
+        const u32 aff_param = (attr1 >> 9) & 31;
 
         // rotation centre
         const int32_t x0 = x_sprite_size / 2;
@@ -181,7 +181,7 @@ void Display::render_sprites(int mode)
         {
 
 
-            const uint32_t x_offset = (x_cord + x1) & 511;
+            const u32 x_offset = (x_cord + x1) & 511;
 
             // probably a nicer way to do this but this is fine for now
             if(x_offset >= SCREEN_WIDTH)
@@ -198,10 +198,10 @@ void Display::render_sprites(int mode)
                 const auto base = aff_param*0x20;
 
                 // 8.8 fixed point
-                const int16_t pa = handle_read<uint16_t>(mem.oam,base+0x6);
-                const int16_t pb = handle_read<uint16_t>(mem.oam,base+0xe);
-                const int16_t pc = handle_read<uint16_t>(mem.oam,base+0x16);
-                const int16_t pd = handle_read<uint16_t>(mem.oam,base+0x1e);
+                const int16_t pa = handle_read<u16>(mem.oam,base+0x6);
+                const int16_t pb = handle_read<u16>(mem.oam,base+0xe);
+                const int16_t pc = handle_read<u16>(mem.oam,base+0x16);
+                const int16_t pd = handle_read<u16>(mem.oam,base+0x1e);
 
 
                 
@@ -226,7 +226,7 @@ void Display::render_sprites(int mode)
             }
 
 
-            uint32_t tile_offset;
+            u32 tile_offset;
 
             // 1d object mapping
             if(disp_io.disp_cnt.obj_vram_mapping)
@@ -249,13 +249,13 @@ void Display::render_sprites(int mode)
             {
 
                 // base + tile_base * tile_size
-                const uint32_t addr = 0x10000 + ((tile_offset + tile_num) * 8 * 4);
+                const u32 addr = 0x10000 + ((tile_offset + tile_num) * 8 * 4);
 
-                const uint32_t data_offset = ((x2 % 8) / 2) + ((y2 % 8) * 4);
+                const u32 data_offset = ((x2 % 8) / 2) + ((y2 % 8) * 4);
                 const auto tile_data = mem.vram[addr+data_offset];
 
                 // lower x cord stored in lower nibble
-                const uint32_t idx = ((x2 & 1)? (tile_data >> 4) : tile_data) & 0xf;
+                const u32 idx = ((x2 & 1)? (tile_data >> 4) : tile_data) & 0xf;
 
                 // object window obj not displayed any non zero pixels are 
                 // the object window
@@ -295,9 +295,9 @@ void Display::render_sprites(int mode)
                 // tile size is still 32 bytes for the tile num in 256 for some reason (thanks fleroviux)
                 // even though the bg uses the logical 64...
                 // the actual offset into it because of the cords is still 64
-                const uint32_t addr = 0x10000 + (tile_num * 8 * 4) + (tile_offset * 8 * 8);
+                const u32 addr = 0x10000 + (tile_num * 8 * 4) + (tile_offset * 8 * 8);
 
-                const uint32_t data_offset = (x2 % 8) + ((y2 % 8) * 8);
+                const u32 data_offset = (x2 % 8) + ((y2 % 8) * 8);
                 const auto tile_data = mem.vram[addr+data_offset];
 
                 // object window obj not displayed any non zero pixels are 

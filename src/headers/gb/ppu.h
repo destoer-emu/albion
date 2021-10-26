@@ -6,8 +6,8 @@
 namespace gameboy
 {
 
-static constexpr uint32_t SCREEN_WIDTH = 160;
-static constexpr uint32_t SCREEN_HEIGHT = 144;
+static constexpr u32 SCREEN_WIDTH = 160;
+static constexpr u32 SCREEN_HEIGHT = 144;
 
 enum class ppu_mode
 {
@@ -20,8 +20,8 @@ enum class ppu_mode
 
 struct Obj // struct for holding sprites on a scanline
 {
-    uint16_t index = 0;
-    uint8_t x_pos = 0;
+    u16 index = 0;
+    u8 x_pos = 0;
 };
 
 struct Ppu
@@ -36,7 +36,7 @@ struct Ppu
     void insert_new_ppu_event() noexcept;
 
 
-    std::vector<uint32_t> screen; // 160 by 144
+    std::vector<u32> screen; // 160 by 144
 
     // inform ppu that registers that can affect
     // pixel transfer have been written
@@ -46,14 +46,14 @@ struct Ppu
 
     bool new_vblank = false;
 
-    void update_graphics(uint32_t cycles) noexcept;
+    void update_graphics(u32 cycles) noexcept;
 
     unsigned int get_current_line() const noexcept
     {
         return early_line_zero? 0 : current_line;
     }
 
-    uint8_t read_stat() const noexcept;
+    u8 read_stat() const noexcept;
 
 
     void write_stat() noexcept;
@@ -68,14 +68,14 @@ struct Ppu
 
 
     // cgb 
-    void set_bg_pal_idx(uint8_t v) noexcept;
-    void set_sp_pal_idx(uint8_t v) noexcept;
-    void write_sppd(uint8_t v) noexcept;
-    void write_bgpd(uint8_t v) noexcept;
+    void set_bg_pal_idx(u8 v) noexcept;
+    void set_sp_pal_idx(u8 v) noexcept;
+    void write_sppd(u8 v) noexcept;
+    void write_bgpd(u8 v) noexcept;
 
 
-    uint8_t get_sppd() const noexcept;
-    uint8_t get_bgpd() const noexcept;
+    u8 get_sppd() const noexcept;
+    u8 get_bgpd() const noexcept;
 
 
     // save states
@@ -84,9 +84,9 @@ struct Ppu
 
 
     // display viewer
-    std::vector<uint32_t> render_bg(bool higher) noexcept;
-    std::vector<uint32_t> render_tiles() noexcept;
-    void render_palette(uint32_t *palette_bg,uint32_t *palette_sp) noexcept;
+    std::vector<u32> render_bg(bool higher) noexcept;
+    std::vector<u32> render_tiles() noexcept;
+    void render_palette(u32 *palette_bg,u32 *palette_sp) noexcept;
 
 
     // todo properly handle cgb in dmg
@@ -97,7 +97,7 @@ struct Ppu
 		{0xffffffff,0xffcccccc,0xff777777,0xff000000}
 	};
 
-    using ColorLut = std::array<uint32_t,32768>;
+    using ColorLut = std::array<u32,32768>;
     const ColorLut col_lut = pop_color_lut();
 
     enum class mask_mode
@@ -124,9 +124,9 @@ struct Ppu
 
     struct Obj // struct for holding sprites on a scanline
     {
-        uint16_t index = 0;
-        uint8_t x_pos = 0;
-        uint8_t attr = 0;
+        u16 index = 0;
+        u8 x_pos = 0;
+        u8 attr = 0;
         unsigned priority = 0;
     };
 
@@ -194,8 +194,8 @@ struct Ppu
     void tick_fetcher() noexcept;
     void render_scanline() noexcept;
     void tile_fetch(Pixel_Obj *buf, bool use_window) noexcept;
-    uint32_t get_cgb_color(int color_num, int cgb_pal, pixel_source source) const noexcept;
-    uint32_t get_dmg_color(int color_num, pixel_source source) const noexcept;
+    u32 get_cgb_color(int color_num, int cgb_pal, pixel_source source) const noexcept;
+    u32 get_dmg_color(int color_num, pixel_source source) const noexcept;
     void read_sprites() noexcept;
     void sprite_fetch(Pixel_Obj *buf,bool use_fifo=true) noexcept;
     void switch_hblank() noexcept;
@@ -207,22 +207,22 @@ struct Ppu
 
 
     // scanline drawing (used when no pixel transfer writes happen)
-    void draw_scanline(uint32_t cycles) noexcept;
+    void draw_scanline(u32 cycles) noexcept;
 
 
     // main ppu state
     ppu_mode mode = ppu_mode::oam_search;
 	bool signal = false;
-    uint32_t scanline_counter = 0;
+    u32 scanline_counter = 0;
     unsigned int current_line = 0;
 
-    static constexpr uint32_t OAM_END = 80;
-    static constexpr uint32_t LINE_END = 456;
-    uint32_t pixel_transfer_end = 252;
+    static constexpr u32 OAM_END = 80;
+    static constexpr u32 LINE_END = 456;
+    u32 pixel_transfer_end = 252;
     bool emulate_pixel_fifo = false;
 
 
-    uint32_t calc_pixel_transfer_end() noexcept;
+    u32 calc_pixel_transfer_end() noexcept;
 
     Pixel_Fetcher fetcher;
     Pixel_Fifo bg_fifo;
@@ -253,14 +253,14 @@ struct Ppu
     bool window_y_triggered = false;
 
     // cgb pal
-	uint8_t bg_pal[0x40] = {0xff}; // bg palette data
-	uint8_t sp_pal[0x40] = {0xff}; // sprite pallete data 
+	u8 bg_pal[0x40] = {0xff}; // bg palette data
+	u8 sp_pal[0x40] = {0xff}; // sprite pallete data 
 	unsigned int sp_pal_idx = 0;
 	unsigned int bg_pal_idx = 0; // index into the bg pal (entry takes two bytes)
 
 
     // default colors
-    static constexpr uint32_t dmg_colors[3][4] = 
+    static constexpr u32 dmg_colors[3][4] = 
     {
         {0xffffffff,0xffcccccc,0xff777777,0xff000000},
         {0xffffffff,0xffcccccc,0xff777777,0xff000000},
@@ -272,7 +272,7 @@ struct Ppu
     {
         ColorLut lut{};
 
-        for(uint16_t col = 0; col < lut.size(); col++)
+        for(u16 col = 0; col < lut.size(); col++)
         {
             int blue = col & 0x1f;
             int green = (col >> 5) & 0x1f;
@@ -284,7 +284,7 @@ struct Ppu
             green = (green << 3) | (green >> 2);
 
 
-            const uint32_t full_color = blue | (green << 8) | (red << 16);
+            const u32 full_color = blue | (green << 8) | (red << 16);
 
             lut[col] = full_color | 0xff000000;
         }

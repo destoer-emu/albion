@@ -12,7 +12,7 @@ struct HaltCnt
     void init();
 
     // write only
-    void write(uint8_t v);
+    void write(u8 v);
 
 
     enum class power_state
@@ -32,17 +32,17 @@ struct Timer
 
     void init();
 
-    uint8_t read_counter(int idx) const;
+    u8 read_counter(int idx) const;
 
     // actually writes the reload but is at the same addr
-    void write_counter(int idx, uint8_t v);
+    void write_counter(int idx, u8 v);
 
-    uint8_t read_control() const;
-    void write_control(uint8_t v);
+    u8 read_control() const;
+    void write_control(u8 v);
 
     // counter
-    uint16_t reload;
-    uint16_t counter;
+    u16 reload;
+    u16 counter;
 
 
     int cycle_count;
@@ -77,8 +77,8 @@ struct CpuIo
 
     // interrupt master enable
     bool ime;
-    uint16_t interrupt_enable;
-    uint16_t interrupt_flag;
+    u16 interrupt_enable;
+    u16 interrupt_flag;
     HaltCnt halt_cnt;
 
 
