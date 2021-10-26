@@ -68,7 +68,7 @@ u32 Cpu::sub(u32 v1, u32 v2)
 
     if constexpr(S)
     {
-        flag_v = sub_overflow(v1,v2);
+        flag_v = ssub_overflow(v1,v2);
         flag_c = arm_usub_overflow(v1,v2);
 
         set_nz_flag(ans);
@@ -89,7 +89,7 @@ u32 Cpu::sbc(u32 v1, u32 v2)
     {
         // ^ as if both operations generate an inproper result we will get an expected sign
         const s32 ans_signed = v1 - v2;
-        flag_v = sub_overflow(v1,v2) ^ sub_overflow(ans_signed,(s32)v3);
+        flag_v = ssub_overflow(v1,v2) ^ ssub_overflow(ans_signed,(s32)v3);
 
         // if both operations overflow we need to set the carry
         const u32 ans_unsigned = v1 - v2;

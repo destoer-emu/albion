@@ -372,7 +372,7 @@ inline bool uadd_overflow(T v1, T v2) noexcept
 
 
 template<typename T>
-inline bool sub_overflow(T v1,T v2) noexcept
+inline bool ssub_overflow(T v1,T v2) noexcept
 {
     using signed_type_in = typename std::make_signed<T>::type;
     auto sv1 = static_cast<signed_type_in>(v1);
@@ -398,6 +398,7 @@ inline bool usub_overflow(T v1,T v2) noexcept
 #ifdef _MSC_VER
     return uv1 <= uv2;
 #else
+	// TODO: this needs to be inverted if we compile for ARM
     return __builtin_sub_overflow(uv1,uv2,&uv1);
 #endif  
 }
