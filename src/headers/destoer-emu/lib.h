@@ -396,7 +396,7 @@ inline bool usub_overflow(T v1,T v2) noexcept
     auto uv1 = static_cast<unsigned_type_in>(v1);
     auto uv2 = static_cast<unsigned_type_in>(v2);
 #ifdef _MSC_VER
-    return uv1 <= uv2;
+    return uv1 < uv2;
 #else
 	// TODO: this needs to be inverted if we compile for ARM
     return __builtin_sub_overflow(uv1,uv2,&uv1);
