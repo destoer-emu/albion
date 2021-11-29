@@ -38,7 +38,18 @@ struct Cpu
 };
 
 
-using INSTR_FUNC = void (*)(N64 &n64, u32 opcode);
+struct Opcode
+{
+    u32 op;
+
+    u32 rs;
+    u32 rd;
+    u32 rt;
+    u16 imm;
+};
+
+
+using INSTR_FUNC = void (*)(N64 &n64, const Opcode &opcode);
 
 void step(N64 &n64);
 void reset_cpu(Cpu &cpu);

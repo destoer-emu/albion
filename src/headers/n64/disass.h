@@ -7,9 +7,9 @@ namespace nintendo64
 {
 
 
-using DISASS_FUNC = std::string (*)(u32 opcode, u64 pc);
+using DISASS_FUNC = std::string (*)(const Opcode &opcode, u64 pc);
 
 
-std::string disass_opcode(u32 opcode, u64 pc);
+std::string disass_opcode(const Opcode &opcode, u64 pc);
 
 }

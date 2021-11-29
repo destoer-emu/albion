@@ -99,6 +99,14 @@ void write_cp0(Cpu &cpu, u64 v, u32 reg)
                 unimplemented("little endian");
             }
 
+
+
+            if(cpu.ie || cpu.im)
+            {
+                unimplemented("interrupts");
+            }
+
+
             if((cpu.ux && cpu.ksu == 0b10) || (cpu.sx && cpu.ksu == 0b01) || (cpu.kx && cpu.ksu == 0b00))
             {
                 unimplemented("64 bit addressing");
@@ -129,14 +137,28 @@ void write_cp0(Cpu &cpu, u64 v, u32 reg)
 }
 
 
+void init_opcode(Opcode &op, u32 opcode)
+{
+    op.op = opcode;
+    op.rs = get_rs(opcode);
+    op.rt = get_rt(opcode);
+    op.rd = get_rd(opcode);
+    op.imm = opcode & 0xffff;    
+}
+
 void step(N64 &n64)
 {
     const u32 opcode = read_u32(n64,n64.cpu.pc);
-    std::cout << fmt::format("{:16x}: {}\n",n64.cpu.pc,disass_opcode(opcode,n64.cpu.pc_next));
+
+    Opcode op;
+    init_opcode(op,opcode);
+
+    std::cout << fmt::format("{:16x}: {}\n",n64.cpu.pc,disass_opcode(op,n64.cpu.pc_next));
     
     skip_instr(n64.cpu);
 
-    instr_lut[opcode >> 26](n64,opcode);
+
+    instr_lut[opcode >> 26](n64,op);
 
     
     // $zero is hardwired to zero, make sure writes cant touch it

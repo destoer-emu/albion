@@ -3,27 +3,23 @@
 namespace nintendo64
 {
 
-void instr_unknown_regimm(N64 &n64, u32 opcode)
+void instr_unknown_regimm(N64 &n64, const Opcode &opcode)
 {
-    const auto err = fmt::format("[cpu {:16x} {}] regimm unknown opcode {:08x}\n",n64.cpu.pc-4,disass_opcode(opcode,n64.cpu.pc),opcode);
+    const auto err = fmt::format("[cpu {:16x} {}] regimm unknown opcode {:08x}\n",n64.cpu.pc-4,disass_opcode(opcode,n64.cpu.pc),opcode.op);
     n64.debug.trace.print();
     throw std::runtime_error(err);        
 }
 
-void instr_regimm(N64 &n64, u32 opcode)
+void instr_regimm(N64 &n64, const Opcode &opcode)
 {
-    instr_regimm_lut[(opcode >> 16) & 0b11111](n64,opcode);
+    instr_regimm_lut[(opcode.op >> 16) & 0b11111](n64,opcode);
 }
 
-void instr_bgezl(N64 &n64, u32 opcode)
+void instr_bgezl(N64 &n64, const Opcode &opcode)
 {
-    const auto rs = get_rs(opcode);
-
-    const auto imm = opcode & 0xffff;
-
-    if(static_cast<s64>(n64.cpu.regs[rs]) >= 0)
+    if(static_cast<s64>(n64.cpu.regs[opcode.rs]) >= 0)
     {
-        const auto target = compute_branch_addr(n64.cpu.pc,imm);
+        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
 
         write_pc(n64,target);
     }
@@ -35,18 +31,14 @@ void instr_bgezl(N64 &n64, u32 opcode)
     }
 }
 
-void instr_bgezal(N64 &n64, u32 opcode)
+void instr_bgezal(N64 &n64, const Opcode &opcode)
 {
-    const auto rs = get_rs(opcode);
-
-    const auto imm = opcode & 0xffff;
-
     // link unconditonally
     n64.cpu.regs[RA] = n64.cpu.pc;
 
-    if(static_cast<s64>(n64.cpu.regs[rs]) >= 0)
+    if(static_cast<s64>(n64.cpu.regs[opcode.rs]) >= 0)
     {
-        const auto target = compute_branch_addr(n64.cpu.pc,imm);
+        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
         write_pc(n64,target);
     }
     

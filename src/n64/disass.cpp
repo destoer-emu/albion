@@ -4,43 +4,43 @@ namespace nintendo64
 {
 
 
-std::string disass_unknown(u32 opcode, u64 pc)
+std::string disass_unknown(const Opcode &opcode, u64 pc)
 {
     // make this panic for now
-    printf("[%zx]disass unknown opcode: %08x\n",pc-0x4,opcode);
+    printf("[%zx]disass unknown opcode: %08x\n",pc-0x4,opcode.op);
     exit(1);
 
     return "unknown opcode";
 }
 
-std::string disass_unknown_regimm(u32 opcode, u64 pc)
+std::string disass_unknown_regimm(const Opcode &opcode, u64 pc)
 {
     // make this panic for now
-    printf("[%zx]disass regimm unknown opcode: %08x\n",pc-0x4,opcode);
+    printf("[%zx]disass regimm unknown opcode: %08x\n",pc-0x4,opcode.op);
     exit(1);
 
     return "unknown opcode";    
 }
 
 
-std::string disass_unknown_cop0(u32 opcode, u64 pc)
+std::string disass_unknown_cop0(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
     // make this panic for now
-    printf("disass cop0 unknown opcode: %08x\n",opcode);
+    printf("disass cop0 unknown opcode: %08x\n",opcode.op);
     exit(1);
 
     return "unknown cop0 opcode";
 }
 
 
-std::string disass_unknown_r(u32 opcode, u64 pc)
+std::string disass_unknown_r(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
     // make this panic for now
-    printf("disass r unknown opcode: %08x\n",opcode);
+    printf("disass r unknown opcode: %08x\n",opcode.op);
     exit(1);
 
     return "unknown r opcode";
@@ -48,374 +48,242 @@ std::string disass_unknown_r(u32 opcode, u64 pc)
 
 
 
-std::string disass_lui(u32 opcode, u64 pc)
+std::string disass_lui(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto rt = get_rt(opcode);
-
-    return fmt::format("lui {}, {:04x}",reg_names[rt],opcode & 0xffff);
+    return fmt::format("lui {}, {:04x}",reg_names[opcode.rt],opcode.imm);
 }
 
-std::string disass_addiu(u32 opcode, u64 pc)
+std::string disass_addiu(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
-
-    const auto rt = get_rt(opcode);
-    const auto rs = get_rs(opcode);
-
-    const auto imm = opcode & 0xffff;
-
-    return fmt::format("addiu {}, {}, {:04x}",reg_names[rt],reg_names[rs],imm);
+    return fmt::format("addiu {}, {}, {:04x}",reg_names[opcode.rt],reg_names[opcode.rs],opcode.imm);
 }
 
 
-std::string disass_addi(u32 opcode, u64 pc)
+std::string disass_addi(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
-
-    const auto rt = get_rt(opcode);
-    const auto rs = get_rs(opcode);
-
-    const auto imm = opcode & 0xffff;
-
-    return fmt::format("addi {}, {}, {:04x}",reg_names[rt],reg_names[rs],imm);
+    return fmt::format("addi {}, {}, {:04x}",reg_names[opcode.rt],reg_names[opcode.rs],opcode.imm);
 }
 
 
-std::string disass_ori(u32 opcode, u64 pc)
+std::string disass_ori(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
-
-    const auto rt = get_rt(opcode);
-    const auto rs = get_rs(opcode);
-
-    const auto imm = opcode & 0xffff;
-
-    return fmt::format("ori {}, {}, {:04x}",reg_names[rt],reg_names[rs],imm);
+    return fmt::format("ori {}, {}, {:04x}",reg_names[opcode.rt],reg_names[opcode.rs],opcode.imm);
 }
 
-std::string disass_andi(u32 opcode, u64 pc)
+std::string disass_andi(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
-
-    const auto rt = get_rt(opcode);
-    const auto rs = get_rs(opcode);
-
-    const auto imm = opcode & 0xffff;
-
-    return fmt::format("andi {}, {}, {:04x}",reg_names[rt],reg_names[rs],imm);
+    return fmt::format("andi {}, {}, {:04x}",reg_names[opcode.rt],reg_names[opcode.rs],opcode.imm);
 }
 
-std::string disass_xori(u32 opcode, u64 pc)
+std::string disass_xori(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
-
-    const auto rt = get_rt(opcode);
-    const auto rs = get_rs(opcode);
-
-    const auto imm = opcode & 0xffff;
-
-    return fmt::format("xori {}, {}, {:04x}",reg_names[rt],reg_names[rs],imm);
+    return fmt::format("xori {}, {}, {:04x}",reg_names[opcode.rt],reg_names[opcode.rs],opcode.imm);
 }
 
 
-std::string disass_slti(u32 opcode, u64 pc)
+std::string disass_slti(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
-
-
-    const auto rt = get_rt(opcode);
-    const auto rs = get_rs(opcode);
-
-    const auto imm = opcode & 0xffff;
-
-    return fmt::format("slti {}, {}, {:04x}",reg_names[rt],reg_names[rs],imm);
+    return fmt::format("slti {}, {}, {:04x}",reg_names[opcode.rt],reg_names[opcode.rs],opcode.imm);
 }   
 
 
-std::string disass_jal(u32 opcode, u64 pc)
+std::string disass_jal(const Opcode &opcode, u64 pc)
 {
-    const auto target = get_target(opcode,pc);
+    const auto target = get_target(opcode.op,pc);
 
     return fmt::format("jal {:8x}",target);
 }
 
-std::string disass_lw(u32 opcode, u64 pc)
+std::string disass_lw(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+    const auto base = opcode.rs;
+    return fmt::format("lw {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
+}
+
+std::string disass_lbu(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto base = get_rs(opcode);
-    const auto rt = get_rt(opcode);
-
-    const auto imm = opcode & 0xffff;  
-
-    return fmt::format("lw {}, {:04x}({})",reg_names[rt],imm,reg_names[base]);
+    const auto base = opcode.rs;
+    return fmt::format("lbu {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
 }
 
-std::string disass_lbu(u32 opcode, u64 pc)
+
+std::string disass_sw(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto base = get_rs(opcode);
-    const auto rt = get_rt(opcode);
-
-    const auto imm = opcode & 0xffff;  
-
-    return fmt::format("lbu {}, {:04x}({})",reg_names[rt],imm,reg_names[base]);
+    const auto base = opcode.rs;
+    return fmt::format("sw {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
 }
 
-
-std::string disass_sw(u32 opcode, u64 pc)
+std::string disass_sb(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto base = get_rs(opcode);
-    const auto rt = get_rt(opcode);
-
-    const auto imm = opcode & 0xffff;  
-
-    return fmt::format("sw {}, {:04x}({})",reg_names[rt],imm,reg_names[base]);
-}
-
-std::string disass_sb(u32 opcode, u64 pc)
-{
-    UNUSED(pc);
-
-    const auto base = get_rs(opcode);
-    const auto rt = get_rt(opcode);
-
-    const auto imm = opcode & 0xffff;  
-
-    return fmt::format("sb {}, {:04x}({})",reg_names[rt],imm,reg_names[base]);
+    const auto base = opcode.rs;
+    return fmt::format("sb {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
 }
 
 
-std::string disass_bne(u32 opcode, u64 pc)
+std::string disass_bne(const Opcode &opcode, u64 pc)
 {
-    const auto rs = get_rs(opcode);
-    const auto rt = get_rt(opcode);
+    const auto addr = compute_branch_addr(pc,opcode.imm);
 
-    const auto imm = opcode & 0xffff;
-
-    const auto addr = compute_branch_addr(pc,imm);
-
-    return fmt::format("bne {}, {}, {:x}",reg_names[rs],reg_names[rt],addr);
+    return fmt::format("bne {}, {}, {:x}",reg_names[opcode.rs],reg_names[opcode.rt],addr);
 }
 
-std::string disass_beq(u32 opcode, u64 pc)
+std::string disass_beq(const Opcode &opcode, u64 pc)
 {
-    const auto rs = get_rs(opcode);
-    const auto rt = get_rt(opcode);
+    const auto addr = compute_branch_addr(pc,opcode.imm);
 
-    const auto imm = opcode & 0xffff;
-
-    const auto addr = compute_branch_addr(pc,imm);
-
-    if(rs == 0 && rt == 0)
+    if(opcode.rs == 0 && opcode.rt == 0)
     {
         return fmt::format("b {:x}",addr);
     }
 
     else
     {
-        return fmt::format("bne {}, {}, {:x}",reg_names[rs],reg_names[rt],addr);
+        return fmt::format("bne {}, {}, {:x}",reg_names[opcode.rs],reg_names[opcode.rt],addr);
     }
 }
 
-std::string disass_beql(u32 opcode, u64 pc)
+std::string disass_beql(const Opcode &opcode, u64 pc)
 {
-    const auto rs = get_rs(opcode);
-    const auto rt = get_rt(opcode);
+    const auto addr = compute_branch_addr(pc,opcode.imm);
 
-    const auto imm = opcode & 0xffff;
-
-    const auto addr = compute_branch_addr(pc,imm);
-
-    return fmt::format("beql {}, {}, {:x}",reg_names[rs],reg_names[rt],addr);
+    return fmt::format("beql {}, {}, {:x}",reg_names[opcode.rs],reg_names[opcode.rt],addr);
 }
 
-std::string disass_blezl(u32 opcode, u64 pc)
+std::string disass_blezl(const Opcode &opcode, u64 pc)
 {
-    const auto rs = get_rs(opcode);
+    const auto addr = compute_branch_addr(pc,opcode.imm);
 
-    const auto imm = opcode & 0xffff;
-
-    const auto addr = compute_branch_addr(pc,imm);
-
-    return fmt::format("blezl {}, {:x}",reg_names[rs],addr);
+    return fmt::format("blezl {}, {:x}",reg_names[opcode.rs],addr);
 }
 
-std::string disass_bgezl(u32 opcode, u64 pc)
+std::string disass_bgezl(const Opcode &opcode, u64 pc)
 {
-    const auto rs = get_rs(opcode);
+    const auto addr = compute_branch_addr(pc,opcode.imm);
 
-    const auto imm = opcode & 0xffff;
-
-    const auto addr = compute_branch_addr(pc,imm);
-
-    return fmt::format("bgezl {}, {:x}",reg_names[rs],addr);
+    return fmt::format("bgezl {}, {:x}",reg_names[opcode.rs],addr);
 }
 
-std::string disass_bgezal(u32 opcode, u64 pc)
+std::string disass_bgezal(const Opcode &opcode, u64 pc)
 {
-    const auto rs = get_rs(opcode);
+    const auto addr = compute_branch_addr(pc,opcode.imm);
 
-    const auto imm = opcode & 0xffff;
-
-    const auto addr = compute_branch_addr(pc,imm);
-
-    if(rs == 0)
+    if(opcode.rs == 0)
     {
-        return fmt::format("bal {}, {:x}",reg_names[rs],addr);
+        return fmt::format("bal {}, {:x}",reg_names[opcode.rs],addr);
     }
 
     else
     {
-        return fmt::format("bgezl {}, {:x}",reg_names[rs],addr);
+        return fmt::format("bgezl {}, {:x}",reg_names[opcode.rs],addr);
     }
 }
 
 
-std::string disass_bnel(u32 opcode, u64 pc)
+std::string disass_bnel(const Opcode &opcode, u64 pc)
 {
-    const auto rs = get_rs(opcode);
-    const auto rt = get_rt(opcode);
+    const auto addr = compute_branch_addr(pc,opcode.imm);
 
-    const auto imm = opcode & 0xffff;
-
-    const auto addr = compute_branch_addr(pc,imm);
-
-    return fmt::format("bnel {}, {}, {:x}",reg_names[rs],reg_names[rt],addr);
+    return fmt::format("bnel {}, {}, {:x}",reg_names[opcode.rs],reg_names[opcode.rt],addr);
 }
 
-std::string disass_cache(u32 opcode, u64 pc)
+std::string disass_cache(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto base = get_rs(opcode);
-    const auto op = get_rt(opcode);
+    const auto base = opcode.rs;
+    const auto op = opcode.rt;
 
-    const auto imm = opcode & 0xffff;
-
-    return fmt::format("cache {}, {:04x}({})",op,imm,reg_names[base]);
+    return fmt::format("cache {}, {:04x}({})",op,opcode.imm,reg_names[base]);
 }
 
-std::string disass_subu(u32 opcode, u64 pc)
+std::string disass_subu(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+    return fmt::format("subu {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rs],reg_names[opcode.rt]);
+}
+
+std::string disass_and(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto rd = get_rd(opcode);
-    const auto rt = get_rt(opcode);
-    const auto rs = get_rs(opcode);
-
-
-    return fmt::format("subu {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);
+    return fmt::format("and {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rs],reg_names[opcode.rt]);
 }
 
-std::string disass_and(u32 opcode, u64 pc)
+std::string disass_addu(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto rd = get_rd(opcode);
-    const auto rt = get_rt(opcode);
-    const auto rs = get_rs(opcode);
-
-
-    return fmt::format("and {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);
+    return fmt::format("addu {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rs],reg_names[opcode.rt]);
 }
 
-std::string disass_addu(u32 opcode, u64 pc)
+std::string disass_add(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto rd = get_rd(opcode);
-    const auto rt = get_rt(opcode);
-    const auto rs = get_rs(opcode);
-
-
-    return fmt::format("addu {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);
+    return fmt::format("add {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rs],reg_names[opcode.rt]);
 }
 
-std::string disass_add(u32 opcode, u64 pc)
+std::string disass_multu(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto rd = get_rd(opcode);
-    const auto rt = get_rt(opcode);
-    const auto rs = get_rs(opcode);
-
-
-    return fmt::format("add {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);
+    return fmt::format("multu {}, {}",reg_names[opcode.rs],reg_names[opcode.rt]);
 }
 
-std::string disass_multu(u32 opcode, u64 pc)
+std::string disass_mflo(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto rt = get_rt(opcode);
-    const auto rs = get_rs(opcode);
-
-
-    return fmt::format("multu {}, {}",reg_names[rs],reg_names[rt]);
-}
-
-std::string disass_mflo(u32 opcode, u64 pc)
-{
-    UNUSED(pc);
-
-    const auto rd = get_rd(opcode);
-
-    return fmt::format("mflo {}",reg_names[rd]);
+    return fmt::format("mflo {}",reg_names[opcode.rd]);
 }
 
 
-std::string disass_sltu(u32 opcode, u64 pc)
+std::string disass_sltu(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto rt = get_rt(opcode);
-    const auto rs = get_rs(opcode);
-    const auto rd = get_rd(opcode);
-
-    return fmt::format("sltu {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);    
+    return fmt::format("sltu {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rs],reg_names[opcode.rt]);    
 }
 
-std::string disass_slt(u32 opcode, u64 pc)
+std::string disass_slt(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto rt = get_rt(opcode);
-    const auto rs = get_rs(opcode);
-    const auto rd = get_rd(opcode);
-
-    return fmt::format("slt {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);    
+    return fmt::format("slt {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rs],reg_names[opcode.rt]);    
 }
 
 
-std::string disass_mtc0(u32 opcode, u64 pc)
+std::string disass_mtc0(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto rt = get_rt(opcode);
-    const auto rd = get_rd(opcode);
-
-    return fmt::format("mtc0 {}, {}",reg_names[rt],cp0_names[rd]);
+    return fmt::format("mtc0 {}, {}",reg_names[opcode.rt],cp0_names[opcode.rd]);
 }
 
-std::string disass_sll(u32 opcode, u64 pc)
+std::string disass_sll(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    if(opcode)
+    if(opcode.op)
     {
-        const auto rt = get_rt(opcode);
-        const auto rd = get_rd(opcode);
-
-        const auto shamt = get_shamt(opcode);
+        const auto shamt = get_shamt(opcode.op);
         
-        
-        return fmt::format("sll {}, {}, {}",reg_names[rd],reg_names[rt],shamt);
+        return fmt::format("sll {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rt],shamt);
     }
 
     else
@@ -424,99 +292,75 @@ std::string disass_sll(u32 opcode, u64 pc)
     }
 }
 
-std::string disass_sllv(u32 opcode, u64 pc)
+std::string disass_sllv(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto rt = get_rt(opcode);
-    const auto rd = get_rd(opcode);
-    const auto rs = get_rs(opcode);
-    
-    
-    return fmt::format("sllv {}, {}, {}",reg_names[rd],reg_names[rt],reg_names[rs]);
+    return fmt::format("sllv {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rt],reg_names[opcode.rs]);
 }
 
 
-std::string disass_srl(u32 opcode, u64 pc)
+std::string disass_srl(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto rt = get_rt(opcode);
-    const auto rd = get_rd(opcode);
+    const auto shamt = get_shamt(opcode.op);
 
-    const auto shamt = get_shamt(opcode);
-    
-    
-    return fmt::format("srl {}, {}, {}",reg_names[rd],reg_names[rt],shamt);
+    return fmt::format("srl {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rt],shamt);
 }
 
-std::string disass_srlv(u32 opcode, u64 pc)
+std::string disass_srlv(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto rt = get_rt(opcode);
-    const auto rd = get_rd(opcode);
-    const auto rs = get_rs(opcode);
-    
-    
-    return fmt::format("srlv {}, {}, {}",reg_names[rd],reg_names[rt],reg_names[rs]);
+    return fmt::format("srlv {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rt],reg_names[opcode.rs]);
 }
 
 
-std::string disass_or(u32 opcode, u64 pc)
+std::string disass_or(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto rt = get_rt(opcode);
-    const auto rd = get_rd(opcode);
-    const auto rs = get_rs(opcode);
-
-    return fmt::format("or {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);    
+    return fmt::format("or {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rs],reg_names[opcode.rt]);    
 }
 
-std::string disass_xor(u32 opcode, u64 pc)
+std::string disass_xor(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto rt = get_rt(opcode);
-    const auto rd = get_rd(opcode);
-    const auto rs = get_rs(opcode);
-
-    return fmt::format("xor {}, {}, {}",reg_names[rd],reg_names[rs],reg_names[rt]);    
+    return fmt::format("xor {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rs],reg_names[opcode.rt]);    
 }
 
 
 
-std::string disass_jr(u32 opcode, u64 pc)
+std::string disass_jr(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
 
-    const auto rs = get_rs(opcode);
-
-    return fmt::format("jr {}",reg_names[rs]);
+    return fmt::format("jr {}",reg_names[opcode.rs]);
 }
 
-std::string disass_cop0(u32 opcode, u64 pc)
+std::string disass_cop0(const Opcode &opcode, u64 pc)
 {
-    return disass_cop0_lut[(opcode >> 21) & 0b11111](opcode,pc);
+    return disass_cop0_lut[(opcode.op >> 21) & 0b11111](opcode,pc);
 }
 
-std::string disass_regimm(u32 opcode, u64 pc)
+std::string disass_regimm(const Opcode &opcode, u64 pc)
 {
-    return disass_regimm_lut[(opcode >> 16) & 0b11111](opcode,pc);
+    return disass_regimm_lut[(opcode.op >> 16) & 0b11111](opcode,pc);
 }
 
 
-std::string disass_r_fmt(u32 opcode, u64 pc)
+std::string disass_r_fmt(const Opcode &opcode, u64 pc)
 {
-    return disass_r_lut[opcode & 0b111111](opcode,pc);
+    return disass_r_lut[opcode.op & 0b111111](opcode,pc);
 }
 
 // okay lets figure out a good way to decode these again
 // and actually worry about the speed of it this time
-std::string disass_opcode(u32 opcode, u64 pc)
+std::string disass_opcode(const Opcode &opcode, u64 pc)
 {
-    return disass_lut[opcode >> 26](opcode,pc);
+    return disass_lut[opcode.op >> 26](opcode,pc);
 }
 
 }
