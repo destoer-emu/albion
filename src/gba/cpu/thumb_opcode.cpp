@@ -12,60 +12,31 @@ namespace gameboyadvance
 
 // TODO: remove preftech hacks
 
-/*
-void Cpu::thumb_fill_pipeline()
+
+void Cpu::slow_thumb_pipeline_fill()
 {
-
-    if(execute_rom)
-    {
-        const auto wait = rom_wait_sequential_16;
-        pipeline[0] = mem.read_rom<u16>(regs[PC]); cycle_tick(wait);
-        regs[PC] += ARM_HALF_SIZE;
-        pipeline[1] = mem.read_rom<u16>(regs[PC]); cycle_tick(wait);
-
-    }
-
-    else
-    {
-        pipeline[0] = mem.read_u16(regs[PC]);
-        regs[PC] += ARM_HALF_SIZE;
-        pipeline[1] = mem.read_u16(regs[PC]);       
-    }
+    pipeline[0] = mem.read_u16(regs[PC]);
+    regs[PC] += ARM_HALF_SIZE;
+    pipeline[1] = mem.read_u16(regs[PC]);        
 }
 
-u16 Cpu::fetch_thumb_opcode()
+u16 Cpu::slow_thumb_fetch()
 {
     const u16 opcode = pipeline[0];
     pipeline[0] = pipeline[1];
+
     regs[PC] += ARM_HALF_SIZE; 
     pc_actual += ARM_HALF_SIZE; 
 
-    if(execute_rom)
-    {
-        const auto wait = rom_wait_sequential_16;
-        pipeline[1] = mem.read_rom<u16>(regs[PC]); cycle_tick(wait);     
-    }
-
-    else
-    {
-        pipeline[1] = mem.read_u16(regs[PC]);
-    }
+    pipeline[1] = mem.read_u16(regs[PC]);
+    
     return opcode;
 }
-*/
 
 
-// fetch speed hacks
 
-void Cpu::fast_thumb_pipeline_fill()
-{
-    pipeline[0] = fast_thumb_fetch(); 
-    regs[PC] += ARM_HALF_SIZE;
-    pipeline[1] = fast_thumb_fetch();          
-}
-
-
-u16 Cpu::fast_thumb_fetch()
+// TODO: make this work with seq and non seq waitstates
+u16 Cpu::fast_thumb_fetch_mem()
 {
     u16 v = 0;
 
@@ -77,7 +48,18 @@ u16 Cpu::fast_thumb_fetch()
     return v;
 }
 
-u16 Cpu::fast_thumb_fetch_opcode()
+// fetch speed hacks
+
+void Cpu::fast_thumb_pipeline_fill()
+{
+    pipeline[0] = fast_thumb_fetch_mem(); 
+    regs[PC] += ARM_HALF_SIZE;
+    pipeline[1] = fast_thumb_fetch_mem();          
+}
+
+
+
+u16 Cpu::fast_thumb_fetch()
 {
     const u16 opcode = pipeline[0];
     pipeline[0] = pipeline[1];
@@ -85,23 +67,39 @@ u16 Cpu::fast_thumb_fetch_opcode()
     pc_actual += ARM_HALF_SIZE; 
 
 
-    pipeline[1] = fast_thumb_fetch();
+    pipeline[1] = fast_thumb_fetch_mem();
     
     return opcode;
+}
+
+u16 Cpu::thumb_fetch_opcode()
+{
+#ifdef FETCH_SPEEDHACK
+    return fast_thumb_fetch();
+#else 
+    return slow_thumb_fetch();
+#endif
+}
+
+void Cpu::thumb_pipeline_fill()
+{
+#ifdef FETCH_SPEEDHACK
+    fast_thumb_pipeline_fill();
+#else
+    slow_thumb_pipeline_fill();
+#endif
 }
 
 
 void Cpu::write_pc_thumb(u32 v)
 {
     regs[PC] = v & ~1;
-    //thumb_fill_pipeline(); // fill the intitial cpu pipeline
-    fast_thumb_pipeline_fill();
+    thumb_pipeline_fill();
 }
 
 void Cpu::exec_thumb()
 {
-    //const auto op = fetch_thumb_opcode();
-    const auto op = fast_thumb_fetch_opcode();
+    const auto op = thumb_fetch_opcode();
 
     execute_thumb_opcode(op);
 }
