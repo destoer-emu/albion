@@ -710,7 +710,16 @@ void Cpu::write_pc(u32 v)
     // after a branch the read is no longer seqential
     mem.sequential = false;
 
+    mem.prefetch_count = 0;
+
     debug.trace.add(source,pc_actual);	
+}
+
+void Cpu::internal_cycle()
+{
+    cycle_tick(1);
+
+    mem.do_prefetch();
 }
 
 }

@@ -3,9 +3,9 @@
 namespace gameboyadvance
 {
 
-template u32 Mem::get_waitstates<u32>(u32 addr,bool seq) const;
-template u32 Mem::get_waitstates<u16>(u32 addr,bool seq) const;
-template u32 Mem::get_waitstates<u8>(u32 addr,bool seq) const;
+template u32 Mem::get_waitstates<u32>(u32 addr,bool seq, bool prefetch);
+template u32 Mem::get_waitstates<u16>(u32 addr,bool seq, bool prefetch);
+template u32 Mem::get_waitstates<u8>(u32 addr,bool seq, bool prefetch);
 
 // TODO: this is an approximation i think the real hardware
 // relies on what instrs were executed
@@ -15,20 +15,29 @@ void Mem::update_seq(u32 addr)
     last_addr = addr;
 }
 
-
-u32 Mem::get_rom_wait(u32 region, u32 size, bool seq) const
+u32 Mem::get_rom_wait(u32 region, u32 size, bool seq, bool use_prefetch)
 {
-    // for now fudge the numbers
-    // TODO: impl the prefetch buffer properly
-    if(mem_io.wait_cnt.prefetch)
+
+    // TODO: our speedhacks dont model prefetch properly at the momement
+    if(mem_io.wait_cnt.prefetch && use_prefetch)
     {
-        return 1;
+        if(prefetch_count >= 2 && size == sizeof(u32))
+        {
+            // rom is done as two u16 reads
+            prefetch_count -= 2;
+            return 2;
+        }
+
+
+        if(prefetch_count >= 1 && size == sizeof(u16))
+        {
+            prefetch_count -= 1;
+            return 1;
+        }
     }
 
-    else
-    {
-        return rom_wait_states[(region - 8) / 2][seq][size >> 1];
-    }
+    // no prefetch
+    return rom_wait_states[(region - 8) / 2][seq][size >> 1];
 }
 
 // we also need to a test refactor using one lib, constants and compiling in one dir
@@ -92,7 +101,7 @@ void Mem::update_wait_states()
 
 
 template<typename access_type>
-u32 Mem::get_waitstates(u32 addr, bool seq) const
+u32 Mem::get_waitstates(u32 addr, bool seq, bool use_prefetch)
 {
     static_assert(sizeof(access_type) <= 4);
 
@@ -112,7 +121,7 @@ u32 Mem::get_waitstates(u32 addr, bool seq) const
         case memory_region::rom:
         {
             // hardcode to sequential access!
-            return get_rom_wait(region,sizeof(access_type),seq);
+            return get_rom_wait(region,sizeof(access_type),seq,use_prefetch);
         }
 
         // should unmapped addresses still tick a cycle?
@@ -130,13 +139,18 @@ u32 Mem::get_waitstates(u32 addr, bool seq) const
 
 void Mem::cache_wait_states(u32 new_pc)
 {
-    wait_seq_16 = get_waitstates<u16>(new_pc,true);
-    wait_seq_32 = get_waitstates<u32>(new_pc,true);
+    wait_seq_16 = get_waitstates<u16>(new_pc,true,false);
+    wait_seq_32 = get_waitstates<u32>(new_pc,true,false);
 
-    wait_nseq_16 = get_waitstates<u16>(new_pc,false);
-    wait_nseq_32 = get_waitstates<u32>(new_pc,false);
+    wait_nseq_16 = get_waitstates<u16>(new_pc,false,false);
+    wait_nseq_32 = get_waitstates<u32>(new_pc,false,false);
 }
 
-
+void Mem::do_prefetch()
+{
+    // prefetch if enabled.. 
+    // TODO: i think this is supposed to actually take a couple of cycles...
+    prefetch_count += mem_io.wait_cnt.prefetch;
+}
 
 }

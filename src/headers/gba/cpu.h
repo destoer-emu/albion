@@ -151,10 +151,7 @@ struct Cpu final
     }
 
 
-    void internal_cycle()
-    {
-        cycle_tick(1);
-    }
+    void internal_cycle();
 
 
     void tick_timer(int t, int cycles);
