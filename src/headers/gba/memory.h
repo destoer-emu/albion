@@ -91,7 +91,7 @@ struct Mem final
     {
         // only allow up to 32bit
         static_assert(sizeof(access_type) <= 4);
-        cpu.cycle_tick(get_waitstates<access_type>(addr));
+        cpu.cycle_tick(get_waitstates<access_type>(addr,sequential));
     }
 
 
@@ -355,10 +355,10 @@ struct Mem final
     void update_wait_states();
     void cache_wait_states(u32 new_pc);
     void update_seq(u32 addr);
-    u32 get_rom_wait(u32 region, u32 size) const;
+    u32 get_rom_wait(u32 region, u32 size, bool seq) const;
 
     template<typename access_type>
-    u32 get_waitstates(u32 addr) const;
+    u32 get_waitstates(u32 addr, bool seq) const;
 
 
     enum class save_type
@@ -470,7 +470,6 @@ struct Mem final
     u32 last_addr;
 
     // wait state caching
-    // (unused for now)
     u32 wait_seq_16;
     u32 wait_seq_32;
 
@@ -517,7 +516,7 @@ extern template bool Mem::fast_memcpy<u16>(u32 src, u32 dst, u32 n);
 extern template bool Mem::fast_memcpy<u32>(u32 src, u32 dst, u32 n);
 
 
-extern template u32 Mem::get_waitstates<u32>(u32 addr) const;
-extern template u32 Mem::get_waitstates<u16>(u32 addr) const;
-extern template u32 Mem::get_waitstates<u8>(u32 addr) const;
+extern template u32 Mem::get_waitstates<u32>(u32 addr, bool seq) const;
+extern template u32 Mem::get_waitstates<u16>(u32 addr, bool seq) const;
+extern template u32 Mem::get_waitstates<u8>(u32 addr, bool seq) const;
 }

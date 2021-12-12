@@ -3,9 +3,9 @@
 namespace gameboyadvance
 {
 
-template u32 Mem::get_waitstates<u32>(u32 addr) const;
-template u32 Mem::get_waitstates<u16>(u32 addr) const;
-template u32 Mem::get_waitstates<u8>(u32 addr) const;
+template u32 Mem::get_waitstates<u32>(u32 addr,bool seq) const;
+template u32 Mem::get_waitstates<u16>(u32 addr,bool seq) const;
+template u32 Mem::get_waitstates<u8>(u32 addr,bool seq) const;
 
 // TODO: this is an approximation i think the real hardware
 // relies on what instrs were executed
@@ -16,7 +16,7 @@ void Mem::update_seq(u32 addr)
 }
 
 
-u32 Mem::get_rom_wait(u32 region, u32 size) const
+u32 Mem::get_rom_wait(u32 region, u32 size, bool seq) const
 {
     // for now fudge the numbers
     // TODO: impl the prefetch buffer properly
@@ -27,7 +27,7 @@ u32 Mem::get_rom_wait(u32 region, u32 size) const
 
     else
     {
-        return rom_wait_states[(region - 8) / 2][sequential][size >> 1];
+        return rom_wait_states[(region - 8) / 2][seq][size >> 1];
     }
 }
 
@@ -81,12 +81,18 @@ void Mem::update_wait_states()
     // sram is just normal state can be seen as S
     const auto sram_wait = wait_first_table[wait_cnt.sram_cnt];
     set_wait_seq(&wait_states[static_cast<size_t>(memory_region::cart_backup)][0],sram_wait);
+
+#ifdef FETCH_SPEEDHACK
+
+    // settings have changed recache waitstates
+    cache_wait_states(cpu.pc_actual);
+#endif
 }
 
 
 
 template<typename access_type>
-u32 Mem::get_waitstates(u32 addr) const
+u32 Mem::get_waitstates(u32 addr, bool seq) const
 {
     static_assert(sizeof(access_type) <= 4);
 
@@ -106,7 +112,7 @@ u32 Mem::get_waitstates(u32 addr) const
         case memory_region::rom:
         {
             // hardcode to sequential access!
-            return get_rom_wait(region,sizeof(access_type));
+            return get_rom_wait(region,sizeof(access_type),seq);
         }
 
         // should unmapped addresses still tick a cycle?
@@ -121,28 +127,16 @@ u32 Mem::get_waitstates(u32 addr) const
     }
 }
 
-// make it right then make it fast
-// add this back in when we properly add back in the fast fetch path
-#if 0
+
 void Mem::cache_wait_states(u32 new_pc)
 {
+    wait_seq_16 = get_waitstates<u16>(new_pc,true);
+    wait_seq_32 = get_waitstates<u32>(new_pc,true);
 
-    // update rom fetch wait state
-    if(mem_io.wait_cnt.prefetch)
-    {
-        cpu.rom_wait_sequential_16 = 1;
-        cpu.rom_wait_sequential_32 = 1;
-    }    
-
-    else
-    {
-        // hardcode to sequential access!
-        // TODO: i think this calc is wrong
-        cpu.rom_wait_sequential_16 = rom_wait_states[(static_cast<int>(memory_region::rom) - 8) / 2][1][1];
-        cpu.rom_wait_sequential_32 = rom_wait_states[(static_cast<int>(memory_region::rom) - 8) / 2][1][2];
-    }
+    wait_nseq_16 = get_waitstates<u16>(new_pc,false);
+    wait_nseq_32 = get_waitstates<u32>(new_pc,false);
 }
-#endif
+
 
 
 }

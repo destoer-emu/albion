@@ -597,8 +597,7 @@ void Cpu::update_fetch_cache()
     fetch_ptr = mem.region_ptr[mem_region];
     fetch_mask = mem.region_info[mem_region].mask;
 
-    // TODO: this needs to be adjusted to work reliably with sequential and non sequnetial for now we are ifdefing it out
-    fetch_cycles = is_thumb? mem.get_waitstates<u16>(pc_actual) : mem.get_waitstates<u32>(pc_actual);     
+    mem.cache_wait_states(pc_actual);
     
     if(!fetch_ptr)
     {
@@ -707,6 +706,9 @@ void Cpu::write_pc(u32 v)
 #endif
         write_pc_arm(v);
     } 
+
+    // after a branch the read is no longer seqential
+    mem.sequential = false;
 
     debug.trace.add(source,pc_actual);	
 }

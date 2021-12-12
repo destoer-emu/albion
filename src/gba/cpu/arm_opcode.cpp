@@ -42,12 +42,14 @@ void Cpu::fast_arm_pipeline_fill()
 // TODO: make this work with seq and non seq waitstates
 u32 Cpu::fast_arm_fetch_mem()
 {
+    mem.update_seq(regs[PC]);
     u32 v = 0;
 
     const u32 offset = regs[PC] & fetch_mask;
     memcpy(&v,&fetch_ptr[offset],sizeof(v));
 
-    cycle_tick(fetch_cycles);
+    cycle_tick(mem.sequential? mem.wait_seq_32 : mem.wait_nseq_32);
+    mem.open_bus_value = v;
 
     return v;
 }

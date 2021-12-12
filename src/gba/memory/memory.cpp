@@ -1923,8 +1923,8 @@ bool Mem::fast_memcpy(u32 dst, u32 src, u32 n)
 
     memcpy(dst_ptr+dst_offset,src_ptr+src_offset,bytes);  
 
-    const auto src_wait = get_waitstates<access_type>(src);
-    const auto dst_wait = get_waitstates<access_type>(dst);
+    const auto src_wait = get_waitstates<access_type>(src,false);
+    const auto dst_wait = get_waitstates<access_type>(dst,false);
 
     for(size_t i = 0; i < n; i++)
     {
