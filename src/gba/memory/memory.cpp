@@ -929,11 +929,6 @@ void Mem::write_io_regs(u32 addr,u8 v)
 
 u8 Mem::read_io_regs(u32 addr)
 {
-    // todo optimise this
-    if(addr >= 0x04000400)
-    {
-        return 0;
-    }
 
     addr &= IO_MASK;
 
@@ -1183,7 +1178,7 @@ u8 Mem::read_io_regs(u32 addr)
             //std::cout << err << "\n";
             //throw std::runtime_error(err);
             // open bus
-            return 0;
+            return open_bus_value >> (8 * (addr & 3));
         }
     }
 }

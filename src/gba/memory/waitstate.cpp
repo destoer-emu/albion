@@ -7,6 +7,8 @@ template u32 Mem::get_waitstates<u32>(u32 addr) const;
 template u32 Mem::get_waitstates<u16>(u32 addr) const;
 template u32 Mem::get_waitstates<u8>(u32 addr) const;
 
+// TODO: this is an approximation i think the real hardware
+// relies on what instrs were executed
 void Mem::update_seq(u32 addr)
 {
     sequential = addr <= last_addr + sizeof(u32);
@@ -17,6 +19,7 @@ void Mem::update_seq(u32 addr)
 u32 Mem::get_rom_wait(u32 region, u32 size) const
 {
     // for now fudge the numbers
+    // TODO: impl the prefetch buffer properly
     if(mem_io.wait_cnt.prefetch)
     {
         return 1;
@@ -56,22 +59,22 @@ void set_wait_nseq(int *buf, int wait, int wait_seq)
 
 void Mem::update_wait_states()
 {
-    static constexpr int wait_first_table[] = {4,3,2,8};
+    static constexpr u32 wait_first_table[] = {4,3,2,8};
     const auto &wait_cnt = mem_io.wait_cnt;
 
     const auto wait_first0 = wait_first_table[wait_cnt.wait01];
-    const auto wait_second0 = wait_cnt.wait02? 2 : 1;
+    const auto wait_second0 = !wait_cnt.wait02? 2 : 1;
     set_wait_nseq(&rom_wait_states[0][0][0],wait_first0,wait_second0);
     set_wait_seq(&rom_wait_states[0][1][0],wait_second0);
 
-    const auto wait_first1 = wait_first_table[wait_cnt.wait11];
-    const auto wait_second1 = wait_cnt.wait12? 4 : 1;
+    const auto wait_first1 = !wait_first_table[wait_cnt.wait11];
+    const auto wait_second1 = wait_cnt.wait12? 1 : 4;
     set_wait_nseq(&rom_wait_states[1][0][0],wait_first1,wait_second1);
     set_wait_seq(&rom_wait_states[1][1][0],wait_second1);
 
 
     const auto wait_first2 = wait_first_table[wait_cnt.wait21];
-    const auto wait_second2 = wait_cnt.wait22? 8 : 1;
+    const auto wait_second2 = wait_cnt.wait22? 1 : 8;
     set_wait_nseq(&rom_wait_states[2][0][0],wait_first2,wait_second2);
     set_wait_seq(&rom_wait_states[2][1][0],wait_second2);
     
