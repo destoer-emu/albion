@@ -168,6 +168,12 @@ void MinHeap<SIZE,event_type>::swap(size_t idx1,size_t idx2)
 template<size_t SIZE,typename event_type>
 void MinHeap<SIZE,event_type>::insert(EventNode<event_type> event)
 {
+    // no cycles would be ticked this event does nothing
+    if(event.start == event.end)
+    {
+        return;
+    }
+
 	// in practice in our emulator events are unique and this shouldunt happen
 	// i.e inserted events will be tagged with a enum and existing ones
     // will be removed by the scheduler before this should happen
