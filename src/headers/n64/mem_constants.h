@@ -20,6 +20,17 @@ static constexpr u32 MI_MODE_REG  = 0x04300000;
 static constexpr u32 MI_VERSION_REG = 0x04300004;
 
 
+// video interface
+static constexpr u32 VI_CONTROL_REG = 0x04400000;
+static constexpr u32 VI_ORIGIN_REG = 0x04400004;
+static constexpr u32 VI_WIDTH_REG = 0x04400008;
+static constexpr u32 VI_INTR_REG = 0x0440000c;
+static constexpr u32 VI_CURRENT_REG = 0x04400010;
+static constexpr u32 VI_BURST_REG = 0x04400014;
+static constexpr u32 VI_V_SYNC_REG = 0x04400018;
+static constexpr u32 VI_H_SYNC_REG = 0x0440001c;
+
 // intr bits
 static constexpr u32 DP_INTR_BIT = 5;
 static constexpr u32 PI_INTR_BIT = 4;
+static constexpr u32 VI_INTR_BIT = 3;

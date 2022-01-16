@@ -103,6 +103,21 @@ void reset_mem(Mem &mem, const std::string &filename)
     // MI
     mem.mi_mode = 0;
     mem.mi_intr = 0;
+
+    // vi
+    mem.vi_bpp = 0;
+    mem.vi_gamma_dither = 0;
+    mem.vi_gamma = 0;
+    mem.vi_divot = 0;
+    mem.vi_serrate = 0;
+    mem.vi_aa = 0;
+
+    mem.vi_origin = 0;
+    mem.vi_width = 0;
+    mem.vi_intr = 0;
+    mem.vi_burst = 0;
+    mem.vi_vsync = 0;
+    mem.vi_hsync = 0;
 }
 
 // TODO: this will probably have to be switched over to software page table
@@ -407,7 +422,92 @@ void write_physical(N64 &n64, u32 addr, access_type v)
 
     else if(addr < 0x04500000)
     {
-        unimplemented("write_mem: video interface");
+        switch(addr)
+        {
+            case VI_CONTROL_REG:
+            {
+                n64.mem.vi_bpp = v & 0xb11;
+                n64.mem.vi_gamma_dither = is_set(v,2);
+                n64.mem.vi_gamma = is_set(v,3);
+                n64.mem.vi_divot = is_set(v,4);
+                n64.mem.vi_serrate = is_set(v,6);
+                n64.mem.vi_aa = (v >> 8) & 0b11;
+
+                if(n64.mem.vi_bpp == 2)
+                {
+                    unimplemented("rgb 5551");
+                }
+
+                if(n64.mem.vi_gamma_dither)
+                {
+                    unimplemented("dither");
+                }
+
+                if(n64.mem.vi_gamma)
+                {
+                    unimplemented("gamma");
+                }
+
+                if(n64.mem.vi_divot)
+                {
+                    unimplemented("divot");
+                }
+
+                if(n64.mem.vi_serrate)
+                {
+                    unimplemented("serrate");
+                }
+
+                break;
+            }
+
+            case VI_ORIGIN_REG:
+            {
+                n64.mem.vi_origin = v & 0x00ffffff;
+                break;
+            }
+
+            case VI_WIDTH_REG:
+            {
+                n64.mem.vi_width = v & 0xfff;
+                break;
+            }
+
+            case VI_INTR_REG:
+            {
+                n64.mem.vi_intr = v & 0x7ff;
+                break;
+            }
+            
+            // TODO: find out what the hell this thing does lol
+            // need to start looking at how rendering works?
+            case VI_BURST_REG:
+            {
+                n64.mem.vi_burst = v;
+                break;
+            }
+
+            case VI_V_SYNC_REG:
+            {
+                n64.mem.vi_vsync = v & 0x7ff;
+                break;
+            }
+
+            case VI_H_SYNC_REG:
+            {
+                n64.mem.vi_hsync = v & 0x7ff;
+                break;
+            }     
+
+            // current line when written clears vi intr
+            case VI_CURRENT_REG:
+            {
+                n64.mem.mi_intr = deset_bit(n64.mem.mi_intr,VI_INTR_BIT);
+                break;
+            }
+
+            default: unimplemented("write_mem: video interface: %8x\n",addr); break;
+        }
     }
 
     else if(addr < 0x04600000)

@@ -40,6 +40,8 @@ using s16 = int16_t;
 using s32 = int32_t;
 using s64 = int64_t;
 
+using b8 = u8;
+
 inline uint64_t current_time()
 {
     return std::chrono::duration_cast<std::chrono::milliseconds>
