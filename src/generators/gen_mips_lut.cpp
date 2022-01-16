@@ -127,9 +127,27 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+            case 0b100111:
+            {
+                printf("lwu");
+                break;
+            }
+
+            case 0b000010:
+            {
+                printf("j");
+                break;
+            }
+
             case 0b001000:
             {
                 printf("addi");
+                break;
+            }
+
+            case 0b011000:
+            {
+                printf("daddi");
                 break;
             }
 
@@ -323,6 +341,20 @@ void gen_r_lut(const char *prefix)
                 printf("jr");
                 break;
             }
+
+            case 0b001001:
+            {
+                printf("jalr");
+                break;
+            }
+
+
+            case 0b001111:
+            {
+                printf("sync");
+                break;
+            }
+
 
             default:
             {

@@ -29,6 +29,23 @@ struct Mem
     // MI
     u16 mi_mode = 0;
     u8 mi_intr = 0;
+
+    // VI
+
+    // vi state
+    u32 vi_bpp = 0;
+    b8 vi_gamma_dither = 0;
+    b8 vi_gamma = 0;
+    b8 vi_divot = 0;
+    b8 vi_serrate = 0;
+    u32 vi_aa = 0;
+
+    u32 vi_origin = 0;
+    u32 vi_width = 0;
+    u32 vi_intr = 0;
+    u32 vi_burst = 0;
+    u32 vi_vsync = 0;
+    u32 vi_hsync = 0;
 };
 
 void reset_mem(Mem &mem, const std::string &filename);

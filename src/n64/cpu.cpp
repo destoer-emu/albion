@@ -178,6 +178,11 @@ void step(N64 &n64)
 
 void write_pc(N64 &n64, u64 pc)
 {
+    if((pc & 0b11) != 0)
+    {
+        unimplemented("pc address exception");
+    }
+
     n64.cpu.pc_next = pc;
 }
 

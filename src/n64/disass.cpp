@@ -46,7 +46,12 @@ std::string disass_unknown_r(const Opcode &opcode, u64 pc)
     return "unknown r opcode";
 }
 
+std::string disass_sync(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc); UNUSED(opcode);
 
+    return "sync";
+}
 
 std::string disass_lui(const Opcode &opcode, u64 pc)
 {
@@ -68,6 +73,11 @@ std::string disass_addi(const Opcode &opcode, u64 pc)
     return fmt::format("addi {}, {}, {:04x}",reg_names[opcode.rt],reg_names[opcode.rs],opcode.imm);
 }
 
+std::string disass_daddi(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+    return fmt::format("daddi {}, {}, {:04x}",reg_names[opcode.rt],reg_names[opcode.rs],opcode.imm);
+}
 
 std::string disass_ori(const Opcode &opcode, u64 pc)
 {
@@ -102,12 +112,29 @@ std::string disass_jal(const Opcode &opcode, u64 pc)
     return fmt::format("jal {:8x}",target);
 }
 
+std::string disass_j(const Opcode &opcode, u64 pc)
+{
+    const auto target = get_target(opcode.op,pc);
+
+    return fmt::format("j {:8x}",target);
+}
+
+
+
 std::string disass_lw(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
     const auto base = opcode.rs;
     return fmt::format("lw {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
 }
+
+std::string disass_lwu(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+    const auto base = opcode.rs;
+    return fmt::format("lwu {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
+}
+
 
 std::string disass_lbu(const Opcode &opcode, u64 pc)
 {
@@ -290,6 +317,13 @@ std::string disass_sll(const Opcode &opcode, u64 pc)
     {
         return "nop";
     }
+}
+
+std::string disass_jalr(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    return fmt::format("jalr {}, {}",reg_names[opcode.rd],reg_names[opcode.rs]);
 }
 
 std::string disass_sllv(const Opcode &opcode, u64 pc)
