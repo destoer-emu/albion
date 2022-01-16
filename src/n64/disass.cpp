@@ -46,7 +46,12 @@ std::string disass_unknown_r(const Opcode &opcode, u64 pc)
     return "unknown r opcode";
 }
 
+std::string disass_sync(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc); UNUSED(opcode);
 
+    return "sync";
+}
 
 std::string disass_lui(const Opcode &opcode, u64 pc)
 {
@@ -290,6 +295,13 @@ std::string disass_sll(const Opcode &opcode, u64 pc)
     {
         return "nop";
     }
+}
+
+std::string disass_jalr(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    return fmt::format("jalr {}, {}",reg_names[opcode.rd],reg_names[opcode.rs]);
 }
 
 std::string disass_sllv(const Opcode &opcode, u64 pc)

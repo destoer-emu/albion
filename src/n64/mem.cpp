@@ -48,6 +48,19 @@ void reset_mem(Mem &mem, const std::string &filename)
     // read rom in and hle the pif rom
     read_file(filename,mem.rom);
 
+    if(mem.rom.size() < 32 * 1024 * 1024)
+    {
+        // ensure rom is power of two!!
+        mem.rom.resize(32 * 1024 * 1024);
+    }
+
+    else
+    {
+        unimplemented("large rom");
+    }
+
+
+
     // init memory
     // 8mb rd ram
     mem.rd_ram.resize(8 * 1024 * 1024);
@@ -65,7 +78,7 @@ void reset_mem(Mem &mem, const std::string &filename)
         std::iter_swap(mem.rom.begin(),mem.rom.end()-1);
     }
 
-    for(u32 i = 0; i < mem.rom.size(); i += 4)
+    for(u32 i = 0; i < mem.rom.size(); i += sizeof(u32))
     {
         u32 v = handle_read_n64<u32>(mem.rom,i);
         v = bswap(v);
@@ -457,6 +470,51 @@ void write_physical(N64 &n64, u32 addr, access_type v)
             default: unimplemented("write_mem: rdram interface: %8x\n",addr);
         }
     }
+
+
+    else if(addr < 0x04900000)
+    {
+        unimplemented("serial interface");
+    }
+
+    // UNUSED
+    else if(addr < 0x05000000)
+    {
+
+    }
+
+    // n64dd
+    else if(addr < 0x08000000)
+    {
+       // not present for now
+    }
+  
+    // sram
+    else if(addr < 0x10000000)
+    {
+        unimplemented("sram");
+    }
+
+    // rom
+    else if(addr < 0x1FC00000)
+    {
+        // does this do anything?
+        unimplemented("rom write");
+    }
+
+    // should this be ignored
+    else if(addr < 0x1FC007C0)
+    {
+        unimplemented("pif boot rom write");
+    }
+
+    // pif ram (ignore for now but need to emulate later)
+    else if(addr < 0x1FC00800)
+    {
+
+    }
+
+
 
     else
     {

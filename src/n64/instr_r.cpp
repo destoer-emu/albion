@@ -112,15 +112,22 @@ void instr_xor(N64 &n64, const Opcode &opcode)
 
 void instr_jr(N64 &n64, const Opcode &opcode)
 {
-    if((n64.cpu.regs[opcode.rs] & 0b11) != 0)
-    {
-        unimplemented("jr address exception");
-    }
+    write_pc(n64,n64.cpu.regs[opcode.rs]);
+}
 
-    else
-    {
-        write_pc(n64,n64.cpu.regs[opcode.rs]);
-    }
+void instr_jalr(N64 &n64, const Opcode &opcode)
+{
+    const auto target = n64.cpu.regs[opcode.rs];
+
+    n64.cpu.regs[opcode.rd] = n64.cpu.pc;
+
+    write_pc(n64,target);
+}
+
+void instr_sync(N64 &n64, const Opcode &opcode)
+{
+    // does this do anything?
+    UNUSED(n64); UNUSED(opcode); 
 }
 
 

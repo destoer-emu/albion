@@ -324,6 +324,20 @@ void gen_r_lut(const char *prefix)
                 break;
             }
 
+            case 0b001001:
+            {
+                printf("jalr");
+                break;
+            }
+
+
+            case 0b001111:
+            {
+                printf("sync");
+                break;
+            }
+
+
             default:
             {
                 printf("unknown_r");
