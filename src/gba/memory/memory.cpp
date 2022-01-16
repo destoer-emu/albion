@@ -1249,6 +1249,7 @@ access_type Mem::read_mem_handler(u32 addr)
         memcpy(&v,buf,sizeof(v));
         return v;
     }
+    const auto mem_region = memory_region_table[(addr >> 24) & 0xf];
 
     switch(mem_region)
     {
