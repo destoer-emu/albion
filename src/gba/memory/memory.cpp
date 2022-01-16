@@ -32,10 +32,6 @@ template void Mem::write_memt_no_debug<u32>(u32 addr, u32 v);
 template bool Mem::fast_memcpy<u16>(u32 src, u32 dst, u32 n);
 template bool Mem::fast_memcpy<u32>(u32 src, u32 dst, u32 n);
 
-template u32 Mem::get_waitstates<u32>(u32 addr) const;
-template u32 Mem::get_waitstates<u16>(u32 addr) const;
-template u32 Mem::get_waitstates<u8>(u32 addr) const;
-
 
 Mem::Mem(GBA &gba) : dma{gba}, debug(gba.debug), cpu(gba.cpu), 
     disp(gba.disp), apu(gba.apu), scheduler(gba.scheduler)
@@ -933,11 +929,6 @@ void Mem::write_io_regs(u32 addr,u8 v)
 
 u8 Mem::read_io_regs(u32 addr)
 {
-    // todo optimise this
-    if(addr >= 0x04000400)
-    {
-        return 0;
-    }
 
     addr &= IO_MASK;
 
@@ -1187,7 +1178,7 @@ u8 Mem::read_io_regs(u32 addr)
             //std::cout << err << "\n";
             //throw std::runtime_error(err);
             // open bus
-            return 0;
+            return open_bus_value >> (8 * (addr & 3));
         }
     }
 }
@@ -1369,7 +1360,6 @@ access_type Mem::read_memt(u32 addr)
         debug.halt();
     }
 #endif
-    open_bus_value = v;
     return v;
 }
 
@@ -1377,7 +1367,13 @@ access_type Mem::read_memt(u32 addr)
 template<typename access_type>
 access_type Mem::read_memt_no_debug(u32 addr)
 {
+    // TODO: i dont think hardware works like this
+    // its just an easy way to get it off the ground
+    update_seq(addr);
+
     const auto v = read_mem<access_type>(addr);
+    open_bus_value = v;
+
     tick_mem_access<access_type>(addr);
     return v;
 }
@@ -1660,100 +1656,6 @@ void Mem::write_memt(u32 addr,access_type v)
 
 
 
-
-// we also need to a test refactor using one lib, constants and compiling in one dir
-// and impl a basic timing test
-// this is completly botched...
-void set_wait(int *buf, int wait)
-{
-    buf[0] =  wait + 1;
-    buf[1] =  wait + 1;
-    buf[2] =  (wait * 2) + 1;
-}
-
-
-void Mem::update_wait_states()
-{
-    static constexpr int wait_first_table[] = {4,3,2,8};
-    const auto &wait_cnt = mem_io.wait_cnt;
-
-    const auto wait_first0 = wait_first_table[wait_cnt.wait01];
-    const auto wait_second0 = wait_cnt.wait02? 2 : 1;
-    set_wait(&rom_wait_states[0][0][0],wait_first0);
-    set_wait(&rom_wait_states[0][1][0],wait_second0);
-
-    const auto wait_first1 = wait_first_table[wait_cnt.wait11];
-    const auto wait_second1 = wait_cnt.wait12? 4 : 1;
-    set_wait(&rom_wait_states[1][0][0],wait_first1);
-    set_wait(&rom_wait_states[1][1][0],wait_second1);
-
-
-    const auto wait_first2 = wait_first_table[wait_cnt.wait21];
-    const auto wait_second2 = wait_cnt.wait22? 8 : 1;
-    set_wait(&rom_wait_states[2][0][0],wait_first2);
-    set_wait(&rom_wait_states[2][1][0],wait_second2);
-    
-
-    const auto sram_wait = wait_first_table[wait_cnt.sram_cnt];
-    set_wait(&wait_states[static_cast<size_t>(memory_region::cart_backup)][0],sram_wait);
-
-    // update rom fetch wait state
-    if(mem_io.wait_cnt.prefetch)
-    {
-        cpu.rom_wait_sequential_16 = 1;
-        cpu.rom_wait_sequential_32 = 1;
-    }    
-
-    else
-    {
-        // hardcode to sequential access!
-        cpu.rom_wait_sequential_16 = rom_wait_states[(static_cast<int>(memory_region::rom) - 8) / 2][1][1];
-        cpu.rom_wait_sequential_32 = rom_wait_states[(static_cast<int>(memory_region::rom) - 8) / 2][1][2];
-    }
-    
-
-}
-
-
-
-template<typename access_type>
-u32 Mem::get_waitstates(u32 addr) const
-{
-    static_assert(sizeof(access_type) <= 4);
-
-    // need to re pull the region incase dma triggered reads
-    const int region =  (addr >> 24) & 0xf; 
-    const auto mem_region = memory_region_table[region];
-    
-    switch(mem_region)
-    {
-        case memory_region::undefined:
-        {
-            // how long should this take?
-            return 1;
-        }
-
-        // TODO: emulate N and S cycles
-        case memory_region::rom:
-        {
-            // hardcode to sequential access!
-            return rom_wait_states[(region - 8) / 2][1][sizeof(access_type) >> 1];
-        }
-
-        // should unmapped addresses still tick a cycle?
-        default:
-        {
-            // access type >> 1 to get the value
-            // 4 -> 2 (word)
-            // 2 -> 1 (half)
-            // 1 -> 0 (byte)
-            return wait_states[region][sizeof(access_type) >> 1];
-        }
-    }
-}
-
-
-
 template<>
 u8 Mem::read_io<u8>(u32 addr)
 {
@@ -2021,8 +1923,8 @@ bool Mem::fast_memcpy(u32 dst, u32 src, u32 n)
 
     memcpy(dst_ptr+dst_offset,src_ptr+src_offset,bytes);  
 
-    const auto src_wait = get_waitstates<access_type>(src);
-    const auto dst_wait = get_waitstates<access_type>(dst);
+    const auto src_wait = get_waitstates<access_type>(src,false,false);
+    const auto dst_wait = get_waitstates<access_type>(dst,false,false);
 
     for(size_t i = 0; i < n; i++)
     {

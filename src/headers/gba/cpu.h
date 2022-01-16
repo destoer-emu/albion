@@ -151,10 +151,7 @@ struct Cpu final
     }
 
 
-    void internal_cycle()
-    {
-        cycle_tick(1);
-    }
+    void internal_cycle();
 
 
     void tick_timer(int t, int cycles);
@@ -203,37 +200,43 @@ struct Cpu final
     // cpu io memory
     CpuIo cpu_io;
 
-    u32 rom_wait_sequential_16 = 1;
-    u32 rom_wait_sequential_32 = 1;
-
 
     void exec_thumb();
     void exec_arm();
 
-    u32 fetch_arm_opcode();
-    u16 fetch_thumb_opcode();
+    u32 arm_fetch_opcode();
+    u16 thumb_fetch_opcode();
+
+    void arm_pipeline_fill();
+    void thumb_pipeline_fill();
+
+
+    // internal impl
 
     // fetch speed hacks
     void update_fetch_cache();
 
     u16 fast_thumb_fetch();
-    u16 fast_thumb_fetch_opcode();
+    u16 fast_thumb_fetch_mem();
     void fast_thumb_pipeline_fill();
 
     u32 fast_arm_fetch();
-    u32 fast_arm_fetch_opcode();
+    u32 fast_arm_fetch_mem();
     void fast_arm_pipeline_fill();
 
+    // slow stable versions
+    u16 slow_thumb_fetch();
+    void slow_thumb_pipeline_fill();
+
+    u32 slow_arm_fetch();
+    void slow_arm_pipeline_fill();
 
 
-    void arm_fill_pipeline();
-    void thumb_fill_pipeline(); 
     void write_pc_arm(u32 v);
     void write_pc_thumb(u32 v);
     void write_pc(u32 v);
 
 
-public:
 
     //arm cpu instructions
     void arm_unknown(u32 opcode);
@@ -507,7 +510,6 @@ public:
 
     u8 *fetch_ptr = nullptr;
     u32 fetch_mask = 0;
-    u32 fetch_cycles = 0;
 };
 
 

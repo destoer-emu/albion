@@ -55,9 +55,6 @@ void Cpu::init()
 
     bios_hle_interrupt = false;
 
-    rom_wait_sequential_16 = 1;
-    rom_wait_sequential_32 = 1;
-
     cpu_io.init();
     update_intr_status();
     debug.trace.clear();
@@ -599,7 +596,8 @@ void Cpu::update_fetch_cache()
 
     fetch_ptr = mem.region_ptr[mem_region];
     fetch_mask = mem.region_info[mem_region].mask;
-    fetch_cycles = is_thumb? mem.get_waitstates<u16>(pc_actual) : mem.get_waitstates<u32>(pc_actual);     
+
+    mem.cache_wait_states(pc_actual);
     
     if(!fetch_ptr)
     {
@@ -691,8 +689,9 @@ void Cpu::write_pc(u32 v)
         in_bios = pc_actual < 0x4000;
         mem.switch_bios(in_bios);
         execute_rom = pc_actual >= 0x08000000 && pc_actual <= 0x0e000000;
-
+#ifdef FETCH_SPEEDHACK
         update_fetch_cache();
+#endif
         write_pc_thumb(v);
     }
 
@@ -702,12 +701,25 @@ void Cpu::write_pc(u32 v)
         in_bios = pc_actual < 0x4000;
         mem.switch_bios(in_bios);
         execute_rom = pc_actual >= 0x08000000 && pc_actual <= 0x0e000000;
-
+#ifdef FETCH_SPEEDHACK
         update_fetch_cache();
+#endif
         write_pc_arm(v);
     } 
 
+    // after a branch the read is no longer seqential
+    mem.sequential = false;
+
+    mem.prefetch_count = 0;
+
     debug.trace.add(source,pc_actual);	
+}
+
+void Cpu::internal_cycle()
+{
+    cycle_tick(1);
+
+    mem.do_prefetch();
 }
 
 }

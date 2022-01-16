@@ -8,73 +8,52 @@ namespace gameboyadvance
 
 // if there is a pipeline stall (whenever pc changes besides a fetch)
 // TODO remove prefetch hacks
-void Cpu::arm_fill_pipeline() // need to verify this...
+void Cpu::slow_arm_pipeline_fill() // need to verify this...
 {
-    // read_rom will break if the program wraps around to the bios region
-    // (this will cause a crash unless the bios swap hardware feature is on)
-    // in this case we cant use this code
-    if(execute_rom)
-    {
-        const auto wait = rom_wait_sequential_32;
-        pipeline[0] = mem.read_rom<u32>(regs[PC]); cycle_tick(wait);
-        regs[PC] += ARM_WORD_SIZE;
-        pipeline[1] = mem.read_rom<u32>(regs[PC]); cycle_tick(wait);
-    }
-
-    else
-    {
-        pipeline[0] = mem.read_u32(regs[PC]);
-        regs[PC] += ARM_WORD_SIZE;
-        pipeline[1] = mem.read_u32(regs[PC]);       
-    }
+    pipeline[0] = mem.read_u32(regs[PC]);
+    regs[PC] += ARM_WORD_SIZE;
+    pipeline[1] = mem.read_u32(regs[PC]); 
 }
 
 
-u32 Cpu::fetch_arm_opcode()
+u32 Cpu::slow_arm_fetch()
 {
     const u32 opcode = pipeline[0];
     pipeline[0] = pipeline[1];
+
     regs[PC] += ARM_WORD_SIZE; 
     pc_actual += ARM_WORD_SIZE;
-    if(execute_rom)
-    {
-        const auto wait = rom_wait_sequential_32;
-        pipeline[1] = mem.read_rom<u32>(regs[PC]);
-        cycle_tick(wait);
-    }
 
-    else
-    {   
-        pipeline[1] = mem.read_u32(regs[PC]);   
-    }
+    pipeline[1] = mem.read_u32(regs[PC]);   
+    
     return opcode;
 }
-
 
 
 // fetch speed hacks
 
 void Cpu::fast_arm_pipeline_fill()
 {
-    pipeline[0] = fast_arm_fetch(); 
+    pipeline[0] = fast_arm_fetch_mem(); 
     regs[PC] += ARM_WORD_SIZE;
-    pipeline[1] = fast_arm_fetch();          
+    pipeline[1] = fast_arm_fetch_mem();          
 }
 
-
-u32 Cpu::fast_arm_fetch()
+// TODO: make this work with seq and non seq waitstates
+u32 Cpu::fast_arm_fetch_mem()
 {
+    mem.update_seq(regs[PC]);
     u32 v = 0;
 
     const u32 offset = regs[PC] & fetch_mask;
     memcpy(&v,&fetch_ptr[offset],sizeof(v));
+    mem.open_bus_value = v;
 
-    cycle_tick(fetch_cycles);
-
+    cycle_tick(mem.sequential? mem.wait_seq_32 : mem.wait_nseq_32);
     return v;
 }
 
-u32 Cpu::fast_arm_fetch_opcode()
+u32 Cpu::fast_arm_fetch()
 {
     const u32 opcode = pipeline[0];
     pipeline[0] = pipeline[1];
@@ -82,17 +61,43 @@ u32 Cpu::fast_arm_fetch_opcode()
     pc_actual += ARM_WORD_SIZE; 
 
 
-    pipeline[1] = fast_arm_fetch();
+    pipeline[1] = fast_arm_fetch_mem();
     
     return opcode;
+}
+
+
+u32 Cpu::arm_fetch_opcode()
+{
+    mem.use_prefetch = true;
+
+#ifdef FETCH_SPEEDHACK
+    return fast_arm_fetch();
+#else 
+    return slow_arm_fetch();
+#endif
+
+    mem.use_prefetch = false;
+}
+
+void Cpu::arm_pipeline_fill()
+{
+    mem.use_prefetch = true;
+
+#ifdef FETCH_SPEEDHACK
+    fast_arm_pipeline_fill();
+#else
+    slow_arm_pipeline_fill();
+#endif
+
+    mem.use_prefetch = false;
 }
 
 
 void Cpu::write_pc_arm(u32 v)
 {
     regs[PC] = v & ~3;
-    //arm_fill_pipeline(); // fill the intitial cpu pipeline
-    fast_arm_pipeline_fill();
+    arm_pipeline_fill();
 }
 
 
@@ -109,8 +114,7 @@ void Cpu::execute_arm_opcode(u32 instr)
 
 void Cpu::exec_arm()
 {
-    //const auto instr = fetch_arm_opcode();
-    const auto instr = fast_arm_fetch_opcode();
+    const auto instr = arm_fetch_opcode();
 
     // if the condition is not met just
     // advance past the instr
