@@ -52,6 +52,26 @@ void instr_addi(N64 &n64, const Opcode &opcode)
 }
 
 
+void instr_daddi(N64 &n64, const Opcode &opcode)
+{
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+    // 32 bit oper
+    const s64 ans = n64.cpu.regs[opcode.rs] + imm;  
+
+    // TODO: speed this up with builtins
+    if(did_overflow(n64.cpu.regs[opcode.rs],imm,ans))
+    {
+        unimplemented("addi exception!");
+    }  
+
+    else
+    {
+        n64.cpu.regs[opcode.rt] = ans;
+    }
+}
+
+
 void instr_ori(N64 &n64, const Opcode &opcode)
 {
     // ori is not sign extended
@@ -78,6 +98,13 @@ void instr_jal(N64 &n64, const Opcode &opcode)
 
     write_pc(n64,target);
 }
+
+void instr_j(N64 &n64, const Opcode &opcode)
+{
+    const auto target = get_target(opcode.op,n64.cpu.pc);
+    write_pc(n64,target);
+}
+
 
 void instr_beql(N64 &n64, const Opcode &opcode)
 {
@@ -163,6 +190,15 @@ void instr_lw(N64 &n64, const Opcode &opcode)
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
     n64.cpu.regs[opcode.rt] = sign_extend_mips<s64,s32>(read_u32(n64,n64.cpu.regs[base] + imm));
+}
+
+void instr_lwu(N64 &n64, const Opcode &opcode)
+{
+    const auto base = opcode.rs;
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+    // not sign extended
+    n64.cpu.regs[opcode.rt] = read_u32(n64,n64.cpu.regs[base] + imm);
 }
 
 void instr_sw(N64 &n64, const Opcode &opcode)

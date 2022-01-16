@@ -127,9 +127,27 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+            case 0b100111:
+            {
+                printf("lwu");
+                break;
+            }
+
+            case 0b000010:
+            {
+                printf("j");
+                break;
+            }
+
             case 0b001000:
             {
                 printf("addi");
+                break;
+            }
+
+            case 0b011000:
+            {
+                printf("daddi");
                 break;
             }
 

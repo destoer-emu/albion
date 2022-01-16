@@ -73,6 +73,11 @@ std::string disass_addi(const Opcode &opcode, u64 pc)
     return fmt::format("addi {}, {}, {:04x}",reg_names[opcode.rt],reg_names[opcode.rs],opcode.imm);
 }
 
+std::string disass_daddi(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+    return fmt::format("daddi {}, {}, {:04x}",reg_names[opcode.rt],reg_names[opcode.rs],opcode.imm);
+}
 
 std::string disass_ori(const Opcode &opcode, u64 pc)
 {
@@ -107,12 +112,29 @@ std::string disass_jal(const Opcode &opcode, u64 pc)
     return fmt::format("jal {:8x}",target);
 }
 
+std::string disass_j(const Opcode &opcode, u64 pc)
+{
+    const auto target = get_target(opcode.op,pc);
+
+    return fmt::format("j {:8x}",target);
+}
+
+
+
 std::string disass_lw(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
     const auto base = opcode.rs;
     return fmt::format("lw {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
 }
+
+std::string disass_lwu(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+    const auto base = opcode.rs;
+    return fmt::format("lwu {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
+}
+
 
 std::string disass_lbu(const Opcode &opcode, u64 pc)
 {
