@@ -476,6 +476,15 @@ void write_physical(N64 &n64, u32 addr, access_type v)
             case VI_WIDTH_REG:
             {
                 n64.mem.vi_width = v & 0xfff;
+
+                // how do we get the res from this
+                const auto x_old = n64.rdp.screen_x; 
+                const auto y_old = n64.rdp.screen_y;
+
+                // do we assume 4:3?
+                change_res(n64.rdp,n64.mem.vi_width,(n64.mem.vi_width / 4) * 3);
+
+                n64.size_change = (n64.rdp.screen_x != x_old || n64.rdp.screen_y != y_old);
                 break;
             }
 

@@ -26,7 +26,7 @@ SDLMainWindow::SDLMainWindow(std::string filename)
 
 			case emu_type::n64:
 			{
-				puts("not supported");
+				n64_main(filename);
 				break;
 			}
 
@@ -45,6 +45,78 @@ SDLMainWindow::SDLMainWindow(std::string filename)
 	}
 }
 
+
+
+void SDLMainWindow::n64_main(std::string filename)
+{
+	reset(n64,filename);
+	// just have a default this might get changed by the hardware
+	init_sdl(640,480);
+
+	FpsCounter fps_counter;
+
+	for(;;)
+	{
+		fps_counter.reading_start();
+
+		n64_handle_input();
+
+		nintendo64::run(n64);
+
+		// screen res changed
+		if(n64.size_change)
+		{
+			n64.size_change = 0;
+			create_texture(n64.rdp.screen_x,n64.rdp.screen_y);
+		}
+
+		n64_render();
+
+		fps_counter.reading_end();
+
+		SDL_SetWindowTitle(window,fmt::format("destoer-emu: {}",fps_counter.get_fps()).c_str());
+
+		puts("frame");
+	}
+
+}
+
+void SDLMainWindow::n64_render()
+{
+    // do our screen blit
+    SDL_UpdateTexture(texture, NULL, n64.rdp.screen.data(),  4 * X);
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
+    SDL_RenderPresent(renderer);    
+}
+
+
+void SDLMainWindow::n64_handle_input()
+{
+	SDL_Event event;
+	
+	// handle input
+	while(SDL_PollEvent(&event))
+	{	
+		switch(event.type)
+		{
+	
+			case SDL_WINDOWEVENT:
+			{
+				if(event.window.event == SDL_WINDOWEVENT_RESIZED)
+				{
+					SDL_SetWindowSize(window,event.window.data1, event.window.data2);
+				}
+				break;
+			}
+
+			case SDL_QUIT:
+			{
+				puts("bye!");
+				exit(0);
+			}
+		}
+	}
+}
 
 void SDLMainWindow::gameboy_main(std::string filename)
 {
@@ -158,23 +230,38 @@ void SDLMainWindow::gameboy_handle_input(GbControllerInput &controller)
     }    
 }
 
-void SDLMainWindow::init_sdl(int x, int y)
+// START HERE:
+void SDLMainWindow::create_texture(u32 x, u32 y)
 {
+	// destroy the old one if need be
+	if(texture)
+	{
+		SDL_DestroyTexture(texture);
+	}
+
 	X = x;
 	Y = y;
 
+	// resize the window
+	SDL_SetWindowSize(window,X * 2, Y * 2);
+
+	texture = SDL_CreateTexture(renderer,
+		SDL_PIXELFORMAT_BGR888, SDL_TEXTUREACCESS_STREAMING, X, Y);
+}
+
+void SDLMainWindow::init_sdl(u32 x, u32 y)
+{
 	// initialize our window
 	window = SDL_CreateWindow("destoer-emu",
-		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,X*2,Y*2,SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
+		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,x * 2,y *2,SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
 	
 	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl"); // crashes without this on windows?
 	
 	// set a render for our window
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-	texture = SDL_CreateTexture(renderer,
-		SDL_PIXELFORMAT_BGR888, SDL_TEXTUREACCESS_STREAMING, X, Y);
-	std::fill(gb.ppu.screen.begin(),gb.ppu.screen.end(),255);	    
+	create_texture(x,y);
+	SDL_GL_SetSwapInterval(1);
 }
 
 
@@ -256,8 +343,6 @@ void SDLMainWindow::gba_handle_input(GbaControllerInput &controller)
 
 void SDLMainWindow::gba_main(std::string filename)
 {
-	SDL_GL_SetSwapInterval(1);
-
 	//constexpr uint32_t fps = 60; 
 	//constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
 	//uint64_t next_time = current_time() + screen_ticks_per_frame;

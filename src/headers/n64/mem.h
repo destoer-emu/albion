@@ -42,6 +42,7 @@ struct Mem
 
     u32 vi_origin = 0;
     u32 vi_width = 0;
+
     u32 vi_intr = 0;
     u32 vi_burst = 0;
     u32 vi_vsync = 0;

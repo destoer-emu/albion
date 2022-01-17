@@ -28,6 +28,7 @@ void cycle_tick(N64 &n64, u32 cycles)
     // increment counter (we will shift this when reading)
     // because it should be on every other cycle
     n64.cpu.cp0_regs[COUNT] += cycles;
+    n64.cycles += cycles;
 }
 
 
@@ -153,7 +154,7 @@ void step(N64 &n64)
     Opcode op;
     init_opcode(op,opcode);
 
-    std::cout << fmt::format("{:16x}: {}\n",n64.cpu.pc,disass_opcode(op,n64.cpu.pc_next));
+    //std::cout << fmt::format("{:16x}: {}\n",n64.cpu.pc,disass_opcode(op,n64.cpu.pc_next));
     
     skip_instr(n64.cpu);
 

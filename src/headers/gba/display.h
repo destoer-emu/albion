@@ -27,11 +27,6 @@ struct Display
     void render_palette(u32 *palette, size_t size);
     void render_map(int id, std::vector<u32> &map);
 
-    u32 convert_color(u16 color)
-    {
-        return col_lut[deset_bit(color,15)];
-    }
-
     std::vector<u32> screen;
     bool new_vblank = false;
     DispIo disp_io;
@@ -104,27 +99,6 @@ struct Display
     std::vector<u32> oam_priority;
     std::vector<u32> sprite_priority;
 
-
-    using ColorLut = std::array<u32,32768>;
-    constexpr ColorLut pop_color_lut()
-    {
-        ColorLut lut{};
-
-        for(u16 c = 0; c < lut.size(); c++)
-        {
-
-            const u32 R = c & 0x1f;
-            const u32 G = (c >> 5) & 0x1f;
-            const u32 B = (c >> 10) & 0x1f;
-
-            // default to standard colors until we add proper correction
-            lut[c] =  B << 19 |  G << 11 | R << 3 | 0xFF000000;
-        }
-
-        return lut;
-    }
-
-    const ColorLut col_lut = pop_color_lut();
 };
 
 }
