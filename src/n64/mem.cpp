@@ -118,6 +118,12 @@ void reset_mem(Mem &mem, const std::string &filename)
     mem.vi_burst = 0;
     mem.vi_vsync = 0;
     mem.vi_hsync = 0;
+    mem.vi_leap = 0;
+    mem.vi_hstart = 0;
+    mem.vi_vstart = 0;
+    mem.vi_vburst = 0;
+    mem.vi_xscale = 0;
+    mem.vi_yscale = 0;
 }
 
 // TODO: this will probably have to be switched over to software page table
@@ -503,6 +509,43 @@ void write_physical(N64 &n64, u32 addr, access_type v)
             case VI_CURRENT_REG:
             {
                 n64.mem.mi_intr = deset_bit(n64.mem.mi_intr,VI_INTR_BIT);
+                break;
+            }
+
+            // TODO: seperate these into there fields
+            case VI_LEAP_REG:
+            {
+                n64.mem.vi_leap = v & 0x0fffffff;
+                break;
+            }
+
+            case VI_H_START_REG:
+            {
+                n64.mem.vi_hstart = v & ~0b000000;
+                break;
+            }
+
+            case VI_V_START_REG:
+            {
+                n64.mem.vi_vstart = v & ~0b000000;
+                break;                
+            }
+
+            case VI_V_BURST_REG:
+            {
+                n64.mem.vi_vburst = v & ~0b000000;
+                break;
+            }
+
+            case VI_X_SCALE_REG:
+            {
+                n64.mem.vi_xscale = v & 0x0fffffff;
+                break;
+            }
+
+            case VI_Y_SCALE_REG:
+            {
+                n64.mem.vi_yscale = v & 0x0fffffff;
                 break;
             }
 

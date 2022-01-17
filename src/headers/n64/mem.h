@@ -46,6 +46,12 @@ struct Mem
     u32 vi_burst = 0;
     u32 vi_vsync = 0;
     u32 vi_hsync = 0;
+    u32 vi_leap = 0;
+    u32 vi_hstart = 0;
+    u32 vi_vstart = 0;
+    u32 vi_vburst = 0;
+    u32 vi_xscale = 0;
+    u32 vi_yscale = 0;
 };
 
 void reset_mem(Mem &mem, const std::string &filename);

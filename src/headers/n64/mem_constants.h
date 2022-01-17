@@ -29,6 +29,12 @@ static constexpr u32 VI_CURRENT_REG = 0x04400010;
 static constexpr u32 VI_BURST_REG = 0x04400014;
 static constexpr u32 VI_V_SYNC_REG = 0x04400018;
 static constexpr u32 VI_H_SYNC_REG = 0x0440001c;
+static constexpr u32 VI_LEAP_REG = 0x04400020;
+static constexpr u32 VI_H_START_REG = 0x04400024;
+static constexpr u32 VI_V_START_REG = 0x04400028;
+static constexpr u32 VI_V_BURST_REG = 0x0440002c;
+static constexpr u32 VI_X_SCALE_REG = 0x04400030;
+static constexpr u32 VI_Y_SCALE_REG = 0x04400034;
 
 // intr bits
 static constexpr u32 DP_INTR_BIT = 5;
