@@ -128,6 +128,20 @@ std::string disass_lw(const Opcode &opcode, u64 pc)
     return fmt::format("lw {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
 }
 
+std::string disass_lb(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+    const auto base = opcode.rs;
+    return fmt::format("lb {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
+}
+
+std::string disass_ld(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+    const auto base = opcode.rs;
+    return fmt::format("ld {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
+}
+
 std::string disass_lwu(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
@@ -151,6 +165,14 @@ std::string disass_sw(const Opcode &opcode, u64 pc)
 
     const auto base = opcode.rs;
     return fmt::format("sw {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
+}
+
+std::string disass_sd(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto base = opcode.rs;
+    return fmt::format("sd {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
 }
 
 std::string disass_sb(const Opcode &opcode, u64 pc)
@@ -203,6 +225,13 @@ std::string disass_bgezl(const Opcode &opcode, u64 pc)
     const auto addr = compute_branch_addr(pc,opcode.imm);
 
     return fmt::format("bgezl {}, {:x}",reg_names[opcode.rs],addr);
+}
+
+std::string disass_bgtz(const Opcode &opcode, u64 pc)
+{
+    const auto addr = compute_branch_addr(pc,opcode.imm);
+
+    return fmt::format("bgtz {}, {:x}",reg_names[opcode.rs],addr);
 }
 
 std::string disass_bgezal(const Opcode &opcode, u64 pc)

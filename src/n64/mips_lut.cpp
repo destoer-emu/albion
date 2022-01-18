@@ -9,7 +9,7 @@ const INSTR_FUNC instr_lut[] = {
 &instr_beq,
 &instr_bne,
 &instr_unknown,
-&instr_unknown,
+&instr_bgtz,
 &instr_addi,
 &instr_addiu,
 &instr_slti,
@@ -34,7 +34,7 @@ const INSTR_FUNC instr_lut[] = {
 &instr_unknown,
 &instr_unknown,
 &instr_unknown,
-&instr_unknown,
+&instr_lb,
 &instr_unknown,
 &instr_unknown,
 &instr_lw,
@@ -57,6 +57,7 @@ const INSTR_FUNC instr_lut[] = {
 &instr_unknown,
 &instr_unknown,
 &instr_unknown,
+&instr_ld,
 &instr_unknown,
 &instr_unknown,
 &instr_unknown,
@@ -64,8 +65,7 @@ const INSTR_FUNC instr_lut[] = {
 &instr_unknown,
 &instr_unknown,
 &instr_unknown,
-&instr_unknown,
-&instr_unknown,
+&instr_sd,
 };
 
 
@@ -77,7 +77,7 @@ const DISASS_FUNC disass_lut[] = {
 &disass_beq,
 &disass_bne,
 &disass_unknown,
-&disass_unknown,
+&disass_bgtz,
 &disass_addi,
 &disass_addiu,
 &disass_slti,
@@ -102,7 +102,7 @@ const DISASS_FUNC disass_lut[] = {
 &disass_unknown,
 &disass_unknown,
 &disass_unknown,
-&disass_unknown,
+&disass_lb,
 &disass_unknown,
 &disass_unknown,
 &disass_lw,
@@ -125,6 +125,7 @@ const DISASS_FUNC disass_lut[] = {
 &disass_unknown,
 &disass_unknown,
 &disass_unknown,
+&disass_ld,
 &disass_unknown,
 &disass_unknown,
 &disass_unknown,
@@ -132,8 +133,7 @@ const DISASS_FUNC disass_lut[] = {
 &disass_unknown,
 &disass_unknown,
 &disass_unknown,
-&disass_unknown,
-&disass_unknown,
+&disass_sd,
 };
 
 

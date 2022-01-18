@@ -19,10 +19,10 @@ void instr_lui(N64 &n64, const Opcode &opcode)
 
 void instr_addiu(N64 &n64, const Opcode &opcode)
 {
-    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+    const auto imm = sign_extend_mips<s32,s16>(opcode.imm);
 
     // addiu (oper is 32 bit, no exceptions thrown)
-    n64.cpu.regs[opcode.rt] = sign_extend_mips<s64,s32>(n64.cpu.regs[opcode.rs] + imm);
+    n64.cpu.regs[opcode.rt] = sign_extend_mips<s64,s32>(u32(n64.cpu.regs[opcode.rs]) + imm);
 }
 
 void instr_slti(N64 &n64, const Opcode &opcode)
@@ -37,7 +37,7 @@ void instr_addi(N64 &n64, const Opcode &opcode)
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
     // 32 bit oper
-    const auto ans = sign_extend_mips<s64,s32>(n64.cpu.regs[opcode.rs] + imm);  
+    const auto ans = sign_extend_mips<s64,s32>(u32(n64.cpu.regs[opcode.rs]) + imm);  
 
     // TODO: speed this up with builtins
     if(did_overflow(n64.cpu.regs[opcode.rs],imm,ans))
@@ -56,13 +56,13 @@ void instr_daddi(N64 &n64, const Opcode &opcode)
 {
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
-    // 32 bit oper
+    // 64 bit oper
     const s64 ans = n64.cpu.regs[opcode.rs] + imm;  
 
     // TODO: speed this up with builtins
     if(did_overflow(n64.cpu.regs[opcode.rs],imm,ans))
     {
-        unimplemented("addi exception!");
+        unimplemented("daddi exception!");
     }  
 
     else
@@ -183,6 +183,15 @@ void instr_cache(N64 &n64, const Opcode &opcode)
     // ignore cache operations for now
 }
 
+void instr_lb(N64 &n64, const Opcode &opcode)
+{
+    const auto base = opcode.rs;
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+    n64.cpu.regs[opcode.rt] = sign_extend_mips<s64,s8>(read_u8(n64,n64.cpu.regs[base] + imm));
+}
+
+
 
 void instr_lw(N64 &n64, const Opcode &opcode)
 {
@@ -191,6 +200,15 @@ void instr_lw(N64 &n64, const Opcode &opcode)
 
     n64.cpu.regs[opcode.rt] = sign_extend_mips<s64,s32>(read_u32(n64,n64.cpu.regs[base] + imm));
 }
+
+void instr_ld(N64 &n64, const Opcode &opcode)
+{
+    const auto base = opcode.rs;
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+    n64.cpu.regs[opcode.rt] = read_u64(n64,n64.cpu.regs[base] + imm);
+}
+
 
 void instr_lwu(N64 &n64, const Opcode &opcode)
 {
@@ -209,6 +227,14 @@ void instr_sw(N64 &n64, const Opcode &opcode)
     write_u32(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);
 }
 
+void instr_sd(N64 &n64, const Opcode &opcode)
+{
+    const auto base = opcode.rs;
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+    write_u64(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);
+}
+
 void instr_lbu(N64 &n64, const Opcode &opcode)
 {
     const auto base = opcode.rs;
@@ -225,5 +251,21 @@ void instr_sb(N64 &n64, const Opcode &opcode)
     write_u8(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);
 }
 
+
+void instr_bgtz(N64 &n64, const Opcode &opcode)
+{
+    if(static_cast<s64>(n64.cpu.regs[opcode.rs]) > 0)
+    {
+        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
+
+        write_pc(n64,target);
+    }
+    
+    // discard delay slot
+    else
+    {
+        skip_instr(n64.cpu);
+    }
+}
 
 }

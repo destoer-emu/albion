@@ -86,6 +86,31 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+
+            case 0b110111:
+            {
+                printf("ld");
+                break;
+            }
+
+            case 0b000111:
+            {
+                printf("bgtz");
+                break;
+            }
+
+            case 0b111111:
+            {
+                printf("sd");
+                break;
+            }
+
+            case 0b100000:
+            {
+                printf("lb");
+                break;
+            }
+
             // lw
             case 0b100011:
             {

@@ -75,8 +75,6 @@ void SDLMainWindow::n64_main(std::string filename)
 		fps_counter.reading_end();
 
 		SDL_SetWindowTitle(window,fmt::format("destoer-emu: {}",fps_counter.get_fps()).c_str());
-
-		puts("frame");
 	}
 
 }
