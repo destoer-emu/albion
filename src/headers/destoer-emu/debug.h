@@ -102,7 +102,7 @@ public:
     {
         // assume SDL for now
         const auto str = fmt::format(x,args...);
-#ifdef FROTNED_SDL
+#ifdef FRONTEND_SDL
         std::cout << str;
 #endif 
 

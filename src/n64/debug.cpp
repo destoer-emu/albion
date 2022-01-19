@@ -35,7 +35,13 @@ void N64Debug::execute_command(const std::vector<Token> &args)
 void N64Debug::regs(const std::vector<Token> &args)
 {
     UNUSED(args);
-    //gba.cpu.print_regs();
+    
+    printf("pc = %016lx\n",n64.cpu.pc);
+
+    for(u32 i = 0; i < 32; i++)
+    {
+        printf("%s = %016lx\n",reg_names[i],n64.cpu.regs[i]);
+    }
 }
 
 void N64Debug::step_internal()
@@ -60,7 +66,12 @@ void N64Debug::step(const std::vector<Token> &args)
 
 std::string N64Debug::disass_instr(uint64_t addr)
 {
-    return fmt::format("{:x}: {}",addr,"placeholder_str");
+    const u32 opcode = read_u32(n64,addr);
+
+    Opcode op;
+    init_opcode(op,opcode);  
+
+    return fmt::format("{:x}: {}",addr,disass_opcode(op,addr));
 }
 
 
@@ -73,7 +84,7 @@ void N64Debug::disass(const std::vector<Token> &args)
 uint64_t N64Debug::get_instr_size(uint64_t addr)
 {
     UNUSED(addr);
-    return 4;
+    return sizeof(u32);
 }
 
 

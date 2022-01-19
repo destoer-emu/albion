@@ -216,7 +216,7 @@ void Debug::print_mem(const std::vector<Token> &args)
         return;
     }
 
-    uint16_t addr;
+    u32 addr;
 
     if(args[1].type == token_type::integer)
     {
@@ -232,7 +232,7 @@ void Debug::print_mem(const std::vector<Token> &args)
 
     if(args.size() == 2)
     {
-        print_console("{:2x}: {}\n",addr,read_mem(addr));
+        print_console("{:8x}: {}\n",addr,read_mem(addr));
     }
 
     else
@@ -256,13 +256,13 @@ void Debug::print_mem(const std::vector<Token> &args)
 			print_console("  {:2x}",i);
 		}
 		
-		print_console("\n\n{:4x}: {:2x} ,",read_mem(addr));
+		print_console("\n\n{:8x}: {:2x} ,",addr,read_mem(addr));
 		for(int i = 1; i < n; i++)
 		{	
 			// makes it "slow" to format but oh well
 			if(i % 16 == 0)
 			{
-				print_console("\n{:4x}: ",addr+i);
+				print_console("\n{:8x}: ",addr+i);
 			}
 			
 			

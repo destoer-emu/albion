@@ -355,15 +355,25 @@ bool verify_immediate(const std::string &line, std::string &literal)
 }
 
 
-uint32_t convert_imm(const std::string &imm)
+u32 convert_imm(const std::string &imm)
 {
-    if(imm.size() >= 3 && imm.substr(0,2) == "0b")
+    try 
     {
-        return static_cast<uint32_t>(std::stoi(imm.substr(2),0,2));
+        if(imm.size() >= 3 && imm.substr(0,2) == "0b")
+        {
+            return static_cast<uint32_t>(std::stoll(imm.substr(2),0,2));
+        }
+
+        // stoi wont auto detect base for binary strings?
+        return static_cast<uint32_t>(std::stoll(imm,0,0));
     }
 
-    // stoi wont auto detect base for binary strings?
-    return static_cast<uint32_t>(std::stoi(imm,0,0));
+    catch(std::exception &ex)
+    {
+        printf("stoi exception\n");
+        std::cout << ex.what() << std::endl;
+        exit(1);
+    }
 }
 
 bool decode_imm(const std::string &line, uint32_t &i,std::string &literal)

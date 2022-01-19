@@ -296,7 +296,7 @@ struct Token
 
 // basic tokenizer
 bool tokenize(const std::string &line,std::vector<Token> &args);
-uint32_t convert_imm(const std::string &imm);
+u32 convert_imm(const std::string &imm);
 
 void print_tokens(const std::vector<Token> &tokens);
 

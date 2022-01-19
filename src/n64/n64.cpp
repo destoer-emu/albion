@@ -5,7 +5,6 @@
 // unity build
 #include <n64/mips.cpp>
 #include <n64/mem.cpp>
-#include <n64/debug.cpp>
 #include <n64/disass.cpp>
 #include <n64/cpu.cpp>
 #include <n64/instr.cpp>
@@ -14,6 +13,7 @@
 #include <n64/instr_cop0.cpp>
 #include <n64/mips_lut.cpp>
 #include <n64/rdp.cpp>
+#include <n64/debug.cpp>
 
 namespace nintendo64
 {
@@ -38,8 +38,6 @@ void run(N64 &n64)
     // dont know when the rendering should be finished just do at end for now
     render(n64);
     n64.cycles -= N64_CLOCK_CYCLES;
-
-    printf("%08lx\n",n64.cpu.regs[30]);
 }
 
 }

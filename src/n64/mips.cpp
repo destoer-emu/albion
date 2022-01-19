@@ -2,7 +2,7 @@ namespace nintendo64
 {
     const char *reg_names[32]
     {
-        "zero", // hardwired to zero
+        "r0", // hardwired to zero
         "at", // assembler tempoary
         "v0", // return value or expression eval
         "v1",

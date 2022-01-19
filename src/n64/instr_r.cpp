@@ -20,24 +20,24 @@ void instr_sll(N64 &n64, const Opcode &opcode)
     const auto shamt = get_shamt(opcode.op);
 
 
-    n64.cpu.regs[opcode.rd] = sign_extend_mips<s64,s32>(n64.cpu.regs[opcode.rt] << shamt);
+    n64.cpu.regs[opcode.rd] = sign_extend_mips<s64,s32>(u32(n64.cpu.regs[opcode.rt]) << shamt);
 }
 
 void instr_sllv(N64 &n64, const Opcode &opcode)
 {
-    n64.cpu.regs[opcode.rd] = sign_extend_mips<s64,s32>(n64.cpu.regs[opcode.rt] << (n64.cpu.regs[opcode.rs] & 0b11111));    
+    n64.cpu.regs[opcode.rd] = sign_extend_mips<s64,s32>(u32(n64.cpu.regs[opcode.rt]) << (n64.cpu.regs[opcode.rs] & 0b11111));    
 }
 
 void instr_srl(N64 &n64, const Opcode &opcode)
 {
     const auto shamt = get_shamt(opcode.op);
 
-    n64.cpu.regs[opcode.rd] = sign_extend_mips<s64,s32>(n64.cpu.regs[opcode.rt] >> shamt);    
+    n64.cpu.regs[opcode.rd] = sign_extend_mips<s64,s32>(u32(n64.cpu.regs[opcode.rt]) >> shamt);    
 }
 
 void instr_srlv(N64 &n64, const Opcode &opcode)
 {
-    n64.cpu.regs[opcode.rd] = sign_extend_mips<s64,s32>(n64.cpu.regs[opcode.rt] >> (n64.cpu.regs[opcode.rs] & 0b11111));    
+    n64.cpu.regs[opcode.rd] = sign_extend_mips<s64,s32>(u32(n64.cpu.regs[opcode.rt]) >> (n64.cpu.regs[opcode.rs] & 0b11111));    
 }
 
 void instr_sltu(N64 &n64, const Opcode &opcode)

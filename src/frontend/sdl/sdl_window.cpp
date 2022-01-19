@@ -107,6 +107,19 @@ void SDLMainWindow::n64_handle_input()
 				break;
 			}
 
+
+			case SDL_KEYDOWN:
+			{
+			#ifdef DEBUG
+				if(event.key.keysym.sym == SDLK_p)
+				{
+					n64.debug.debug_input();
+				}
+			#endif
+				break;
+			}
+
+
 			case SDL_QUIT:
 			{
 				puts("bye!");

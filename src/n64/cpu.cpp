@@ -16,6 +16,8 @@ void reset_cpu(Cpu &cpu)
     write_cp0(cpu,0x70400004,STATUS);
     cpu.cp0_regs[PRID] = 0x00000B00;
     cpu.cp0_regs[CONFIG] = 0x0006E463;
+    cpu.cp0_regs[COUNT] = 0;
+    cpu.cp0_regs[COMPARE] = 0;
 
     cpu.pc = 0xA4000040;
     cpu.pc_next = cpu.pc + 4; 
@@ -183,6 +185,8 @@ void write_pc(N64 &n64, u64 pc)
     {
         unimplemented("pc address exception");
     }
+
+    n64.debug.trace.add(n64.cpu.pc,pc);	
 
     n64.cpu.pc_next = pc;
 }
