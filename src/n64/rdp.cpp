@@ -31,9 +31,9 @@ void render(N64 &n64)
             // this probably has more to it but just a plain copy for now
             for(u32 i = 0; i < n64.rdp.screen.size(); i++)
             {
-                const u32 addr = i * sizeof(u16) + n64.mem.vi_origin;
+                //const u32 addr = i * sizeof(u16) + n64.mem.vi_origin;
                 // FIXME: hack to fix output 
-                //const u32 addr = i * sizeof(u32) + n64.mem.vi_origin;
+                const u32 addr = i * sizeof(u32) + n64.mem.vi_origin;
                 const auto v = handle_read<u16>(n64.mem.rd_ram,addr);
 
                 if(is_set(v,15))

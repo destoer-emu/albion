@@ -32,6 +32,13 @@ void run(N64 &n64)
     // dont know how our vblank setup works
     while(n64.cycles <= (N64_CLOCK_CYCLES / 60))
     {
+
+#ifdef DEBUG
+        if(n64.debug.is_halted())
+        {
+            return;
+        }
+#endif
         step(n64);
     }
 

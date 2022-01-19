@@ -167,6 +167,14 @@ std::string disass_sw(const Opcode &opcode, u64 pc)
     return fmt::format("sw {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
 }
 
+std::string disass_sh(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto base = opcode.rs;
+    return fmt::format("sh {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
+}
+
 std::string disass_sd(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);

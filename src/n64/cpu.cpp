@@ -153,6 +153,17 @@ void step(N64 &n64)
 {
     const u32 opcode = read_u32(n64,n64.cpu.pc);
 
+// TODO: this needs to optimised
+#ifdef DEBUG 
+	if(n64.debug.breakpoint_hit(n64.cpu.pc,opcode,break_type::execute))
+	{
+		// halt until told otherwhise :)
+		write_log(n64.debug,"[DEBUG] execute breakpoint hit ({:x}:{:x})",n64.cpu.pc,opcode);
+		n64.debug.halt();
+        return;
+	}    
+#endif
+
     Opcode op;
     init_opcode(op,opcode);
 

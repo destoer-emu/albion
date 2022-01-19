@@ -72,6 +72,14 @@ void SDLMainWindow::n64_main(std::string filename)
 
 		n64_render();
 
+	#ifdef DEBUG
+		if(n64.debug.is_halted())
+		{
+			n64.debug.debug_input();
+		}
+	#endif
+
+
 		fps_counter.reading_end();
 
 		SDL_SetWindowTitle(window,fmt::format("destoer-emu: {}",fps_counter.get_fps()).c_str());
@@ -253,11 +261,12 @@ void SDLMainWindow::create_texture(u32 x, u32 y)
 	X = x;
 	Y = y;
 
-	// resize the window
-	SDL_SetWindowSize(window,X * 2, Y * 2);
-
 	texture = SDL_CreateTexture(renderer,
-		SDL_PIXELFORMAT_BGR888, SDL_TEXTUREACCESS_STREAMING, X, Y);
+		SDL_PIXELFORMAT_BGR888, SDL_TEXTUREACCESS_STREAMING, x, y);
+
+
+	// resize the window
+	SDL_SetWindowSize(window,x * 2, y * 2);
 }
 
 void SDLMainWindow::init_sdl(u32 x, u32 y)

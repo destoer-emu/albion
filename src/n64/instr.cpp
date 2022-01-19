@@ -34,13 +34,13 @@ void instr_slti(N64 &n64, const Opcode &opcode)
 
 void instr_addi(N64 &n64, const Opcode &opcode)
 {
-    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+    const auto imm = sign_extend_mips<s32,s16>(opcode.imm);
 
     // 32 bit oper
     const auto ans = sign_extend_mips<s64,s32>(u32(n64.cpu.regs[opcode.rs]) + imm);  
 
     // TODO: speed this up with builtins
-    if(did_overflow(n64.cpu.regs[opcode.rs],imm,ans))
+    if(did_overflow(s32(n64.cpu.regs[opcode.rs]),s32(imm),s32(ans)))
     {
         unimplemented("addi exception!");
     }  
@@ -225,6 +225,14 @@ void instr_sw(N64 &n64, const Opcode &opcode)
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
     write_u32(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);
+}
+
+void instr_sh(N64 &n64, const Opcode &opcode)
+{
+    const auto base = opcode.rs;
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+    write_u16(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);
 }
 
 void instr_sd(N64 &n64, const Opcode &opcode)

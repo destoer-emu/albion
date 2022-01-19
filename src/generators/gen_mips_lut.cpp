@@ -99,6 +99,12 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+            case 0b0101001:
+            {
+                printf("sh");
+                break;
+            }
+
             case 0b111111:
             {
                 printf("sd");
