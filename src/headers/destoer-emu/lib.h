@@ -42,6 +42,9 @@ using s64 = int64_t;
 
 using b8 = u8;
 
+using f32 = float;
+using f64 = double;
+
 inline uint64_t current_time()
 {
     return std::chrono::duration_cast<std::chrono::milliseconds>

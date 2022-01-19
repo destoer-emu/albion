@@ -29,7 +29,7 @@ void instr_slti(N64 &n64, const Opcode &opcode)
 {
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
-    n64.cpu.regs[opcode.rt] = static_cast<s64>(n64.cpu.regs[opcode.rs]) < imm;
+    n64.cpu.regs[opcode.rt] = s64(n64.cpu.regs[opcode.rs]) < imm;
 }
 
 void instr_addi(N64 &n64, const Opcode &opcode)
@@ -124,7 +124,7 @@ void instr_beql(N64 &n64, const Opcode &opcode)
 
 void instr_blezl(N64 &n64, const Opcode &opcode)
 {
-    if(static_cast<s64>(n64.cpu.regs[opcode.rs]) <= 0)
+    if(s64(n64.cpu.regs[opcode.rs]) <= 0)
     {
         const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
 
@@ -262,7 +262,7 @@ void instr_sb(N64 &n64, const Opcode &opcode)
 
 void instr_bgtz(N64 &n64, const Opcode &opcode)
 {
-    if(static_cast<s64>(n64.cpu.regs[opcode.rs]) > 0)
+    if(s64(n64.cpu.regs[opcode.rs]) > 0)
     {
         const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
 

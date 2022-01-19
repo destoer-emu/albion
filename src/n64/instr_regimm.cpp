@@ -17,7 +17,7 @@ void instr_regimm(N64 &n64, const Opcode &opcode)
 
 void instr_bgezl(N64 &n64, const Opcode &opcode)
 {
-    if(static_cast<s64>(n64.cpu.regs[opcode.rs]) >= 0)
+    if(s64(n64.cpu.regs[opcode.rs]) >= 0)
     {
         const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
 
@@ -36,7 +36,7 @@ void instr_bgezal(N64 &n64, const Opcode &opcode)
     // link unconditonally
     n64.cpu.regs[RA] = n64.cpu.pc;
 
-    if(static_cast<s64>(n64.cpu.regs[opcode.rs]) >= 0)
+    if(s64(n64.cpu.regs[opcode.rs]) >= 0)
     {
         const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
         write_pc(n64,target);

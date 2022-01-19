@@ -47,7 +47,7 @@ void instr_sltu(N64 &n64, const Opcode &opcode)
 
 void instr_slt(N64 &n64, const Opcode &opcode)
 {
-    n64.cpu.regs[opcode.rd] = static_cast<s64>(n64.cpu.regs[opcode.rs]) < static_cast<s64>(n64.cpu.regs[opcode.rt]);    
+    n64.cpu.regs[opcode.rd] = s64(n64.cpu.regs[opcode.rs]) < s64(n64.cpu.regs[opcode.rt]);    
 }
 
 void instr_subu(N64 &n64, const Opcode &opcode)
