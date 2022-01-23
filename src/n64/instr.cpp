@@ -22,7 +22,7 @@ void instr_addiu(N64 &n64, const Opcode &opcode)
     const auto imm = sign_extend_mips<s32,s16>(opcode.imm);
 
     // addiu (oper is 32 bit, no exceptions thrown)
-    n64.cpu.regs[opcode.rt] = sign_extend_mips<s64,s32>(u32(n64.cpu.regs[opcode.rs]) + imm);
+    n64.cpu.regs[opcode.rt] = sign_extend_mips<s64,s32>(s32(n64.cpu.regs[opcode.rs]) + imm);
 }
 
 void instr_slti(N64 &n64, const Opcode &opcode)

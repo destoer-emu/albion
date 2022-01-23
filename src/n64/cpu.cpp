@@ -155,7 +155,7 @@ void step(N64 &n64)
 
 // TODO: this needs to optimised
 #ifdef DEBUG 
-	if(n64.debug.breakpoint_hit(n64.cpu.pc,opcode,break_type::execute))
+	if(n64.debug.breakpoint_hit(u32(n64.cpu.pc),opcode,break_type::execute))
 	{
 		// halt until told otherwhise :)
 		write_log(n64.debug,"[DEBUG] execute breakpoint hit ({:x}:{:x})",n64.cpu.pc,opcode);

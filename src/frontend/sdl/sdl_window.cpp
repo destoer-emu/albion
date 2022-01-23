@@ -55,6 +55,10 @@ void SDLMainWindow::n64_main(std::string filename)
 
 	FpsCounter fps_counter;
 
+	#ifdef DEBUG
+		n64.debug.debug_input();
+	#endif
+
 	for(;;)
 	{
 		fps_counter.reading_start();

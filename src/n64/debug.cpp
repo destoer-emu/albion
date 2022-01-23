@@ -46,7 +46,10 @@ void N64Debug::regs(const std::vector<Token> &args)
 
 void N64Debug::step_internal()
 {
+    const auto old = breakpoints_enabled;
+    breakpoints_enabled = false;
     nintendo64::step(n64);
+    breakpoints_enabled = old;
     halt();
 }
 
@@ -71,7 +74,7 @@ std::string N64Debug::disass_instr(uint64_t addr)
     Opcode op;
     init_opcode(op,opcode);  
 
-    return fmt::format("{:x}: {}",addr,disass_opcode(op,addr));
+    return fmt::format("{:x}: {}",addr,disass_opcode(op,addr+sizeof(u32)));
 }
 
 
