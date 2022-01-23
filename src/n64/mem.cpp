@@ -91,7 +91,7 @@ void reset_mem(Mem &mem, const std::string &filename)
 
     mem.sp_imem.resize(0x1000);
 
-    const auto magic = handle_read_n64<uint32_t>(mem.rom,0x0);
+    const auto magic = handle_read<u32>(mem.rom,0x0);
 
     // if rom is middle endian byteswap it
 
@@ -103,9 +103,9 @@ void reset_mem(Mem &mem, const std::string &filename)
 
     for(u32 i = 0; i < mem.rom.size(); i += sizeof(u32))
     {
-        u32 v = handle_read_n64<u32>(mem.rom,i);
+        u32 v = handle_read<u32>(mem.rom,i);
         v = bswap(v);
-        handle_write_n64<u32>(mem.rom,i,v);
+        handle_write<u32>(mem.rom,i,v);
     }
 
 
@@ -613,10 +613,9 @@ void write_physical(N64 &n64, u32 addr, access_type v)
             case PI_WR_LEN_REG:
             {
                 n64.mem.pi_wr_len = v & 0xffffff;
-                //printf("pi dma %08x:%08x:%08x\n",n64.mem.pi_cart_addr,n64.mem.pi_dram_addr,n64.mem.pi_wr_len + 1);
                 
                 // dma from cart to rdram
-                do_pi_dma(n64,n64.mem.pi_cart_addr & ~1,n64.mem.pi_dram_addr & ~7,n64.mem.pi_wr_len + 1);
+                do_pi_dma(n64,n64.mem.pi_cart_addr,n64.mem.pi_dram_addr,n64.mem.pi_wr_len + 1);
                 break;
             }
 
@@ -716,6 +715,8 @@ void write_mem(N64 &n64, u32 addr, access_type v)
 
 void do_pi_dma(N64 &n64, u32 src, u32 dst, u32 len)
 {
+    printf("dma from %08x to %08x len %08x\n",src,dst,len);
+
     // for now just do it naviely with a read and write
     // and optimise it with memcpy later
     // len aligned to 16 bit
