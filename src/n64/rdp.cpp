@@ -24,6 +24,13 @@ void render(N64 &n64)
 
     switch(n64.mem.vi_bpp)
     {
+        // blank
+        case 0:
+        {
+            std::fill(n64.rdp.screen.begin(),n64.rdp.screen.end(),0xff000000);
+            break;
+        }
+
         // rgb 5551
         case 1:
         {

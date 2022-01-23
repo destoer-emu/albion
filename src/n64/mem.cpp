@@ -6,6 +6,12 @@ namespace nintendo64
 
 void do_pi_dma(N64 &n64, u32 src, u32 dst, u32 len);
 
+
+inline u64 swap_word(u64 v)
+{
+    return ((v & 0xffffffff) << 32)  | (v >> 32);
+}
+
 template<typename access_type>
 access_type handle_read_n64(std::vector<u8> &buf, u32 addr)
 {
@@ -21,7 +27,17 @@ access_type handle_read_n64(std::vector<u8> &buf, u32 addr)
         addr ^= 3;
     }
 
-    return handle_read<access_type>(buf,addr);
+
+    auto v = handle_read<access_type>(buf,addr);
+
+    // 8 byte so we have to swap them
+    if constexpr(sizeof(access_type) == 8)
+    {
+        v = swap_word(v);
+    }
+
+
+    return v;
 }
 
 template<typename access_type>
@@ -38,6 +54,13 @@ void handle_write_n64(std::vector<u8> &buf, u32 addr, access_type v)
     {
         addr ^= 3;
     }
+
+    // 8 byte so swap words
+    if constexpr(sizeof(access_type) == 8)
+    {
+        v = swap_word(v);
+    }
+
 
     handle_write<access_type>(buf,addr,v);
 }
