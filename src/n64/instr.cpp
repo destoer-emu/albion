@@ -94,7 +94,7 @@ void instr_jal(N64 &n64, const Opcode &opcode)
 {
     const auto target = get_target(opcode.op,n64.cpu.pc);
 
-    n64.cpu.regs[RA] = n64.cpu.pc;
+    n64.cpu.regs[RA] = n64.cpu.pc_next;
 
     write_pc(n64,target);
 }

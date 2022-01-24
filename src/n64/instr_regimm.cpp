@@ -34,7 +34,7 @@ void instr_bgezl(N64 &n64, const Opcode &opcode)
 void instr_bgezal(N64 &n64, const Opcode &opcode)
 {
     // link unconditonally
-    n64.cpu.regs[RA] = n64.cpu.pc;
+    n64.cpu.regs[RA] = n64.cpu.pc_next;
 
     if(s64(n64.cpu.regs[opcode.rs]) >= 0)
     {
