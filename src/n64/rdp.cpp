@@ -5,15 +5,16 @@ namespace nintendo64
 
 void reset_rdp(Rdp &rdp, u32 x, u32 y)
 {
-    printf("res change %d : %d\n",x,y);
     change_res(rdp,x,y);
 }
 
 void change_res(Rdp &rdp, u32 x, u32 y)
 {
+    printf("res change %d : %d : %d\n",x,y, x * y);
+
     rdp.screen_x = x;
     rdp.screen_y = y;
-    rdp.screen.resize(y * x);
+    rdp.screen.resize(x * y);
     std::fill(rdp.screen.begin(),rdp.screen.end(),0xff000000);
 }
 
@@ -32,16 +33,14 @@ void render(N64 &n64)
         }
 
         // rgb 5551
-        case 1:
+        case 2:
         {
             // TODO: handle alpha
             // this probably has more to it but just a plain copy for now
             for(u32 i = 0; i < n64.rdp.screen.size(); i++)
             {
-                const u32 addr = i * sizeof(u16) + n64.mem.vi_origin;
-                // FIXME: hack to fix output 
-                //const u32 addr = i * sizeof(u32) + n64.mem.vi_origin;
-                const auto v = handle_read<u16>(n64.mem.rd_ram,addr);
+                const u32 addr = n64.mem.vi_origin + (i * sizeof(u16));
+                const auto v = handle_read_n64<u16>(n64.mem.rd_ram,addr);
 
                 if(is_set(v,15))
                 {
@@ -52,13 +51,21 @@ void render(N64 &n64)
         }
 
         // 8bpp
-        case 2:
+        case 3:
         {
             // this probably has more to it but just a plain copy for now
             for(u32 i = 0; i < n64.rdp.screen.size(); i++)
             {
-                const u32 addr = i * sizeof(u32) + n64.mem.vi_origin;
-                n64.rdp.screen[i] = handle_read<u32>(n64.mem.rd_ram,addr) | 0xff000000;
+                const u32 addr = n64.mem.vi_origin + (i * sizeof(u32));
+
+                // TODO: handle alpha properly
+
+                const auto v = handle_read_n64<u32>(n64.mem.rd_ram,addr);
+
+                if(v & 0xff000000)  
+                {
+                    n64.rdp.screen[i] = v | 0xff000000;
+                }
             }
             break;
         }

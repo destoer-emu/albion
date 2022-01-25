@@ -53,7 +53,7 @@ void N64Debug::step_internal()
     halt();
 }
 
-uint64_t N64Debug::get_pc()
+u64 N64Debug::get_pc()
 {
     return n64.cpu.pc;
 }
@@ -67,7 +67,7 @@ void N64Debug::step(const std::vector<Token> &args)
     step_internal();
 }
 
-std::string N64Debug::disass_instr(uint64_t addr)
+std::string N64Debug::disass_instr(u64 addr)
 {
     const u32 opcode = read_u32(n64,addr);
 
@@ -84,21 +84,20 @@ void N64Debug::disass(const std::vector<Token> &args)
     disass_internal(args);
 }
 
-uint64_t N64Debug::get_instr_size(uint64_t addr)
+u64 N64Debug::get_instr_size(u64 addr)
 {
     UNUSED(addr);
     return sizeof(u32);
 }
 
 
-uint8_t N64Debug::read_mem(uint64_t addr)
+u8 N64Debug::read_mem(u64 addr)
 {
     return read_u8(n64,addr);
 }
 
 void N64Debug::change_breakpoint_enable(bool enable)
 {
-    //gba.change_breakpoint_enable(enable);
     UNUSED(enable);
 }
 

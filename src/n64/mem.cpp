@@ -260,7 +260,7 @@ access_type read_physical(N64 &n64, u32 addr)
     {
         switch(addr)
         {
-            case MI_VERSION_REG: return static_cast<access_type>(0x02020102);
+            case MI_VERSION_REG: return access_type(0x02020102);
 
             default:
             {
@@ -326,14 +326,14 @@ access_type read_physical(N64 &n64, u32 addr)
     // UNUSED
     else if(addr < 0x05000000)
     {
-        return static_cast<access_type>(0xffffffff);
+        return access_type(0xffffffff);
     }
 
     // n64dd
     else if(addr < 0x08000000)
     {
         // return as not present for now
-        return static_cast<access_type>(0xffffffff);
+        return access_type(0xffffffff);
     }
   
     // sram
@@ -455,7 +455,7 @@ void write_physical(N64 &n64, u32 addr, access_type v)
         {
             case VI_CONTROL_REG:
             {
-                n64.mem.vi_bpp = v & 0xb11;
+                n64.mem.vi_bpp = v & 0b11;
                 n64.mem.vi_gamma_dither = is_set(v,2);
                 n64.mem.vi_gamma = is_set(v,3);
                 n64.mem.vi_divot = is_set(v,4);
