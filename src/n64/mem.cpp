@@ -462,11 +462,6 @@ void write_physical(N64 &n64, u32 addr, access_type v)
                 n64.mem.vi_serrate = is_set(v,6);
                 n64.mem.vi_aa = (v >> 8) & 0b11;
 
-                if(n64.mem.vi_bpp == 2)
-                {
-                    unimplemented("rgb 5551");
-                }
-
                 if(n64.mem.vi_gamma_dither)
                 {
                     unimplemented("dither");

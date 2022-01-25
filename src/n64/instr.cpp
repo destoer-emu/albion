@@ -268,12 +268,6 @@ void instr_bgtz(N64 &n64, const Opcode &opcode)
 
         write_pc(n64,target);
     }
-    
-    // discard delay slot
-    else
-    {
-        skip_instr(n64.cpu);
-    }
 }
 
 }
