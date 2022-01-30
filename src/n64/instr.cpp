@@ -72,6 +72,15 @@ void instr_daddi(N64 &n64, const Opcode &opcode)
 }
 
 
+
+void instr_daddiu(N64 &n64, const Opcode &opcode)
+{
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+    // 64 bit oper no overflow
+    n64.cpu.regs[opcode.rt]  = n64.cpu.regs[opcode.rs] + imm;  
+}
+
 void instr_ori(N64 &n64, const Opcode &opcode)
 {
     // ori is not sign extended
@@ -258,6 +267,15 @@ void instr_sb(N64 &n64, const Opcode &opcode)
 
     write_u8(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);
 }
+
+void instr_lhu(N64 &n64, const Opcode &opcode)
+{
+    const auto base = opcode.rs;
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+    n64.cpu.regs[opcode.rt] = read_u16(n64,n64.cpu.regs[base] + imm);
+}
+
 
 
 void instr_bgtz(N64 &n64, const Opcode &opcode)

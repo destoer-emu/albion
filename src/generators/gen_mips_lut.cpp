@@ -117,6 +117,12 @@ void gen_mips_lut(const char *prefix)
                 break;
             }
 
+            case 0b100101:
+            {
+                printf("lhu");
+                break;
+            }
+
             // lw
             case 0b100011:
             {
@@ -155,6 +161,12 @@ void gen_mips_lut(const char *prefix)
             case 0b001001:
             {
                 printf("addiu");
+                break;
+            }
+
+            case 0b011001:
+            {
+                printf("daddiu");
                 break;
             }
 

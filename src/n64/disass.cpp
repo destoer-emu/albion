@@ -79,6 +79,13 @@ std::string disass_daddi(const Opcode &opcode, u64 pc)
     return fmt::format("daddi {}, {}, {:04x}",reg_names[opcode.rt],reg_names[opcode.rs],opcode.imm);
 }
 
+std::string disass_daddiu(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+    return fmt::format("daddiu {}, {}, {:04x}",reg_names[opcode.rt],reg_names[opcode.rs],opcode.imm);
+}
+
+
 std::string disass_ori(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
@@ -126,6 +133,13 @@ std::string disass_lw(const Opcode &opcode, u64 pc)
     UNUSED(pc);
     const auto base = opcode.rs;
     return fmt::format("lw {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
+}
+
+std::string disass_lhu(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+    const auto base = opcode.rs;
+    return fmt::format("lhu {}, {:04x}({})",reg_names[opcode.rt],opcode.imm,reg_names[base]);
 }
 
 std::string disass_lb(const Opcode &opcode, u64 pc)
