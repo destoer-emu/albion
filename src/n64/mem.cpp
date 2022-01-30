@@ -193,7 +193,7 @@ u32 remap_addr(u32 addr)
 template<typename access_type>
 access_type read_physical(N64 &n64, u32 addr)
 {
-   // just do something naive for now so we can get roms running
+    // just do something naive for now so we can get roms running
     if(addr < 0x00800000)
     {
         return handle_read_n64<access_type>(n64.mem.rd_ram,addr);
@@ -715,9 +715,9 @@ void do_pi_dma(N64 &n64, u32 src, u32 dst, u32 len)
     // for now just do it naviely with a read and write
     // and optimise it with memcpy later
     // len aligned to 16 bit
-    for(u32 i = 0; i < len / 2; i += 2)
+    for(u32 i = 0; i < len; i += 2)
     {
-        const auto v = read_physical<u16>(n64,src + i);
+        const u16 v = read_physical<u16>(n64,src + i);
         write_physical<u16>(n64,dst+i,v);
     }
 

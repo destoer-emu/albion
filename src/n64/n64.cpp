@@ -22,7 +22,7 @@ void reset(N64 &n64, const std::string &filename)
 {
     reset_mem(n64.mem,filename);
     reset_cpu(n64.cpu);
-    reset_rdp(n64.rdp,640,480);
+    reset_rdp(n64.rdp,320,240);
     n64.cycles = 0;
     n64.size_change = false;
 }

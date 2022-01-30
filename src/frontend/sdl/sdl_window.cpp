@@ -51,7 +51,7 @@ void SDLMainWindow::n64_main(std::string filename)
 {
 	reset(n64,filename);
 	// just have a default this might get changed by the hardware
-	init_sdl(640,480);
+	init_sdl(320,240);
 
 	FpsCounter fps_counter;
 
@@ -277,7 +277,7 @@ void SDLMainWindow::init_sdl(u32 x, u32 y)
 {
 	// initialize our window
 	window = SDL_CreateWindow("destoer-emu",
-		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,x * 2,y *2,SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
+		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,x * 2,y *2,SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
 	
 	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl"); // crashes without this on windows?
 	

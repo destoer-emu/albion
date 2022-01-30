@@ -210,7 +210,7 @@ std::string disass_beq(const Opcode &opcode, u64 pc)
 
     else
     {
-        return fmt::format("bne {}, {}, {:x}",reg_names[opcode.rs],reg_names[opcode.rt],addr);
+        return fmt::format("beq {}, {}, {:x}",reg_names[opcode.rs],reg_names[opcode.rt],addr);
     }
 }
 
