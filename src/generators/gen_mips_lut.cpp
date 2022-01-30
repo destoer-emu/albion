@@ -306,6 +306,18 @@ void gen_r_lut(const char *prefix)
                 break;
             }
 
+            case 0b111000:
+            {
+                printf("dsll");
+                break;
+            }
+
+            case 0b111100:
+            {
+                printf("dsll32");
+                break;
+            }
+
             case 0b000100:
             {
                 printf("sllv");

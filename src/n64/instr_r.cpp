@@ -19,9 +19,24 @@ void instr_sll(N64 &n64, const Opcode &opcode)
 {
     const auto shamt = get_shamt(opcode.op);
 
-
     n64.cpu.regs[opcode.rd] = sign_extend_mips<s64,s32>(u32(n64.cpu.regs[opcode.rt]) << shamt);
 }
+
+void instr_dsll(N64 &n64, const Opcode &opcode)
+{
+    const auto shamt = get_shamt(opcode.op);
+
+    n64.cpu.regs[opcode.rd] = n64.cpu.regs[opcode.rt] << u64(shamt);
+}
+
+void instr_dsll32(N64 &n64, const Opcode &opcode)
+{
+    const auto shamt = get_shamt(opcode.op);
+
+    n64.cpu.regs[opcode.rd] = n64.cpu.regs[opcode.rt] << u64(shamt + 32);
+}
+
+
 
 void instr_sllv(N64 &n64, const Opcode &opcode)
 {

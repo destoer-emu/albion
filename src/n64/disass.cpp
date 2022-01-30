@@ -370,6 +370,25 @@ std::string disass_sll(const Opcode &opcode, u64 pc)
     }
 }
 
+std::string disass_dsll(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto shamt = get_shamt(opcode.op);
+    
+    return fmt::format("dsll {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rt],shamt);   
+}
+
+std::string disass_dsll32(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto shamt = get_shamt(opcode.op);
+    
+    return fmt::format("dsll32 {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rt],shamt);   
+}
+
+
 std::string disass_jalr(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);
