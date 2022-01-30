@@ -10,7 +10,6 @@ void gen_mips_lut(const char *prefix)
         switch(i)
         {
             // r-format instruction
-            // TODO: start here
             case 0b000000:
             {
                 printf("r_fmt");
@@ -21,6 +20,12 @@ void gen_mips_lut(const char *prefix)
             case 0b000001:
             {
                 printf("regimm");
+                break;
+            }
+
+            case 0b001011:
+            {
+                printf("sltiu");
                 break;
             }
 
@@ -315,6 +320,36 @@ void gen_r_lut(const char *prefix)
             case 0b111100:
             {
                 printf("dsll32");
+                break;
+            }
+
+            case 0b010100:
+            {
+                printf("dsllv");
+                break;
+            }
+
+            case 0b111111:
+            {
+                printf("dsra32");
+                break;
+            }
+
+            case 0b000011:
+            {
+                printf("sra");
+                break;
+            }
+
+            case 0b000111:
+            {
+                printf("srav");
+                break;
+            }
+
+            case 0b100111:
+            {
+                printf("nor");
                 break;
             }
 

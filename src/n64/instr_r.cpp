@@ -26,7 +26,7 @@ void instr_dsll(N64 &n64, const Opcode &opcode)
 {
     const auto shamt = get_shamt(opcode.op);
 
-    n64.cpu.regs[opcode.rd] = n64.cpu.regs[opcode.rt] << u64(shamt);
+    n64.cpu.regs[opcode.rd] = n64.cpu.regs[opcode.rt] << shamt;
 }
 
 void instr_dsll32(N64 &n64, const Opcode &opcode)
@@ -43,12 +43,35 @@ void instr_sllv(N64 &n64, const Opcode &opcode)
     n64.cpu.regs[opcode.rd] = sign_extend_mips<s64,s32>(u32(n64.cpu.regs[opcode.rt]) << (n64.cpu.regs[opcode.rs] & 0b11111));    
 }
 
+void instr_dsllv(N64 &n64, const Opcode &opcode)
+{
+    n64.cpu.regs[opcode.rd] = n64.cpu.regs[opcode.rt] << u64(n64.cpu.regs[opcode.rs] & 0b111111);    
+}
+
+void instr_sra(N64 &n64, const Opcode &opcode)
+{
+    const auto shamt = get_shamt(opcode.op);
+
+    // shift, clamp, sign extend
+    // thanks dillon
+    const auto v = s32(s64(n64.cpu.regs[opcode.rt]) >> shamt);
+    n64.cpu.regs[opcode.rd] = sign_extend_mips<s64,s32>(v);
+}
+
 void instr_srl(N64 &n64, const Opcode &opcode)
 {
     const auto shamt = get_shamt(opcode.op);
 
     n64.cpu.regs[opcode.rd] = sign_extend_mips<s64,s32>(u32(n64.cpu.regs[opcode.rt]) >> shamt);    
 }
+
+void instr_dsra32(N64 &n64, const Opcode &opcode)
+{
+    const auto shamt = get_shamt(opcode.op);
+
+    n64.cpu.regs[opcode.rd] = s64(n64.cpu.regs[opcode.rt]) >> (shamt + 32);    
+}
+
 
 void instr_srlv(N64 &n64, const Opcode &opcode)
 {
@@ -116,6 +139,11 @@ void instr_mflo(N64 &n64, const Opcode &opcode)
 void instr_or(N64 &n64, const Opcode &opcode)
 {
     n64.cpu.regs[opcode.rd] = n64.cpu.regs[opcode.rs] | n64.cpu.regs[opcode.rt];
+}
+
+void instr_nor(N64 &n64, const Opcode &opcode)
+{
+    n64.cpu.regs[opcode.rd] = ~(n64.cpu.regs[opcode.rs] | n64.cpu.regs[opcode.rt]);
 }
 
 void instr_xor(N64 &n64, const Opcode &opcode)

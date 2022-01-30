@@ -111,6 +111,13 @@ std::string disass_slti(const Opcode &opcode, u64 pc)
     return fmt::format("slti {}, {}, {:04x}",reg_names[opcode.rt],reg_names[opcode.rs],opcode.imm);
 }   
 
+std::string disass_sltiu(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+    return fmt::format("sltiu {}, {}, {:04x}",reg_names[opcode.rt],reg_names[opcode.rs],opcode.imm);
+}   
+
+
 
 std::string disass_jal(const Opcode &opcode, u64 pc)
 {
@@ -403,6 +410,13 @@ std::string disass_sllv(const Opcode &opcode, u64 pc)
     return fmt::format("sllv {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rt],reg_names[opcode.rs]);
 }
 
+std::string disass_dsllv(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    return fmt::format("dsllv {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rt],reg_names[opcode.rs]);
+}
+
 
 std::string disass_srl(const Opcode &opcode, u64 pc)
 {
@@ -411,6 +425,25 @@ std::string disass_srl(const Opcode &opcode, u64 pc)
     const auto shamt = get_shamt(opcode.op);
 
     return fmt::format("srl {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rt],shamt);
+}
+
+std::string disass_sra(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto shamt = get_shamt(opcode.op);
+
+    return fmt::format("sra {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rt],shamt);
+}
+
+
+std::string disass_dsra32(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    const auto shamt = get_shamt(opcode.op);
+
+    return fmt::format("dsra32 {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rt],shamt);
 }
 
 std::string disass_srlv(const Opcode &opcode, u64 pc)
@@ -428,6 +461,13 @@ std::string disass_or(const Opcode &opcode, u64 pc)
     return fmt::format("or {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rs],reg_names[opcode.rt]);    
 }
 
+
+std::string disass_nor(const Opcode &opcode, u64 pc)
+{
+    UNUSED(pc);
+
+    return fmt::format("nor {}, {}, {}",reg_names[opcode.rd],reg_names[opcode.rs],reg_names[opcode.rt]);    
+}
 std::string disass_xor(const Opcode &opcode, u64 pc)
 {
     UNUSED(pc);

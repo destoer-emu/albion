@@ -32,6 +32,13 @@ void instr_slti(N64 &n64, const Opcode &opcode)
     n64.cpu.regs[opcode.rt] = s64(n64.cpu.regs[opcode.rs]) < imm;
 }
 
+void instr_sltiu(N64 &n64, const Opcode &opcode)
+{
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+    n64.cpu.regs[opcode.rt] = n64.cpu.regs[opcode.rs] < u64(imm);
+}
+
 void instr_addi(N64 &n64, const Opcode &opcode)
 {
     const auto imm = sign_extend_mips<s32,s16>(opcode.imm);
