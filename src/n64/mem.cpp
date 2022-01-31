@@ -240,8 +240,16 @@ access_type read_physical(N64 &n64, u32 addr)
     // TODO: start here impl the read lw is doing
     else if(addr < 0x04100000)
     {
-        unimplemented("read_mem: sp regs");
-        return 0;
+        switch(addr)
+        {
+        
+            default:
+            {
+                unimplemented("read_mem: sp regs %8x\n",addr);
+                return 0;
+            }
+
+        }
     }
 
     else if(addr < 0x04200000)

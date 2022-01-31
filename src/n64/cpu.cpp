@@ -178,8 +178,8 @@ void step(N64 &n64)
     // $zero is hardwired to zero, make sure writes cant touch it
     n64.cpu.regs[R0] = 0;
 
-    // assume 2 CPI
-    cycle_tick(n64,2);
+    // assume 1 CPI
+    cycle_tick(n64,1);
 
     // check for count interrupt
     // TODO: push this onto the scheduler later

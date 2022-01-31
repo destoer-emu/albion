@@ -44,7 +44,7 @@ void run(N64 &n64)
 
     // dont know when the rendering should be finished just do at end for now
     render(n64);
-    n64.cycles -= N64_CLOCK_CYCLES;
+    n64.cycles -= (N64_CLOCK_CYCLES / 60);
 }
 
 }

@@ -63,7 +63,7 @@ void N64Debug::step(const std::vector<Token> &args)
     UNUSED(args);
     const auto pc = get_pc();
     const auto instr = disass_instr(pc);
-    print_console("{:8x}: {}\n",pc,instr);
+    print_console("{}\n",instr);
     step_internal();
 }
 

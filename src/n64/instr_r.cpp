@@ -69,7 +69,7 @@ void instr_dsra32(N64 &n64, const Opcode &opcode)
 {
     const auto shamt = get_shamt(opcode.op);
 
-    n64.cpu.regs[opcode.rd] = s64(n64.cpu.regs[opcode.rt]) >> (shamt + 32);    
+    n64.cpu.regs[opcode.rd] = s64(n64.cpu.regs[opcode.rt]) >> u64(shamt + 32);    
 }
 
 

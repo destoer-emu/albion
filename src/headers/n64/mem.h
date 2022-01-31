@@ -14,6 +14,10 @@ struct Mem
     std::vector<u8> sp_imem;
 
 
+    // sp
+    u32 sp_mem_addr = 0;
+
+
     // RI
     u8 ri_select = 0;
     u8 ri_config = 0;
