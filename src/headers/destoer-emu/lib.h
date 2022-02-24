@@ -41,6 +41,7 @@ using s32 = int32_t;
 using s64 = int64_t;
 
 using b8 = u8;
+using b32 = u32;
 
 using f32 = float;
 using f64 = double;
@@ -145,6 +146,27 @@ inline T deset_bit(T v,int bit) noexcept
 {
 	const T shift = 1;
     return v & ~(shift << bit);
+}
+
+
+inline b32 set_if_set(b32 b, b32 v, u32 bit)
+{
+    if(is_set(v,bit))
+    {
+        return true;
+    }
+
+    return b;
+}
+
+inline b32 deset_if_set(b32 b, b32 v, u32 bit)
+{
+    if(is_set(v,bit))
+    {
+        return false;
+    }
+
+    return b;
 }
 
 

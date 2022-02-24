@@ -242,6 +242,10 @@ access_type read_physical(N64 &n64, u32 addr)
     {
         switch(addr)
         {
+            case SP_PC_REG:
+            {
+                return n64.mem.sp_pc;
+            }
         
             default:
             {
@@ -426,7 +430,52 @@ void write_physical(N64 &n64, u32 addr, access_type v)
     // TODO: start here impl the read lw is doing
     else if(addr < 0x04100000)
     {
-        unimplemented("write_mem: sp regs");
+        switch(addr)
+        {
+        
+            case SP_STATUS_REG:
+            {
+                Mem &mem = n64.mem;
+                mem.sp_halt = deset_if_set(mem.sp_halt,v,0);
+                mem.sp_halt = set_if_set(mem.sp_halt,v,1);
+
+                mem.sp_broke = deset_if_set(mem.sp_broke,v,2);
+
+                // TODO: should this actually be in the mips int reg
+                // check this when we get intr
+                mem.sp_intr = deset_if_set(mem.sp_intr,v,3);
+                mem.sp_intr = set_if_set(mem.sp_intr,v,4);
+
+                mem.sp_single_step = deset_if_set(mem.sp_single_step,v,5);
+                mem.sp_single_step = set_if_set(mem.sp_single_step,v,6);
+
+                mem.sp_clear_intr_on_break = is_set(v,7);
+                mem.sp_set_intr_on_break = is_set(v,8);
+
+                // handle signal sets
+                for(u32 i = 0; i < 8; i++)
+                {
+                    const u32 idx = ((i + 9) * 2);
+                    mem.sp_signal[i] = set_if_set(mem.sp_signal[i],idx,v);
+                }
+
+                // handle signal clear
+                for(u32 i = 0; i < 8; i++)
+                {
+                    const u32 idx = ((i + 10) * 2);
+                    mem.sp_signal[i] = deset_if_set(mem.sp_signal[i],idx,v);
+                }
+
+                break;
+            }
+        
+            default:
+            {
+                unimplemented("write_mem: sp regs: %08x : %08x\n",addr,v);
+                break;
+            }
+        }
+
     }
 
     else if(addr < 0x04200000)

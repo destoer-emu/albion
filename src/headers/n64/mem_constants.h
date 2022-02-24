@@ -40,3 +40,7 @@ static constexpr u32 VI_Y_SCALE_REG = 0x04400034;
 static constexpr u32 DP_INTR_BIT = 5;
 static constexpr u32 PI_INTR_BIT = 4;
 static constexpr u32 VI_INTR_BIT = 3;
+
+// sp
+static constexpr u32 SP_PC_REG = 0x04080000;
+static constexpr u32 SP_STATUS_REG = 0x04040010;

@@ -17,6 +17,23 @@ struct Mem
     // sp
     u32 sp_mem_addr = 0;
 
+    u32 sp_pc = 0;
+    b32 sp_halt = false;
+    b32 sp_broke = false;
+    // TODO: is this in the mips intr reg
+    b32 sp_intr = false;
+    b32 sp_dma_busy = false;
+    b32 sp_dma_full = false;
+    b32 sp_io_full = false;
+    b32 sp_single_step = false;
+    b32 sp_clear_intr_on_break = false;
+    b32 sp_set_intr_on_break = false;
+    b32 intr_on_break = false;
+    b32 sp_signal[8] = {0};
+
+
+
+
 
     // RI
     u8 ri_select = 0;
