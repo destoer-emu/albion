@@ -50,6 +50,7 @@ struct Mem
     // MI
     u16 mi_mode = 0;
     u8 mi_intr = 0;
+    u8 mi_mask = 0;
 
     // VI
 

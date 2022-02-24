@@ -18,6 +18,7 @@ static constexpr u32  PI_WR_LEN_REG = 0x0460000c;
 // mips interface
 static constexpr u32 MI_MODE_REG  = 0x04300000;
 static constexpr u32 MI_VERSION_REG = 0x04300004;
+static constexpr u32 MI_INTR_MASK_REG = 0x0430000C;
 
 
 // video interface
@@ -37,9 +38,15 @@ static constexpr u32 VI_X_SCALE_REG = 0x04400030;
 static constexpr u32 VI_Y_SCALE_REG = 0x04400034;
 
 // intr bits
-static constexpr u32 DP_INTR_BIT = 5;
-static constexpr u32 PI_INTR_BIT = 4;
+static constexpr u32 SP_INTR_BIT = 0;
+static constexpr u32 SI_INTR_BIT = 1;
+static constexpr u32 AI_INTR_BIT = 2;
 static constexpr u32 VI_INTR_BIT = 3;
+static constexpr u32 PI_INTR_BIT = 4;
+static constexpr u32 DP_INTR_BIT = 5;
+
+
+
 
 // sp
 static constexpr u32 SP_PC_REG = 0x04080000;

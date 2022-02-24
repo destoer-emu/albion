@@ -169,6 +169,27 @@ inline b32 deset_if_set(b32 b, b32 v, u32 bit)
     return b;
 }
 
+inline u32 set_bitset_if_set(u32 set, u32 v, u32 b1, u32 b2)
+{
+	if(is_set(v,b1))
+	{
+		set = set_bit(set,b2);
+	}
+
+	return set;
+}
+
+inline u32 deset_bitset_if_set(u32 set, u32 v, u32 b1, u32 b2)
+{
+	if(is_set(v,b1))
+	{
+		set = deset_bit(set,b2);
+	}
+
+	return set;
+}
+
+
 
 // std::rotr and std::rotl in c++20 probs should be used
 // for now https://stackoverflow.com/questions/776508/best-practices-for-circular-shift-rotate-operations-in-c
