@@ -331,7 +331,7 @@ access_type read_physical(N64 &n64, u32 addr)
 
     else if(addr < 0x04900000)
     {
-        unimplemented("serial interface");
+        unimplemented("read_mem: serial interface: %08x\n",addr);
         return 0;
     }
 
@@ -427,7 +427,6 @@ void write_physical(N64 &n64, u32 addr, access_type v)
 
     }
 
-    // TODO: start here impl the read lw is doing
     else if(addr < 0x04100000)
     {
         switch(addr)
@@ -661,11 +660,20 @@ void write_physical(N64 &n64, u32 addr, access_type v)
         }
     }
 
+    // TODO: implement the audio interface
     else if(addr < 0x04600000)
     {
-        unimplemented("write_mem: audio interface");
+        switch(addr)
+        {
+            default:
+            {
+                //unimplemented("write_mem: audio interface %08x\n",addr);
+                break;
+            }
+        }
     }
 
+    // TODO: implement rest of PI 
     else if(addr < 0x04700000)
     {
         switch(addr)
@@ -695,7 +703,11 @@ void write_physical(N64 &n64, u32 addr, access_type v)
                 break;
             }
 
-            default: unimplemented("write_mem: pi interface: %08x\n",addr);
+            default: 
+            {
+                //unimplemented("write_mem: pi interface: %08x\n",addr);
+                break;
+            }
         }
     }
     
@@ -721,10 +733,17 @@ void write_physical(N64 &n64, u32 addr, access_type v)
         }
     }
 
-
+    // TODO: implement the serial interface
     else if(addr < 0x04900000)
     {
-        unimplemented("serial interface");
+        switch(addr)
+        {
+            default: 
+            {
+                //unimplemented("write_mem: serial interface :%08x\n",addr);
+                break;
+            }
+        }
     }
 
     // UNUSED
