@@ -161,8 +161,17 @@ public:
 
     void disable_everything();
 
+    bool breakpoint_hit_internal(uint64_t addr, uint64_t value, break_type type);
 
-    bool breakpoint_hit(uint64_t addr, uint64_t value, break_type type);
+    inline bool breakpoint_hit(uint64_t addr, uint64_t value, break_type type)
+    {
+        if(!breakpoints_enabled && !watchpoints_enabled)
+        {
+            return false;
+        }
+
+        return breakpoint_hit_internal(addr,value,type);
+    }
 
     void set_breakpoint(uint64_t addr,bool r, bool w, bool x, bool value_enabled=false, uint64_t value=0xdeadbeef,bool watch = false);
 

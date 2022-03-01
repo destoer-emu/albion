@@ -42,7 +42,7 @@ struct Cpu final
 
     inline void exec_instr()
     {
-        std::invoke(exec_instr_fptr,this);
+        exec_instr_debug();
     }
 
     void exec_instr_debug();

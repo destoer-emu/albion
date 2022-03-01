@@ -25,7 +25,7 @@ void Debug::disable_everything()
     breakpoints_enabled = false;
 }
 
-bool Debug::breakpoint_hit(uint64_t addr, uint64_t value, break_type type)
+bool Debug::breakpoint_hit_internal(uint64_t addr, uint64_t value, break_type type)
 {
     if(!breakpoints_enabled && !watchpoints_enabled)
     {

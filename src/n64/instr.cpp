@@ -118,6 +118,13 @@ void instr_jal(N64 &n64, const Opcode &opcode)
 void instr_j(N64 &n64, const Opcode &opcode)
 {
     const auto target = get_target(opcode.op,n64.cpu.pc);
+
+    // trivial waitloop
+    if(target == n64.cpu.pc - 4)
+    {
+        n64.scheduler.skip_to_event();
+    }
+
     write_pc(n64,target);
 }
 
@@ -156,10 +163,18 @@ void instr_blezl(N64 &n64, const Opcode &opcode)
 
 void instr_bnel(N64 &n64, const Opcode &opcode)
 {
+    const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
+
+    // branch to self (trivial waitloop)
+    if(opcode.rs == opcode.rt && target == (n64.cpu.pc - 4))
+    {
+        puts("waitloop");
+        exit(1);
+    }
+
+
     if(n64.cpu.regs[opcode.rs] != n64.cpu.regs[opcode.rt])
     {
-        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
         write_pc(n64,target);
     }
     
@@ -183,10 +198,19 @@ void instr_bne(N64 &n64, const Opcode &opcode)
 
 void instr_beq(N64 &n64, const Opcode &opcode)
 {
+    
+    const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
+
+    // branch to self (trivial waitloop)
+    if(opcode.rs == opcode.rt && target == (n64.cpu.pc - 4))
+    {
+        puts("waitloop");
+        exit(1);
+    }
+
     if(n64.cpu.regs[opcode.rs] == n64.cpu.regs[opcode.rt])
     {
-        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
+        
         write_pc(n64,target);
     }
 }
