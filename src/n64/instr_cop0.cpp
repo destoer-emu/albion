@@ -17,7 +17,7 @@ void instr_cop0(N64 &n64, const Opcode &opcode)
 
 void instr_mtc0(N64 &n64, const Opcode &opcode)
 {
-    write_cp0(n64.cpu,n64.cpu.regs[opcode.rt],opcode.rd); 
+    write_cp0(n64,n64.cpu.regs[opcode.rt],opcode.rd); 
 }
 
 }

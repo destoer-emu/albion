@@ -3,6 +3,9 @@
 #include <destoer-emu/lib.h>
 #include <destoer-emu/debug.h>
 
+// TODO: remove undeeded generics with this and just replace the event type with an int
+// when we factor away the old reference holding method from the other cors
+
 template<typename event_type>
 struct EventNode
 {
@@ -16,10 +19,10 @@ struct EventNode
     }
 
     // when event was added
-    uint32_t start;
+    u64 start;
 
     // when it will trigger
-    uint32_t end;
+    u64 end;
 
     event_type type;
 

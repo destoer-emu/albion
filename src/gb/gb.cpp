@@ -213,7 +213,6 @@ void GB::key_pressed(button b)
 // run a frame
 void GB::run()
 {
-	scheduler.adjust_timestamp();
     ppu.new_vblank = false;
 #ifdef DEBUG
 

@@ -3,8 +3,32 @@
 namespace nintendo64
 {
 
-void reset_cpu(Cpu &cpu)
+void insert_count_event(N64 &n64)
 {
+    u64 cycles;
+
+    const u32 count = n64.cpu.cp0_regs[COUNT];
+    const u32 compare = n64.cpu.cp0_regs[COMPARE];
+
+    
+    if(count < compare)
+    {
+        cycles = (compare - count) * 2;
+    }
+
+    else
+    {
+        cycles = ((compare - count) + 0xffffffff) * 2; 
+    }
+
+    const auto event = n64.scheduler.create_event(cycles,n64_event::count);
+    n64.scheduler.insert(event); 
+}
+
+void reset_cpu(N64 &n64)
+{
+    auto &cpu = n64.cpu;
+
     // setup regs to hle the pif rom
     memset(cpu.regs,0,sizeof(cpu.regs));
     cpu.regs[T3] = 0xFFFFFFFFA4000040;
@@ -13,7 +37,7 @@ void reset_cpu(Cpu &cpu)
     cpu.regs[SP] = 0xFFFFFFFFA4001FF0;
 
     cpu.cp0_regs[RANDOM] = 0x0000001F;
-    write_cp0(cpu,0x70400004,STATUS);
+    write_cp0(n64,0x70400004,STATUS);
     cpu.cp0_regs[PRID] = 0x00000B00;
     cpu.cp0_regs[CONFIG] = 0x0006E463;
     cpu.cp0_regs[COUNT] = 0;
@@ -21,21 +45,26 @@ void reset_cpu(Cpu &cpu)
 
     cpu.pc = 0xA4000040;
     cpu.pc_next = cpu.pc + 4; 
+
+    insert_count_event(n64);
 }
 
+void count_intr(N64 &n64)
+{
+    n64.cpu.cp0_regs[CAUSE] = set_bit(n64.cpu.cp0_regs[CAUSE],15);
+    insert_count_event(n64);
+}
 
 
 void cycle_tick(N64 &n64, u32 cycles)
 {
-    // increment counter (we will shift this when reading)
-    // because it should be on every other cycle
-    n64.cpu.cp0_regs[COUNT] += cycles;
-    n64.cycles += cycles;
+    n64.scheduler.delay_tick(cycles);
 }
 
 
-void write_cp0(Cpu &cpu, u64 v, u32 reg)
+void write_cp0(N64 &n64, u64 v, u32 reg)
 {
+    auto &cpu = n64.cpu;
     auto &regs = cpu.cp0_regs;
 
     switch(reg)
@@ -44,6 +73,7 @@ void write_cp0(Cpu &cpu, u64 v, u32 reg)
         case COUNT:
         {
             regs[COUNT] = v;
+            insert_count_event(n64);
             break;
         }
 
@@ -51,6 +81,7 @@ void write_cp0(Cpu &cpu, u64 v, u32 reg)
         case COMPARE:
         {
             regs[COMPARE] = v;
+            insert_count_event(n64);
 
             // ip7 in cause is reset when this is written
             regs[CAUSE] = deset_bit(regs[CAUSE],7);
@@ -154,7 +185,7 @@ void step(N64 &n64)
     const u32 opcode = read_u32(n64,n64.cpu.pc);
 
 // TODO: this needs to optimised
-#ifdef DEBUG 
+#if 0
 	if(n64.debug.breakpoint_hit(u32(n64.cpu.pc),opcode,break_type::execute))
 	{
 		// halt until told otherwhise :)
@@ -180,14 +211,6 @@ void step(N64 &n64)
 
     // assume 1 CPI
     cycle_tick(n64,1);
-
-    // check for count interrupt
-    // TODO: push this onto the scheduler later
-    if((n64.cpu.cp0_regs[COUNT] >> 1) == n64.cpu.cp0_regs[COMPARE])
-    {
-        // flag interrupt
-        n64.cpu.cp0_regs[CAUSE] = set_bit(n64.cpu.cp0_regs[CAUSE],15);
-    }
 }
 
 void write_pc(N64 &n64, u64 pc)

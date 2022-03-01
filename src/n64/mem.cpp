@@ -284,8 +284,16 @@ access_type read_physical(N64 &n64, u32 addr)
 
     else if(addr < 0x04500000)
     {
-        unimplemented("read_mem: video interface");
-        return 0;
+        switch(addr)
+        {
+            case VI_CURRENT_REG: return n64.rdp.ly;
+
+            default:
+            {
+                unimplemented("read_mem: video interface: %8x\n",addr);
+                return 0;
+            }
+        }
     }
 
     else if(addr < 0x04600000)
@@ -559,7 +567,7 @@ void write_physical(N64 &n64, u32 addr, access_type v)
 
                 if(n64.mem.vi_serrate)
                 {
-                    unimplemented("serrate");
+                    //unimplemented("serrate");
                 }
 
                 break;
@@ -580,7 +588,7 @@ void write_physical(N64 &n64, u32 addr, access_type v)
                 const auto y_old = n64.rdp.screen_y;
 
                 // do we assume 4:3?
-                change_res(n64.rdp,n64.mem.vi_width,(n64.mem.vi_width / 4) * 3);
+                change_res(n64,n64.mem.vi_width,(n64.mem.vi_width / 4) * 3);
 
                 n64.size_change = (n64.rdp.screen_x != x_old || n64.rdp.screen_y != y_old);
                 break;

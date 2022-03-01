@@ -35,7 +35,7 @@ public:
     } 
 
     // helper to create events
-    EventNode<event_type> create_event(uint32_t duration, event_type t) const;
+    EventNode<event_type> create_event(u64 duration, event_type t) const;
 
     void adjust_timestamp();
 
@@ -46,8 +46,8 @@ protected:
     MinHeap<EVENT_SIZE,event_type> event_list;
 
     // current elapsed time
-    uint32_t timestamp = 0;
-    uint32_t min_timestamp = 0;
+    u64 timestamp = 0;
+    u64 min_timestamp = 0;
 };
 
 
@@ -102,6 +102,8 @@ void Scheduler<SIZE,event_type>::tick(uint32_t cycles)
     service_events();
 }
 
+// using a 64 bit timestamp not required
+/*
 template<size_t SIZE,typename event_type>
 void Scheduler<SIZE,event_type>::adjust_timestamp()
 {
@@ -130,6 +132,7 @@ void Scheduler<SIZE,event_type>::adjust_timestamp()
         min_timestamp -= min;
     }    
 }
+*/
 
 template<size_t SIZE,typename event_type>
 void Scheduler<SIZE,event_type>::insert(const EventNode<event_type> &node,bool tick_old)
@@ -185,7 +188,7 @@ uint64_t Scheduler<SIZE,event_type>::get_next_event_cycles() const
 }
 
 template<size_t SIZE,typename event_type>
-EventNode<event_type> Scheduler<SIZE,event_type>::create_event(uint32_t duration, event_type t) const
+EventNode<event_type> Scheduler<SIZE,event_type>::create_event(u64 duration, event_type t) const
 {
     return EventNode<event_type>(timestamp,duration+timestamp,t);
 }

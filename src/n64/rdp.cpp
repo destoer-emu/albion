@@ -3,20 +3,48 @@
 namespace nintendo64
 {
 
-void reset_rdp(Rdp &rdp, u32 x, u32 y)
+void insert_line_event(N64 &n64)
 {
-    change_res(rdp,x,y);
+    const auto event = n64.scheduler.create_event(n64.rdp.line_cycles,n64_event::line_inc);
+    n64.scheduler.insert(event,false);     
 }
 
-void change_res(Rdp &rdp, u32 x, u32 y)
+
+void reset_rdp(N64 &n64, u32 x, u32 y)
 {
+    change_res(n64,x,y);
+}
+
+void change_res(N64 &n64, u32 x, u32 y)
+{
+    auto &rdp = n64.rdp;
     printf("res change %d : %d : %d\n",x,y, x * y);
 
     rdp.screen_x = x;
     rdp.screen_y = y;
+
+    rdp.line_cycles = (N64_CLOCK_CYCLES_FRAME / rdp.screen_y);
+    insert_line_event(n64); 
+
     rdp.screen.resize(x * y);
     std::fill(rdp.screen.begin(),rdp.screen.end(),0xff000000);
 }
+
+
+
+void increment_line(N64 &n64)
+{
+    n64.rdp.ly++;
+
+    if(n64.rdp.ly == n64.rdp.screen_y)
+    {
+        n64.rdp.ly = 0;
+        n64.rdp.frame_done = true;
+    }
+
+    insert_line_event(n64);
+}
+
 
 void render(N64 &n64)
 {
@@ -51,6 +79,7 @@ void render(N64 &n64)
         }
 
         // 8bpp
+        // what format is this in?
         case 3:
         {
             // this probably has more to it but just a plain copy for now

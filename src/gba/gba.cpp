@@ -39,7 +39,6 @@ void GBA::reset(std::string filename)
 // run a frame
 void GBA::run()
 {
-	scheduler.adjust_timestamp();
 	disp.new_vblank = false;	
 #ifdef DEBUG
 

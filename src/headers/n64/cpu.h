@@ -59,7 +59,7 @@ void write_pc(N64 &n64, u64 pc);
 
 void cycle_tick(N64 &n64, u32 cycles);
 
-void write_cp0(Cpu &cpu, u64 v, u32 reg);
+void write_cp0(N64 &n64, u64 v, u32 reg);
 
 
 }
