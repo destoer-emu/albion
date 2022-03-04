@@ -40,6 +40,8 @@ struct GB
     void change_breakpoint_enable(bool enabled);
 #endif
 
+    // NOTE: see n64 core for better example of how to structure this
+    // the effort required to fix this isn't worthwhile however
     Cpu cpu{*this};
     Memory mem{*this};
     Ppu ppu{*this};

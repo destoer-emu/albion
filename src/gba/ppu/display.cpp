@@ -7,6 +7,9 @@ namespace gameboyadvance
     mosiac,unstub the memory writes
 */
 
+static constexpr u32 LINE_CYC = 1232;
+static constexpr u32 VIS_CYC = 1006;
+
 Display::Display(GBA &gba) : mem(gba.mem), cpu(gba.cpu), scheduler(gba.scheduler)
 {
     screen.resize(SCREEN_WIDTH*SCREEN_HEIGHT);
@@ -30,7 +33,7 @@ void Display::init()
 
     window_0_y_triggered = false;
     window_1_y_triggered = false;
-    insert_new_ppu_event();	
+    insert_new_ppu_event(VIS_CYC);	
 }
 
 // not asserted on irq enable changes
@@ -119,13 +122,11 @@ void Display::advance_line()
     }
 
 
-
-
     update_vcount_compare();
 
     // exit hblank
     disp_io.disp_stat.hblank = false;
-    cyc_cnt -= 1232; // reset cycle counter
+    cyc_cnt -= LINE_CYC; // reset cycle counter
 }
 
 
@@ -140,7 +141,7 @@ void Display::tick(int cycles)
         case display_mode::visible:
         {
             // enter hblank 
-            if(cyc_cnt >= 1006)
+            if(cyc_cnt >= VIS_CYC)
             {
                 if(ly < SCREEN_HEIGHT)
                 {
@@ -166,15 +167,16 @@ void Display::tick(int cycles)
                     cpu.request_interrupt(interrupt::hblank);
                 }
                 mem.dma.handle_dma(dma_type::hblank);
+
+                insert_new_ppu_event(LINE_CYC);
             }
-            insert_new_ppu_event();	
             break;
         }
 
         case display_mode::hblank:
         {
             // end of line
-            if(cyc_cnt >= 1232)
+            if(cyc_cnt >= LINE_CYC)
             {
                 advance_line();
 
@@ -200,75 +202,49 @@ void Display::tick(int cycles)
 
                     
                     mem.dma.handle_dma(dma_type::vblank);
+                    insert_new_ppu_event(VIS_CYC);
                 }
 
                 else
                 {
                     mode = display_mode::visible;
+                    insert_new_ppu_event(VIS_CYC);
                 }
             }
-
-            insert_new_ppu_event();	
             break;
         }
 
         case display_mode::vblank:
         {
             // inc a line
-            if(cyc_cnt >= 1232)
+            if(cyc_cnt >= LINE_CYC)
             {
                 advance_line();
+                insert_new_ppu_event(VIS_CYC);
             }
             
-            else if(cyc_cnt >= 1006) 
+            else if(cyc_cnt >= VIS_CYC) 
             {
                 // enter hblank (dont set the internal mode here)
                 disp_io.disp_stat.hblank = true;
 
+                // dma does not happen here just the interrupt
                 if(disp_io.disp_stat.hblank_irq_enable)
                 {
                     cpu.request_interrupt(interrupt::hblank);
                 }
 
-
-                // dma does not happen here
-            }
-            insert_new_ppu_event();	
+                insert_new_ppu_event(LINE_CYC);
+            }	
             break;
         }
     }
 }
 
-void Display::insert_new_ppu_event()
+void Display::insert_new_ppu_event(u32 next)
 {
-    u32 cycles = 0;
-    if(cyc_cnt >= 1232)
-    {
-        printf("%d\n",cyc_cnt);
-    }
-    switch(mode)
-    {
-        case display_mode::vblank:
-        {
-            cycles = cyc_cnt < 1006? 1006 - cyc_cnt : 1232 - cyc_cnt;
-            break; 
-        }
-
-        case display_mode::hblank:
-        {
-            cycles = 1232 - cyc_cnt;
-            break;
-        }
-
-        case display_mode::visible:
-        {
-            cycles = 1006 - cyc_cnt;
-            break;
-        }
-    }
-
-    const auto event = scheduler.create_event(cycles,gba_event::display);
-    scheduler.insert(event,false);       
+    const auto event = scheduler.create_event(next - cyc_cnt,gba_event::display);
+    scheduler.insert(event,false);        
 }
 
 }

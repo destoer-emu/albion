@@ -21,7 +21,7 @@ struct Display
 
     void update_vcount_compare();
 
-    void insert_new_ppu_event();
+    void insert_new_ppu_event(u32 next);
 
 
     void render_palette(u32 *palette, size_t size);

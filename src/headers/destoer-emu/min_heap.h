@@ -4,7 +4,7 @@
 #include <destoer-emu/debug.h>
 
 // TODO: remove undeeded generics with this and just replace the event type with an int
-// when we factor away the old reference holding method from the other cors
+// we can just pass the system struct into the event method and not require all this overkill
 
 template<typename event_type>
 struct EventNode
