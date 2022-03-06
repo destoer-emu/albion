@@ -41,11 +41,11 @@ void GBA::run()
 {
 	disp.new_vblank = false;	
 #ifdef DEBUG
-
 	if(debug.is_halted())
 	{
 		return;
 	}
+#endif
 
 	// break out early if we have hit a debug event
 	while(!disp.new_vblank) 
@@ -53,26 +53,17 @@ void GBA::run()
 		while(!scheduler.event_ready() && !cpu.interrupt_ready())
 		{
 			cpu.exec_instr();
+		#if DEBUG
 			if(debug.is_halted())
 			{
 				return;
 			}
-		}
-		scheduler.service_events();
-		cpu.do_interrupts();
-	}
-#else 
-	while(!disp.new_vblank) // exec until a vblank hits
-    {
-		while(!scheduler.event_ready() && !cpu.interrupt_ready())
-		{
-			cpu.exec_instr();
+		#endif
 		}
 		scheduler.service_events();
 		cpu.do_interrupts();
 	}
 
-#endif
 	if(throttle_emu)
 	{
 		mem.frame_end();

@@ -858,6 +858,13 @@ void Mem::write_io_regs(u32 addr,u8 v)
 		case IO_NR43:
 		{
 			apu.psg.write_nr43(v);
+
+			// incase we havent done any events due the scheduler being off reinsert noise
+			if(!scheduler.is_active(gba_event::c4_period_elapse))
+			{
+				noise_reload_period(apu.psg.channels[3],apu.psg.noise);
+				apu.insert_chan4_period_event();
+			}
 			break;
 		}
 

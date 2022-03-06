@@ -36,6 +36,8 @@ instr timing rewrite
 memory timing (seq, nonseq),
 gamepak prefetch
 
+redo gb psg emulation and add a low pass filter for it
+
 
 # thanks
 
