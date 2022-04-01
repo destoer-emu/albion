@@ -126,6 +126,9 @@ u8 Cpu::fetch_opcode() noexcept
 	const bool fired = interrupt_fire;
 	cycle_tick_t(2);
 
+	// need to sync here as our memory write doesn't tick
+	scheduler.service_events();
+
 	if(fired)
 	{
 		// pc will get decremented triggering oam bug

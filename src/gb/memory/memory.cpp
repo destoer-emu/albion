@@ -720,7 +720,6 @@ void Memory::write_memt_no_oam_bug(u16 addr, u8 v) noexcept
 
 void Memory::write_memt(u16 addr, u8 v) noexcept
 {
-	
     write_mem(addr,v);
 	cpu.cycle_tick(1); // tick for the memory access
 }
@@ -2341,7 +2340,6 @@ void Memory::write_iot_debug(u16 addr, u8 v) noexcept
 
 void Memory::write_iot_no_debug(u16 addr,u8 v) noexcept
 {
-	
 	scheduler.service_events();
     write_io(addr,v);
 	cpu.cycle_tick(1); // tick for mem access

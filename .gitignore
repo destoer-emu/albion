@@ -36,3 +36,5 @@ build.ninja
 .ninja_deps
 .ninja_log
 gen_mips_lut
+gen_arm_lut
+gen_sm83_lut
