@@ -24,7 +24,7 @@ u32 Cpu::slow_arm_fetch()
     regs[PC] += ARM_WORD_SIZE; 
     pc_actual += ARM_WORD_SIZE;
 
-    pipeline[1] = mem.read_u32(regs[PC]);   
+    pipeline[1] = mem.read_u32(regs[PC]); 
     
     return opcode;
 }
@@ -69,28 +69,20 @@ u32 Cpu::fast_arm_fetch()
 
 u32 Cpu::arm_fetch_opcode()
 {
-    mem.use_prefetch = true;
-
 #ifdef FETCH_SPEEDHACK
     return fast_arm_fetch();
 #else 
     return slow_arm_fetch();
 #endif
-
-    mem.use_prefetch = false;
 }
 
 void Cpu::arm_pipeline_fill()
 {
-    mem.use_prefetch = true;
-
 #ifdef FETCH_SPEEDHACK
     fast_arm_pipeline_fill();
 #else
     slow_arm_pipeline_fill();
 #endif
-
-    mem.use_prefetch = false;
 }
 
 

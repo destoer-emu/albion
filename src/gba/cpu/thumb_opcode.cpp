@@ -76,28 +76,20 @@ u16 Cpu::fast_thumb_fetch()
 
 u16 Cpu::thumb_fetch_opcode()
 {
-    mem.use_prefetch = true;
-
 #ifdef FETCH_SPEEDHACK
     return fast_thumb_fetch();
 #else 
     return slow_thumb_fetch();
 #endif
-
-    mem.use_prefetch = false;
 }
 
 void Cpu::thumb_pipeline_fill()
 {
-    mem.use_prefetch = true;
-
 #ifdef FETCH_SPEEDHACK
     fast_thumb_pipeline_fill();
 #else
     slow_thumb_pipeline_fill();
 #endif
-
-    mem.use_prefetch = false;
 }
 
 

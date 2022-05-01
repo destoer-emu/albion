@@ -17,27 +17,33 @@ void Mem::update_seq(u32 addr)
 
 u32 Mem::get_rom_wait(u32 region, u32 size, bool seq, bool use_prefetch)
 {
-
     // TODO: our speedhacks dont model prefetch properly at the momement
+    // need to actually impl reading out of the buffer, with prefetch_count?
     if(mem_io.wait_cnt.prefetch && use_prefetch)
     {
-        if(prefetch_count >= 2 && size == sizeof(u32))
+        if(size == sizeof(u32))
         {
             // rom is done as two u16 reads
-            prefetch_count -= 2;
             return 2;
         }
 
 
-        if(prefetch_count >= 1 && size == sizeof(u16))
+        if(size == sizeof(u16))
         {
-            prefetch_count -= 1;
             return 1;
         }
     }
 
     // no prefetch
-    return rom_wait_states[(region - 8) / 2][seq][size >> 1];
+    if(size == sizeof(u32))
+    {
+        return rom_wait_states[(region - 8) / 2][seq][size >> 1] + 2;        
+    }
+
+    else 
+    {
+        return rom_wait_states[(region - 8) / 2][seq][size >> 1] + 1;
+    }    
 }
 
 // we also need to a test refactor using one lib, constants and compiling in one dir
@@ -48,20 +54,20 @@ u32 Mem::get_rom_wait(u32 region, u32 size, bool seq, bool use_prefetch)
 void set_wait_seq(int *buf, int wait)
 {
     // waitstate + N OR S
-    buf[0] =  wait + 1;
-    buf[1] =  wait + 1;
+    buf[0] =  wait;
+    buf[1] =  wait;
 
     // waitstate times two as there are two u16 reads
-    buf[2] =  (wait * 2) + 1;
+    buf[2] =  (wait * 2);
 }
 
 void set_wait_nseq(int *buf, int wait, int wait_seq)
 {
-    buf[0] =  wait + 1;
-    buf[1] =  wait + 1;    
+    buf[0] =  wait;
+    buf[1] =  wait;    
 
     // 2nd of the 16 bit fetches is allways seq
-    buf[2] = wait + wait_seq + 1;
+    buf[2] = wait + wait_seq;
 }
 
 
@@ -139,11 +145,12 @@ u32 Mem::get_waitstates(u32 addr, bool seq, bool use_prefetch)
 
 void Mem::cache_wait_states(u32 new_pc)
 {
-    wait_seq_16 = get_waitstates<u16>(new_pc,true,false);
-    wait_seq_32 = get_waitstates<u32>(new_pc,true,false);
+    // just assume prefetch is allways on
+    wait_seq_16 = get_waitstates<u16>(new_pc,true,true);
+    wait_seq_32 = get_waitstates<u32>(new_pc,true,true);
 
-    wait_nseq_16 = get_waitstates<u16>(new_pc,false,false);
-    wait_nseq_32 = get_waitstates<u32>(new_pc,false,false);
+    wait_nseq_16 = get_waitstates<u16>(new_pc,false,true);
+    wait_nseq_32 = get_waitstates<u32>(new_pc,false,true);
 }
 
 void Mem::do_prefetch()

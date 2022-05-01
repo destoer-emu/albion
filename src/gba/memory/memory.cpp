@@ -1562,7 +1562,7 @@ void Mem::write_mem(u32 addr,access_type v)
         
         case memory_region::bios:
         {
-        /*
+        
             // logging hack
             static int idx = 0;
             if(addr == 0x4)
@@ -1574,7 +1574,7 @@ void Mem::write_mem(u32 addr,access_type v)
                 }
                 putchar('\n');
             }
-        */
+        
             break; // read only
         }
         case memory_region::wram_board: write_board_wram<access_type>(addr,v); break;
