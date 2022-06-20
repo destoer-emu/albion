@@ -45,6 +45,12 @@ void increment_line(N64 &n64)
     insert_line_event(n64);
 }
 
+/* TODO: understand how this works ourselves
+u32 blend(const u32 v1, const u32 v2)
+{
+
+}
+*/
 
 void render(N64 &n64)
 {
@@ -87,14 +93,10 @@ void render(N64 &n64)
             {
                 const u32 addr = n64.mem.vi_origin + (i * sizeof(u32));
 
-                // TODO: handle alpha properly
+                const u32 v = handle_read_n64<u32>(n64.mem.rd_ram,addr);
 
-                const auto v = handle_read_n64<u32>(n64.mem.rd_ram,addr);
-
-                if(v & 0xff000000)  
-                {
-                    n64.rdp.screen[i] = v | 0xff000000;
-                }
+                // convert to ARGB
+                n64.rdp.screen[i] = bswap(v); 
             }
             break;
         }

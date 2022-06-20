@@ -253,7 +253,6 @@ void SDLMainWindow::gameboy_handle_input(GbControllerInput &controller)
     }    
 }
 
-// START HERE:
 void SDLMainWindow::create_texture(u32 x, u32 y)
 {
 	// destroy the old one if need be
@@ -266,7 +265,7 @@ void SDLMainWindow::create_texture(u32 x, u32 y)
 	Y = y;
 
 	texture = SDL_CreateTexture(renderer,
-		SDL_PIXELFORMAT_BGR888, SDL_TEXTUREACCESS_STREAMING, x, y);
+		SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, x, y);
 
 
 	// resize the window
