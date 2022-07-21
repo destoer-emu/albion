@@ -195,7 +195,7 @@ void MinHeap<SIZE,event_type>::insert(EventNode<event_type> event)
     // update idx here incase it is first insertion
     type_idx[event_idx] = idx;
 
-	// fix our insertion, while parent is greater swap
+	// while parent is greater swap
 	while(idx != 0 && *heap[parent(idx)] > *heap[idx])
 	{
 		const u32 parent_idx = parent(idx);
@@ -212,8 +212,8 @@ void MinHeap<SIZE,event_type>::verify()
 {
     for(u32 i = 0; i < len; i++)
     {
-        const u32 r = right(i);
-        const u32 l = left(i);
+        const auto r = right(i);
+        const auto l = left(i);
 
         if(l < len && *heap[i] > *heap[l])
         {
@@ -233,6 +233,7 @@ void MinHeap<SIZE,event_type>::verify()
 template<u32 SIZE,typename event_type>
 void MinHeap<SIZE,event_type>::heapify(u32 idx)
 {
+    // check that children arent smaller
     while(idx <= len)
     {
         u32 min = idx;
@@ -261,14 +262,14 @@ void MinHeap<SIZE,event_type>::heapify(u32 idx)
         {
             break;
         }
-    }
+    } 
 }
 
 template<u32 SIZE,typename event_type>
 std::optional<EventNode<event_type>> MinHeap<SIZE,event_type>::remove(event_type t)
 {
     //printf("removing type... \n");
-    const u32 idx = u32(t);
+    const auto idx = u32(t);
     if(type_idx[idx] != IDX_INVALID)
     {
         return remove(type_idx[idx]);
@@ -281,7 +282,7 @@ std::optional<EventNode<event_type>> MinHeap<SIZE,event_type>::remove(event_type
 template<u32 SIZE,typename event_type>
 std::optional<EventNode<event_type>> MinHeap<SIZE,event_type>::get(event_type t) const
 {
-    const u32 idx = u32(t);
+    const auto idx = u32(t);
 
     if(type_idx[idx] != IDX_INVALID)
     {
@@ -312,8 +313,22 @@ EventNode<event_type> MinHeap<SIZE,event_type>::remove(u32 idx)
     type_idx[u32(v.type)] = IDX_INVALID;
 
 
-	// ensure we have a valid heap after the swap
-	heapify(idx);
+	// while we are smaller than parent swap
+	if(idx != 0 && *heap[idx] < *heap[parent(idx)])
+	{
+        while(idx != 0 && *heap[idx] < *heap[parent(idx)])
+        {
+            const auto parent_idx = parent(idx);
+		    swap(idx,parent_idx);
+		    idx = parent(idx);
+        }
+	}
+
+    // children may need fixing
+    else
+    {
+        heapify(idx);
+    }
 
     //verify();
 
@@ -331,12 +346,12 @@ void MinHeap<SIZE,event_type>::save_state(std::ofstream &fp)
 
     // ok as our heap now has pointers we will write out indexes and re populate the pointers
     // instead 
-    const size_t start = size_t(&buf[0]);
-    std::array<u32,SIZE> idx_list;
+    const auto start = size_t(&buf[0]);
+    std::array<size_t,SIZE> idx_list;
 
-    for(u32 i = 0; i < SIZE; i++)
+    for(size_t i = 0; i < SIZE; i++)
     {
-        const size_t ptr = size_t(heap[i]);
+        const auto ptr = size_t(heap[i]);
         idx_list[i] = ((ptr - start) / sizeof(EventNode<event_type>));
     }
 
@@ -355,11 +370,11 @@ void MinHeap<SIZE,event_type>::load_state(std::ifstream &fp)
     file_read_arr(fp,buf.data(),sizeof(buf[0]) * buf.size());
 
     // read idx back in so we can reconstruct our ptrs
-    std::array<u32,SIZE> idx_list;
+    std::array<size_t,SIZE> idx_list;
     file_read_arr(fp,idx_list.data(),sizeof(idx_list[0]) * idx_list.size());
 
     // verify idx bounds 
-    for(const u32 x: idx_list)
+    for(const auto &x: idx_list)
     {
         if(x >= SIZE)
         {
