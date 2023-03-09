@@ -69,7 +69,7 @@ void handle_write_n64(std::vector<u8> &buf, u32 addr, access_type v)
 void reset_mem(Mem &mem, const std::string &filename)
 {
     // read rom in and hle the pif rom
-    read_file(filename,mem.rom);
+    read_bin(filename,mem.rom);
 
     if(mem.rom.size() < 32 * 1024 * 1024)
     {

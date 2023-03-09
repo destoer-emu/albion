@@ -6,3 +6,6 @@
 	path = src/common/thirdparty/fmt
 	url = https://github.com/fmtlib/fmt
 	branch = master
+[submodule "destoer-lib"]
+	path = destoer-lib
+	url = https://github.com/destoer/destoer-lib.git

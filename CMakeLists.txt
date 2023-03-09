@@ -86,6 +86,9 @@ include_directories("src/common/thirdparty")
 include_directories("src/common/thirdparty/imgui")
 include_directories("src")
 
+#destoer lib
+include_directories("destoer-lib/src/")
+add_definitions(-DFORWARD_DEF_DESTOER_LIB)
 
 if(${FRONTEND} STREQUAL "IMGUI")
 	include_directories("/usr/include/SDL2")

@@ -1,3 +1,4 @@
+#include <destoer.cpp>
 #include <frontend/qt/qt_window.h>
 #include <frontend/sdl/sdl_window.h>
 #include <frontend/imgui/imgui_window.h>
@@ -92,7 +93,8 @@ void gb_run_tests()
 {
     puts("gekkio_tests:");
     auto start = std::chrono::system_clock::now();
-    gb_run_test_helper(filter_ext(get_dir_tree("mooneye-gb_hwtests"),"gb"),10);
+    const auto [tree,error] = read_dir_tree("mooneye-gb_hwtests");
+    gb_run_test_helper(filter_ext(tree,"gb"),10);
     auto current = std::chrono::system_clock::now();
     auto count = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(current - start).count()) / 1000.0;
     printf("total time taken %f\n",count);

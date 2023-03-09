@@ -66,7 +66,7 @@ void Mem::init(std::string filename)
     this->filename = filename;
 
     // read out rom
-    read_file(filename,rom);
+    read_bin(filename,rom);
 
 
 
@@ -131,12 +131,8 @@ void Mem::init(std::string filename)
         case save_type::sram:
         {
             const auto save_name = get_save_file_name(filename);
-            try
-            {
-                read_file(save_name,sram);
-            } catch(std::exception &ex) {}
 
-
+            read_bin(save_name,sram);
             break;
         }
 
@@ -144,10 +140,9 @@ void Mem::init(std::string filename)
         {
             std::fill(sram.begin(),sram.end(),0xff);
             const auto save_name = get_save_file_name(filename);
-            try
-            {
-                read_file(save_name,sram);
-            } catch(std::exception &ex) {}
+
+            read_bin(save_name,sram);
+
             addr_size = -1;
             state = eeprom_state::ready;
             eeprom_idx = 0;
@@ -179,8 +174,8 @@ void Mem::init(std::string filename)
     frame_count = 0;
 
     // read and copy in the bios rom
-    read_file("GBA.BIOS",bios_rom);
-    //read_file("gba_bios.bin",bios_rom);
+    read_bin("GBA.BIOS",bios_rom);
+    //read_bin("gba_bios.bin",bios_rom);
 
     if(bios_rom.size() != 0x4000)
     {
@@ -330,14 +325,14 @@ void Mem::save_cart_ram()
         case save_type::sram:
         {
             const auto save_name = get_save_file_name(filename);
-            write_file(save_name,sram);
+            write_bin(save_name,sram);
             break;
         }
 
         case save_type::eeprom:
         {
             const auto save_name = get_save_file_name(filename);
-            write_file(save_name,sram);            
+            write_bin(save_name,sram);            
             break;
         }
     }    
