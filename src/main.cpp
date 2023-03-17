@@ -3,7 +3,7 @@
 #include <frontend/sdl/sdl_window.h>
 #include <frontend/imgui/imgui_window.h>
 #include <frontend/destoer/destoer_window.h>
-#include <destoer-emu/lib.h>
+#include <albion/lib.h>
 #include <gba/gba.h>
 #include <gb/gb.h>
 
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 
     QtMainWindow window;
 
-    window.setWindowTitle("destoer-emu: no rom");
+    window.setWindowTitle("albion: no rom");
     window.show();
 
     return app.exec();

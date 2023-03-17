@@ -1,6 +1,6 @@
 #pragma once
 #include <gba/forward_def.h>
-#include <destoer-emu/lib.h>
+#include <albion/lib.h>
 
 namespace gameboyadvance
 {

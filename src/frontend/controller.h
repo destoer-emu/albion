@@ -1,5 +1,5 @@
 #pragma once
-#include <destoer-emu/lib.h>
+#include <albion/lib.h>
 #ifdef CONTROLLER_SDL
 
 #define SDL_MAIN_HANDLED

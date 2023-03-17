@@ -1,5 +1,5 @@
 #pragma once
-#include <destoer-emu/lib.h>
+#include <albion/lib.h>
 #include <frontend/gb/playback.h>
 #include <gb/forward_def.h>
 #include <gb/mem_constants.h>

@@ -1,6 +1,6 @@
 
 #include "imgui_window.h"
-#include <destoer-emu/destoer-emu.h>
+#include <albion/destoer-emu.h>
 
 // TODO: implement n64 debugging
 

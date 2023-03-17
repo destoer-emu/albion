@@ -1,6 +1,6 @@
 #pragma once
-#include <destoer-emu/lib.h>
-#include <destoer-emu/debug.h>
+#include <albion/lib.h>
+#include <albion/debug.h>
 #include <frontend/gba/playback.h>
 #include <gba/forward_def.h>
 #include <gba/apu_io.h>

@@ -1,5 +1,5 @@
 #include <frontend/controller.h>
-#include <destoer-emu/lib.h>
+#include <albion/lib.h>
 
 #ifdef CONTROLLER_SDL
 void Controller::init()

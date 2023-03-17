@@ -248,7 +248,7 @@ void QtMainWindow::open()
         }
 
         // set window name with the rom title
-        QString window_tile = QString::fromStdString(fmt::format("destoer-emu: {}",
+        QString window_tile = QString::fromStdString(fmt::format("albion: {}",
             file_name.substr(file_name.find_last_of("/\\") + 1)));
         setWindowTitle(window_tile);
         start_emu();
@@ -259,7 +259,7 @@ void QtMainWindow::open()
         QMessageBox messageBox;
         messageBox.critical(nullptr,"Error",ex.what());
         messageBox.setFixedSize(500,200);
-        setWindowTitle("destoer-emu: no rom");        
+        setWindowTitle("albion: no rom");        
         return;
     }
 }

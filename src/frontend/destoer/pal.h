@@ -1,5 +1,5 @@
 #pragma once
-#include <destoer-emu/lib.h>
+#include <albion/lib.h>
 
 const u32 PAL[256] = 
 {

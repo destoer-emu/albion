@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <destoer-emu/lib.h>
+#include <albion/lib.h>
 
 
 class FrameBuffer : public QOpenGLWidget

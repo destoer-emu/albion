@@ -1,5 +1,5 @@
 #pragma once
-#include <destoer-emu/lib.h>
+#include <albion/lib.h>
 
 static constexpr u8 PAL01 = 0;
 static constexpr u8 PAL23 = 1;

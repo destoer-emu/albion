@@ -1,6 +1,6 @@
 #pragma once
 #include "forward_def.h"
-#include <destoer-emu/lib.h>
+#include <albion/lib.h>
 #include <gb/scheduler.h>
 
 namespace gameboy

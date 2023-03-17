@@ -2,7 +2,7 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-project(destoer-emu)
+project(albion)
 
 
 set(CMAKE_CXX_STANDARD 17)
@@ -54,10 +54,8 @@ endif()
 file(GLOB src_files
 	"src/*.h"
 	"src/*.cpp"
-	"src/common/destoer-emu/*.cpp"
-	"src/headers/destoer-emu/*.h"
-	"src/common/thirdparty/fmt/src/*.cc"
-	"src/common/thirdparty/fmt/include/*.h"	
+	"src/common/albion/*.cpp"
+	"src/headers/albion/*.h"
     "src/gb/*.cpp"	
     "src/gb/cpu/*.cpp"
     "src/gb/apu/*.cpp"
@@ -81,7 +79,6 @@ file(GLOB src_files
 
 # add some includes
 include_directories("src/headers")
-include_directories("src/common/thirdparty/fmt/include")
 include_directories("src/common/thirdparty")
 include_directories("src/common/thirdparty/imgui")
 include_directories("src")
@@ -128,12 +125,12 @@ endif()
 
 if(${FRONTEND} STREQUAL "QT")
 	if(WIN32)
-		add_executable(destoer-emu  WIN32 ${src_files} ${frontend_files})
+		add_executable(albion  WIN32 ${src_files} ${frontend_files})
 	else()
-		add_executable(destoer-emu  ${src_files} ${frontend_files})
+		add_executable(albion  ${src_files} ${frontend_files})
 	endif()
 else()
-	add_executable(destoer-emu ${src_files} ${frontend_files})
+	add_executable(albion ${src_files} ${frontend_files})
 endif()
 
 
@@ -149,12 +146,12 @@ if(WIN32)
 
 		# opengl
 		find_package(OPENGL REQUIRED)
-		target_link_libraries(destoer-emu OpenGL::GL)
+		target_link_libraries(albion OpenGL::GL)
 
 		# glew
 		list(APPEND CMAKE_PREFIX_PATH "C:/glew-2.1.0")
 		find_package(GLEW REQUIRED)
-		target_link_libraries(destoer-emu GLEW::GLEW)
+		target_link_libraries(albion GLEW::GLEW)
 
 		# for some reason building is broken and extra steps are required
 		add_library(GLEW SHARED IMPORTED)
@@ -162,7 +159,7 @@ if(WIN32)
 			IMPORTED_IMPLIB "C:/glew-2.1.0/lib/Release/x64/glew32.lib"
 			LINKER_LANGUAGE C
 		)
-		target_link_libraries(destoer-emu GLEW)
+		target_link_libraries(albion GLEW)
 
 	endif()
 
@@ -174,7 +171,7 @@ if(WIN32)
         IMPORTED_IMPLIB "C:/SDL2-2.0.14/lib/x64/SDL2.lib"
         LINKER_LANGUAGE C
     )
-	target_link_libraries(destoer-emu SDL2)
+	target_link_libraries(albion SDL2)
 	
     include_directories("C:/SDL2-2.0.14/include")
 else()
@@ -182,11 +179,11 @@ else()
 if(${FRONTEND} STREQUAL "HEADLESS")
 
 else ()
-	target_link_libraries(destoer-emu SDL2)
+	target_link_libraries(albion SDL2)
 endif()
 
 if(${FRONTEND} STREQUAL "IMGUI") 
-	target_link_libraries(destoer-emu GL GLEW)
+	target_link_libraries(albion GL GLEW)
 endif()
 
 endif()
@@ -210,3 +207,7 @@ if(${FRONTEND} STREQUAL "QT")
 	link_libraries(Qt5::Widgets)
 	link_libraries(Qt5::OpenGL)
 endif()
+
+# fmt lib
+add_subdirectory(src/common/thirdparty/fmt)
+target_link_libraries(albion fmt::fmt)

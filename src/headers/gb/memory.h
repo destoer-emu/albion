@@ -1,8 +1,8 @@
 #pragma once
 #include <gb/forward_def.h>
-#include <destoer-emu/lib.h>
+#include <albion/lib.h>
 #include <gb/debug.h>
-#include <destoer-emu/emulator.h>
+#include <albion/emulator.h>
 #include <gb/scheduler.h>
 #include <gb/rom.h>
 #include <gb/mem_constants.h>

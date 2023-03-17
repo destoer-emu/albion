@@ -1,6 +1,6 @@
 #pragma once
-#include <destoer-emu/debug.h>
-#include <destoer-emu/lib.h>
+#include <albion/debug.h>
+#include <albion/lib.h>
 #include <n64/forward_def.h>
 
 

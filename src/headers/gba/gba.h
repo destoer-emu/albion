@@ -6,7 +6,7 @@
 #include <gba/apu.h>
 #include <gba/scheduler.h>
 #include <gba/debug.h>
-#include <destoer-emu/debug.h>
+#include <albion/debug.h>
 
 namespace gameboyadvance
 {

@@ -6,7 +6,7 @@
 #include <QLabel>
 #include <QMenu>
 #include <QVBoxLayout>
-#include <destoer-emu/emulator.h>
+#include <albion/emulator.h>
 #include "framebuffer.h"
 #include "gameboy_instance.h"
 #include "gba_instance.h"

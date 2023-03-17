@@ -5,7 +5,7 @@
 #include <n64/disass.h>
 #include <n64/debug.h>
 #include <n64/scheduler.h>
-#include <destoer-emu/lib.h>
+#include <albion/lib.h>
 
 namespace nintendo64
 {

@@ -43,8 +43,8 @@ using namespace gl;
 #include <imgui/backends/imgui_impl_sdl.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <stdio.h>
-#include <destoer-emu/lib.h>
-#include <destoer-emu/emulator.h>
+#include <albion/lib.h>
+#include <albion/emulator.h>
 #include <frontend/gb/controller.h>
 #include <frontend/gba/controller.h>
 

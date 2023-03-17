@@ -1,6 +1,6 @@
 #pragma once
 #include <n64/forward_def.h>
-#include <destoer-emu/lib.h>
+#include <albion/lib.h>
 
 
 namespace nintendo64

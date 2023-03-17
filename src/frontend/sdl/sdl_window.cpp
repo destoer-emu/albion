@@ -1,6 +1,6 @@
 #ifdef FRONTEND_SDL
 #include <frontend/sdl/sdl_window.h>
-#include <destoer-emu/destoer-emu.h>
+#include <albion/destoer-emu.h>
 
 
 SDLMainWindow::SDLMainWindow(std::string filename)
@@ -86,7 +86,7 @@ void SDLMainWindow::n64_main(std::string filename)
 
 		fps_counter.reading_end();
 
-		SDL_SetWindowTitle(window,fmt::format("destoer-emu: {}",fps_counter.get_fps()).c_str());
+		SDL_SetWindowTitle(window,fmt::format("albion: {}",fps_counter.get_fps()).c_str());
 	}
 
 }
@@ -186,7 +186,7 @@ void SDLMainWindow::gameboy_main(std::string filename)
 
 		fps_counter.reading_end();
 
-		SDL_SetWindowTitle(window,fmt::format("destoer-emu: {}",fps_counter.get_fps()).c_str());
+		SDL_SetWindowTitle(window,fmt::format("albion: {}",fps_counter.get_fps()).c_str());
 
 		//next_time = current_time() + screen_ticks_per_frame;
 		
@@ -275,7 +275,7 @@ void SDLMainWindow::create_texture(u32 x, u32 y)
 void SDLMainWindow::init_sdl(u32 x, u32 y)
 {
 	// initialize our window
-	window = SDL_CreateWindow("destoer-emu",
+	window = SDL_CreateWindow("albion",
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,x * 2,y *2,SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
 	
 	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl"); // crashes without this on windows?
@@ -404,7 +404,7 @@ void SDLMainWindow::gba_main(std::string filename)
 
 		fps_counter.reading_end();
 
-		SDL_SetWindowTitle(window,fmt::format("destoer-emu: {}",fps_counter.get_fps()).c_str());
+		SDL_SetWindowTitle(window,fmt::format("albion: {}",fps_counter.get_fps()).c_str());
 
 		//next_time = current_time() + screen_ticks_per_frame;
 	#ifdef DEBUG

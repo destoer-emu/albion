@@ -1,5 +1,5 @@
 #include "controller.h"
-#include <destoer-emu/destoer-emu.h>
+#include <albion/destoer-emu.h>
 using namespace gameboyadvance;
 
 #ifdef CONTROLLER_SDL

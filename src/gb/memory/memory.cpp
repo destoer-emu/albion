@@ -1,7 +1,7 @@
 #include <gb/gb.h>
 #include <gb/cpu.inl>
-#include <destoer-emu/lib.h>
-#include <destoer-emu/debug.h>
+#include <albion/lib.h>
+#include <albion/debug.h>
 #include <gb/sgb.h>
 
 // todo on what cycles are read and writes asserted on the bus?

@@ -1,8 +1,8 @@
 #pragma once
 #include <gba/forward_def.h>
-#include <destoer-emu/lib.h>
-#include <destoer-emu/debug.h>
-#include <destoer-emu/scheduler.h>
+#include <albion/lib.h>
+#include <albion/debug.h>
+#include <albion/scheduler.h>
 
 namespace gameboyadvance
 {

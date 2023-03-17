@@ -5,7 +5,7 @@
 #include <gb/cpu.h>
 #include <gb/scheduler.h>
 #include <gb/disass.h>
-#include <destoer-emu/lib.h>
+#include <albion/lib.h>
 #include <gb/debug.h>
 
 namespace gameboy

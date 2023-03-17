@@ -1,7 +1,7 @@
 #include <gb/gb.h>
 #include <gb/opcode_table.h>
 #include<gb/cpu.inl>
-#include <destoer-emu/debug.h>
+#include <albion/debug.h>
 
 
 

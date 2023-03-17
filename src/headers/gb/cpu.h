@@ -1,6 +1,6 @@
 #pragma once
 #include <gb/forward_def.h>
-#include <destoer-emu/lib.h>
+#include <albion/lib.h>
 #include <gb/debug.h>
 #include <gb/scheduler.h>
 

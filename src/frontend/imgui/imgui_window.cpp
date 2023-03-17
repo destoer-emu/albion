@@ -1,6 +1,6 @@
 #ifdef FRONTEND_IMGUI
 #include "imgui_window.h"
-#include <destoer-emu/destoer-emu.h>
+#include <albion/destoer-emu.h>
 
 
 void Texture::update_texture()
@@ -97,7 +97,7 @@ ImguiMainWindow::ImguiMainWindow()
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    window = SDL_CreateWindow("destoer-emu", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, window_flags);
+    window = SDL_CreateWindow("albion", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, window_flags);
     gl_context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, gl_context);
     SDL_GL_SetSwapInterval(1); // Enable vsync
@@ -798,7 +798,7 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
 
         fps.reading_end();
 
-        SDL_SetWindowTitle(window,fmt::format("destoer-emu: {}",fps.get_fps()).c_str());
+        SDL_SetWindowTitle(window,fmt::format("albion: {}",fps.get_fps()).c_str());
     }
     stop_instance();
 }

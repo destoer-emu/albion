@@ -1,4 +1,4 @@
-#include <destoer-emu/destoer-emu.h>
+#include <albion/destoer-emu.h>
 #include <gb/gb.h>
 #include <font.h>
 #include <pal.h>
@@ -69,7 +69,7 @@ DestoerUI::DestoerUI()
 */
 
 	// initialize our window
-	window = SDL_CreateWindow("destoer-emu",
+	window = SDL_CreateWindow("albion",
 		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,width,height,SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
 	
 	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl"); // crashes without this on windows?
