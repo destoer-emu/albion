@@ -30,7 +30,7 @@ converted.gb
 ALL_BUILD.vcxproj.user
 converted.sav
 albion.vcxproj.user
-albion
+/albion
 vgcore.*
 build.ninja
 .ninja_deps
