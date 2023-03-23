@@ -52,30 +52,32 @@ endif()
 
 # main source files
 file(GLOB src_files
-	"src/*.h"
 	"src/*.cpp"
 	"src/common/albion/*.cpp"
-	"src/headers/albion/*.h"
-    "src/gb/*.cpp"	
+	"src/frontend/gb/*.cpp"
+	"src/frontend/gba/*.cpp"
+	"src/frontend/*.cpp"
+)
+
+add_library(n64 STATIC "src/n64/n64.cpp")
+
+file(GLOB gb_files
+	"src/gb/*.cpp"	
     "src/gb/cpu/*.cpp"
     "src/gb/apu/*.cpp"
 	"src/gb/ppu/*.cpp"
     "src/gb/memory/*.cpp"
-	"src/gb/headers/gb/*.h"
+)
+add_library(gb STATIC ${gb_files})
+
+file(GLOB gba_files
 	"src/gba/*.cpp"
 	"src/gba/cpu/*.cpp"
 	"src/gba/memory/*.cpp"
 	"src/gba/ppu/*.cpp"
 	"src/gba/apu/*.cpp"
-	"src/gba/headers/gba/*.h"
-	"src/n64/n64.cpp"
-	"src/n64/*.h"
-	"src/frontend/gb/*.cpp"
-	"src/frontend/gb/*.h"
-	"src/frontend/gba/*.cpp"
-	"src/frontend/gba/*.h"
-	"src/frontend/*.cpp"
 )
+add_library(gba STATIC ${gba_files})
 
 # add some includes
 include_directories("src/headers")
@@ -90,10 +92,8 @@ add_definitions(-DFORWARD_DEF_DESTOER_LIB)
 if(${FRONTEND} STREQUAL "IMGUI")
 	include_directories("/usr/include/SDL2")
 	file(GLOB frontend_files
-		"src/frontend/imgui/*.h"
 		"src/frontend/imgui/*.cpp"
 		"src/common/thirdparty/imgui/*.cpp"
-		"src/common/thirdparty/imgui/*.h"
 		"src/common/thirdparty/imgui/backends/imgui_impl_sdl.cpp"
 		"src/common/thirdparty/imgui/backends/imgui_impl_opengl3.cpp"	
 	)
@@ -101,21 +101,18 @@ endif()
 
 if(${FRONTEND} STREQUAL "QT")
 	file(GLOB frontend_files
-		"src/frontend/qt/*.h"
 		"src/frontend/qt/*.cpp"
 	)
 endif()
 
 if(${FRONTEND} STREQUAL "SDL")
 	file(GLOB frontend_files
-		"src/frontend/sdl/*.h"
 		"src/frontend/sdl/*.cpp"
 	)
 endif()
 
 if(${FRONTEND} STREQUAL "DESTOER")
 	file(GLOB frontend_files
-		"src/frontend/destoer/*.h"
 		"src/frontend/destoer/*.cpp"
 	)
 
@@ -175,7 +172,7 @@ if(WIN32)
 	
     include_directories("C:/SDL2-2.0.14/include")
 else()
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -march=native -pthread -Ofast -fomit-frame-pointer -Wno-missing-braces")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -march=native -pthread -O1 -fomit-frame-pointer -Wno-missing-braces")
 if(${FRONTEND} STREQUAL "HEADLESS")
 
 else ()
@@ -210,4 +207,4 @@ endif()
 
 # fmt lib
 add_subdirectory(src/common/thirdparty/fmt)
-target_link_libraries(albion fmt::fmt)
+target_link_libraries(albion fmt::fmt n64 gb gba)

@@ -550,6 +550,9 @@ void Debug::debug_input()
             // TODO: provide better error reporting
             print_console("one or more args is invalid");
         }
+
+        // TODO:
+        //resolve_vars(args);
         
         execute_command(args);
         std::cin.clear();
