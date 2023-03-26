@@ -52,9 +52,11 @@ static constexpr int CONFIG = 16;
 static constexpr int TAGLO = 28;
 static constexpr int TAGHI = 29;
 
+static constexpr u32 REG_NAMES_SIZE = 32;
+
 // constants for disassembling mips
-extern const char *reg_names[32];
-extern const char *cp0_names[32];
+extern const char *reg_names[REG_NAMES_SIZE];
+extern const char *cp0_names[REG_NAMES_SIZE];
 
 // sign extend on a 8 bit aligned quantity
 template<typename OUT,typename IN>

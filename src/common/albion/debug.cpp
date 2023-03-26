@@ -1,5 +1,21 @@
 #include <albion/debug.h>
 
+
+token_type read_type(const Token& token)
+{
+    return token_type(token.index());
+} 
+
+u64 read_u64(const Token& token)
+{
+    return std::get<u64>(token);
+}
+
+std::string read_str(const Token& token)
+{
+    return std::get<std::string>(token);
+}
+
 // wake the instance up
 void Debug::wake_up()
 {
@@ -25,7 +41,7 @@ void Debug::disable_everything()
     breakpoints_enabled = false;
 }
 
-bool Debug::breakpoint_hit_internal(uint64_t addr, uint64_t value, break_type type)
+b32 Debug::breakpoint_hit_internal(u64 addr, u64 value, break_type type)
 {
     if(!breakpoints_enabled && !watchpoints_enabled)
     {
@@ -40,7 +56,7 @@ bool Debug::breakpoint_hit_internal(uint64_t addr, uint64_t value, break_type ty
 
     auto b = breakpoints[addr];
 
-    const bool hit =  b.is_hit(type,value);
+    const b32 hit =  b.is_hit(type,value);
 
 
     if(hit)
@@ -48,7 +64,7 @@ bool Debug::breakpoint_hit_internal(uint64_t addr, uint64_t value, break_type ty
 
         if(breakpoints_enabled && !b.watch)
         {
-            print_console("[{:x}]:{} breakpoint hit at {:x}:{:x}\n",get_pc(),static_cast<int>(type),addr,value);
+            print_console("[{:x}]:{} breakpoint hit at {:x}:{:x}\n",read_pc(),u32(type),addr,value);
         }
 
         // this is a watchpoint we just want to print to the console
@@ -56,7 +72,7 @@ bool Debug::breakpoint_hit_internal(uint64_t addr, uint64_t value, break_type ty
         else if(watchpoints_enabled && b.watch)
         {
             //print_watchpoint(b);
-            print_console("[{:x}]:{} watch hit at {:x}:{:x}\n",get_pc(),static_cast<int>(type),addr,value);
+            print_console("[{:x}]:{} watch hit at {:x}:{:x}\n",read_pc(),u32(type),addr,value);
             return false;
         }
     }
@@ -64,7 +80,7 @@ bool Debug::breakpoint_hit_internal(uint64_t addr, uint64_t value, break_type ty
     return hit && breakpoints_enabled;
 }
 
-void Debug::set_breakpoint(uint64_t addr,bool r, bool w, bool x, bool value_enabled, uint64_t value, bool watch)
+void Debug::set_breakpoint(u64 addr,b32 r, b32 w, b32 x, b32 value_enabled, u64 value, b32 watch)
 {
     Breakpoint b;
 
@@ -74,8 +90,8 @@ void Debug::set_breakpoint(uint64_t addr,bool r, bool w, bool x, bool value_enab
 }
 
 
-void Breakpoint::set(uint64_t addr, bool r, bool w, bool x, 
-    bool value_enabled,uint64_t value,bool break_enabled, bool watch)
+void Breakpoint::set(u64 addr, b32 r, b32 w, b32 x, 
+    b32 value_enabled,u64 value,b32 break_enabled, b32 watch)
 {
     this->value = value;
     this->addr = addr;
@@ -86,17 +102,17 @@ void Breakpoint::set(uint64_t addr, bool r, bool w, bool x,
 
     if(r)
     {
-        break_setting |= static_cast<int>(break_type::read);
+        break_setting |= u32(break_type::read);
     }
 
     if(w)
     {
-        break_setting |= static_cast<int>(break_type::write);
+        break_setting |= u32(break_type::write);
     }
 
     if(x)
     {
-        break_setting |= static_cast<int>(break_type::execute);
+        break_setting |= u32(break_type::execute);
     }
 
 }
@@ -111,7 +127,7 @@ void Breakpoint::enable()
     break_enabled = true;
 }
 
-bool Breakpoint::is_hit(break_type type,uint64_t value)
+b32 Breakpoint::is_hit(break_type type,u64 value)
 {
     // if the its not enabled or the value does not match if enabled
     // then it is not hit
@@ -122,7 +138,7 @@ bool Breakpoint::is_hit(break_type type,uint64_t value)
 
     // if the type the breakpoint has been triggered for
     // is not being watched then we aernt interested
-    if((static_cast<int>(type) & break_setting) == 0)
+    if((u32(type) & break_setting) == 0)
     {
         return false;
     }
@@ -160,7 +176,7 @@ void Debug::draw_console()
 {
     ImGui::BeginChild("console_child",ImVec2(0, 300), true);
 
-    static bool update = false;
+    static b32 update = false;
 
     for (size_t i = 0; i < console.size(); i++)
     {         
@@ -216,11 +232,11 @@ void Debug::print_mem(const std::vector<Token> &args)
         return;
     }
 
-    u32 addr;
+    u64 addr;
 
-    if(args[1].type == token_type::integer)
+    if(read_type(args[1]) == token_type::u64_t)
     {
-        addr = convert_imm(args[1].literal);
+        addr = read_u64(args[1]);
     }
 
     else
@@ -238,9 +254,9 @@ void Debug::print_mem(const std::vector<Token> &args)
     else
     {
         int n;
-        if(args[2].type == token_type::integer)
+        if(read_type(args[2]) == token_type::u64_t)
         {
-            n = convert_imm(args[2].literal);
+            n = read_u64(args[2]);
         }
 
         else
@@ -340,9 +356,9 @@ void Debug::print_breakpoint(const Breakpoint &b)
 {
     print_console(
         "{:04x}: {}{}{} {} {:x} {}\n",b.addr,
-            b.break_setting & static_cast<int>(break_type::read)? "r" : "",
-            b.break_setting & static_cast<int>(break_type::write)? "w" : "",
-            b.break_setting & static_cast<int>(break_type::execute)? "x" : "",
+            b.break_setting & u32(break_type::read)? "r" : "",
+            b.break_setting & u32(break_type::write)? "w" : "",
+            b.break_setting & u32(break_type::execute)? "x" : "",
             b.break_enabled? "enabled" : "disabled",
             b.value,
             b.value_enabled? "enabled" : "disabled"
@@ -384,11 +400,11 @@ void Debug::disass_internal(const std::vector<Token> &args)
         return;
     }
 
-    uint64_t addr;
+    u64 addr;
 
-    if(args[1].type == token_type::integer)
+    if(read_type(args[1]) == token_type::u64_t)
     {
-        addr = convert_imm(args[1].literal);
+        addr = read_u64(args[1]);
     }
 
     else
@@ -406,9 +422,9 @@ void Debug::disass_internal(const std::vector<Token> &args)
     else
     {
         int n;
-        if(args[2].type == token_type::integer)
+        if(read_type(args[2]) == token_type::u64_t)
         {
-            n = convert_imm(args[2].literal);
+            n = read_u64(args[2]);
         }
 
         else
@@ -426,7 +442,7 @@ void Debug::disass_internal(const std::vector<Token> &args)
 }
 
 
-void Debug::set_break_internal(const std::vector<Token> &args, bool watch)
+void Debug::set_break_internal(const std::vector<Token> &args, b32 watch)
 {
 
     if(args.size() <= 1 || args.size() > 4)
@@ -435,34 +451,36 @@ void Debug::set_break_internal(const std::vector<Token> &args, bool watch)
         return;
     }
 
-    if(args[1].type != token_type::integer)
+    if(read_type(args[1]) != token_type::u64_t)
     {
-        print_console("expected int got string: {}\n",args[1].literal);
+        print_console("expected int got string: {}\n",read_str(args[1]));
         return;
     }
 
-    const auto addr = convert_imm(args[1].literal);
+    const auto addr = read_u64(args[1]);
 
-    bool r = false;
-    bool w = false;
-    bool x = true;
-    bool value_enabled = false;
+    b32 r = false;
+    b32 w = false;
+    b32 x = true;
+    b32 value_enabled = false;
 
     auto value = 0xdeadbeef;
 
     // for 2nd arg allow tpye or value
     if(args.size() >= 3)
     {
-        if(args[2].type == token_type::integer)
+        if(read_type(args[2]) == token_type::u64_t)
         {
-            value = convert_imm(args[2].literal);
+            value = read_u64(args[2]);
             value_enabled = true;
         }
 
         // type set
         else
         {
-            for(const auto c: args[2].literal)
+            const auto literal = read_str(args[2]);
+
+            for(const auto c: literal)
             {
                 switch(c)
                 {
@@ -472,7 +490,7 @@ void Debug::set_break_internal(const std::vector<Token> &args, bool watch)
 
                     default:
                     {
-                        print_console("expected type (rwx) got: {}\n",args[2].literal);
+                        print_console("expected type (rwx) got: {}\n",literal);
                         return;
                     }
                 }
@@ -482,15 +500,15 @@ void Debug::set_break_internal(const std::vector<Token> &args, bool watch)
             if(args.size() == 4)
             {
                 // last is value and previous was type set
-                if(args[3].type == token_type::integer)
+                if(read_type(args[3]) == token_type::u64_t)
                 {
-                    value = convert_imm(args[3].literal);
+                    value = read_u64(args[3]);
                     value_enabled = true;
                 }
 
                 else
                 {
-                    print_console("expected int got string: {}\n",args[3].literal);
+                    print_console("expected int got string: {}\n",read_str(args[3]));
                     return;
                 }
             }
@@ -531,9 +549,241 @@ void Debug::run(const std::vector<Token> &args)
     print_console("resuming execution\n");
 }
 
+
+// basic tokenizer
+template<typename F>
+b32 verify_immediate_internal(const std::string &line, uint32_t &i, F lambda)
+{
+    const auto len = line.size();
+
+    for(; i < len; i++)
+    {
+        // valid part of the value
+        if(lambda(line[i]))
+        {
+            continue;
+        }
+
+        // values cannot have these at the end!
+        else if(isalpha(line[i]))
+        {
+            return false;
+        }
+
+        // we have  < ; + , etc stop parsing
+        else 
+        {
+            return true;
+        }
+    }
+
+    return true;
+}
+
+
+b32 verify_immediate(const std::string &line, std::string &literal)
+{
+    const auto len = line.size();
+
+    // an empty immediate aint much use to us
+    if(!len)
+    {
+        return false;
+    }
+
+    uint32_t i = 0;
+
+    const auto c = line[0];
+
+    // allow - or +
+    if(c == '-' || c == '+')
+    {
+        i = 1;
+        // no digit after the sign is of no use
+        if(len == 1)
+        {
+            return false;
+        }
+    }
+
+    b32 valid = false;
+
+
+    // have prefix + one more digit at minimum
+    const auto prefix = i+2 < len?  line.substr(i,2) : "";
+
+    // verify we have a valid hex number
+    if(prefix == "0x")
+    {
+        // skip past the prefix
+        i += 2;
+        valid = verify_immediate_internal(line,i,[](const char c) 
+        {
+            return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+        });
+    }
+
+    // verify its ones or zeros
+    else if(prefix == "0b")
+    {
+        // skip past the prefix
+        i += 2;                
+        valid = verify_immediate_internal(line,i,[](const char c) 
+        {
+            return c == '0' || c == '1';
+        });
+    }
+
+    // verify we have all digits
+    else
+    {
+        valid = verify_immediate_internal(line,i,[](const char c) 
+        {
+            return c >= '0' && c <= '9';
+        });
+    }
+    
+
+    if(valid)
+    {
+        literal = line.substr(0,i);
+    }
+
+    return valid;    
+}
+
+
+u32 convert_imm(const std::string &imm)
+{
+    try 
+    {
+        if(imm.size() >= 3 && imm.substr(0,2) == "0b")
+        {
+            return u64(std::stoll(imm.substr(2),0,2));
+        }
+
+        // stoi wont auto detect base for binary strings?
+        return u64(std::stoll(imm,0,0));
+    }
+
+    catch(std::exception &ex)
+    {
+        printf("stoi exception\n");
+        std::cout << ex.what() << std::endl;
+        exit(1);
+    }
+}
+
+b32 decode_imm(const std::string &line, uint32_t &i,std::string &literal)
+{
+    const auto success = verify_immediate(line.substr(i),literal);
+
+    // set one back for whatever the terminating character was
+    i--;
+
+    i += literal.size();  
+
+    return success;
+}
+
+b32 Debug::tokenize(const std::string &line,std::vector<Token> &tokens)
+{
+    tokens.clear();
+    for(uint32_t i = 0; i < line.size(); i++)
+    {
+        const auto c =  line[i];
+        switch(c)
+        {
+            case ' ': break;
+            case '\n': break;
+            case '\t': break;
+            case '\r': break;
+            case '\0': break;
+
+            // comment end of line
+            case ';': return true;
+
+
+         
+            default:
+            {   
+                Token token;
+                std::string literal = "";
+
+                // integer
+                if(isdigit(c))
+                {
+                    if(!decode_imm(line,i,literal))
+                    {
+                        return false;
+                    }
+
+                    token = convert_imm(literal);
+                }
+
+                // string
+                else
+                {
+                    for(; i < line.size(); i++)
+                    {
+                        const auto c = line[i];
+                        if(c == ' ')
+                        {
+                            break;
+                        }
+
+                        literal += c;
+                    }
+
+                    // parse a var
+                    if(literal[0] == '$')
+                    {
+                        u64 value = 0;
+                        if(!read_var(literal.substr(1),&value))
+                        {
+                            print_console("could not read var {}\n",literal);
+                            return false;
+                        }
+
+                        token = value;
+                    }
+
+                    else
+                    {
+                        token = literal;
+                    }
+                }
+
+                // push token
+                tokens.push_back(token);
+                break;
+            }
+        }
+    }
+    return true;
+}
+
+
+b32 Debug::invalid_command(const std::vector<Token>& args)
+{
+    // No args, we have nothing to process
+    if(!args.size())
+    {
+        return true;
+    }
+
+    // We expect a string for this
+    if(read_type(args[0]) != token_type::str_t)
+    {
+        return true;
+    }
+
+    return false;
+}
+
 void Debug::debug_input()
 {
-    print_console("{:16x}\n",get_pc());
+    print_console("{:16x}\n",read_pc());
     std::string line = "";
 
 
@@ -558,5 +808,14 @@ void Debug::debug_input()
         std::cin.clear();
     }
 }  
+
+
+u64 Debug::read_pc()
+{
+    u64 pc;
+    read_var("pc",&pc);
+
+    return pc;
+}
 
 #endif

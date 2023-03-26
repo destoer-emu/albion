@@ -74,7 +74,7 @@ void Dma::write_source(int reg_num,int idx, u8 v)
         r.src = deset_bit(r.src,27);
     }
 */
-    //printf("dma source written! %08x:%08x\n",r.src,cpu.get_pc());
+    //printf("dma source written! %08x:%08x\n",r.src,cpu.read_pc());
 }
 
 void Dma::write_dest(int reg_num, int idx, u8 v)
@@ -204,7 +204,7 @@ void Dma::write_control(int reg_num,int idx, u8 v)
                 r.src_shadow = r.src;
                 r.dst_shadow = r.dst;
 
-                //printf("[%08x]reloaded to %x:%08x:%08x:%d:%d:%x\n",cpu.get_pc(),reg_num,r.src_shadow,r.dst_shadow,r.dst_cnt,r.src_cnt,r.word_count);
+                //printf("[%08x]reloaded to %x:%08x:%08x:%d:%d:%x\n",cpu.read_pc(),reg_num,r.src_shadow,r.dst_shadow,r.dst_cnt,r.src_cnt,r.word_count);
 
                 if(r.start_time == dma_type::immediate)
                 {

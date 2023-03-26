@@ -28,8 +28,8 @@ public:
     std::string disass_instr(uint64_t addr) override;
     uint64_t get_instr_size(uint64_t addr) override;
     void execute_command(const std::vector<Token> &args) override;
+    b32 read_var(const std::string &name, u64* out) override;
     void step_internal() override;
-    uint64_t get_pc() override;
 
 private:
 

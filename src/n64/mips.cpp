@@ -1,6 +1,6 @@
 namespace nintendo64
 {
-    const char *reg_names[32]
+    const char *reg_names[REG_NAMES_SIZE]
     {
         "r0", // hardwired to zero
         "at", // assembler tempoary

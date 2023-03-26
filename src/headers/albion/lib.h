@@ -21,6 +21,7 @@
 #include <type_traits>
 #include <atomic>
 #include <optional>
+#include <variant>
 #include <stdint.h>
 #include <assert.h>
 #include <stdio.h>
@@ -32,28 +33,6 @@
 using namespace destoer;
 
 
-enum class token_type
-{
-	string,
-	integer
-};
-
-struct Token
-{
-	Token(const std::string &l,token_type t) : literal(l), type(t)
-	{
-
-	}
-
-	std::string literal;
-	token_type type;
-};
-
-// basic tokenizer
-b32 tokenize(const std::string &line,std::vector<Token> &args);
-u32 convert_imm(const std::string &imm);
-
-void print_tokens(const std::vector<Token> &tokens);
 
 
 

@@ -16,13 +16,13 @@ GBDebug::GBDebug(GB &g) : gb(g)
 
 void GBDebug::execute_command(const std::vector<Token> &args)
 {
-    if(!args.size())
+    if(invalid_command(args))
     {
-        print_console("empty command\n");
+        print_console("invalid command\n");
         return;
     }
 
-    const auto command = args[0].literal;
+    const auto command = std::get<std::string>(args[0]);
     if(!func_table.count(command))
     {
         print_console("unknown command: '{}'\n",command);
@@ -52,10 +52,7 @@ void GBDebug::step_internal()
     halt();
 }
 
-uint64_t GBDebug::get_pc()
-{
-    return gb.cpu.pc;
-}
+
 
 void GBDebug::step(const std::vector<Token> &args)
 {
@@ -85,6 +82,25 @@ void GBDebug::change_breakpoint_enable(bool enable)
 {
     gb.change_breakpoint_enable(enable);
 }
+
+b32 GBDebug::read_var(const std::string &name, u64* out)
+{
+    b32 success = true;
+
+    if(name == "pc")
+    {
+        *out = gb.cpu.pc;
+    }
+
+    else
+    {
+        *out = 0;
+        success = false;
+    }
+
+    return success;
+}
+
 
 }
 

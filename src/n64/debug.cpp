@@ -12,13 +12,13 @@ N64Debug::N64Debug(N64 &n) : n64(n)
 
 void N64Debug::execute_command(const std::vector<Token> &args)
 {
-    if(!args.size())
+    if(invalid_command(args))
     {
-        print_console("empty command\n");
+        print_console("invalid command\n");
         return;
     }
 
-    const auto command = args[0].literal;
+    const auto command = std::get<std::string>(args[0]);
     if(!func_table.count(command))
     {
         print_console("unknown command: '{}'\n",command);
@@ -53,15 +53,10 @@ void N64Debug::step_internal()
     halt();
 }
 
-u64 N64Debug::get_pc()
-{
-    return n64.cpu.pc;
-}
-
 void N64Debug::step(const std::vector<Token> &args)
 {
     UNUSED(args);
-    const auto pc = get_pc();
+    const auto pc = read_pc();
     const auto instr = disass_instr(pc);
     print_console("{}\n",instr);
     step_internal();
@@ -99,6 +94,35 @@ u8 N64Debug::read_mem(u64 addr)
 void N64Debug::change_breakpoint_enable(bool enable)
 {
     UNUSED(enable);
+}
+
+b32 N64Debug::read_var(const std::string &name, u64* out)
+{
+    b32 success = true;
+
+    if(name == "pc")
+    {
+        *out = n64.cpu.pc;
+    }
+
+    else
+    {
+        // TODO: we could make this faster
+        for(u32 i = 0; i < REG_NAMES_SIZE; i++)
+        {
+            if(reg_names[i] == name)
+            {
+                *out = n64.cpu.regs[i];
+                return true;
+            }
+        }
+
+
+        *out = 0;
+        success = false;
+    }
+
+    return success;
 }
 
 }

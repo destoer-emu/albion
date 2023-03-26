@@ -156,7 +156,7 @@ void Cpu::thumb_sp_add(u16 opcode)
 void Cpu::thumb_swi(u16 opcode)
 {
 
-    //printf("swi %08x: %08x\n",get_pc(),opcode);
+    //printf("swi %08x: %08x\n",read_pc(),opcode);
 
     // nn is ignored by hardware
     UNUSED(opcode);

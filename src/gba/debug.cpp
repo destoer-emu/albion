@@ -16,13 +16,13 @@ GBADebug::GBADebug(GBA &g) : gba(g)
 
 void GBADebug::execute_command(const std::vector<Token> &args)
 {
-    if(!args.size())
+    if(invalid_command(args))
     {
-        print_console("empty command\n");
+        print_console("invalid command\n");
         return;
     }
 
-    const auto command = args[0].literal;
+    const auto command = std::get<std::string>(args[0]);
     if(!func_table.count(command))
     {
         print_console("unknown command: '{}'\n",command);
@@ -47,10 +47,7 @@ void GBADebug::step_internal()
     halt();
 }
 
-uint64_t GBADebug::get_pc()
-{
-    return gba.cpu.pc_actual;
-}
+
 
 void GBADebug::step(const std::vector<Token> &args)
 {
@@ -105,6 +102,24 @@ uint8_t GBADebug::read_mem(uint64_t addr)
 void GBADebug::change_breakpoint_enable(bool enable)
 {
     gba.change_breakpoint_enable(enable);
+}
+
+b32 GBADebug::read_var(const std::string &name, u64* out)
+{
+    b32 success = true;
+
+    if(name == "pc")
+    {
+        *out = gba.cpu.regs[PC];
+    }
+
+    else
+    {
+        *out = 0;
+        success = false;
+    }
+
+    return success;
 }
 
 }

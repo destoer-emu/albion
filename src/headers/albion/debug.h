@@ -16,7 +16,7 @@ struct Trace
         memset(history_source,0,sizeof(history_source));
     }
 
-    void add(uint64_t src, uint64_t dst)
+    void add(u64 src, u64 dst)
     {
         history_source[idx] = src;
         history_target[idx] = dst;
@@ -34,9 +34,9 @@ struct Trace
         return out;
     }
 
-    uint64_t idx;
-    uint64_t history_target[0x10] = {0};
-    uint64_t history_source[0x10] = {0};
+    u64 idx;
+    u64 history_target[0x10] = {0};
+    u64 history_source[0x10] = {0};
 };
 
 
@@ -52,27 +52,41 @@ enum class break_type : int
 // breakpoint helper class
 struct Breakpoint
 {
-    void set(uint64_t addr, bool r, bool w, bool x, 
-        bool value_enabled,uint64_t value,bool break_enabled, bool watch);
+    void set(u64 addr, b32 r, b32 w, b32 x, 
+        b32 value_enabled,u64 value,b32 break_enabled, b32 watch);
 
     void disable();
 
     void enable();
 
-    bool is_hit(break_type type,uint64_t value);
+    b32 is_hit(break_type type,u64 value);
 
-    uint64_t value = 0xdeadbeef;
-    bool value_enabled = false;
-    bool break_enabled = false;
-    uint64_t addr = 0xdeadbeef;
+    u64 value = 0xdeadbeef;
+    b32 value_enabled = false;
+    b32 break_enabled = false;
+    u64 addr = 0xdeadbeef;
     int break_setting = 0;
-    bool watch = false;
+    b32 watch = false;
 };
 
 
 
 
+using Token = std::variant<u64, std::string>;
 
+// NOTE: order has to be the same as the variant decl
+enum class token_type
+{
+    u64_t,
+    str_t,
+};
+
+// basic tokenizer
+b32 tokenize(const std::string &line,std::vector<Token> &args);
+u32 convert_imm(const std::string &imm);
+
+
+// TODO: clean up lots of this ifdef chaining
 class Debug
 {
 public:
@@ -132,9 +146,9 @@ public:
 #endif
 
 #endif
-
+    b32 invalid_command(const std::vector<Token>& args);
     void breakpoint(const std::vector<Token> &args);
-    void set_break_internal(const std::vector<Token> &args, bool watch);
+    void set_break_internal(const std::vector<Token> &args, b32 watch);
     void watch(const std::vector<Token> &args);
     void enable_watch(const std::vector<Token> &args);
     void disable_watch(const std::vector<Token> &args);
@@ -149,21 +163,24 @@ public:
     void print_breakpoint(const Breakpoint &b);
     void disass_internal(const std::vector<Token> &args);
     void debug_input();
+    b32 tokenize(const std::string &line,std::vector<Token> &tokens);
 
 
     void wake_up();
     void halt();
 
-    bool is_halted() const noexcept 
+    u64 read_pc();
+
+    b32 is_halted() const noexcept 
     {
         return halted;
     } 
 
     void disable_everything();
 
-    bool breakpoint_hit_internal(uint64_t addr, uint64_t value, break_type type);
+    b32 breakpoint_hit_internal(u64 addr, u64 value, break_type type);
 
-    inline bool breakpoint_hit(uint64_t addr, uint64_t value, break_type type)
+    inline b32 breakpoint_hit(u64 addr, u64 value, break_type type)
     {
         if(!breakpoints_enabled && !watchpoints_enabled)
         {
@@ -173,15 +190,15 @@ public:
         return breakpoint_hit_internal(addr,value,type);
     }
 
-    void set_breakpoint(uint64_t addr,bool r, bool w, bool x, bool value_enabled=false, uint64_t value=0xdeadbeef,bool watch = false);
+    void set_breakpoint(u64 addr,b32 r, b32 w, b32 x, b32 value_enabled=false, u64 value=0xdeadbeef,b32 watch = false);
 
 
     // map to hold breakpoints (lookup by addr)
-    std::unordered_map<uint64_t,Breakpoint> breakpoints;
+    std::unordered_map<u64,Breakpoint> breakpoints;
 
-    bool breakpoints_enabled = false;
-    bool watchpoints_enabled = false;
-    bool log_enabled = false;
+    b32 breakpoints_enabled = false;
+    b32 watchpoints_enabled = false;
+    b32 log_enabled = false;
 
 
     Trace trace;
@@ -194,20 +211,22 @@ public:
 protected:
 #ifdef DEBUG
     // internal overrides
-    virtual void change_breakpoint_enable(bool enable) = 0;
-    virtual uint8_t read_mem(uint64_t addr) = 0;
-    virtual std::string disass_instr(uint64_t addr) = 0;
-    virtual uint64_t get_instr_size(uint64_t addr) = 0;
+    virtual void change_breakpoint_enable(b32 enable) = 0;
+    virtual u8 read_mem(u64 addr) = 0;
+    virtual std::string disass_instr(u64 addr) = 0;
+    virtual u64 get_instr_size(u64 addr) = 0;
     virtual void execute_command(const std::vector<Token> &args) = 0;
     virtual void step_internal() = 0;
-    virtual uint64_t get_pc() = 0;
+
+    // NOTE: this must have a $pc value to read for impl read_pc()
+    virtual b32 read_var(const std::string& name, u64* value_out) = 0;
 #endif
 
     std::ofstream log_file;
-    bool log_full = false;
+    b32 log_full = false;
     // is debugged instance halted
-    bool halted = false;    
-    bool quit;
+    b32 halted = false;    
+    b32 quit = false;
 };
 
 
