@@ -56,7 +56,7 @@ void ImguiMainWindow::draw_breakpoints()
     
 
 
-	ImGui::InputText("", input_breakpoint, IM_ARRAYSIZE(input_breakpoint),ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase);
+	ImGui::InputText("breakpoint-input", input_breakpoint, IM_ARRAYSIZE(input_breakpoint),ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase);
 
 
 	// set breakpoints
@@ -64,10 +64,11 @@ void ImguiMainWindow::draw_breakpoints()
 
 	if (ImGui::Button("Set"))
 	{
-		if (is_valid_hex_string(input_breakpoint))
-		{
-			uint64_t breakpoint = strtoll(input_breakpoint, NULL, 16);
+        errno = 0;
+        uint64_t breakpoint = strtoll(input_breakpoint, NULL, 16);
 
+        if(errno == 0)
+        {
             switch(running_type)
             {
                 case emu_type::gameboy: gb.debug.set_breakpoint(breakpoint,break_r,break_w,break_x,false,false,false); break;
@@ -75,8 +76,8 @@ void ImguiMainWindow::draw_breakpoints()
                 case emu_type::n64: break;
                 case emu_type::none: break;
             }
-			*input_breakpoint = '\0';
-		}
+            *input_breakpoint = '\0';
+        }	
 	}
 
 
@@ -236,7 +237,7 @@ void ImguiMainWindow::draw_memory()
     static int x = -1;
 
     // combo box to select view type
-    if(ImGui::BeginCombo("",region_ptr[region_idx].name))
+    if(ImGui::BeginCombo("##gba-mem-combo",region_ptr[region_idx].name))
     {
         for(uint64_t i = 0; i < size; i++)
         {
@@ -257,7 +258,7 @@ void ImguiMainWindow::draw_memory()
     ImGui::Text("edit: %zx",base_addr + (y * 0x10) + x); ImGui::SameLine();
     static char input[3] = {0};
     ImGui::PushItemWidth(20.0);
-    if(ImGui::InputText(" ", input, IM_ARRAYSIZE(input),ImGuiInputTextFlags_EnterReturnsTrue | 
+    if(ImGui::InputText("##mem-write", input, IM_ARRAYSIZE(input),ImGuiInputTextFlags_EnterReturnsTrue | 
         ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase))
     {
         if(x != -1 && y != -1)
@@ -289,7 +290,8 @@ void ImguiMainWindow::draw_memory()
     ImGui::Separator();
 
     ImGui::BeginChild("Memory View");
-    ImGuiListClipper clipper(clipper_count); 
+    ImGuiListClipper clipper;
+    clipper.Begin(clipper_count); 
 
 
     while (clipper.Step())

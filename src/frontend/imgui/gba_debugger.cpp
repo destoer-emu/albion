@@ -122,7 +122,7 @@ void GBADisplayViewer::draw_map()
     static int selected = 0;
 
     // combo box to select view type
-    if(ImGui::BeginCombo("",window_names[selected]))
+    if(ImGui::BeginCombo("gba_map_combo",window_names[selected]))
     {
         for(int i = 0; i < SIZE; i++)
         {
@@ -205,7 +205,7 @@ void ImguiMainWindow::gba_draw_registers_child()
     static int selected = 0;
 
     // combo box to select view type
-    if(ImGui::BeginCombo("",window_names[selected]))
+    if(ImGui::BeginCombo("gba_reg_combo",window_names[selected]))
     {
         for(int i = 0; i < SIZE; i++)
         {

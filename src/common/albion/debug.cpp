@@ -196,7 +196,7 @@ void Debug::draw_console()
 
     static char input[128] = "";
 
-    if(ImGui::InputText("", input, IM_ARRAYSIZE(input),ImGuiInputTextFlags_EnterReturnsTrue))
+    if(ImGui::InputText("##console-text-input", input, IM_ARRAYSIZE(input),ImGuiInputTextFlags_EnterReturnsTrue))
     {
         if(*input)
         {

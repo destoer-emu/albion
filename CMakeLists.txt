@@ -94,7 +94,7 @@ if(${FRONTEND} STREQUAL "IMGUI")
 	file(GLOB frontend_files
 		"src/frontend/imgui/*.cpp"
 		"src/common/thirdparty/imgui/*.cpp"
-		"src/common/thirdparty/imgui/backends/imgui_impl_sdl.cpp"
+		"src/common/thirdparty/imgui/backends/imgui_impl_sdl2.cpp"
 		"src/common/thirdparty/imgui/backends/imgui_impl_opengl3.cpp"	
 	)
 endif()

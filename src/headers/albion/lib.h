@@ -63,3 +63,5 @@ inline u32 convert_color(u16 color)
 }
 
 void load_ips_patch(const std::string &filename,std::vector<uint8_t> &rom);
+
+std::vector<std::string> read_sorted_directory(const std::string &file_path);

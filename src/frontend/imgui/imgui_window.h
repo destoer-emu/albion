@@ -40,7 +40,7 @@ using namespace gl;
 
 
 #include <imgui/imgui.h>
-#include <imgui/backends/imgui_impl_sdl.h>
+#include <imgui/backends/imgui_impl_sdl2.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 #include <stdio.h>
 #include <albion/lib.h>
@@ -63,7 +63,7 @@ public:
     void update_texture();
     void swap_buffer(std::vector<uint32_t> &other);
     GLuint get_texture() const;
-    void draw_texture();
+    void draw_texture(u32 width_offset, u32 height_offset,u32 factor_x, u32 factor_y);
     int get_width() const { return x; } 
     int get_height() const { return y; } 
 
@@ -73,6 +73,7 @@ private:
     int x;
     int y;
     GLuint texture;
+    u32 shader_program;
     bool first_time = true;
 };
 

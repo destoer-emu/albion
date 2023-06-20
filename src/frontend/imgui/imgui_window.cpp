@@ -45,22 +45,14 @@ void Texture::swap_buffer(std::vector<uint32_t> &other)
 }
 
 
-void Texture::draw_texture()
+void Texture::draw_texture(u32 width_offset, u32 height_offset,u32 factor_x, u32 factor_y)
 {
-    glEnable(GL_TEXTURE_2D); 
-    glBindTexture(GL_TEXTURE_2D,texture);
+    // render this straight to background with imgui
+    ImVec2 min_pos = ImVec2(width_offset,height_offset);
+    ImVec2 max_pos = ImVec2(width_offset + (x * factor_x), height_offset + (y * factor_y));
 
-    // figure out how to maintain ratio here ;)
-
-    glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0, 1.0);
-        glTexCoord2f(1.0f, 0.0f); glVertex2f( 1.0, 1.0);
-        glTexCoord2f(1.0f, 1.0f); glVertex2f( 1.0, -1.0);
-        glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0, -1.0);
-    glEnd();
-
-    glBindTexture(GL_TEXTURE_2D,0);
-    glDisable(GL_TEXTURE_2D);    
+    auto bg = ImGui::GetBackgroundDrawList();
+    bg->AddImage((void*)(intptr_t)texture,min_pos,max_pos, ImVec2(0, 0), ImVec2(1, 1));
 }
 
 GLuint Texture::get_texture() const
@@ -334,7 +326,7 @@ void ImguiMainWindow::file_browser(file_option option, const char *title)
 
     ImGui::Begin(title);
 
-    if(ImGui::InputText("", input_path, IM_ARRAYSIZE(input_path),ImGuiInputTextFlags_EnterReturnsTrue))
+    if(ImGui::InputText("##file_browser_input_text", input_path, IM_ARRAYSIZE(input_path),ImGuiInputTextFlags_EnterReturnsTrue))
     {
         if(std::filesystem::is_directory(input_path))
         {
@@ -653,14 +645,14 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
             }
         }
 
+
+        // Start the Dear ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL2_NewFrame(window);
+        ImGui::NewFrame();
+
         if(focus)
         {
-            // Start the Dear ImGui frame
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplSDL2_NewFrame(window);
-            ImGui::NewFrame();
-
-
             switch(running_type)
             {
                 case emu_type::gameboy:
@@ -738,21 +730,14 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
                     break;
                 }
             }
-            ImGui::Render();
         }
 
-        
-
-        // Rendering
+        // calc offseting and display the screen
         int display_w, display_h;
         SDL_GetWindowSize(window, &display_w, &display_h);
-        glViewport(0, 0, display_w, display_h);
-        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT);
-
 
         // lets figure out how much to scale by
-        const int y = display_h - static_cast<int>(menubar_size.y);
+        const int y = display_h;
         const int x = display_w;
 
         int fact_y = y / screen.get_height();
@@ -773,27 +758,26 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
         int screen_y = screen.get_height() * fact_y;
         int screen_x = screen.get_width() * fact_x;
 
-    
+
 
         // now get half the remainder of our total draw area 
         // and use it to keep it in the centre of the viewpoert
         int width_offset = (x - screen_x) / 2;
         int height_offset = (y - screen_y) / 2;
 
-        // set the viewport to draw from the offsets and draw the screen for the factor we are strecthing at
-        glViewport(width_offset, height_offset, screen_x, screen_y);
-
         screen.update_texture();
-        screen.draw_texture();
-
-        // and set it back to how imgui expects it
-        glViewport(0, 0, display_w, display_h);
+        screen.draw_texture(width_offset,height_offset,fact_x,fact_y);
+    
+        ImGui::Render();
         
-        if(focus)
-        {
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        }
 
+        // Rendering
+        glViewport(0, 0, display_w, display_h);
+        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         SDL_GL_SwapWindow(window);
 
         fps.reading_end();
