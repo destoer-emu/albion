@@ -1,9 +1,24 @@
 #ifdef FRONTEND_SDL
 #include <frontend/sdl/sdl_window.h>
+
+#ifdef GB_ENABLED
+#include <frontend/sdl/gb_window.h>
+#include "gb_window.cpp"
+#endif
+
+#ifdef GBA_ENABLED
+#include <frontend/sdl/gba_window.h>
+#include "gba_window.cpp"
+#endif
+
+#ifdef N64_ENABLED
+#include <frontend/sdl/n64_window.h>
+#include "n64_window.cpp"
+#endif
+
 #include <albion/destoer-emu.h>
 
-
-SDLMainWindow::SDLMainWindow(std::string filename)
+void start_emu(std::string filename)
 {
 	try
 	{
@@ -12,25 +27,34 @@ SDLMainWindow::SDLMainWindow(std::string filename)
 
 		switch(type)
 		{
+		#ifdef GB_ENABLED
 			case emu_type::gameboy:
 			{
-				gameboy_main(filename);
+				GameboyWindow gb;
+				gb.main(filename);
 				break;
 			}
+		#endif
 
+		#ifdef GBA_ENABLED
 			case emu_type::gba:
 			{
-				gba_main(filename);
+				GBAWindow gba;
+				gba.main(filename);
 				break;
 			}
+		#endif
 
+		#ifdef N64_ENABLED
 			case emu_type::n64:
 			{
-				n64_main(filename);
+				N64Window n64;
+				n64.main(filename);
 				break;
 			}
+		#endif
 
-			case emu_type::none:
+			default:
 			{
 				std::cout << "unrecognised rom type" 
 					<< filename << "\n";
@@ -45,213 +69,6 @@ SDLMainWindow::SDLMainWindow(std::string filename)
 	}
 }
 
-
-
-void SDLMainWindow::n64_main(std::string filename)
-{
-	reset(n64,filename);
-	// just have a default this might get changed by the hardware
-	init_sdl(320,240);
-
-	FpsCounter fps_counter;
-
-	#ifdef DEBUG
-		n64.debug.debug_input();
-	#endif
-
-	for(;;)
-	{
-		fps_counter.reading_start();
-
-		n64_handle_input();
-
-		nintendo64::run(n64);
-
-		// screen res changed
-		if(n64.size_change)
-		{
-			n64.size_change = 0;
-			create_texture(n64.rdp.screen_x,n64.rdp.screen_y);
-		}
-
-		n64_render();
-
-	#ifdef DEBUG
-		if(n64.debug.is_halted())
-		{
-			n64.debug.debug_input();
-		}
-	#endif
-
-
-		fps_counter.reading_end();
-
-		SDL_SetWindowTitle(window,fmt::format("albion: {}",fps_counter.get_fps()).c_str());
-	}
-
-}
-
-void SDLMainWindow::n64_render()
-{
-    // do our screen blit
-    SDL_UpdateTexture(texture, NULL, n64.rdp.screen.data(),  4 * X);
-    SDL_RenderCopy(renderer, texture, NULL, NULL);
-    SDL_RenderPresent(renderer);    
-}
-
-
-void SDLMainWindow::n64_handle_input()
-{
-	SDL_Event event;
-	
-	// handle input
-	while(SDL_PollEvent(&event))
-	{	
-		switch(event.type)
-		{
-	
-			case SDL_WINDOWEVENT:
-			{
-				if(event.window.event == SDL_WINDOWEVENT_RESIZED)
-				{
-					SDL_SetWindowSize(window,event.window.data1, event.window.data2);
-				}
-				break;
-			}
-
-
-			case SDL_KEYDOWN:
-			{
-			#ifdef DEBUG
-				if(event.key.keysym.sym == SDLK_p)
-				{
-					n64.debug.debug_input();
-				}
-			#endif
-				break;
-			}
-
-
-			case SDL_QUIT:
-			{
-				puts("bye!");
-				exit(0);
-			}
-		}
-	}
-}
-
-void SDLMainWindow::gameboy_main(std::string filename)
-{
-	SDL_GL_SetSwapInterval(1);
-
-	//constexpr uint32_t fps = 60; 
-	//constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
-	//uint64_t next_time = current_time() + screen_ticks_per_frame;
-    gb.reset(filename);
-    init_sdl(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);
-
-
-	FpsCounter fps_counter;
-
-
-	/* setup our controller */
-	GbControllerInput controller;
-	controller.init();
-
-    for(;;)
-    {
-		fps_counter.reading_start();
-
-        gameboy_handle_input(controller);
-
-		controller.update(gb);
-
-        gb.run();
-
-        gameboy_render();
-
-		// throttle the emulation
-		if(gb.throttle_emu)
-		{
-        	//SDL_Delay(time_left(next_time));
-			SDL_GL_SetSwapInterval(1);
-		}
-
-		else
-		{
-			//SDL_Delay(time_left(next_time) / 8);
-			SDL_GL_SetSwapInterval(0);
-		}
-
-		fps_counter.reading_end();
-
-		SDL_SetWindowTitle(window,fmt::format("albion: {}",fps_counter.get_fps()).c_str());
-
-		//next_time = current_time() + screen_ticks_per_frame;
-		
-		// we hit a breakpoint go back to the prompt
-	#ifdef DEBUG
-		if(gb.debug.is_halted())
-		{
-			gb.debug.debug_input();
-		}
-	#endif
-    }	
-}
-
-void SDLMainWindow::gameboy_handle_input(GbControllerInput &controller)
-{
-	SDL_Event event;
-	
-	// handle input
-	while(SDL_PollEvent(&event))
-	{	
-		switch(event.type)
-		{
-	
-			case SDL_WINDOWEVENT:
-			{
-				if(event.window.event == SDL_WINDOWEVENT_RESIZED)
-				{
-					SDL_SetWindowSize(window,event.window.data1, event.window.data2);
-				}
-				break;
-			}
-
-			case SDL_KEYDOWN:
-			{
-			#ifdef DEBUG
-				if(event.key.keysym.sym == SDLK_p)
-				{
-					gb.debug.debug_input();
-				}
-
-				else
-			#endif
-				{
-					gb.key_input(event.key.keysym.sym,true);
-				}
-				break;
-			}
-			
-			case SDL_KEYUP:
-			{
-				gb.key_input(event.key.keysym.sym,false);
-				break;
-			}
-
-			case SDL_CONTROLLERDEVICEADDED: controller.connected(event.cdevice.which); break;
-			case SDL_CONTROLLERDEVICEREMOVED: controller.disconnected(event.cdevice.which); break;
-
-			case SDL_QUIT:
-			{
-				gb.mem.save_cart_ram();
-				exit(0);
-			}
-        }
-    }    
-}
 
 void SDLMainWindow::create_texture(u32 x, u32 y)
 {
@@ -287,134 +104,14 @@ void SDLMainWindow::init_sdl(u32 x, u32 y)
 	SDL_GL_SetSwapInterval(1);
 }
 
-
-void SDLMainWindow::gameboy_render()
+void SDLMainWindow::render(const u32* data)
 {
     // do our screen blit
-    SDL_UpdateTexture(texture, NULL, gb.ppu.screen.data(),  4 * X);
+    SDL_UpdateTexture(texture, NULL, data,  4 * X);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
-    SDL_RenderPresent(renderer);    
+    SDL_RenderPresent(renderer);    	
 }
 
-void SDLMainWindow::gba_render()
-{
-    // do our screen blit
-    SDL_UpdateTexture(texture, NULL, gba.disp.screen.data(),  4 * X);
-    SDL_RenderCopy(renderer, texture, NULL, NULL);
-    SDL_RenderPresent(renderer);    
-}
-
-void SDLMainWindow::gba_handle_input(GbaControllerInput &controller)
-{
-	SDL_Event event;
-	
-	// handle input
-	while(SDL_PollEvent(&event))
-	{	
-		switch(event.type) 
-		{
-			case SDL_WINDOWEVENT:
-			{
-				if(event.window.event == SDL_WINDOWEVENT_RESIZED)
-				{
-					SDL_SetWindowSize(window,event.window.data1, event.window.data2);
-				}
-				break;
-			}
-		
-	
-			case SDL_QUIT:
-			{
-				gba.mem.save_cart_ram();
-                puts("quitting...");
-                exit(1);
-			}	
-			
-			case SDL_KEYDOWN:
-			{
-			#ifdef DEBUG
-				if(event.key.keysym.sym == SDLK_p)
-				{
-					gba.debug.debug_input();
-				}
-
-				else
-			#endif
-				{
-					gba.key_input(event.key.keysym.sym,true);
-				}
-                break;
-			}
-			
-			case SDL_KEYUP:
-			{
-				gba.key_input(event.key.keysym.sym,false);
-                break;
-			}
-
-			case SDL_CONTROLLERDEVICEADDED: controller.connected(event.cdevice.which); break;
-			case SDL_CONTROLLERDEVICEREMOVED: controller.disconnected(event.cdevice.which); break;
-
-
-            default:
-            {
-                break;
-            }           
-		}
-	}
-}
-
-void SDLMainWindow::gba_main(std::string filename)
-{
-	//constexpr uint32_t fps = 60; 
-	//constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
-	//uint64_t next_time = current_time() + screen_ticks_per_frame;
-    gba.reset(filename);
-    init_sdl(gameboyadvance::SCREEN_WIDTH,gameboyadvance::SCREEN_HEIGHT);
-
-	FpsCounter fps_counter;
-
-	/* setup our controller */
-	GbaControllerInput controller;
-	controller.init();
-
-	for(;;)
-	{
-		fps_counter.reading_start();
-
-		gba_handle_input(controller);
-
-		controller.update(gba);
-
-		gba.run();
-		gba_render();
-
-		// throttle the emulation
-		if(gba.throttle_emu)
-		{
-        	//SDL_Delay(time_left(next_time));
-			SDL_GL_SetSwapInterval(1);
-		}
-
-		else
-		{
-			//SDL_Delay(time_left(next_time) / 8);
-			SDL_GL_SetSwapInterval(0);
-		}
-
-		fps_counter.reading_end();
-
-		SDL_SetWindowTitle(window,fmt::format("albion: {}",fps_counter.get_fps()).c_str());
-
-		//next_time = current_time() + screen_ticks_per_frame;
-	#ifdef DEBUG
-		if(gba.debug.is_halted())
-		{
-			gba.debug.debug_input();
-		}
-	#endif
-	}
-}
 
 SDLMainWindow::~SDLMainWindow()
 {
@@ -435,4 +132,71 @@ SDLMainWindow::~SDLMainWindow()
 
     SDL_QuitSubSystem(SDL_INIT_EVERYTHING);  
 }
+
+
+void SDLMainWindow::main(std::string filename)
+{
+	SDL_GL_SetSwapInterval(1);
+
+	//constexpr uint32_t fps = 60; 
+	//constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
+	//uint64_t next_time = current_time() + screen_ticks_per_frame;
+	init(filename);
+
+	FpsCounter fps_counter;
+
+
+    for(;;)
+    {
+		fps_counter.reading_start();
+		auto control = input.handle_input(window);
+		
+		pass_input_to_core();
+
+		run_frame();
+
+		switch(control)
+		{
+			case emu_control::quit_t:
+			{
+				core_quit();
+				break;
+			}
+
+			case emu_control::throttle_t:
+			{
+				//SDL_Delay(time_left(next_time));
+				SDL_GL_SetSwapInterval(1);
+				core_throttle();
+				break;
+			}
+
+			case emu_control::unbound_t:
+			{
+				//SDL_Delay(time_left(next_time) / 8);
+				SDL_GL_SetSwapInterval(0);
+				core_unbound();
+				break;
+			}
+
+			case emu_control::break_t:
+			{
+				debug_halt();
+				break;
+			}
+
+			case emu_control::none_t: break;
+		}
+
+		fps_counter.reading_end();
+
+		SDL_SetWindowTitle(window,fmt::format("albion: {}",fps_counter.get_fps()).c_str());
+
+		//next_time = current_time() + screen_ticks_per_frame;
+		
+		// we hit a breakpoint go back to the prompt
+		handle_debug();
+    }	
+}
+
 #endif

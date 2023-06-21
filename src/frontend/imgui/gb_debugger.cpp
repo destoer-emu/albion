@@ -12,7 +12,7 @@ void ImguiMainWindow::gameboy_run_frame()
 {
     try
     {
-        gb_controller.update(gb);
+        gb.handle_input(input.controller);
   
         gb.run();
     #ifdef DEBUG

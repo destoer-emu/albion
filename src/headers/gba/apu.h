@@ -1,7 +1,7 @@
 #pragma once
 #include <albion/lib.h>
 #include <albion/debug.h>
-#include <frontend/gba/playback.h>
+#include <frontend/playback.h>
 #include <gba/forward_def.h>
 #include <gba/apu_io.h>
 #include <gb/apu.h>
@@ -70,7 +70,7 @@ struct Apu
 
     ApuIo apu_io;
 
-    GbaPlayback playback;
+    Playback playback;
     gameboy_psg::Psg psg;
 
     Mem &mem;

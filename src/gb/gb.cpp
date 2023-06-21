@@ -1,5 +1,5 @@
 #include <gb/gb.h>
-#include <albion/key.h>
+#include <albion/input.h>
 
 namespace gameboy
 {
@@ -42,70 +42,6 @@ void GB::change_breakpoint_enable(bool enabled)
 	debug.breakpoints_enabled = enabled;
 }
 #endif
-
-void GB::key_input(int key, bool pressed)
-{
-
-
-	if(pressed)
-	{
-		switch(static_cast<emu_key>(key))
-		{
-			case emu_key::a: key_pressed(button::a); break;
-			case emu_key::s: key_pressed(button::b); break;
-			case emu_key::enter: key_pressed(button::start); break;
-			case emu_key::space: key_pressed(button::select); break;
-			case emu_key::right: key_pressed(button::right); break;
-			case emu_key::left: key_pressed(button::left); break;
-			case emu_key::up: key_pressed(button::up); break;
-			case emu_key::down: key_pressed(button::down); break;
-			case emu_key::k:
-			{
-				apu.playback.stop();
-				throttle_emu = false;
-				#ifdef FRONTEND_IMGUI
-				SDL_GL_SetSwapInterval(0); // Disable vsync
-				#endif
-				break;
-			}
-
-			case emu_key::l:
-			{
-				apu.playback.start();
-				throttle_emu = true;
-				#ifdef FRONTEND_IMGUI
-				SDL_GL_SetSwapInterval(1); // Enable vsync
-				#endif						
-				break;
-			}
-
-			default: break;
-		}
-	}
-
-	else // released
-	{
-		switch(static_cast<emu_key>(key))
-		{
-			case emu_key::a: key_released(button::a); break;
-			case emu_key::s: key_released(button::b); break;
-			case emu_key::enter: key_released(button::start); break;
-			case emu_key::space: key_released(button::select); break;
-			case emu_key::right: key_released(button::right); break;
-			case emu_key::left: key_released(button::left); break;
-			case emu_key::up: key_released(button::up); break;
-			case emu_key::down: key_released(button::down); break;
-			default: break;
-		}
-	}
-}
-
-// our "frontend" will call these
-void GB::key_released(button b)
-{
-	auto key = static_cast<int>(b); 
-	cpu.joypad_state = set_bit(cpu.joypad_state, key);
-}
 
 
 // need to do alot more integrity checking on data in these :)
@@ -172,6 +108,48 @@ catch(std::exception &ex)
 }
 
 }
+
+void GB::handle_input(Controller& controller)
+{
+	for(auto& event : controller.input_events)
+	{
+		switch(event.input)
+		{
+			case controller_input::start: key_input(button::start,event.down); break;
+			case controller_input::select: key_input(button::select,event.down); break;
+			case controller_input::a: key_input(button::a,event.down); break;
+			case controller_input::x: key_input(button::b,event.down); break;
+
+			case controller_input::up: key_input(button::up,event.down); break;
+			case controller_input::down: key_input(button::down,event.down); break;
+			case controller_input::left: key_input(button::left,event.down); break;
+			case controller_input::right: key_input(button::right,event.down); break;
+
+			default: break;
+		}
+	}
+}
+
+void GB::key_input(button b, b32 down)
+{
+	if(down)
+	{
+		key_pressed(b);
+	}
+
+	else
+	{
+		key_released(b);
+	}
+}
+
+// our "frontend" will call these
+void GB::key_released(button b)
+{
+	auto key = static_cast<int>(b); 
+	cpu.joypad_state = set_bit(cpu.joypad_state, key);
+}
+
 
 void GB::key_pressed(button b)
 {

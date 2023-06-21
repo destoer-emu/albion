@@ -45,8 +45,7 @@ using namespace gl;
 #include <stdio.h>
 #include <albion/lib.h>
 #include <albion/emulator.h>
-#include <frontend/gb/controller.h>
-#include <frontend/gba/controller.h>
+#include <frontend/input.h>
 
 
 
@@ -201,8 +200,7 @@ private:
     gameboy::GB gb;
     gameboyadvance::GBA gba;
     nintendo64::N64 n64;
-    GbControllerInput gb_controller;
-    GbaControllerInput gba_controller;
+    Input input;
 
     enum class current_window
     {

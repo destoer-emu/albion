@@ -1,5 +1,5 @@
 #include <gba/gba.h>
-#include <albion/key.h>
+#include <albion/input.h>
 
 
 namespace gameboyadvance
@@ -72,40 +72,27 @@ void GBA::run()
 
 
 
-void GBA::key_input(int key, bool pressed)
+void GBA::handle_input(Controller& controller)
 {
-	switch(static_cast<emu_key>(key))
+	for(auto& event : controller.input_events)
 	{
-		case emu_key::enter: button_event(button::start,pressed); break;		
-		case emu_key::space: button_event(button::select,pressed); break;
-		case emu_key::down: button_event(button::down,pressed); break;
-		case emu_key::up: button_event(button::up,pressed); break;
-		case emu_key::left: button_event(button::left,pressed); break;
-		case emu_key::right: button_event(button::right,pressed); break;
-		case emu_key::a: button_event(button::a,pressed); break;
-		case emu_key::s: button_event(button::b,pressed); break;
-        case emu_key::d: button_event(button::l,pressed); break;
-        case emu_key::f: button_event(button::r,pressed); break;
-		case emu_key::k:
-		{
-			apu.playback.stop();
-			throttle_emu = false;
-			#ifdef FRONTEND_IMGUI
-			SDL_GL_SetSwapInterval(0); // Disable vsync
-			#endif
-			break;
-		}
+		const b32 pressed = event.down;
 
-		case emu_key::l:
+		switch(event.input)
 		{
-			apu.playback.start();
-			throttle_emu = true;
-			#ifdef FRONTEND_IMGUI
-			SDL_GL_SetSwapInterval(1); // Enable vsync
-			#endif						
-			break;
+			case controller_input::start: button_event(button::start,pressed); break;		
+			case controller_input::select: button_event(button::select,pressed); break;
+			case controller_input::down: button_event(button::down,pressed); break;
+			case controller_input::up: button_event(button::up,pressed); break;
+			case controller_input::left: button_event(button::left,pressed); break;
+			case controller_input::right: button_event(button::right,pressed); break;
+			case controller_input::a: button_event(button::a,pressed); break;
+			case controller_input::x: button_event(button::b,pressed); break;
+			case controller_input::left_trigger: button_event(button::l,pressed); break;
+			case controller_input::right_trigger: button_event(button::r,pressed); break;
+
+			default: break;
 		}
-		default: break;
 	}
 }
 

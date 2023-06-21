@@ -1,10 +1,6 @@
 #pragma once
 #ifdef FRONTEND_SDL
-#include <gb/gb.h>
-#include <gba/gba.h>
-#include <n64/n64.h>
-#include <frontend/gb/controller.h>
-#include <frontend/gba/controller.h>
+#include <frontend/input.h>
 
 #define SDL_MAIN_HANDLED
 #ifdef _WIN32
@@ -13,39 +9,43 @@
 #include <SDL2/SDL.h>
 #endif
 
+
 class SDLMainWindow
 {
 public:
-    SDLMainWindow(std::string filename);
     ~SDLMainWindow();
+    void main(std::string filename);
 
-private:
+protected:
+    virtual void init(const std::string& filename) = 0;
+    virtual void pass_input_to_core() = 0;
+    virtual void run_frame() = 0;
+    virtual void handle_debug() = 0;
+    virtual void core_quit() = 0;
+    virtual void core_throttle() = 0;
+    virtual void core_unbound() = 0;
+    virtual void debug_halt() = 0;
+
+
+
+
 
     void init_sdl(u32 x, u32 y);
-    void create_texture(u32 x, u32 y);
-
-    void gameboy_render();
-    void gameboy_handle_input(GbControllerInput &controller);
-    void gameboy_main(std::string filename);
-
-    void gba_render();
-    void gba_handle_input(GbaControllerInput &controller);
-    void gba_main(std::string filename);
-
-    void n64_main(std::string filename);
-    void n64_render();
-    void n64_handle_input();
-
-    // main emu instance
-    gameboy::GB gb;
-    gameboyadvance::GBA gba;
-    nintendo64::N64 n64;
+    void create_texture(u32 x, u32 y); 
+    void render(const u32* data);
 
     // sdl gfx
 	SDL_Window * window = NULL;
 	SDL_Renderer * renderer = NULL;
 	SDL_Texture * texture = NULL;
-    int X;
-    int Y;    
+    s32 X;
+    s32 Y;
+
+    Input input;
+
+    b32 throttle_emu;       
 };
+
+void start_emu(std::string filename);
+
 #endif

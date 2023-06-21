@@ -1,6 +1,6 @@
 #pragma once
 #include <albion/lib.h>
-#include <frontend/gb/playback.h>
+#include <frontend/playback.h>
 #include <gb/forward_def.h>
 #include <gb/mem_constants.h>
 #include <gb/scheduler.h>
@@ -332,7 +332,7 @@ struct Apu
 	}
 
 	gameboy_psg::Psg psg;
-	GbPlayback playback;
+	Playback playback;
 
 	bool is_cgb;
 

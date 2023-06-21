@@ -10,8 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 
 #set(FRONTEND "QT")
-set(FRONTEND "SDL")
-#set(FRONTEND "IMGUI")
+#set(FRONTEND "SDL")
+set(FRONTEND "IMGUI")
 #set(FRONTEND "DESTOER")
 
 # external frontend
@@ -22,22 +22,26 @@ set(FRONTEND "SDL")
 if(${FRONTEND} STREQUAL "IMGUI")
 	add_definitions(-DAUDIO_ENABLE -DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL -DFETCH_SPEEDHACK)
 	add_definitions(-DFRONTEND_IMGUI -DIMGUI_IMPL_OPENGL_LOADER_GLEW -DDEBUG -DLOG_CONSOLE)
+
+	# individual cores not supported in imgui
+	set(GB "TRUE")
+	set(GBA "TRUE")
+	set(N64 "TRUE")
+
 endif()
 
 if(${FRONTEND} STREQUAL "SDL")
 	add_definitions(-DAUDIO_ENABLE -DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL -DDEBUG -DFETCH_SPEEDHACK)
 	add_definitions(-DFRONTEND_SDL)
+
+	set(N64 "TRUE")
+
 endif()
 
 
 if(${FRONTEND} STREQUAL "DESTOER")
 	add_definitions(-DAUDIO_ENABLE -DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL -DDEBUG -DFETCH_SPEEDHACK)
 	add_definitions(-DFRONTEND_DESTOER)
-endif()
-
-if(${FRONTEND} STREQUAL "QT") # not supported yet come back to this
-	add_definitions(-DAUDIO_ENABLE -DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL -DDEBUG -DFETCH_SPEEDHACK)
-	add_definitions(-DFRONTEND_QT)
 endif()
 
 if(${FRONTEND} STREQUAL "HEADLESS")
@@ -52,37 +56,17 @@ endif()
 
 # main source files
 file(GLOB src_files
-	"src/*.cpp"
+	"src/main.cpp"
 	"src/common/albion/*.cpp"
 	"src/frontend/gb/*.cpp"
 	"src/frontend/gba/*.cpp"
 	"src/frontend/*.cpp"
 )
 
-add_library(n64 STATIC "src/n64/n64.cpp")
-
-file(GLOB gb_files
-	"src/gb/*.cpp"	
-    "src/gb/cpu/*.cpp"
-    "src/gb/apu/*.cpp"
-	"src/gb/ppu/*.cpp"
-    "src/gb/memory/*.cpp"
-)
-add_library(gb STATIC ${gb_files})
-
-file(GLOB gba_files
-	"src/gba/*.cpp"
-	"src/gba/cpu/*.cpp"
-	"src/gba/memory/*.cpp"
-	"src/gba/ppu/*.cpp"
-	"src/gba/apu/*.cpp"
-)
-add_library(gba STATIC ${gba_files})
-
 # add some includes
 include_directories("src/headers")
 include_directories("src/common/thirdparty")
-include_directories("src/common/thirdparty/imgui")
+
 include_directories("src")
 
 #destoer lib
@@ -91,6 +75,7 @@ add_definitions(-DFORWARD_DEF_DESTOER_LIB)
 
 if(${FRONTEND} STREQUAL "IMGUI")
 	include_directories("/usr/include/SDL2")
+	include_directories("src/common/thirdparty/imgui")
 	file(GLOB frontend_files
 		"src/frontend/imgui/*.cpp"
 		"src/common/thirdparty/imgui/*.cpp"
@@ -99,15 +84,10 @@ if(${FRONTEND} STREQUAL "IMGUI")
 	)
 endif()
 
-if(${FRONTEND} STREQUAL "QT")
-	file(GLOB frontend_files
-		"src/frontend/qt/*.cpp"
-	)
-endif()
 
 if(${FRONTEND} STREQUAL "SDL")
 	file(GLOB frontend_files
-		"src/frontend/sdl/*.cpp"
+		"src/frontend/sdl/sdl_window.cpp"
 	)
 endif()
 
@@ -120,20 +100,8 @@ if(${FRONTEND} STREQUAL "DESTOER")
 endif()
 
 
-if(${FRONTEND} STREQUAL "QT")
-	if(WIN32)
-		add_executable(albion  WIN32 ${src_files} ${frontend_files})
-	else()
-		add_executable(albion  ${src_files} ${frontend_files})
-	endif()
-else()
-	add_executable(albion ${src_files} ${frontend_files})
-endif()
 
-
-
-
-
+add_executable(albion  ${src_files} ${frontend_files})
 
 # make these paths less of a pain to modify :)
 
@@ -173,38 +141,64 @@ if(WIN32)
     include_directories("C:/SDL2-2.0.14/include")
 else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -march=native -pthread -O1 -fomit-frame-pointer -Wno-missing-braces")
-if(${FRONTEND} STREQUAL "HEADLESS")
 
-else ()
-	target_link_libraries(albion SDL2)
+	if(${FRONTEND} STREQUAL "HEADLESS")
+
+	else ()
+		target_link_libraries(albion SDL2)
+	endif()
 endif()
+
+
+
+
+
+# fmt lib
+add_subdirectory(src/common/thirdparty/fmt)
+
+if(DEFINED N64)
+	add_definitions(-DN64_ENABLED)
+	add_library(n64 STATIC "src/n64/n64.cpp")
+
+	target_link_libraries(albion n64)
+endif()
+
+if(DEFINED GBA)
+	file(GLOB gba_files
+		"src/gba/*.cpp"
+		"src/gba/cpu/*.cpp"
+		"src/gba/memory/*.cpp"
+		"src/gba/ppu/*.cpp"
+		"src/gba/apu/*.cpp"
+	)
+	add_definitions(-DGBA_ENABLED)
+	add_library(gba STATIC ${gba_files})
+
+	# TODO: gba requires gb for psg support 
+	# we need to split the files up
+
+	target_link_libraries(albion gba)
+endif()
+
+if(DEFINED GB)
+	file(GLOB gb_files
+		"src/gb/*.cpp"	
+		"src/gb/cpu/*.cpp"
+		"src/gb/apu/*.cpp"
+		"src/gb/ppu/*.cpp"
+		"src/gb/memory/*.cpp"
+	)
+	add_definitions(-DGB_ENABLED)
+
+	add_library(gb STATIC ${gb_files})
+
+
+	target_link_libraries(albion gb)
+endif()
+
+
+target_link_libraries(albion fmt::fmt)
 
 if(${FRONTEND} STREQUAL "IMGUI") 
 	target_link_libraries(albion GL GLEW)
 endif()
-
-endif()
-
-if(${FRONTEND} STREQUAL "QT") 
-	if(WIN32)
-		list(APPEND CMAKE_PREFIX_PATH "C:/Qt/5.9.9/msvc2017_64")
-		find_package(OPENGL REQUIRED)
-		if (OPENGL_FOUND)
-			include_directories(${OPENGL_INCLUDE_DIRS})
-			link_libraries(${OPENGL_LIBRARIES})
-		endif()
-	else()
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lGL")
-	endif()
-
-	set(CMAKE_AUTOMOC ON)
-	set(CMAKE_AUTORCC ON)
-	set(CMAKE_AUTOUIC ON)
-	find_package(Qt5 COMPONENTS Widgets OpenGL REQUIRED)
-	link_libraries(Qt5::Widgets)
-	link_libraries(Qt5::OpenGL)
-endif()
-
-# fmt lib
-add_subdirectory(src/common/thirdparty/fmt)
-target_link_libraries(albion fmt::fmt n64 gb gba)

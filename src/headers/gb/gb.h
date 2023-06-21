@@ -6,6 +6,7 @@
 #include <gb/scheduler.h>
 #include <gb/disass.h>
 #include <albion/lib.h>
+#include <albion/input.h>
 #include <gb/debug.h>
 
 namespace gameboy
@@ -29,7 +30,9 @@ struct GB
     void reset(std::string rom_name, bool with_rom=true, bool use_bios = false);
     void run();
 
-    void key_input(int key,bool pressed);
+
+    void handle_input(Controller& controller);
+    void key_input(button b, b32 down);
     void key_released(button b);
     void key_pressed(button b);
 

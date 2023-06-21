@@ -551,10 +551,6 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
     
     FpsCounter fps;
 
-    gb_controller.init();
-    gba_controller.init();
-
-
     if(rom_name != "")
     {
         new_instance(rom_name,false);
@@ -574,65 +570,74 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
         {
             ImGui_ImplSDL2_ProcessEvent(&event);
             
-            switch(event.type)
+            if(ImGui::GetIO().WantCaptureKeyboard)
             {
-
-                case SDL_QUIT:
-                {
-                    done = true;
-                    break;
-                }
-
-                case SDL_WINDOWEVENT: 
-                {
-                    if(event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
-                    {
-                        done = true;
-                    }
-                    break;
-                }
-
-                case SDL_KEYDOWN:
-                {
-                    if(ImGui::GetIO().WantCaptureKeyboard)
-                    {
-                        break;
-                    }
-
-                    switch(running_type)
-                    {
-                        case emu_type::gameboy: gb.key_input(event.key.keysym.sym,true); break;
-                        case emu_type::gba: gba.key_input(event.key.keysym.sym,true); break;
-                        case emu_type::n64: break;
-                        default: break;
-                    }
-
-                    break;
-                }
-                
-                case SDL_KEYUP:
-                {
-                    if(ImGui::GetIO().WantCaptureKeyboard)
-                    {
-                        break;
-                    }
-
-                    switch(running_type)
-                    {
-                        case emu_type::gameboy: gb.key_input(event.key.keysym.sym,false); break;
-                        case emu_type::gba: gba.key_input(event.key.keysym.sym,false); break;
-                        case emu_type::n64: break;
-
-                        default: break;
-                    }
-
-                    break;
-                }
+                break;
             }
 
+            else
+            {
+                const auto control = input.handle_input(window);
+
+                switch(control)
+                {
+                    case emu_control::quit_t:
+                    {
+                        done = true;
+                        break;
+                    }
+
+                    case emu_control::throttle_t:
+                    {
+                        SDL_GL_SetSwapInterval(1);
+                        switch(running_type)
+                        {
+                            case emu_type::gameboy:
+                            {
+                                gb.apu.playback.start();
+                                gb.throttle_emu = true; 
+                            }
+                            case emu_type::n64: break;
+                            case emu_type::gba:
+                            {
+                                gba.apu.playback.start();
+                                gba.throttle_emu = true;                                 
+                            }
+
+                            case emu_type::none: break;
+                        }
+                        break;
+                    }
+
+                    case emu_control::unbound_t:
+                    {
+                        SDL_GL_SetSwapInterval(0);
+                        switch(running_type)
+                        {
+                            case emu_type::gameboy:
+                            {
+                                gb.apu.playback.stop();
+                                gb.throttle_emu = false;                                 
+                            }
+
+                            case emu_type::n64: break;
+                            case emu_type::gba:
+                            {
+                                gba.apu.playback.stop();
+                                gba.throttle_emu = false;                                 
+                            }
+
+                            case emu_type::none: break;
+                        }
+                        break;
+                    }
+
+                    case emu_control::break_t: break;
+
+                    case emu_control::none_t: break;
+                }
+            }
         }
-
-
         
         if(emu_running)
         {

@@ -7,6 +7,7 @@
 #include <gba/scheduler.h>
 #include <gba/debug.h>
 #include <albion/debug.h>
+#include <albion/input.h>
 
 namespace gameboyadvance
 {
@@ -27,7 +28,7 @@ struct GBA
     
     
     void button_event(button b, bool down); //actual hanlder
-    void key_input(int key, bool pressed); // takes the input and passes it on
+    void handle_input(Controller& controller);
 
 #ifdef DEBUG
     void change_breakpoint_enable(bool enabled);
