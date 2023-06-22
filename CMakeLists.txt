@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.10)
 project(albion)
 
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 
@@ -153,9 +153,6 @@ endif()
 
 
 
-# fmt lib
-add_subdirectory(src/common/thirdparty/fmt)
-
 if(DEFINED N64)
 	add_definitions(-DN64_ENABLED)
 	add_library(n64 STATIC "src/n64/n64.cpp")
@@ -196,8 +193,6 @@ if(DEFINED GB)
 	target_link_libraries(albion gb)
 endif()
 
-
-target_link_libraries(albion fmt::fmt)
 
 if(${FRONTEND} STREQUAL "IMGUI") 
 	target_link_libraries(albion GL GLEW)

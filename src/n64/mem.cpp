@@ -795,7 +795,7 @@ void write_physical(N64 &n64, u32 addr, access_type v)
 
     else
     {
-        std::cout << fmt::format("write_mem: unknown physical address: {:8x}:{:x}\n",addr,v);
+        std::cout << std::format("write_mem: unknown physical address: {:8x}:{:x}\n",addr,v);
         exit(1);
     }    
 }

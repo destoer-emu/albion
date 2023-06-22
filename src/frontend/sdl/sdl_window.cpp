@@ -190,7 +190,7 @@ void SDLMainWindow::main(std::string filename)
 
 		fps_counter.reading_end();
 
-		SDL_SetWindowTitle(window,fmt::format("albion: {}",fps_counter.get_fps()).c_str());
+		SDL_SetWindowTitle(window,std::format("albion: {}",fps_counter.get_fps()).c_str());
 
 		//next_time = current_time() + screen_ticks_per_frame;
 		

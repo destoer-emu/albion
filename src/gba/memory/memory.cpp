@@ -920,7 +920,7 @@ void Mem::write_io_regs(u32 addr,u8 v)
 
         default: // here we will handle open bus when we have all our io regs done :)
         { 
-            //auto err = fmt::format("[io {:08x}] unhandled write at {:08x}:{:x}",cpu.pc_actual,addr,v);
+            //auto err = std::format("[io {:08x}] unhandled write at {:08x}:{:x}",cpu.pc_actual,addr,v);
             //throw std::runtime_error(err);
             break;
         }
@@ -1176,7 +1176,7 @@ u8 Mem::read_io_regs(u32 addr)
 
         default:
         {
-            //auto err = fmt::format("[io {:08x}] unhandled read at {:08x}",cpu.pc_actual,addr);
+            //auto err = std::format("[io {:08x}] unhandled read at {:08x}",cpu.pc_actual,addr);
             //std::cout << err << "\n";
             //throw std::runtime_error(err);
             // open bus

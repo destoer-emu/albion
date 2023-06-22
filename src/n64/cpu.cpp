@@ -198,7 +198,7 @@ void step(N64 &n64)
     Opcode op;
     init_opcode(op,opcode);
 
-    //std::cout << fmt::format("{:16x}: {}\n",n64.cpu.pc,disass_opcode(op,n64.cpu.pc_next));
+    //std::cout << std::format("{:16x}: {}\n",n64.cpu.pc,disass_opcode(op,n64.cpu.pc_next));
     
     skip_instr(n64.cpu);
 

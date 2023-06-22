@@ -160,7 +160,7 @@ std::string Disass::disass_thumb_load_store_sp(u16 opcode)
 
     std::string instr = l ? "ldr" : "str";
 
-    return fmt::format("{} {}, [sp,#0x{:x}]",instr,user_regs_names[rd],nn);
+    return std::format("{} {}, [sp,#0x{:x}]",instr,user_regs_names[rd],nn);
 }
 
 std::string Disass::disass_thumb_sp_add(u16 opcode)
@@ -171,19 +171,19 @@ std::string Disass::disass_thumb_sp_add(u16 opcode)
 
     if(u)
     {
-        return fmt::format("add sp, #0x{:x}",nn);
+        return std::format("add sp, #0x{:x}",nn);
     }
 
     else
     {
-        return fmt::format("add sp, -#0x{:x}",nn);
+        return std::format("add sp, -#0x{:x}",nn);
     }
 }
 
 std::string Disass::disass_thumb_swi(u16 opcode)
 {
     u8 nn = opcode & 0xff;
-    return fmt::format("swi #0x{:x}",nn);
+    return std::format("swi #0x{:x}",nn);
 }
 
 std::string Disass::disass_thumb_load_store_reg(u16 opcode)
@@ -195,10 +195,10 @@ std::string Disass::disass_thumb_load_store_reg(u16 opcode)
 
     const static char *names[4] = {"str","strb","ldr","ldrb"};
 
-    std::string addr_str = fmt::format("{},[{},{}]",user_regs_names[rd],
+    std::string addr_str = std::format("{},[{},{}]",user_regs_names[rd],
         user_regs_names[rb],user_regs_names[ro]);
 
-    return fmt::format("{} {}",names[op],addr_str);
+    return std::format("{} {}",names[op],addr_str);
 }
 
 std::string Disass::disass_thumb_get_rel_addr(u16 opcode)
@@ -209,13 +209,13 @@ std::string Disass::disass_thumb_get_rel_addr(u16 opcode)
 
     if(pc)
     {
-        return fmt::format("add {},pc,#0x{:x}",
+        return std::format("add {},pc,#0x{:x}",
             user_regs_names[rd],offset);
     }
 
     else
     {
-        return fmt::format("add {},sp,#0x{:x}",
+        return std::format("add {},sp,#0x{:x}",
             user_regs_names[rd],offset);
     }
 }
@@ -225,7 +225,7 @@ std::string Disass::disass_thumb_branch(u16 opcode)
     int32_t offset = sign_extend<int32_t>(opcode & 0x7ff,11) * 2;
     u32 res = pc+offset+ARM_HALF_SIZE;
 
-    return fmt::format("b #0x{:08x}",res);
+    return std::format("b #0x{:08x}",res);
 }
 
 std::string Disass::disass_thumb_load_store_half(u16 opcode)
@@ -236,7 +236,7 @@ std::string Disass::disass_thumb_load_store_half(u16 opcode)
 
     std::string instr = is_set(opcode,11) ? "ldrh" : "strh";
 
-    return fmt::format("{} {}, [{} #0x{:x}]",instr,user_regs_names[rd],
+    return std::format("{} {}, [{} #0x{:x}]",instr,user_regs_names[rd],
         user_regs_names[rb],nn);    
 }
 
@@ -248,12 +248,12 @@ std::string Disass::disass_thumb_load_store_sbh(u16 opcode)
 
     const static char *names[4] = {"strh","ldsb","ldrh","ldsh"};
 
-    std::string addr_str = fmt::format("{},[{},{}]",user_regs_names[rd],
+    std::string addr_str = std::format("{},[{},{}]",user_regs_names[rd],
         user_regs_names[rb],user_regs_names[ro]);
 
     int op = (opcode >> 10) & 0x3;
 
-    return fmt::format("{} {}",names[op],addr_str);
+    return std::format("{} {}",names[op],addr_str);
 }
 
 std::string Disass::disass_thumb_ldst_imm(u16 opcode)
@@ -269,28 +269,28 @@ std::string Disass::disass_thumb_ldst_imm(u16 opcode)
     {
         case 0b00: // str
         {  
-            return fmt::format("str {},[{},#0x{:x}]",user_regs_names[rd],
+            return std::format("str {},[{},#0x{:x}]",user_regs_names[rd],
                 user_regs_names[rb],imm*4);
             break;
         }
 
         case 0b01: // ldr
         {
-            return fmt::format("ldr {},[{},#0x{:x}]",user_regs_names[rd],
+            return std::format("ldr {},[{},#0x{:x}]",user_regs_names[rd],
                 user_regs_names[rb],imm*4);
             break;            
         }
 
         case 0b10: // strb
         {
-            return fmt::format("strb {},[{},#0x{:x}]",user_regs_names[rd],
+            return std::format("strb {},[{},#0x{:x}]",user_regs_names[rd],
                 user_regs_names[rb],imm);
             break;
         }
 
         case 0b11: // ldrb
         {
-            return fmt::format("ldrb {},[{},#0x{:x}]",user_regs_names[rd],
+            return std::format("ldrb {},[{},#0x{:x}]",user_regs_names[rd],
                 user_regs_names[rb],imm);            
             break;
         }
@@ -319,25 +319,25 @@ std::string Disass::disass_thumb_hi_reg_ops(u16 opcode)
     {
         case 0b00: // add
         {
-            return fmt::format("add {},{}",user_regs_names[rd],user_regs_names[rs]);
+            return std::format("add {},{}",user_regs_names[rd],user_regs_names[rs]);
             break;
         }
 
         case 0b01: // cmp
         {
-            return fmt::format("cmp {},{}",user_regs_names[rd],user_regs_names[rs]);
+            return std::format("cmp {},{}",user_regs_names[rd],user_regs_names[rs]);
             break;
         }
 
         case 0b10: // mov
         {
-            return fmt::format("mov {},{}",user_regs_names[rd],user_regs_names[rs]);
+            return std::format("mov {},{}",user_regs_names[rd],user_regs_names[rs]);
             break;
         }
 
         case 0b11: // bx
         {
-            return fmt::format("bx {}",user_regs_names[rs]);
+            return std::format("bx {}",user_regs_names[rs]);
             break;
         }
     }
@@ -362,7 +362,7 @@ std::string Disass::disass_thumb_push_pop(u16 opcode)
     {
         if(is_set(reg_range,i))
         {
-            reg_str += fmt::format("r{},",i);
+            reg_str += std::format("r{},",i);
         }
     }
     if(pop)
@@ -377,7 +377,7 @@ std::string Disass::disass_thumb_push_pop(u16 opcode)
             reg_str[reg_str.size()-1] = '}';
         }
 
-        return fmt::format("pop {}",reg_str);
+        return std::format("pop {}",reg_str);
     }
 
     else // push
@@ -391,7 +391,7 @@ std::string Disass::disass_thumb_push_pop(u16 opcode)
         {
             reg_str[reg_str.size()-1] = '}';
         }
-        return fmt::format("push {}",reg_str);
+        return std::format("push {}",reg_str);
     }
 
 }
@@ -412,14 +412,14 @@ std::string Disass::disass_thumb_multiple_load_store(u16 opcode)
     {
         if(is_set(reg_range,i))
         {
-            reg_str += fmt::format("r{},",i);
+            reg_str += std::format("r{},",i);
         }
     }
 
     // set last element to a '}'
     reg_str[reg_str.length()-1] = '}';
 
-    return fmt::format("{} {}!,{}",instr,user_regs_names[rb],reg_str);
+    return std::format("{} {}!,{}",instr,user_regs_names[rb],reg_str);
 
 }
 
@@ -434,22 +434,22 @@ std::string Disass::disass_thumb_add_sub(u16 opcode)
     {
         case 0b00: // add reg
         { 
-            return fmt::format("add {},{},{}",user_regs_names[rd],
+            return std::format("add {},{},{}",user_regs_names[rd],
                 user_regs_names[rs],user_regs_names[rn]);
         }
         case 0b01: // sub reg
         { 
-            return fmt::format("sub {},{},{}",user_regs_names[rd],
+            return std::format("sub {},{},{}",user_regs_names[rd],
                 user_regs_names[rs],user_regs_names[rn]);
         }        
         case 0b10: // add imm
         { 
-            return fmt::format("add {},{},#0x{:x}",user_regs_names[rd],
+            return std::format("add {},{},#0x{:x}",user_regs_names[rd],
                 user_regs_names[rs],rn);
         }        
         case 0b11: // sub imm
         { 
-            return fmt::format("sub {},{},#0x{:x}",user_regs_names[rd],
+            return std::format("sub {},{},#0x{:x}",user_regs_names[rd],
                 user_regs_names[rs],rn);
         }        
     }
@@ -471,7 +471,7 @@ std::string Disass::disass_thumb_alu(u16 opcode)
         "orr","mul","bic","mvn",
     };
 
-    return fmt::format("{} {},{}",names[op],user_regs_names[rd],
+    return std::format("{} {},{}",names[op],user_regs_names[rd],
         user_regs_names[rs]);
 }
 
@@ -492,7 +492,7 @@ std::string Disass::disass_thumb_long_bl(u16 opcode)
     offset1 = sign_extend<int32_t>(offset1,23);
 
     u32 addr = (offset2 << 1) + (pc + offset1);
-    return fmt::format("bl #0x{:08x} ; {}",addr, first? "first" : "second");
+    return std::format("bl #0x{:08x} ; {}",addr, first? "first" : "second");
 
 }
 
@@ -508,7 +508,7 @@ std::string Disass::disass_thumb_mcas_imm(u16 opcode)
     u8 imm = opcode & 0xff;
 
 
-    return fmt::format("{} {}, #0x{:02x}",names[op],user_regs_names[rd],imm);
+    return std::format("{} {}, #0x{:02x}",names[op],user_regs_names[rd],imm);
 }
 
 std::string Disass::disass_thumb_ldr_pc(u16 opcode)
@@ -518,7 +518,7 @@ std::string Disass::disass_thumb_ldr_pc(u16 opcode)
     // 0 - 1020 in offsets of 4
     int offset = (opcode & 0xff) * 4;
 
-    return fmt::format("ldr {}, [pc,#0x{:x}]",user_regs_names[rd],offset);
+    return std::format("ldr {}, [pc,#0x{:x}]",user_regs_names[rd],offset);
 }
 
 std::string Disass::disass_thumb_mov_reg_shift(u16 opcode)
@@ -530,7 +530,7 @@ std::string Disass::disass_thumb_mov_reg_shift(u16 opcode)
 
     int type = (opcode >> 11) & 0x3;
 
-    return fmt::format("{} {},{},#0x{:x}",shift_names[type],user_regs_names[rd],user_regs_names[rs],n);
+    return std::format("{} {},{},#0x{:x}",shift_names[type],user_regs_names[rd],user_regs_names[rs],n);
 
 }
 
@@ -541,7 +541,7 @@ std::string Disass::disass_thumb_cond_branch(u16 opcode)
     u32 addr = (pc+2) + offset*2;
     int cond = (opcode >> 8) & 0xf;
 
-    return fmt::format("b{} #0x{:08x}",suf_array[cond],addr);
+    return std::format("b{} #0x{:08x}",suf_array[cond],addr);
 }
 
 std::string Disass::disass_thumb_unknown(u16 opcode)

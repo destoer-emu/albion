@@ -142,7 +142,7 @@ void ImguiMainWindow::breakpoint_ui_internal(Debug& debug)
         i++;
         Breakpoint b = it.second;    
     
-        std::string break_str = fmt::format(
+        std::string break_str = std::format(
             "{:04x}: {}{}{} {} {:x} {}",b.addr,
                 b.break_setting & static_cast<int>(break_type::read)? "r" : "",
                 b.break_setting & static_cast<int>(break_type::write)? "w" : "",
@@ -314,7 +314,7 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
 
         fps.reading_end();
 
-        SDL_SetWindowTitle(context.window,fmt::format("albion: {}",fps.get_fps()).c_str());
+        SDL_SetWindowTitle(context.window,std::format("albion: {}",fps.get_fps()).c_str());
     }
 
     stop_instance();

@@ -69,7 +69,7 @@ std::string N64Debug::disass_instr(u64 addr)
     Opcode op;
     init_opcode(op,opcode);  
 
-    return fmt::format("{:x}: {}",addr,disass_opcode(op,addr+sizeof(u32)));
+    return std::format("{:x}: {}",addr,disass_opcode(op,addr+sizeof(u32)));
 }
 
 

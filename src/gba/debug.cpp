@@ -60,7 +60,7 @@ void GBADebug::step(const std::vector<Token> &args)
 
 std::string GBADebug::disass_instr(uint64_t addr)
 {
-    return fmt::format("{:x}: {}",addr,
+    return std::format("{:x}: {}",addr,
         disass_thumb? gba.disass.disass_thumb(addr) : gba.disass.disass_arm(addr));
 }
 

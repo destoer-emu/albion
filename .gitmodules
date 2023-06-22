@@ -2,10 +2,6 @@
 	path = src/common/thirdparty/imgui
 	url = https://github.com/ocornut/imgui
 	branch = master
-[submodule "src/common/thirdparty/fmt"]
-	path = src/common/thirdparty/fmt
-	url = https://github.com/fmtlib/fmt
-	branch = master
 [submodule "destoer-lib"]
 	path = destoer-lib
 	url = https://github.com/destoer/destoer-lib.git

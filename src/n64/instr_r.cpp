@@ -5,7 +5,7 @@ namespace nintendo64
 
 void instr_unknown_r(N64 &n64, const Opcode &opcode)
 {
-    const auto err = fmt::format("[cpu {:16x} {}] unknown r opcode {:08x}\n",n64.cpu.pc,disass_opcode(opcode,n64.cpu.pc),opcode.op & 0b11111);
+    const auto err = std::format("[cpu {:16x} {}] unknown r opcode {:08x}\n",n64.cpu.pc,disass_opcode(opcode,n64.cpu.pc),opcode.op & 0b11111);
     n64.debug.trace.print();
     throw std::runtime_error(err);        
 }

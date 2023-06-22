@@ -265,7 +265,7 @@ void Memory::init(std::string rom_name, bool with_rom, bool use_bios)
 
 		if(read_bin(bios_file,bios))
 		{
-			throw std::runtime_error(fmt::format("could not load bios file: {}!",bios_file));
+			throw std::runtime_error(std::format("could not load bios file: {}!",bios_file));
 		}
 	}
 

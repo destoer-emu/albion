@@ -161,7 +161,7 @@ std::string Disass::disass_arm_get_cond_suffix(int opcode)
 
 std::string Disass::disass_arm_swi(uint32_t opcode)
 {
-    return fmt::format("swi {:08x}",opcode & 0x0ffffff);
+    return std::format("swi {:08x}",opcode & 0x0ffffff);
 }
 
 
@@ -188,14 +188,14 @@ std::string Disass::disass_arm_mul(uint32_t opcode)
 
     if(a) // mla
     {
-        return fmt::format("mla{} {},{},{},{}",suffix,
+        return std::format("mla{} {},{},{},{}",suffix,
             user_regs_names[rd],user_regs_names[rm],
             user_regs_names[rs],user_regs_names[rn]);
     }
 
     else // mul
     {
-        return fmt::format("mul{} {},{},{}",suffix,
+        return std::format("mul{} {},{},{}",suffix,
             user_regs_names[rd],user_regs_names[rm],
             user_regs_names[rs]);
     }
@@ -216,7 +216,7 @@ std::string Disass::disass_arm_swap(uint32_t opcode)
         suffix += "b";
     }
 
-    return fmt::format("swp{} {},{},{}",suffix,user_regs_names[rd],
+    return std::format("swp{} {},{},{}",suffix,user_regs_names[rd],
         user_regs_names[rm],user_regs_names[rn]);    
 }
 
@@ -242,13 +242,13 @@ std::string Disass::disass_arm_block_data_transfer(uint32_t opcode)
     {
         if(is_set(rlist,i))
         {
-            reg_str += fmt::format("{},",user_regs_names[i]);
+            reg_str += std::format("{},",user_regs_names[i]);
         }
     }
 
     reg_str[reg_str.size()-1] = '}';
 
-    return fmt::format("{}{} {}{},{}{}",instr,suffix,user_regs_names[rn],
+    return std::format("{}{} {}{},{}{}",instr,suffix,user_regs_names[rn],
         w? "!" : "", reg_str, s? "^" : "");
 
 }
@@ -277,14 +277,14 @@ std::string Disass::disass_arm_hds_data_transfer(uint32_t opcode)
         {
             u8 imm = opcode & 0xf;
             imm |= (opcode >> 4) & 0xf0;
-            addr_str = fmt::format("[{},{}#0x{:02x}]{}",user_regs_names[rn],
+            addr_str = std::format("[{},{}#0x{:02x}]{}",user_regs_names[rn],
                 u? "" : "-",imm,w? "!" : "");
         }
 
         else
         {
             int rm = opcode & 0xf;
-            addr_str = fmt::format("[{},{}{}]{}",user_regs_names[rn],
+            addr_str = std::format("[{},{}{}]{}",user_regs_names[rn],
                 u? "" : "-",user_regs_names[rm],w? "!" : "");
         }
     }
@@ -295,14 +295,14 @@ std::string Disass::disass_arm_hds_data_transfer(uint32_t opcode)
         {
             u8 imm = opcode & 0xf;
             imm |= (opcode >> 8) & 0xf;
-            addr_str = fmt::format("[{}], {}#0x{:02x}",user_regs_names[rn],
+            addr_str = std::format("[{}], {}#0x{:02x}",user_regs_names[rn],
                 u? "" : "-",imm);
         }
 
         else
         {
             int rm = opcode & 0xf;
-            addr_str = fmt::format("[{}], {}{}",user_regs_names[rn],
+            addr_str = std::format("[{}], {}{}",user_regs_names[rn],
                 u? "" : "-",user_regs_names[rm]);
         }
     }
@@ -319,17 +319,17 @@ std::string Disass::disass_arm_hds_data_transfer(uint32_t opcode)
 
             case 1:
             {
-                return fmt::format("ldr{}h {},{}",suffix,user_regs_names[rd],addr_str);
+                return std::format("ldr{}h {},{}",suffix,user_regs_names[rd],addr_str);
             }
 
             case 2:
             {
-                return fmt::format("ldr{}sb {},{}",suffix,user_regs_names[rd],addr_str);
+                return std::format("ldr{}sb {},{}",suffix,user_regs_names[rd],addr_str);
             }
 
             case 3:
             {
-                return fmt::format("ldr{}sh {},{}",suffix,user_regs_names[rd],addr_str);
+                return std::format("ldr{}sh {},{}",suffix,user_regs_names[rd],addr_str);
             }
         }
     }
@@ -345,17 +345,17 @@ std::string Disass::disass_arm_hds_data_transfer(uint32_t opcode)
 
             case 1:
             {
-                return fmt::format("str{}h {},{}",suffix,user_regs_names[rd],addr_str);
+                return std::format("str{}h {},{}",suffix,user_regs_names[rd],addr_str);
             }
 
             case 2:
             {
-                return fmt::format("ldr{}d {},{}",suffix,user_regs_names[rd],addr_str);
+                return std::format("ldr{}d {},{}",suffix,user_regs_names[rd],addr_str);
             }
 
             case 3:
             {
-                return fmt::format("str{}d {},{}",suffix,user_regs_names[rd],addr_str);
+                return std::format("str{}d {},{}",suffix,user_regs_names[rd],addr_str);
             }
         }
     }
@@ -374,7 +374,7 @@ std::string Disass::disass_arm_get_shift_string(uint32_t opcode)
         int rs = (opcode >> 8) & 0xf;
 
         //r1, asr r2
-        return fmt::format("{},{} {}",user_regs_names[rm],shift_names[type],user_regs_names[rs]);
+        return std::format("{},{} {}",user_regs_names[rm],shift_names[type],user_regs_names[rs]);
     }
 
     else // shift type on 5 bit immediate
@@ -384,7 +384,7 @@ std::string Disass::disass_arm_get_shift_string(uint32_t opcode)
 
         if(imm != 0)
         {
-            return fmt::format("{},{} #0x{:x}",user_regs_names[rm],shift_names[type],imm);
+            return std::format("{},{} #0x{:x}",user_regs_names[rm],shift_names[type],imm);
         }
 
         else // depending on the shift it has a behavior
@@ -399,17 +399,17 @@ std::string Disass::disass_arm_get_shift_string(uint32_t opcode)
 
                 case shift_type::lsr: // 32 shift
                 {
-                    return fmt::format("{}, lsr #0x20",user_regs_names[rm]);
+                    return std::format("{}, lsr #0x20",user_regs_names[rm]);
                 }
 
                 case shift_type::asr: // 32 shift
                 {
-                    return fmt::format("{}, asr #0x20",user_regs_names[rm]);
+                    return std::format("{}, asr #0x20",user_regs_names[rm]);
                 }
 
                 case shift_type::ror: // rrx
                 {
-                    return fmt::format("{}, rrx #0x1",user_regs_names[rm],32);
+                    return std::format("{}, rrx #0x1",user_regs_names[rm],32);
                 }
             }
         }            
@@ -424,7 +424,7 @@ std::string Disass::disass_arm_branch_and_exchange(uint32_t opcode)
 
     int rn = opcode & 0xf;
 
-    return fmt::format("bx{} {}",suffix,user_regs_names[rn]);
+    return std::format("bx{} {}",suffix,user_regs_names[rn]);
 }
 
 // psr transfer 
@@ -448,7 +448,7 @@ std::string Disass::disass_arm_psr(uint32_t opcode)
         // msr to psr
         if(is_set(opcode,15)) 
         {
-            output = fmt::format("msr{} {}, {}",suffix,sr,user_regs_names[rm]); 
+            output = std::format("msr{} {}, {}",suffix,sr,user_regs_names[rm]); 
         }
 
         // msr to psr (flag bits only)
@@ -456,12 +456,12 @@ std::string Disass::disass_arm_psr(uint32_t opcode)
         {
             if(is_set(opcode,25))
             {
-                output = fmt::format("msr{} {}_flg, {}",suffix,sr,get_arm_operand2_imm(opcode));
+                output = std::format("msr{} {}_flg, {}",suffix,sr,get_arm_operand2_imm(opcode));
             }
 
             else
             {
-                output = fmt::format("msr{} {}_flg, {}",suffix,sr,user_regs_names[rm]);
+                output = std::format("msr{} {}_flg, {}",suffix,sr,user_regs_names[rm]);
             } 
         }
     }
@@ -469,7 +469,7 @@ std::string Disass::disass_arm_psr(uint32_t opcode)
     else // mrs
     {
         int rd = (opcode >> 12) & 0xf;
-        output = fmt::format("mrs{} {}, {}",suffix,user_regs_names[rd],sr); 
+        output = std::format("mrs{} {}, {}",suffix,user_regs_names[rd],sr); 
     }
     return output;
 }
@@ -487,7 +487,7 @@ std::string Disass::disass_arm_data_processing(uint32_t opcode)
     int rn = (opcode >> 16) & 0xf;
 
     // if i bit its an immediate else its a shifted reg or value
-    std::string operand2 = is_set(opcode,25)? fmt::format("#0x{:08x}",get_arm_operand2_imm(opcode)) : disass_arm_get_shift_string(opcode); 
+    std::string operand2 = is_set(opcode,25)? std::format("#0x{:08x}",get_arm_operand2_imm(opcode)) : disass_arm_get_shift_string(opcode); 
 
     // what instr is it
     int op = (opcode >> 21) & 0xf;
@@ -502,98 +502,98 @@ std::string Disass::disass_arm_data_processing(uint32_t opcode)
 
         case 0x0: // and
         {
-            return fmt::format("and{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
+            return std::format("and{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
             break;           
         }
 
         case 0x1: // eor
         {
-            return fmt::format("eor{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
+            return std::format("eor{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
             break;               
         }
 
         case 0x2: // sub
         {
-            return fmt::format("sub{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
+            return std::format("sub{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
             break;            
         }
 
         case 0x3: // rsb
         {
-            return fmt::format("rsb{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
+            return std::format("rsb{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
             break;            
         }        
 
         case 0x4: // add
         {
-            return fmt::format("add{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
+            return std::format("add{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
             break;
         }
 
         case 0x5: // adc
         {
-            return fmt::format("adc{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
+            return std::format("adc{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
             break;           
         }
 
         case 0x6: //sbc
         {
-            return fmt::format("sbc{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
+            return std::format("sbc{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
             break;
         }
 
         case 0x7: // rsc
         {
-            return fmt::format("rsc{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
+            return std::format("rsc{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
             break;
         }
 
         case 0x8: // tst
         {
-            return fmt::format("tst{} {},{}",suffix,user_regs_names[rn],operand2);
+            return std::format("tst{} {},{}",suffix,user_regs_names[rn],operand2);
             break;
         }
 
         case 0x9: // teq
         {
-            return fmt::format("teq{} {},{}",suffix,user_regs_names[rn],operand2);
+            return std::format("teq{} {},{}",suffix,user_regs_names[rn],operand2);
             break;
         }
 
         case 0xa: // cmp
         {
-            return fmt::format("cmp{} {},{}",suffix,user_regs_names[rn],operand2);
+            return std::format("cmp{} {},{}",suffix,user_regs_names[rn],operand2);
             break;
         }
 
         case 0xb: // cmn
         {
-            return fmt::format("cmn{} {},{}",suffix,user_regs_names[rn],operand2);
+            return std::format("cmn{} {},{}",suffix,user_regs_names[rn],operand2);
             break;
         }
 
 
         case 0xc: // orr
         {
-            return fmt::format("orr{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
+            return std::format("orr{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
             break;
         }
 
         case 0xd: // mov
         {
-            return fmt::format("mov{} {},{}",suffix,user_regs_names[rd],operand2);
+            return std::format("mov{} {},{}",suffix,user_regs_names[rd],operand2);
             break;
         }
 
         case 0xe: // bic
         {
-            return fmt::format("bic{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
+            return std::format("bic{} {},{},{}",suffix,user_regs_names[rd],user_regs_names[rn],operand2);
             break;                       
         }
 
         case 0xf: // mvn
         {
-            return fmt::format("mvn{} {},{}",suffix,user_regs_names[rd],operand2);
+            return std::format("mvn{} {},{}",suffix,user_regs_names[rd],operand2);
             break;            
         }
     }
@@ -619,13 +619,13 @@ std::string Disass::disass_arm_branch(uint32_t opcode)
     // if the link bit is set this acts as a call instr
     if(is_set(opcode,24))
     {
-        output = fmt::format("bl{} #0x{:08x}",suffix,addr);
+        output = std::format("bl{} #0x{:08x}",suffix,addr);
     }
 
 
     else 
     {
-        output = fmt::format("b{} #0x{:08x}",suffix,addr);
+        output = std::format("b{} #0x{:08x}",suffix,addr);
     }
 
     return output;
@@ -662,7 +662,7 @@ std::string Disass::disass_arm_single_data_transfer(uint32_t opcode)
     {
         // 12 bit immediate
         int v = opcode & 0xfff;
-        imm = fmt::format("#0x{:x}",v);
+        imm = std::format("#0x{:x}",v);
     }
 
 
@@ -677,7 +677,7 @@ std::string Disass::disass_arm_single_data_transfer(uint32_t opcode)
     {
         // write back enabled?
         std::string w = is_set(opcode,21) ? "!" : ""; 
-        output = fmt::format("{}{} {},[{},{}]{}",instr,suffix,
+        output = std::format("{}{} {},[{},{}]{}",instr,suffix,
             user_regs_names[rd],user_regs_names[base],imm,w);
     }
 
@@ -686,7 +686,7 @@ std::string Disass::disass_arm_single_data_transfer(uint32_t opcode)
         // if post indexed add a t if writeback set
         // this forces user mode in a system context
         suffix += is_set(opcode,21) ? "t" : "";
-        output = fmt::format("{}{} {},[{}],{}",instr,suffix,user_regs_names[rd],
+        output = std::format("{}{} {},[{}],{}",instr,suffix,user_regs_names[rd],
             user_regs_names[base],imm);
     }
 

@@ -36,7 +36,7 @@ void gb_run_test_helper(const std::vector<std::string> &tests, int seconds)
 
                 if(gb.mem.test_result == emu_test::fail)
                 {
-                    std::cout << fmt::format("{}: fail\n",x);
+                    std::cout << std::format("{}: fail\n",x);
                     fail++;
                     break;
                 }
@@ -45,7 +45,7 @@ void gb_run_test_helper(const std::vector<std::string> &tests, int seconds)
                 {
                     // we are passing so many compared to fails at this point
                     // it doesnt make sense to print them
-                    //std::cout << fmt::format("{}: pass\n",x);
+                    //std::cout << std::format("{}: pass\n",x);
                     pass++;
                     break;
                 }
@@ -55,7 +55,7 @@ void gb_run_test_helper(const std::vector<std::string> &tests, int seconds)
                 // if the test takes longer than 5 seconds time it out
                 if(std::chrono::duration_cast<std::chrono::seconds>(current - start).count() > seconds)
                 {
-                    std::cout << fmt::format("{}: timeout\n",x);
+                    std::cout << std::format("{}: timeout\n",x);
                     timeout++;
                     break;
                 }
@@ -64,7 +64,7 @@ void gb_run_test_helper(const std::vector<std::string> &tests, int seconds)
 
         catch(std::exception &ex)
         {
-            std::cout << fmt::format("{}: aborted {}\n",x,ex.what());
+            std::cout << std::format("{}: aborted {}\n",x,ex.what());
             aborted++;
         }
     }

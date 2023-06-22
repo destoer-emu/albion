@@ -254,7 +254,7 @@ void Cpu::handle_power_state()
             // need a better check here to prevent the emulator just locking up
             if(!cpu_io.interrupt_enable)
             {
-                throw std::runtime_error(fmt::format("[halt] halt locked up at {:08x}",pc_actual));
+                throw std::runtime_error(std::format("[halt] halt locked up at {:08x}",pc_actual));
             }
 
             // tick cycles until we an interrupt fires
@@ -415,7 +415,7 @@ void Cpu::load_registers(cpu_mode mode)
 
         default:
         {
-            auto err = fmt::format("[load-regs {:08x}]unhandled mode switch: {:x}\n",pc_actual,idx);
+            auto err = std::format("[load-regs {:08x}]unhandled mode switch: {:x}\n",pc_actual,idx);
             throw std::runtime_error(err);
         }
     }
@@ -490,7 +490,7 @@ void Cpu::store_registers(cpu_mode mode)
 
         default:
         {
-            auto err = fmt::format("[store-regs {:08x}]unhandled mode switch: {:x}\n",pc_actual,idx);
+            auto err = std::format("[store-regs {:08x}]unhandled mode switch: {:x}\n",pc_actual,idx);
             throw std::runtime_error(err);
         }
     }
@@ -513,7 +513,7 @@ cpu_mode Cpu::cpu_mode_from_bits(u32 v)
     // clearly no program should attempt this 
     // but is their a defined behavior for it?
     debug.trace.print();
-    auto err = fmt::format("unknown mode from bits: {:08x}:{:08x}\n",v,pc_actual);
+    auto err = std::format("unknown mode from bits: {:08x}:{:08x}\n",v,pc_actual);
     throw std::runtime_error(err);
 }
 

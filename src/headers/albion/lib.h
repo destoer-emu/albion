@@ -1,5 +1,5 @@
 #pragma once
-#include <fmt/format.h>
+#include <format>
 #include <string>
 #include <vector>
 #include <array>

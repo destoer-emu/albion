@@ -738,13 +738,13 @@ std::string Disass::disass_op(u16 addr) noexcept
 
                 if(get_symbol(v,symbol))
                 {
-                    const auto str = fmt::format(entry.fmt_str,symbol);
-                    return fmt::format("{} ; {:x}",str,v);               
+                    const auto str = std::format(entry.fmt_str,symbol);
+                    return std::format("{} ; {:x}",str,v);               
                 }
 
                 else
                 {
-                    return fmt::format(entry.fmt_str,fmt::format("{:x}",v));
+                    return std::format(entry.fmt_str,std::format("{:x}",v));
                 }
             }
 
@@ -757,18 +757,18 @@ std::string Disass::disass_op(u16 addr) noexcept
                 //  ld a, (ff00+xx)
                 if(opcode == 0xf0 && get_symbol(0xff00+v,symbol)) 
                 {
-                    return fmt::format("ld a, ({}) ; (ff00+{:x})",symbol,v);
+                    return std::format("ld a, ({}) ; (ff00+{:x})",symbol,v);
                 }
 
                 // ld (0xff00+xx), a
                 else if(opcode == 0xe0 && get_symbol(0xff00+v,symbol))
                 {
-                    return fmt::format("ld ({}), a ; (ff00+{:x})",symbol,v);
+                    return std::format("ld ({}), a ; (ff00+{:x})",symbol,v);
                 }
 
                 else
                 {
-                    return fmt::format(entry.fmt_str,fmt::format("{:x}",v));
+                    return std::format(entry.fmt_str,std::format("{:x}",v));
                 }
             }
 
@@ -780,13 +780,13 @@ std::string Disass::disass_op(u16 addr) noexcept
                 std::string symbol = "";
                 if(get_symbol(v,symbol))
                 {
-                    const auto str = fmt::format(entry.fmt_str,symbol);
-                    return fmt::format("{} ; {:x}",str,v);               
+                    const auto str = std::format(entry.fmt_str,symbol);
+                    return std::format("{} ; {:x}",str,v);               
                 }
 
                 else
                 {
-                    return fmt::format(entry.fmt_str,fmt::format("{:x}",v));
+                    return std::format(entry.fmt_str,std::format("{:x}",v));
                 }
             }
 

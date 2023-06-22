@@ -29,7 +29,7 @@ struct Trace
         for(int i = 0; i < 0x10; i++)
         {
             const auto offset = (idx + i) & 0xf;
-            out += fmt::format("{}: {:8x} -> {:8x}\n",i,history_source[offset],history_target[offset]);
+            out += std::format("{}: {:8x} -> {:8x}\n",i,history_source[offset],history_target[offset]);
         }
         return out;
     }
@@ -101,7 +101,7 @@ public:
 
         if(log_enabled)
         {
-            auto str = fmt::format(x,args...);
+            auto str = std::vformat(x,std::make_format_args(args...));
             log_file << str << "\n";
             log_file.flush();
             #ifdef LOG_CONSOLE
@@ -115,7 +115,7 @@ public:
     void print_console(std::string x,Args... args)
     {
         // assume SDL for now
-        const auto str = fmt::format(x,args...);
+        const auto str = std::vformat(x,std::make_format_args(args...));
 #ifdef FRONTEND_SDL
         std::cout << str;
 #endif 
@@ -137,7 +137,7 @@ public:
     template<typename... Args>
     void print_console(std::string x,Args... args)
     {
-        const auto str = fmt::format(x,args...);
+        const auto str = std::vformat(x,std::make_format_args(args...));
         std::cout << str;
     }
 
