@@ -62,20 +62,25 @@ void GBDebug::step(const std::vector<Token> &args)
 }
 
 
-std::string GBDebug::disass_instr(uint64_t addr)
+std::string GBDebug::disass_instr(u64 addr)
 {
-    uint64_t bank = addr < 0x8000? gb.mem.cart_rom_bank : 0;
+    u64 bank = addr < 0x8000? gb.mem.cart_rom_bank : 0;
     return fmt::format("{:x}:{:x} {}",bank,addr,gb.disass.disass_op(addr));    
 }
 
-uint64_t GBDebug::get_instr_size(uint64_t addr)
+u64 GBDebug::get_instr_size(u64 addr)
 {
     return gb.disass.get_op_sz(addr);
 }
 
-uint8_t GBDebug::read_mem(uint64_t addr)
+u8 GBDebug::read_mem(u64 addr)
 {
     return gb.mem.raw_read(addr);
+}
+
+void GBDebug::write_mem(u64 addr, u8 v)
+{
+    gb.mem.raw_write(addr,v);
 }
 
 void GBDebug::change_breakpoint_enable(bool enable)
@@ -100,7 +105,6 @@ b32 GBDebug::read_var(const std::string &name, u64* out)
 
     return success;
 }
-
 
 }
 

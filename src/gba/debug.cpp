@@ -93,10 +93,14 @@ uint64_t GBADebug::get_instr_size(uint64_t addr)
     return (!disass_thumb * 2) + 2;
 }
 
-// TODO: use the no debug version when we have it
 uint8_t GBADebug::read_mem(uint64_t addr)
 {
     return gba.mem.read_mem<uint8_t>(addr);
+}
+
+void GBADebug::write_mem(uint64_t addr, u8 v)
+{
+    gba.mem.write_mem<uint8_t>(addr, v);
 }
 
 void GBADebug::change_breakpoint_enable(bool enable)

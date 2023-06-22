@@ -3,7 +3,7 @@
 
 void N64Window::init(const std::string& filename)
 {
-    init_sdl(320,240);
+    init_sdl(640,480);
     input.init();
     reset(n64,filename);	
 }

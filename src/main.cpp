@@ -62,14 +62,13 @@ int main(int argc, char *argv[])
 #ifdef FRONTEND_IMGUI
     UNUSED(argc); UNUSED(argv);
 
-    ImguiMainWindow window;
     std::string rom_name = "";
     if(argc == 2)
     {
         rom_name = argv[1];
     }
 
-    window.mainloop(rom_name);
+    mainloop(rom_name);
 #endif
 
 #ifdef FRONTEND_DESTOER

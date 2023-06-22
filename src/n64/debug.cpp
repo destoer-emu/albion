@@ -91,6 +91,11 @@ u8 N64Debug::read_mem(u64 addr)
     return read_u8(n64,addr);
 }
 
+void N64Debug::write_mem(u64 addr, u8 v)
+{
+    write_u8(n64,addr,v);
+}
+
 void N64Debug::change_breakpoint_enable(bool enable)
 {
     UNUSED(enable);

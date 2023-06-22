@@ -29,6 +29,8 @@ void reset(N64 &n64, const std::string &filename)
 
 void run(N64 &n64)
 {
+    n64.rdp.frame_done = false;
+
     // dont know how our vblank setup works
     while(!n64.rdp.frame_done)
     {
@@ -46,7 +48,6 @@ void run(N64 &n64)
         }
         n64.scheduler.service_events();
     }
-    n64.rdp.frame_done = false;
 
     // dont know when the rendering should be finished just do at end for now
     render(n64);

@@ -211,8 +211,6 @@ public:
 protected:
 #ifdef DEBUG
     // internal overrides
-    virtual void change_breakpoint_enable(b32 enable) = 0;
-    virtual u8 read_mem(u64 addr) = 0;
     virtual std::string disass_instr(u64 addr) = 0;
     virtual u64 get_instr_size(u64 addr) = 0;
     virtual void execute_command(const std::vector<Token> &args) = 0;
@@ -227,6 +225,12 @@ protected:
     // is debugged instance halted
     b32 halted = false;    
     b32 quit = false;
+
+    // public overrides
+public:
+    virtual void change_breakpoint_enable(b32 enable) = 0;
+    virtual u8 read_mem(u64 addr) = 0;
+    virtual void write_mem(u64 addr, u8 v) = 0;
 };
 
 

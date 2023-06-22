@@ -45,96 +45,48 @@ using namespace gl;
 #include <stdio.h>
 #include <albion/lib.h>
 #include <albion/emulator.h>
+#include <albion/debug.h>
 #include <frontend/input.h>
+#include "texture.h"
 
 
 
-
-
-#include <gb/gb.h>
-#include <gba/gba.h>
-#include <n64/n64.h>
-
-class Texture
+class ImguiContext
 {
 public:
-    void init_texture(const int X, const int Y);
-    void update_texture();
-    void swap_buffer(std::vector<uint32_t> &other);
-    GLuint get_texture() const;
-    void draw_texture(u32 width_offset, u32 height_offset,u32 factor_x, u32 factor_y);
-    int get_width() const { return x; } 
-    int get_height() const { return y; } 
+    ImguiContext();
+    ~ImguiContext();
 
-    std::vector<uint32_t> buf;
-
-private:
-    int x;
-    int y;
-    GLuint texture;
-    u32 shader_program;
-    bool first_time = true;
+    SDL_Window* window;
+    SDL_GLContext gl_context;
 };
 
 
-class GameboyDisplayViewer
+struct MemRegion
 {
-public:
-    void init();
-    void update(gameboy::GB &gb);
+    MemRegion(const char *n,uint64_t o, uint64_t s) : name(n), offset(o), size(s)
+    {}
 
-    void draw_bg_map();
-    void draw_tiles();
-    void draw_palette();
-
-    bool enabled = false;
-    Texture bg_map;
-    Texture tiles;
-
-    bool bg_map_higher = false;
-
-private:
-    uint32_t palette_bg[32];
-    uint32_t palette_sp[32];
-};
-
-
-class GBADisplayViewer
-{
-public:
-    void init();
-    void update(gameboyadvance::GBA &gb);
-    void draw_palette();
-    void draw_map();
-
-
-    bool enabled = false;
-
-private:
-    static constexpr int PAL_X = 16;
-    static constexpr int PAL_Y = 16;
-    std::array<uint32_t,PAL_X*PAL_Y> palette{0};
-
-    std::array<Texture,4> bg_maps;
+    const char *name;
+    const uint64_t offset;
+    const uint64_t size;
 };
 
 class ImguiMainWindow
 {
 public:
-    ImguiMainWindow();
-    ~ImguiMainWindow();
-    void mainloop(const std::string &rom_name); 
+    ImguiMainWindow(ImguiContext& c,emu_type type) : running_type(type), context(c)
+    {
+
+    }
+
+    void mainloop(const std::string& filename);
+
+    // name for new emu instance?
+    std::string exit_filename = "";
+    b32 load_new_rom = false;
+
 private:
-
-    void start_instance();
-    void stop_instance();
-    void disable_audio();
-    void enable_audio();
-    void new_instance(std::string filename, bool use_bios = false);
-    void load_state(std::string filename);
-    void save_state(std::string filename);
-
-    void handle_file_ui();
 
     enum class file_option
     {
@@ -143,64 +95,6 @@ private:
         save_state
     };
 
-    void do_file_option(file_option option, const std::string &filename, bool use_bios);
-    void file_browser(file_option option, const char *title);
-    void menu_bar(Debug &debug);
-#ifdef DEBUG
-    std::unordered_map<uint64_t,Breakpoint> &get_breakpoint_ref();
-    void draw_breakpoints();
-
-    void write_mem(uint64_t addr,uint8_t v);
-    uint8_t read_mem(uint64_t addr);
-    void draw_memory();
-#endif
-    // Gameboy
-
-    // emulator managment
-    void gameboy_stop_instance();
-    void gameboy_start_instance();
-    void gameboy_new_instance(std::string filename, bool use_bios);
-    void gameboy_reset_instance(std::string filename, bool use_bios);
-    void gameboy_run_frame();
-#ifdef DEBUG
-    // frontend drawing
-    void gameboy_draw_screen(); // unused now we just render to back of window
-
-    // display viewer handled by seperate class
-
-    void gameboy_draw_regs_child();
-    void gameboy_draw_memory();
-    void gameboy_draw_cpu_info();
-#endif
-    // gba
-    void gba_stop_instance();
-    void gba_start_instance();
-    void gba_new_instance(std::string filename);
-    void gba_reset_instance(std::string filename);
-    void gba_run_frame();
-#ifdef DEBUG
-    // frotend drawing
-    void gba_draw_registers_child(); 
-    void gba_draw_cpu_info();
-    void gba_draw_memory();
-#endif
-
-    void n64_stop_instance();
-    void n64_start_instance();
-    void n64_new_instance(std::string filename, bool use_bios = false);
-    void n64_reset_instance(std::string filename, bool use_bios = false);
-    void n64_run_frame();
-
-
-    ImVec2 menubar_size;
-
-     
-    
-    // underlying emulator instance data
-    gameboy::GB gb;
-    gameboyadvance::GBA gba;
-    nintendo64::N64 n64;
-    Input input;
 
     enum class current_window
     {
@@ -218,17 +112,70 @@ private:
 
 
     current_window selected_window = current_window::load_rom;
+
+    // top level ui
+    void handle_input();
+    void render_ui();
+    void render_screen();
+
+    // files
+    void file_browser(file_option option, const char *title);
+    void do_file_option(file_option option, const std::string &filename, bool use_bios);
+    void handle_file_ui();
+
+    // menu
+    void menu_bar();
+
     
-    SDL_Window* window;
-    SDL_GLContext gl_context;
-    bool emu_running = false; 
+
+    void new_instance(const std::string& name, b32 use_bios);
+
+protected:
+
+    // emulation control
+    virtual void start_instance() {}
+    virtual void reset_instance(const std::string& name, b32 use_bios) { UNUSED(name); UNUSED(use_bios); }
+    virtual void stop_instance() {}
+    virtual void run_frame() {}
+    virtual void load_state(const std::string& filename) { UNUSED(filename); }
+    virtual void save_state(const std::string& filename) { UNUSED(filename); }
+    virtual void enable_audio() {}
+    virtual void disable_audio() {}
+    virtual void throttle_core() {}
+    virtual void unbound_core() {}
+    
+    // debugging ui
+    virtual void cpu_info_ui() {}
+    virtual void breakpoint_ui() {}
+    virtual void display_viewer_ui() {}
+    virtual void memory_viewer() {}
+
+    void breakpoint_ui_internal(Debug& debug);
+    void draw_memory_internal(Debug& debug, MemRegion* region_ptr, u32 size);
+
+    // frontend debugging access
+    virtual u8 read_mem(u64 addr) { return 0; UNUSED(addr); }
+    virtual void write_mem(u64 addr, u8 v) {UNUSED(addr); UNUSED(v);}
+
+
+
+    b32 emu_running = false;
+
+    b32 display_viewer_enabled = false;
+    b32 log_enabled = false;
+
     emu_type running_type = emu_type::none;
 
+    ImguiContext& context;
+    b32 quit = false;
+    Input input;
+
     Texture screen;
-#ifdef DEBUG
-    GameboyDisplayViewer gb_display_viewer;
-    GBADisplayViewer gba_display_viewer;
-#endif
 };
+
+
+
+
+void mainloop(std::string rom_name);
 
 #endif

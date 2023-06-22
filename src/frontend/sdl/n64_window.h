@@ -1,3 +1,4 @@
+#pragma once
 #include <n64/n64.h>
 #include "sdl_window.h"
 

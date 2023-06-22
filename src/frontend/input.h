@@ -23,7 +23,7 @@ class Input
 {
 public:
     void init();
-    emu_control handle_input(SDL_Window* window);
+    emu_control handle_input(SDL_Window* window, b32 ignore_key_inputs = false);
     void handle_controller_input();
     void add_event_from_key(s32 key, b32 down);
 

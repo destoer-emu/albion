@@ -25,6 +25,7 @@ public:
     // overrides
     void change_breakpoint_enable(bool enable) override;
     uint8_t read_mem(uint64_t addr) override;
+    void write_mem(u64 addr, u8 v) override;
     std::string disass_instr(uint64_t addr) override;
     uint64_t get_instr_size(uint64_t addr) override;
     void execute_command(const std::vector<Token> &args) override;
