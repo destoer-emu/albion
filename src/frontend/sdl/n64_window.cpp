@@ -3,7 +3,7 @@
 
 void N64Window::init(const std::string& filename)
 {
-    init_sdl(640,480);
+    init_sdl(320,240);
     input.init();
     reset(n64,filename);	
 }
@@ -23,6 +23,13 @@ void N64Window::core_quit()
 void N64Window::run_frame()
 {
     run(n64);
+
+    if(n64.size_change)
+    {
+        create_texture(n64.rdp.screen_x,n64.rdp.screen_y);
+        n64.size_change = false;
+    }
+
     render(n64.rdp.screen.data());
 }
 
