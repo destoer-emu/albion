@@ -2,7 +2,7 @@
 namespace nintendo64
 {
 
-struct Cpu; struct Opcode;
+struct Cpu;
 struct Mem;
 struct N64;
 struct Rdp;

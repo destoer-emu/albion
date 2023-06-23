@@ -5,3 +5,6 @@
 [submodule "destoer-lib"]
 	path = destoer-lib
 	url = https://github.com/destoer/destoer-lib.git
+[submodule "beyond-all-repair"]
+	path = beyond-all-repair
+	url = git@github.com:destoer/beyond-all-repair.git

@@ -3,13 +3,12 @@
 namespace nintendo64
 {
 
-void instr_unknown(N64 &n64, const Opcode &opcode)
+void instr_unknown_opcode(N64 &n64, const Opcode &opcode)
 {
-    const auto err = std::format("[cpu {:16x} {}] unknown opcode {:08x}\n",n64.cpu.pc-4,disass_opcode(opcode,n64.cpu.pc),opcode.op);
+    const auto err = std::format("[cpu {:16x} {}] unknown opcode {:08x}\n",n64.cpu.pc-4,disass_n64(n64,opcode,n64.cpu.pc),opcode.op);
     n64.debug.trace.print();
     throw std::runtime_error(err);    
 }
-
 
 void instr_lui(N64 &n64, const Opcode &opcode)
 {
@@ -223,90 +222,163 @@ void instr_cache(N64 &n64, const Opcode &opcode)
     // ignore cache operations for now
 }
 
+template<const b32 debug>
 void instr_lb(N64 &n64, const Opcode &opcode)
 {
     const auto base = opcode.rs;
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
-    n64.cpu.regs[opcode.rt] = sign_extend_mips<s64,s8>(read_u8(n64,n64.cpu.regs[base] + imm));
+    n64.cpu.regs[opcode.rt] = sign_extend_mips<s64,s8>(read_u8<debug>(n64,n64.cpu.regs[base] + imm));
 }
 
 
-
+template<const b32 debug>
 void instr_lw(N64 &n64, const Opcode &opcode)
 {
     const auto base = opcode.rs;
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
-    n64.cpu.regs[opcode.rt] = sign_extend_mips<s64,s32>(read_u32(n64,n64.cpu.regs[base] + imm));
+    n64.cpu.regs[opcode.rt] = sign_extend_mips<s64,s32>(read_u32<debug>(n64,n64.cpu.regs[base] + imm));
 }
 
+template<const b32 debug>
 void instr_ld(N64 &n64, const Opcode &opcode)
 {
     const auto base = opcode.rs;
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
-    n64.cpu.regs[opcode.rt] = read_u64(n64,n64.cpu.regs[base] + imm);
+    n64.cpu.regs[opcode.rt] = read_u64<debug>(n64,n64.cpu.regs[base] + imm);
 }
 
+template<const b32 debug>
+void instr_ldl(N64 &n64, const Opcode &opcode)
+{
+    instr_unknown_opcode(n64,opcode);
+}
 
+template<const b32 debug>
 void instr_lwu(N64 &n64, const Opcode &opcode)
 {
     const auto base = opcode.rs;
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
     // not sign extended
-    n64.cpu.regs[opcode.rt] = read_u32(n64,n64.cpu.regs[base] + imm);
+    n64.cpu.regs[opcode.rt] = read_u32<debug>(n64,n64.cpu.regs[base] + imm);
 }
 
+template<const b32 debug>
+void instr_lwl(N64 &n64, const Opcode &opcode)
+{
+    instr_unknown_opcode(n64,opcode);
+}
+
+template<const b32 debug>
+void instr_lwr(N64 &n64, const Opcode &opcode)
+{
+    instr_unknown_opcode(n64,opcode);
+}
+
+template<const b32 debug>
 void instr_sw(N64 &n64, const Opcode &opcode)
 {
     const auto base = opcode.rs;
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
-    write_u32(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);
+    write_u32<debug>(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);
 }
 
+template<const b32 debug>
+void instr_swr(N64 &n64, const Opcode &opcode)
+{
+    instr_unknown_opcode(n64,opcode);
+}
+
+template<const b32 debug>
+void instr_swl(N64 &n64, const Opcode &opcode)
+{
+    instr_unknown_opcode(n64,opcode);
+}
+
+template<const b32 debug>
 void instr_sh(N64 &n64, const Opcode &opcode)
 {
     const auto base = opcode.rs;
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
-    write_u16(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);
+    write_u16<debug>(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);
 }
 
+template<const b32 debug>
 void instr_sd(N64 &n64, const Opcode &opcode)
 {
     const auto base = opcode.rs;
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
-    write_u64(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);
+    write_u64<debug>(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);
 }
 
+template<const b32 debug>
+void instr_sdl(N64 &n64, const Opcode &opcode)
+{
+    instr_unknown_opcode(n64,opcode);
+}
+
+template<const b32 debug>
+void instr_sdr(N64 &n64, const Opcode &opcode)
+{
+    instr_unknown_opcode(n64,opcode);
+}
+
+template<const b32 debug>
+void instr_ll(N64 &n64, const Opcode &opcode)
+{
+    instr_unknown_opcode(n64,opcode);
+}
+
+template<const b32 debug>
+void instr_lld(N64 &n64, const Opcode &opcode)
+{
+    instr_unknown_opcode(n64,opcode);
+}
+
+template<const b32 debug>
+void instr_ldr(N64 &n64, const Opcode &opcode)
+{
+    instr_unknown_opcode(n64,opcode);
+}
+
+template<const b32 debug>
 void instr_lbu(N64 &n64, const Opcode &opcode)
 {
     const auto base = opcode.rs;
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
-    n64.cpu.regs[opcode.rt] = read_u8(n64,n64.cpu.regs[base] + imm);
+    n64.cpu.regs[opcode.rt] = read_u8<debug>(n64,n64.cpu.regs[base] + imm);
 }
 
+template<const b32 debug>
 void instr_sb(N64 &n64, const Opcode &opcode)
 {
     const auto base = opcode.rs;
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
-    write_u8(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);
+    write_u8<debug>(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);
 }
 
+template<const b32 debug>
 void instr_lhu(N64 &n64, const Opcode &opcode)
 {
     const auto base = opcode.rs;
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
-    n64.cpu.regs[opcode.rt] = read_u16(n64,n64.cpu.regs[base] + imm);
+    n64.cpu.regs[opcode.rt] = read_u16<debug>(n64,n64.cpu.regs[base] + imm);
 }
 
+template<const b32 debug>
+void instr_lh(N64 &n64, const Opcode &opcode)
+{
+    instr_unknown_opcode(n64,opcode);
+}
 
 
 void instr_bgtz(N64 &n64, const Opcode &opcode)
@@ -317,6 +389,16 @@ void instr_bgtz(N64 &n64, const Opcode &opcode)
 
         write_pc(n64,target);
     }
+}
+
+void instr_blez(N64& n64, const Opcode& opcode)
+{
+    instr_unknown_opcode(n64,opcode);
+}
+
+void instr_bgtzl(N64& n64, const Opcode& opcode)
+{
+    instr_unknown_opcode(n64,opcode);
 }
 
 }

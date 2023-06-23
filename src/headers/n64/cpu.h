@@ -2,6 +2,7 @@
 #include <n64/forward_def.h>
 #include <albion/lib.h>
 #include <n64/mips.h>
+#include <beyond_all_repair.h>
 
 namespace nintendo64
 {
@@ -38,20 +39,10 @@ struct Cpu
 };
 
 
-struct Opcode
-{
-    u32 op;
-
-    u32 rs;
-    u32 rd;
-    u32 rt;
-    u16 imm;
-};
-
+using Opcode = beyond_all_repair::Opcode;
 
 using INSTR_FUNC = void (*)(N64 &n64, const Opcode &opcode);
 
-void step(N64 &n64);
 void reset_cpu(Cpu &cpu);
 
 void skip_instr(Cpu &cpu);

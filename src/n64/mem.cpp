@@ -382,7 +382,7 @@ access_type read_physical(N64 &n64, u32 addr)
 // however they are supposed to throw exceptions
 // when they are not
 
-template<typename access_type>
+template<const b32 debug,typename access_type>
 access_type read_mem(N64 &n64, u32 addr)
 {
     // force align addr
@@ -804,7 +804,7 @@ void write_physical(N64 &n64, u32 addr, access_type v)
 // however they are supposed to throw exceptions
 // when they are not
 
-template<typename access_type>
+template<const b32 debug,typename access_type>
 void write_mem(N64 &n64, u32 addr, access_type v)
 {
     // force align addr
@@ -834,46 +834,52 @@ void do_pi_dma(N64 &n64, u32 src, u32 dst, u32 len)
 }
 
 
-
+template<const b32 debug>
 u8 read_u8(N64 &n64,u32 addr)
 {
-    return read_mem<u8>(n64,addr);
+    return read_mem<debug,u8>(n64,addr);
 }
 
+template<const b32 debug>
 u16 read_u16(N64 &n64,u32 addr)
 {
-    return read_mem<u16>(n64,addr);
+    return read_mem<debug,u16>(n64,addr);
 }
 
+template<const b32 debug>
 u32 read_u32(N64 &n64,u32 addr)
 {
-    return read_mem<u32>(n64,addr);
+    return read_mem<debug,u32>(n64,addr);
 }
 
+template<const b32 debug>
 u64 read_u64(N64 &n64,u32 addr)
 {
-    return read_mem<u64>(n64,addr);
+    return read_mem<debug,u64>(n64,addr);
 }
 
-
+template<const b32 debug>
 void write_u8(N64 &n64,u32 addr,u8 v)
 {
-    write_mem<u8>(n64,addr,v);
+    write_mem<debug,u8>(n64,addr,v);
 }
 
+template<const b32 debug>
 void write_u16(N64 &n64,u32 addr,u16 v)
 {
-    write_mem<u16>(n64,addr,v);
+    write_mem<debug,u16>(n64,addr,v);
 }
 
+template<const b32 debug>
 void write_u32(N64 &n64,u32 addr,u32 v)
 {
-    write_mem<u32>(n64,addr,v);
+    write_mem<debug,u32>(n64,addr,v);
 }
 
+template<const b32 debug>
 void write_u64(N64 &n64,u32 addr,u64 v)
 {
-    write_mem<u64>(n64,addr,v);
+    write_mem<debug,u64>(n64,addr,v);
 }
 
 

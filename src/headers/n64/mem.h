@@ -79,14 +79,5 @@ struct Mem
 
 void reset_mem(Mem &mem, const std::string &filename);
 
-u8 read_u8(N64 &n64,u32 addr);
-u16 read_u16(N64 &n64,u32 addr);
-u32 read_u32(N64 &n64,u32 addr);
-u64 read_u64(N64 &n64,u32 addr);
-
-void write_u8(N64 &n64,u32 addr,u8 v);
-void write_u16(N64 &n64,u32 addr,u16 v);
-void write_u32(N64 &n64,u32 addr,u32 v);
-void write_u64(N64 &n64,u32 addr,u64 v);
 
 }

@@ -140,7 +140,7 @@ if(WIN32)
 	
     include_directories("C:/SDL2-2.0.14/include")
 else()
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -march=native -pthread -O1 -fomit-frame-pointer -Wno-missing-braces")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -march=native -pthread -O3 -fomit-frame-pointer -Wno-missing-braces")
 
 	if(${FRONTEND} STREQUAL "HEADLESS")
 
@@ -156,6 +156,7 @@ endif()
 if(DEFINED N64)
 	add_definitions(-DN64_ENABLED)
 	add_library(n64 STATIC "src/n64/n64.cpp")
+	include_directories("beyond-all-repair/src")
 
 	target_link_libraries(albion n64)
 endif()
