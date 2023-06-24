@@ -165,44 +165,26 @@ void reset_mem(Mem &mem, const std::string &filename)
     mem.vi_yscale = 0;
 }
 
-// TODO: this will probably have to be switched over to software page table
-// come time for implementing the tlb but lets just keep things nice and simple for now
-// and do a giant if else chain for everything
-u32 remap_addr(u32 addr)
+u32 remap_addr(N64& n64,u32 addr)
 {
-    if(addr < 0x80000000)
-    {
-        printf("KUSEG %8x\n",addr);
-        exit(1);
-    }
+    // TODO: do we care about caching?
+    UNUSED(n64);
 
-    // KSEG0 (direct mapped cached)
-    else if(addr < 0xa0000000)
-    {
-        return addr - 0x80000000;
-    }
 
-    // KSEG1 (direct mapped uncached)
-    else if(addr < 0xc0000000)
-    {
-        return addr - 0xa0000000;
-    }
+    const u16 tlb_set = 0b11'11'00'00'11111111;
+    const u32 idx = (addr & 0xf000'0000) >> 28;
 
-    // KSSEG
-    else if(addr < 0xe0000000)
+    if(is_set(tlb_set,idx))
     {
-        printf("KSSEG %8x\n",addr);
-        exit(1);
+        assert(false);
     }
 
     else
     {
-        printf("KSEG3 %8x\n",addr);
-        exit(1);
+        // NOTE: this only works because both direct mapped sections 
+        // are the same size...
+        return addr & 0x1FFF'FFFF;
     }
-
-    assert(false);
-    return 0;
 }
 
 
@@ -404,7 +386,7 @@ access_type read_mem(N64 &n64, u32 addr)
     // force align addr
     addr &= ~(sizeof(access_type)-1);   
 
-    addr = remap_addr(addr);
+    addr = remap_addr(n64,addr);
 
     return read_physical<access_type>(n64,addr);
 }
@@ -789,7 +771,7 @@ void write_mem(N64 &n64, u32 addr, access_type v)
     // force align addr
     addr &= ~(sizeof(access_type)-1);   
 
-    addr = remap_addr(addr);
+    addr = remap_addr(n64,addr);
 
     write_physical<access_type>(n64,addr,v);
 }

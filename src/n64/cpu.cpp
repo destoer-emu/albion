@@ -71,7 +71,7 @@ void step(N64 &n64)
 
     // call the instr handler
     //const u32 offset = beyond_all_repair::get_opcode_type(opcode);
-    const u32 offset = beyond_all_repair::calc_table_offset(op);
+    const u32 offset = beyond_all_repair::calc_base_table_offset(op);
     
     if constexpr(debug)
     {
