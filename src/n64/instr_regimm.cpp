@@ -13,8 +13,6 @@ void instr_unknown_regimm(N64 &n64, const Opcode &opcode)
 template<const b32 debug>
 void instr_REGIMM(N64& n64, const Opcode& opcode)
 {
-    using namespace beyond_all_repair;
-
     if constexpr(debug)
     {
         INSTR_TABLE_DEBUG[REGIMM_OFFSET + ((opcode.op >> REGIMM_SHIFT) & REGIMM_MASK)](n64,opcode);

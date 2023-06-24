@@ -40,7 +40,7 @@ void N64Debug::regs(const std::vector<Token> &args)
 
     for(u32 i = 0; i < 32; i++)
     {
-        printf("%s = %016lx\n",reg_names[i],n64.cpu.regs[i]);
+        printf("%s = %016lx\n",REG_NAMES[i],n64.cpu.regs[i]);
     }
 }
 
@@ -114,7 +114,7 @@ b32 N64Debug::read_var(const std::string &name, u64* out)
         // TODO: we could make this faster
         for(u32 i = 0; i < REG_NAMES_SIZE; i++)
         {
-            if(reg_names[i] == name)
+            if(REG_NAMES[i] == name)
             {
                 *out = n64.cpu.regs[i];
                 return true;

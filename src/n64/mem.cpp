@@ -91,21 +91,37 @@ void reset_mem(Mem &mem, const std::string &filename)
 
     mem.sp_imem.resize(0x1000);
 
-    const auto magic = handle_read<u32>(mem.rom,0x0);
+    auto magic = handle_read<u32>(mem.rom,0x0);
+
+    printf("rom magic: %x\n",magic);
 
     // if rom is middle endian byteswap it
-
-    if(magic != 0x80371240)
+    if(magic == 0x12408037)
     {
-        puts("byteswapping rom");
-        std::iter_swap(mem.rom.begin(),mem.rom.end()-1);
+        puts("middle swap rom");
+        
+        for(u32 i = 0; i < mem.rom.size() - 1; i += 2)
+        {
+            std::swap(mem.rom[i],mem.rom[i+1]);
+        }
+
     }
+    // re read the magic
+    magic = handle_read<u32>(mem.rom,0x0);
 
-    for(u32 i = 0; i < mem.rom.size(); i += sizeof(u32))
+    printf("rom magic: %x\n",magic);
+
+    // big endian swap around
+    if(magic == 0x40123780)
     {
-        u32 v = handle_read<u32>(mem.rom,i);
-        v = bswap(v);
-        handle_write<u32>(mem.rom,i,v);
+        puts("swapping big endian into le");
+
+        for(u32 i = 0; i < mem.rom.size(); i += sizeof(u32))
+        {
+            u32 v = handle_read<u32>(mem.rom,i);
+            v = bswap(v);
+            handle_write<u32>(mem.rom,i,v);
+        }
     }
 
 

@@ -13,8 +13,6 @@ void instr_unknown_r(N64 &n64, const Opcode &opcode)
 template<const b32 debug>
 void instr_SPECIAL(N64& n64, const Opcode& opcode)
 {
-    using namespace beyond_all_repair;
-
     if constexpr(debug)
     {
         INSTR_TABLE_DEBUG[SPECIAL_OFFSET + ((opcode.op >> SPECIAL_SHIFT) & FUNCT_MASK)](n64,opcode);
