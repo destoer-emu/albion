@@ -19,6 +19,8 @@ struct Cpu
     u64 hi;
 
     Cop0 cop0;
+
+    b32 interrupt = false;
 };
 
 

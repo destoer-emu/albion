@@ -36,6 +36,11 @@ void increment_line(N64 &n64)
 {
     n64.rdp.ly++;
 
+    if(n64.rdp.ly == n64.mem.vi_intr)
+    {
+        set_mi_interrupt(n64,VI_INTR_BIT);
+    }
+
     if(n64.rdp.ly == n64.rdp.screen_y)
     {
         n64.rdp.ly = 0;

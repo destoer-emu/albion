@@ -35,14 +35,6 @@ void reset_cpu(N64 &n64)
     insert_count_event(n64);
 }
 
-// NOTE: do this relative to your storage,
-// start tomorrow you are too tired
-void count_intr(N64 &n64)
-{
-    deset_intr_cop0(n64,COUNT_BIT);
-    insert_count_event(n64);
-}
-
 
 void cycle_tick(N64 &n64, u32 cycles)
 {
