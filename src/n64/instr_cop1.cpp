@@ -15,7 +15,11 @@ void instr_unknown_cop1(N64 &n64, const Opcode &opcode)
 template<const b32 debug>
 void instr_COP1(N64 &n64, const Opcode &opcode)
 {
-    UNUSED(n64); UNUSED(opcode);
+    // coprocesor unusable
+    if(!cop1_usable(n64))
+    {
+        return;
+    }
 
     const u32 offset = calc_cop1_table_offset(opcode);
 
@@ -25,24 +29,48 @@ void instr_COP1(N64 &n64, const Opcode &opcode)
 template<const b32 debug>
 void instr_lwc1(N64 &n64, const Opcode &opcode)
 {
+    // coprocesor unusable
+    if(!cop1_usable(n64))
+    {
+        return;
+    }
+
     instr_unknown_opcode(n64,opcode);
 }
 
 template<const b32 debug>
 void instr_ldc1(N64 &n64, const Opcode &opcode)
 {
+    // coprocesor unusable
+    if(!cop1_usable(n64))
+    {
+        return;
+    }
+
     instr_unknown_opcode(n64,opcode);
 }
 
 template<const b32 debug>
 void instr_swc1(N64 &n64, const Opcode &opcode)
 {
+    // coprocesor unusable
+    if(!cop1_usable(n64))
+    {
+        return;
+    }
+
     instr_unknown_opcode(n64,opcode);
 }
 
 template<const b32 debug>
 void instr_sdc1(N64 &n64, const Opcode &opcode)
 {
+    // coprocesor unusable
+    if(!cop1_usable(n64))
+    {
+        return;
+    }
+
     instr_unknown_opcode(n64,opcode);
 }
 

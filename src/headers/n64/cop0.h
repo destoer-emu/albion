@@ -26,7 +26,7 @@ struct Status
 struct Cause
 {
     u32 exception_code;
-    u8 pending;
+    b32 pending;
     u32 coprocessor_error;
     b32 branch_delay;
 };

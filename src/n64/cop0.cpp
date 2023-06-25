@@ -13,6 +13,7 @@ void check_interrupts(N64 &n64)
     auto& status = cop0.status;
     auto& cause = cop0.cause;
 
+
     // enable off or execption being serviced
     // no interrupts on
     if(!status.ie || cop0.status.erl || cop0.status.exl)
@@ -20,11 +21,34 @@ void check_interrupts(N64 &n64)
         return;
     }
 
-    if(status.im & cause.pending)
+    // mask enabled with pending interrupt
+    const b32 pending = (status.im & cause.pending) != 0;
+
+    if(pending)
     {
         n64.cpu.interrupt = true;
+        // need to go look at exception handling for normal exceptions...
         assert(false);
     }
+}
+
+// see page 121 psuedo code of manual
+void standard_exception(N64& n64, u32 code)
+{
+    assert(false); 
+    UNUSED(n64); UNUSED(code); 
+}
+
+void coprocesor_unusable(N64& n64, u32 number)
+{
+    assert(false);
+    UNUSED(n64); UNUSED(number);
+}
+
+void error_exception(N64& n64, u32 code)
+{
+    assert(false);
+    UNUSED(n64); UNUSED(code); 
 }
 
 
