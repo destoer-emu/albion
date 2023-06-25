@@ -8,6 +8,7 @@ using namespace beyond_all_repair;
 
 #include <n64/mem.cpp>
 #include <n64/cop0.cpp>
+#include <n64/cop1.cpp>
 #include <n64/mips_interface.cpp>
 #include <n64/cpu.cpp>
 #include <n64/instr.cpp>

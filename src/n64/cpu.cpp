@@ -8,6 +8,19 @@ std::string disass_n64(N64& n64, Opcode opcode, u64 addr)
     return beyond_all_repair::disass_mips(n64.program,addr,opcode);
 }
 
+template<const b32 debug>
+void call_handler(N64& n64, const Opcode& opcode, u32 idx)
+{
+    if constexpr(debug)
+    {
+        INSTR_TABLE_DEBUG[idx](n64,opcode);
+    }
+
+    else
+    {
+        INSTR_TABLE_NO_DEBUG[idx](n64,opcode);
+    }    
+}
 
 void reset_cpu(N64 &n64)
 {
@@ -47,23 +60,23 @@ void cycle_tick(N64 &n64, u32 cycles)
 template<const b32 debug>
 void step(N64 &n64)
 {
-    const u32 opcode = read_u32<debug>(n64,n64.cpu.pc);
+    const u32 op = read_u32<debug>(n64,n64.cpu.pc);
 
 // TODO: this needs to optimised
 #ifdef DEBUG 
     if constexpr(debug)
     {
-        if(n64.debug.breakpoint_hit(u32(n64.cpu.pc),opcode,break_type::execute))
+        if(n64.debug.breakpoint_hit(u32(n64.cpu.pc),op,break_type::execute))
         {
             // halt until told otherwhise :)
-            write_log(n64.debug,"[DEBUG] execute breakpoint hit ({:x}:{:x})",n64.cpu.pc,opcode);
+            write_log(n64.debug,"[DEBUG] execute breakpoint hit ({:x}:{:x})",n64.cpu.pc,op);
             n64.debug.halt();
             return;
         }
     }    
 #endif
 
-    const Opcode op = beyond_all_repair::make_opcode(opcode);
+    const Opcode opcode = beyond_all_repair::make_opcode(op);
 
     //std::cout << std::format("{:16x}: {}\n",n64.cpu.pc,disass_n64(n64,op,n64.cpu.pc_next));
     
@@ -71,17 +84,9 @@ void step(N64 &n64)
 
     // call the instr handler
     //const u32 offset = beyond_all_repair::get_opcode_type(opcode);
-    const u32 offset = beyond_all_repair::calc_base_table_offset(op);
+    const u32 offset = beyond_all_repair::calc_base_table_offset(opcode);
     
-    if constexpr(debug)
-    {
-        INSTR_TABLE_DEBUG[offset](n64,op);
-    }
-
-    else
-    {
-        INSTR_TABLE_NO_DEBUG[offset](n64,op);
-    }
+    call_handler<debug>(n64,opcode,offset);
     
     // $zero is hardwired to zero, make sure writes cant touch it
     n64.cpu.regs[R0] = 0;

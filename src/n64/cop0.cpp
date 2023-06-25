@@ -7,14 +7,15 @@ namespace nintendo64
 static constexpr u32 COUNT_BIT = 7;
 static constexpr u32 MI_BIT = 2;
 
-void check_interrups(N64 &n64)
+void check_interrupts(N64 &n64)
 {
     auto& cop0 = n64.cpu.cop0;
     auto& status = cop0.status;
     auto& cause = cop0.cause;
 
-    // global enable off
-    if(!status.ie)
+    // enable off or execption being serviced
+    // no interrupts on
+    if(!status.ie || cop0.status.erl || cop0.status.exl)
     {
         return;
     }
@@ -57,7 +58,7 @@ void set_intr_cop0(N64& n64, u32 bit)
     auto& cause = n64.cpu.cop0.cause;
 
     cause.pending = set_bit(cause.pending,bit);
-    check_interrups(n64);
+    check_interrupts(n64);
 }
 
 void deset_intr_cop0(N64& n64, u32 bit)

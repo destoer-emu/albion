@@ -3,6 +3,7 @@
 #include <albion/lib.h>
 #include <n64/mips.h>
 #include <n64/cop0.h>
+#include <n64/cop1.h>
 #include <beyond_all_repair.h>
 
 namespace nintendo64
@@ -19,6 +20,7 @@ struct Cpu
     u64 hi;
 
     Cop0 cop0;
+    Cop1 cop1;
 
     b32 interrupt = false;
 };

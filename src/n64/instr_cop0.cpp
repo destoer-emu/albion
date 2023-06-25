@@ -15,15 +15,7 @@ void instr_COP0(N64 &n64, const Opcode &opcode)
 {
     const u32 offset = calc_cop0_table_offset(opcode);
 
-    if constexpr(debug)
-    {
-        INSTR_TABLE_DEBUG[offset](n64,opcode);
-    }
-
-    else
-    {
-        INSTR_TABLE_NO_DEBUG[offset](n64,opcode);
-    }
+    call_handler<debug>(n64,opcode,offset);
 }
 
 void instr_mtc0(N64 &n64, const Opcode &opcode)

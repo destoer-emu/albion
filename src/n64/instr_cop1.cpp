@@ -17,7 +17,9 @@ void instr_COP1(N64 &n64, const Opcode &opcode)
 {
     UNUSED(n64); UNUSED(opcode);
 
-    instr_unknown_cop1(n64,opcode);
+    const u32 offset = calc_cop1_table_offset(opcode);
+
+    call_handler<debug>(n64,opcode,offset);
 }
 
 template<const b32 debug>
@@ -42,6 +44,18 @@ template<const b32 debug>
 void instr_sdc1(N64 &n64, const Opcode &opcode)
 {
     instr_unknown_opcode(n64,opcode);
+}
+
+void instr_cfc1(N64& n64, const Opcode &opcode)
+{
+    const u32 fs = get_fs(opcode);
+    n64.cpu.regs[opcode.rt] = read_cop1_control(n64,fs);
+}
+
+void instr_ctc1(N64& n64, const Opcode &opcode)
+{
+    const u32 fs = get_fs(opcode);
+    write_cop1_control(n64,fs,n64.cpu.regs[opcode.rt]);
 }
 
 }

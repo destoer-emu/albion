@@ -1,4 +1,8 @@
 
+namespace nintendo64
+{
+
+
 struct Status
 {
     // cp0 status
@@ -21,7 +25,7 @@ struct Status
 
 struct Cause
 {
-    u32 code;
+    u32 exception_code;
     u8 pending;
     u32 coprocessor_error;
     b32 branch_delay;
@@ -50,3 +54,5 @@ struct Cop0
     u32 tag_hi; 
     u32 tag_lo;
 };
+
+}
