@@ -1,16 +1,7 @@
 #include <n64/n64.h>
 
-#include <n64/mem/mips_interface.cpp>
-#include <n64/mem/rdram.cpp>
-#include <n64/mem/sp_regs.cpp>
-#include <n64/mem/video_interface.cpp>
-#include <n64/mem/peripheral_interface.cpp>
-
 namespace nintendo64
 {
-
-void do_pi_dma(N64 &n64, u32 src, u32 dst, u32 len);
-
 
 inline u64 swap_word(u64 v)
 {
@@ -68,7 +59,9 @@ void handle_write_n64(std::vector<u8> &buf, u32 addr, access_type v)
 
 
     handle_write<access_type>(buf,addr,v);
-}
+}    
+
+void do_pi_dma(N64 &n64, u32 src, u32 dst, u32 len);
 
 
 void reset_mem(Mem &mem, const std::string &filename)
@@ -95,6 +88,8 @@ void reset_mem(Mem &mem, const std::string &filename)
     mem.sp_dmem.resize(0x1000);
 
     mem.sp_imem.resize(0x1000);
+
+    mem.pif_ram.resize(PIF_SIZE);
 
     auto magic = handle_read<u32>(mem.rom,0x0);
 
@@ -246,3 +241,10 @@ void write_u64(N64 &n64,u32 addr,u64 v)
 
 
 }
+
+#include <n64/mem/mips_interface.cpp>
+#include <n64/mem/rdram.cpp>
+#include <n64/mem/sp_regs.cpp>
+#include <n64/mem/video_interface.cpp>
+#include <n64/mem/peripheral_interface.cpp>
+#include <n64/mem/pif.cpp>

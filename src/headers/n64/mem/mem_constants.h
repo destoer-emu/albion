@@ -51,3 +51,6 @@ static constexpr u32 DP_INTR_BIT = 5;
 // sp
 static constexpr u32 SP_PC_REG = 0x04080000;
 static constexpr u32 SP_STATUS_REG = 0x04040010;
+
+static constexpr u32 PIF_SIZE = 0x40;
+static constexpr u32 PIF_MASK = PIF_SIZE - 1;

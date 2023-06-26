@@ -28,6 +28,8 @@ struct Mem
     PeripheralInterface pi;
     MipsInterface mi;
     VideoInterface vi;
+
+    std::vector<u8> pif_ram;
 };
 
 void reset_mem(Mem &mem, const std::string &filename);

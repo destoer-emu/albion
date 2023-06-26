@@ -81,18 +81,18 @@ access_type read_physical(N64 &n64, u32 addr)
         return handle_read_n64<access_type>(n64.mem.rom, rom_addr);
     }
 
-    // should this be ignored
+    // currently we dont emulate the pif rom
+    // and it cant be read after bootup anyways
     else if(addr < 0x1FC007C0)
     {
-        unimplemented("pif boot rom read");
+        //unimplemented("pif boot rom read");
         return 0;
     }
 
     // pif ram (ignore for now but need to emulate later)
     else if(addr < 0x1FC00800)
     {
-        unimplemented("pif ram");
-        return 0;
+        return read_pif<access_type>(n64,addr);
     }
 
     else if(addr >= 0x1FD00000 && addr <= 0x7FFFFFFF)
@@ -184,16 +184,16 @@ void write_physical(N64 &n64, u32 addr, access_type v)
         unimplemented("rom write");
     }
 
-    // should this be ignored
+    // should this be ignored?
     else if(addr < 0x1FC007C0)
     {
-        unimplemented("pif boot rom write");
+        //unimplemented("pif boot rom write");
     }
 
     // pif ram (ignore for now but need to emulate later)
     else if(addr < 0x1FC00800)
     {
-        unimplemented("pif ram");
+        write_pif<access_type>(n64,addr,v);
     }
 
     else if(addr >= 0x1FD00000 && addr <= 0x7FFFFFFF)
