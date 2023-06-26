@@ -1,5 +1,8 @@
 #include <n64/n64.h>
 
+#include <n64/cpu/cop0.cpp>
+#include <n64/cpu/cop1.cpp>
+
 namespace nintendo64
 {
 
@@ -83,7 +86,7 @@ void step(N64 &n64)
     skip_instr(n64.cpu);
 
     // call the instr handler
-    //const u32 offset = beyond_all_repair::get_opcode_type(opcode);
+    //const u32 offset = beyond_all_repair::get_opcode_type(opcode.op);
     const u32 offset = beyond_all_repair::calc_base_table_offset(opcode);
     
     call_handler<debug>(n64,opcode,offset);

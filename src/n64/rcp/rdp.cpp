@@ -13,6 +13,9 @@ void insert_line_event(N64 &n64)
 void reset_rdp(N64 &n64, u32 x, u32 y)
 {
     change_res(n64,x,y);
+
+    // for now assume ntsc
+    n64.rdp.scan_lines = 525;
 }
 
 void change_res(N64 &n64, u32 x, u32 y)
@@ -23,7 +26,7 @@ void change_res(N64 &n64, u32 x, u32 y)
     rdp.screen_x = x;
     rdp.screen_y = y;
 
-    rdp.line_cycles = (N64_CLOCK_CYCLES_FRAME / rdp.screen_y);
+    rdp.line_cycles = (N64_CLOCK_CYCLES_FRAME / rdp.scan_lines);
     insert_line_event(n64); 
 
     rdp.screen.resize(x * y);
@@ -34,14 +37,15 @@ void change_res(N64 &n64, u32 x, u32 y)
 
 void increment_line(N64 &n64)
 {
+    auto& vi = n64.mem.vi;
     n64.rdp.ly++;
 
-    if(n64.rdp.ly == n64.mem.vi_intr)
+    if(n64.rdp.ly == vi.intr)
     {
         set_mi_interrupt(n64,VI_INTR_BIT);
     }
 
-    if(n64.rdp.ly == n64.rdp.screen_y)
+    if(n64.rdp.ly == n64.rdp.scan_lines)
     {
         n64.rdp.ly = 0;
         n64.rdp.frame_done = true;
@@ -59,10 +63,12 @@ u32 blend(const u32 v1, const u32 v2)
 
 void render(N64 &n64)
 {
+    auto& vi = n64.mem.vi;
+
     // kinda assume some settings for just to get the test output
     UNUSED(n64);
 
-    switch(n64.mem.vi_bpp)
+    switch(vi.bpp)
     {
         // blank
         case 0:
@@ -78,7 +84,7 @@ void render(N64 &n64)
             // this probably has more to it but just a plain copy for now
             for(u32 i = 0; i < n64.rdp.screen.size(); i++)
             {
-                const u32 addr = n64.mem.vi_origin + (i * sizeof(u16));
+                const u32 addr = vi.origin + (i * sizeof(u16));
                 const auto v = handle_read_n64<u16>(n64.mem.rd_ram,addr);
 
                 if(is_set(v,15))
@@ -96,7 +102,7 @@ void render(N64 &n64)
             // this probably has more to it but just a plain copy for now
             for(u32 i = 0; i < n64.rdp.screen.size(); i++)
             {
-                const u32 addr = n64.mem.vi_origin + (i * sizeof(u32));
+                const u32 addr = vi.origin + (i * sizeof(u32));
 
                 const u32 v = handle_read_n64<u32>(n64.mem.rd_ram,addr);
 
@@ -106,7 +112,7 @@ void render(N64 &n64)
             break;
         }
 
-        default: printf("unhandled bpp mode %x\n",n64.mem.vi_bpp); exit(1);
+        default: printf("unhandled bpp mode %x\n",vi.bpp); exit(1);
     }
 
 

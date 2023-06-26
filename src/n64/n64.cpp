@@ -6,19 +6,12 @@
 #include <beyond_all_repair.cpp>
 using namespace beyond_all_repair;
 
-#include <n64/mem.cpp>
-#include <n64/cop0.cpp>
-#include <n64/cop1.cpp>
-#include <n64/mips_interface.cpp>
-#include <n64/cpu.cpp>
-#include <n64/instr.cpp>
-#include <n64/instr_r.cpp>
-#include <n64/instr_regimm.cpp>
-#include <n64/instr_cop0.cpp>
-#include <n64/instr_cop1.cpp>
-#include <n64/instr_cop2.cpp>
-#include <n64/mips_lut.cpp>
-#include <n64/rdp.cpp>
+#include <n64/cpu/cpu.cpp>
+#include <n64/mem/mem.cpp>
+#include <n64/mem/layout.cpp>
+#include <n64/instr/instr.cpp>
+#include <n64/instr/mips_lut.cpp>
+#include <n64/rcp/rdp.cpp>
 #include <n64/debug.cpp>
 #include <n64/scheduler.cpp>
 

@@ -11,6 +11,7 @@ struct Rdp
 
     u32 ly = 0;
     u32 line_cycles = 0;
+    u32 scan_lines = 525;
 
     bool frame_done;
 };

@@ -1,5 +1,11 @@
 #include <n64/n64.h>
 
+#include <n64/instr/instr_r.cpp>
+#include <n64/instr/instr_regimm.cpp>
+#include <n64/instr/instr_cop0.cpp>
+#include <n64/instr/instr_cop1.cpp>
+#include <n64/instr/instr_cop2.cpp>
+
 namespace nintendo64
 {
 

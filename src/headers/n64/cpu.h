@@ -41,4 +41,6 @@ void write_cop0(N64 &n64, u64 v, u32 reg);
 u64 read_cop0(N64& n64, u32 reg);
 
 
+void instr_unknown_opcode(N64 &n64, const Opcode &opcode);
+
 }
