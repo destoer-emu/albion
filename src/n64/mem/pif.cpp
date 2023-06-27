@@ -15,6 +15,8 @@ void handle_pif_commands(N64& n64)
 {
     const u8 commands = n64.mem.pif_ram[PIF_MASK];
 
+    printf("pif commands: %x\n",commands);
+
     if(commands & CONFIG_FLAG)
     {
         printf("pif: joybus config");
