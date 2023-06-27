@@ -105,6 +105,21 @@ void mi_intr(N64& n64)
     set_intr_cop0(n64,MI_BIT);
 }
 
+void write_entry_lo(EntryLo& entry_lo, u32 v)
+{
+    entry_lo.pfn = (v >> 6) & 0x00ff'ffff;
+    entry_lo.c = (v >> 3) & 0b11;
+    entry_lo.d = is_set(v,2);
+    entry_lo.v = is_set(v,1);
+    entry_lo.g = is_set(v,0);
+}
+
+u32 read_entry_lo(EntryLo& entry_lo)
+{
+    return (entry_lo.g << 0) | (entry_lo.v << 1) | (entry_lo.d << 2) | 
+        (entry_lo.c << 3) | (entry_lo.pfn << 6); 
+}
+
 
 void write_cop0(N64 &n64, u64 v, u32 reg)
 {
@@ -199,6 +214,26 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
             break;
         }
 
+        case ENTRY_HI:
+        {
+            auto& entry_hi = cop0.entry_hi;
+            entry_hi.vpn2 = (v >> 13);
+            entry_hi.asid = v & 0xff; 
+            break;
+        }
+
+        case ENTRY_LO_ZERO:
+        {
+            write_entry_lo(cop0.entry_lo_zero,v);
+            break;
+        }
+
+        case ENTRY_LO_ONE:
+        {
+            write_entry_lo(cop0.entry_lo_one,v);
+            break;
+        }
+
         // TODO: what is this used for?
         case PRID:
         {
@@ -241,6 +276,22 @@ u64 read_cop0(N64& n64, u32 reg)
                 (status.kx << 7) | (status.im << 8) | (status.ds << 8) |
                 (status.re << 25) | (status.fr << 26) | (status.rp << 27) |
                 (status.cu1 << 29);
+        }
+
+        case ENTRY_HI:
+        {
+            auto& entry_hi = cop0.entry_hi;
+            return (entry_hi.asid << 0) | (entry_hi.vpn2 << 13);
+        }
+
+        case ENTRY_LO_ZERO:
+        {
+            return read_entry_lo(cop0.entry_lo_zero);
+        }
+
+        case ENTRY_LO_ONE:
+        {
+            return read_entry_lo(cop0.entry_lo_one);
         }
 
         default:
