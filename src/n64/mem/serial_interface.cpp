@@ -26,10 +26,16 @@ void write_si(N64& n64, u64 addr, u32 v)
 
 u32 read_si(N64& n64, u64 addr)
 {
-    UNUSED(n64);
+    auto& si = n64.mem.si;
 
     switch(addr)
     {
+        case SI_STATUS:
+        {
+            return (si.dma_busy << 0) | (si.io_busy << 1) | (si.read_pending << 2) |
+                (si.dma_error << 3) | (mi_intr_set(n64,SI_INTR_BIT) << 12);
+        }
+
         default:
         {
             unimplemented("si read: %x\n",addr);

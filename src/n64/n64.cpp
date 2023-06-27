@@ -1,6 +1,8 @@
 #include <n64/n64.h>
 #include <n64/mips_lut.h>
 
+// TODO:
+// make dmas not complete instantly, but rather memcpy at the end
 
 // unity build
 #include <beyond_all_repair.cpp>

@@ -73,6 +73,12 @@ u32 read_mi(N64& n64, u64 addr)
     }    
 }
 
+b32 mi_intr_set(N64& n64, u32 bit)
+{
+    auto& mi = n64.mem.mi;
+    return is_set(mi.intr,bit);
+}
+
 void set_mi_interrupt(N64& n64, u32 bit)
 {
     auto& mi = n64.mem.mi;
