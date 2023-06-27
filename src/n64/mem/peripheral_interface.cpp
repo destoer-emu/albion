@@ -16,7 +16,7 @@ void do_pi_dma(N64 &n64, u32 src, u32 dst, u32 len)
     }
 
     // dma is done set the intr flag
-    n64.mem.mi.intr = set_bit(n64.mem.mi.intr,PI_INTR_BIT);
+    set_mi_interrupt(n64,PI_INTR_BIT);
 }
 
 void write_pi(N64& n64, u64 addr, u32 v)
