@@ -26,7 +26,7 @@ struct Status
 struct Cause
 {
     u32 exception_code = 0;
-    b32 pending = 0;
+    u8 pending = 0;
     u32 coprocessor_error = 0;
     b32 branch_delay = 0;
 };
@@ -68,6 +68,9 @@ struct Cop0
     EntryLo entry_lo_one;
     EntryLo entry_lo_zero;
     Index index;
+    u32 page_mask = 0;
+
+    u64 epc = 0;
 
     // count and compare
     u64 count = 0;

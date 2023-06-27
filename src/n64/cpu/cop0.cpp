@@ -266,6 +266,18 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
             break;
         }
 
+        case PAGE_MASK:
+        {
+            cop0.page_mask = (v >> 13) & 0xfff;
+            break;
+        }
+
+        case EPC:
+        {
+            cop0.epc = v;
+            break;
+        }
+
         // read only
         case RANDOM: break;
 
@@ -313,9 +325,25 @@ u64 read_cop0(N64& n64, u32 reg)
             return read_entry_lo(cop0.entry_lo_one);
         }
 
+        case PAGE_MASK:
+        {
+            return (cop0.page_mask << 13);
+        }
+
         case COUNT:
         {
             return (cop0.count >> 1);
+        }
+
+        case EPC:
+        {
+            return cop0.epc;
+        }
+
+        case CAUSE:
+        {
+            auto& cause = cop0.cause;
+            return (cause.exception_code << 2) | (cause.pending  << 8) | (cause.coprocessor_error << 28) | (cause.branch_delay << 31); 
         }
 
         case INDEX:

@@ -40,4 +40,33 @@ void instr_scd(N64 &n64, const Opcode &opcode)
     instr_unknown_opcode(n64,opcode);
 }
 
+// tlb instrs
+// TODO: i think we can saftely ignore these until we actually try to access a tlb section?
+void instr_tlbwi(N64& n64, const Opcode &opcode)
+{
+    UNUSED(n64); UNUSED(opcode);
+}
+
+void instr_eret(N64& n64, const Opcode& opcode)
+{
+    UNUSED(opcode);
+
+    auto& cop0 = n64.cpu.cop0;
+    auto& status = cop0.status;
+
+    if(status.erl)
+    {
+        assert(false);
+    }
+
+    else
+    {
+        write_pc(n64,cop0.epc);
+        status.exl = false;
+    }
+
+    // this does not execute the delay slot
+    skip_instr(n64.cpu);
+}
+
 }

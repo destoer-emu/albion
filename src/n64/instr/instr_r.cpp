@@ -84,17 +84,17 @@ void instr_syscall(N64 &n64, const Opcode &opcode)
 
 void instr_mfhi(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    n64.cpu.regs[opcode.rd] = n64.cpu.hi;
 }
 
 void instr_mthi(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    n64.cpu.hi = n64.cpu.regs[opcode.rs];
 }
 
 void instr_mtlo(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    n64.cpu.lo = n64.cpu.regs[opcode.rs];
 }
 
 void instr_srl(N64 &n64, const Opcode &opcode)
@@ -212,7 +212,10 @@ void instr_multu(N64 &n64, const Opcode &opcode)
 
 void instr_mult(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    const u64 res = s64(s32(n64.cpu.regs[opcode.rs])) * s64(s32(n64.cpu.regs[opcode.rt]));
+
+    n64.cpu.lo = sign_extend_mips<s64,s32>(res & 0xffffffff);
+    n64.cpu.hi = sign_extend_mips<s64,s32>((res >> 32) & 0xffffffff);
 }
 
 void instr_dmultu(N64 &n64, const Opcode &opcode)
@@ -237,7 +240,17 @@ void instr_div(N64 &n64, const Opcode &opcode)
 
 void instr_divu(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    // div by zero not allowed
+    if(n64.cpu.regs[opcode.rt] == 0)
+    {
+        return;
+    }
+
+    const u64 res = u32(n64.cpu.regs[opcode.rs]) / u32(n64.cpu.regs[opcode.rt]);
+    const u64 remainder = u32(n64.cpu.regs[opcode.rs]) % u32(n64.cpu.regs[opcode.rt]);
+
+    n64.cpu.lo = sign_extend_mips<s64,s32>(res);
+    n64.cpu.hi = sign_extend_mips<s64,s32>(remainder);    
 }
 
 void instr_ddiv(N64 &n64, const Opcode &opcode)

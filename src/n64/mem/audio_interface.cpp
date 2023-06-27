@@ -15,7 +15,7 @@ void write_ai(N64& n64, u64 addr ,u32 v)
 
         default:
         {
-            unimplemented("ai write: %x\n",addr);
+            //unimplemented("ai write: %x\n",addr);
             break;
         }
     }
