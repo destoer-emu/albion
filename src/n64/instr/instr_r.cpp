@@ -235,7 +235,17 @@ void instr_break(N64 &n64, const Opcode &opcode)
 
 void instr_div(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    // div by zero not allowed
+    if(n64.cpu.regs[opcode.rt] == 0)
+    {
+        return;
+    }
+
+    const s32 res = s32(n64.cpu.regs[opcode.rs]) / s32(n64.cpu.regs[opcode.rt]);
+    const s32 remainder = s32(n64.cpu.regs[opcode.rs]) % s32(n64.cpu.regs[opcode.rt]);
+
+    n64.cpu.lo = sign_extend_mips<s64,s32>(res);
+    n64.cpu.hi = sign_extend_mips<s64,s32>(remainder);  
 }
 
 void instr_divu(N64 &n64, const Opcode &opcode)
@@ -246,8 +256,8 @@ void instr_divu(N64 &n64, const Opcode &opcode)
         return;
     }
 
-    const u64 res = u32(n64.cpu.regs[opcode.rs]) / u32(n64.cpu.regs[opcode.rt]);
-    const u64 remainder = u32(n64.cpu.regs[opcode.rs]) % u32(n64.cpu.regs[opcode.rt]);
+    const u32 res = u32(n64.cpu.regs[opcode.rs]) / u32(n64.cpu.regs[opcode.rt]);
+    const u32 remainder = u32(n64.cpu.regs[opcode.rs]) % u32(n64.cpu.regs[opcode.rt]);
 
     n64.cpu.lo = sign_extend_mips<s64,s32>(res);
     n64.cpu.hi = sign_extend_mips<s64,s32>(remainder);    

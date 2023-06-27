@@ -18,17 +18,17 @@ void write_vi(N64& n64, u64 addr ,u32 v)
 
             if(vi.gamma_dither)
             {
-                unimplemented("dither");
+                //unimplemented("dither");
             }
 
             if(vi.gamma)
             {
-                unimplemented("gamma");
+                //unimplemented("gamma");
             }
 
             if(vi.divot)
             {
-                unimplemented("divot");
+                //unimplemented("divot");
             }
 
             if(vi.serrate)

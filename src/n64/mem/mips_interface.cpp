@@ -59,11 +59,13 @@ void write_mi(N64& n64, u64 addr, u32 v)
 
 u32 read_mi(N64& n64, u64 addr)
 {
-    UNUSED(n64);
+    auto& mi = n64.mem.mi;
 
     switch(addr)
     {
         case MI_VERSION: return 0x02020102;
+
+        case MI_INTR_MASK: return mi.mask;
 
         default:
         {

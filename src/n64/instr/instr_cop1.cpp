@@ -3,6 +3,15 @@
 namespace nintendo64
 {
 
+f32 bit_cast_float(u32 v)
+{
+    static_assert(sizeof(f32) == sizeof(u32));
+
+    f32 out = 0.0;
+    memcpy(&out,&v,sizeof(u32));
+    return out;
+}
+
 void instr_unknown_cop1(N64 &n64, const Opcode &opcode)
 {
     const auto err = std::format("[cpu {:16x} {}] unknown cop1 opcode {:08x} : {:08x}\n",
@@ -22,8 +31,9 @@ void instr_COP1(N64 &n64, const Opcode &opcode)
     }
 
     const u32 offset = calc_cop1_table_offset(opcode);
+    UNUSED(offset);
 
-    call_handler<debug>(n64,opcode,offset);
+    //call_handler<debug>(n64,opcode,offset);
 }
 
 template<const b32 debug>
@@ -35,7 +45,16 @@ void instr_lwc1(N64 &n64, const Opcode &opcode)
         return;
     }
 
-    instr_unknown_opcode(n64,opcode);
+    const auto base = opcode.rs;
+    const u32 ft = get_ft(opcode);
+
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+
+    const u32 v = read_u32<debug>(n64,n64.cpu.regs[base] + imm);
+    const f32 f = bit_cast_float(v);
+
+    write_cop1_reg(n64,ft,f);    
 }
 
 template<const b32 debug>
@@ -84,6 +103,14 @@ void instr_ctc1(N64& n64, const Opcode &opcode)
 {
     const u32 fs = get_fs(opcode);
     write_cop1_control(n64,fs,n64.cpu.regs[opcode.rt]);
+}
+
+void instr_mtc1(N64& n64, const Opcode &opcode)
+{
+    const u32 fs = get_fs(opcode);
+    
+    const f32 f = bit_cast_float(n64.cpu.regs[opcode.rt]);
+    write_cop1_reg(n64,fs,f);
 }
 
 }

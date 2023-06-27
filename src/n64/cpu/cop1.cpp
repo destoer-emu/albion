@@ -76,5 +76,25 @@ u32 read_cop1_control(N64& n64, u32 idx)
     }
 }
 
+u32 calc_float_reg_idx(N64& n64, u32 reg)
+{
+    auto& status = n64.cpu.cop0.status;
+    return (reg >> status.fr) & ~u32(!status.fr);
+}
+
+f64 read_cop1_reg(N64& n64, u32 reg)
+{
+    const u32 idx = calc_float_reg_idx(n64,reg);
+
+    return n64.cpu.cop1.regs[idx];
+}
+
+void write_cop1_reg(N64& n64, u32 reg, f64 v)
+{
+    const u32 idx = calc_float_reg_idx(n64,reg);
+
+    n64.cpu.cop1.regs[idx] = v;
+}
+
 
 }

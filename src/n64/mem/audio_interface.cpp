@@ -30,7 +30,8 @@ u32 read_ai(N64& n64, u64 addr)
 
         default:
         {
-            unimplemented("ai read: %x\n",addr);
+            //unimplemented("ai read: %x\n",addr);
+            return 0;
             break;
         }
     }
