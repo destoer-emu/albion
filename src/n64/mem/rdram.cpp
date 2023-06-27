@@ -34,11 +34,11 @@ void write_ri(N64& n64, u64 addr ,u32 v)
 
     switch(addr)
     {
-        case RI_SELECT_REG: ri.select = v & 0b111111; break;
-        case RI_CONFIG_REG: ri.config = v & 0b1111111; break;
-        case RI_CURRENT_LOAD_REG: break; // write only ignore for now
-        case RI_BASE_REG: ri.base = v & 0b1111; break;
-        case RI_REFRESH_REG: ri.refresh = v & 0b1111111111111111111; break;
+        case RI_SELECT: ri.select = v & 0b111111; break;
+        case RI_CONFIG: ri.config = v & 0b1111111; break;
+        case RI_CURRENT_LOAD: break; // write only ignore for now
+        case RI_BASE: ri.base = v & 0b1111; break;
+        case RI_REFRESH: ri.refresh = v & 0b1111111111111111111; break;
 
         default: break;
     }    
@@ -50,10 +50,10 @@ u32 read_ri(N64& n64, u64 addr)
 
     switch(addr)
     {
-        case RI_SELECT_REG: return ri.select;
-        case RI_CONFIG_REG: return ri.config;
-        case RI_BASE_REG: return ri.base;
-        case RI_REFRESH_REG: return ri.refresh;
+        case RI_SELECT: return ri.select;
+        case RI_CONFIG: return ri.config;
+        case RI_BASE: return ri.base;
+        case RI_REFRESH: return ri.refresh;
 
         default: return 0;
     }    

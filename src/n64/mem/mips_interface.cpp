@@ -20,7 +20,7 @@ void write_mi(N64& n64, u64 addr, u32 v)
 
     switch(addr)
     {  
-        case MI_MODE_REG: 
+        case MI_MODE: 
         {
             mi.mode = v; 
             if(is_set(v,11)) // bit 11 wrote clear DP interrupt bit 
@@ -30,7 +30,7 @@ void write_mi(N64& n64, u64 addr, u32 v)
             break;
         }
 
-        case MI_INTR_MASK_REG:
+        case MI_INTR_MASK:
         {
             mi.mask = deset_bitset_if_set(mi.mask,v,0,SP_INTR_BIT);
             mi.mask = set_bitset_if_set(mi.mask,v,1,SP_INTR_BIT);
@@ -63,7 +63,7 @@ u32 read_mi(N64& n64, u64 addr)
 
     switch(addr)
     {
-        case MI_VERSION_REG: return 0x02020102;
+        case MI_VERSION: return 0x02020102;
 
         default:
         {

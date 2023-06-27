@@ -51,10 +51,10 @@ access_type read_physical(N64 &n64, u32 addr)
             case 2: unimplemented("read_mem: dp span regs"); return 0;
             case 3: return read_mi(n64,addr); 
             case 4: return read_vi(n64,addr); 
-            case 5: unimplemented("read_mem: audio interface %08x\n",addr); return 0;
+            case 5: return read_ai(n64,addr);
             case 6: return read_pi(n64,addr); 
             case 7: return read_ri(n64,addr);
-            case 8: unimplemented("read_mem: serial interface :%08x\n",addr);  return 0;
+            case 8: return read_si(n64,addr);
 
             default: return 0;
         }
@@ -155,10 +155,10 @@ void write_physical(N64 &n64, u32 addr, access_type v)
             case 2: unimplemented("write_mem: dp span regs"); break;
             case 3: write_mi(n64,addr,v); break;
             case 4: write_vi(n64,addr,v); break;
-            case 5: unimplemented("write_mem: audio interface %08x\n",addr); break;
+            case 5: write_ai(n64,addr,v); break;
             case 6: write_pi(n64,addr,v); break;
             case 7: write_ri(n64,addr,v); break;
-            case 8: unimplemented("write_mem: serial interface :%08x\n",addr); break;
+            case 8: write_si(n64,addr,v); break;
 
             default: break;
         }

@@ -133,6 +133,8 @@ void reset_mem(Mem &mem, const std::string &filename)
     mem.mi = {};
     mem.vi = {};
     mem.sp_regs = {};
+    mem.si = {};
+    mem.ai = {};
 }
 
 u32 remap_addr(N64& n64,u32 addr)
@@ -248,3 +250,5 @@ void write_u64(N64 &n64,u32 addr,u64 v)
 #include <n64/mem/video_interface.cpp>
 #include <n64/mem/peripheral_interface.cpp>
 #include <n64/mem/pif.cpp>
+#include <n64/mem/serial_interface.cpp>
+#include <n64/mem/audio_interface.cpp>

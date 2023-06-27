@@ -6,7 +6,7 @@ void write_sp_regs(N64& n64, u64 addr ,u32 v)
 
     switch(addr)
     {
-        case SP_STATUS_REG:
+        case SP_STATUS:
         {
             sp.halt = deset_if_set(sp.halt,v,0);
             sp.halt = set_if_set(sp.halt,v,1);
@@ -55,7 +55,7 @@ u32 read_sp_regs(N64& n64, u64 addr)
 
     switch(addr)
     {
-        case SP_PC_REG:
+        case SP_PC:
         {
             return sp.pc;
         }

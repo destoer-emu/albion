@@ -5,6 +5,8 @@
 #include <n64/mem/peripheral_interface.h>
 #include <n64/mem/video_interface.h>
 #include <n64/mem/mips_interface.h>
+#include <n64/mem/serial_interface.h>
+#include <n64/mem/audio_interface.h>
 
 namespace nintendo64
 {
@@ -28,6 +30,8 @@ struct Mem
     PeripheralInterface pi;
     MipsInterface mi;
     VideoInterface vi;
+    SerialInterface si;
+    AudioInterface ai;
 
     std::vector<u8> pif_ram;
 };

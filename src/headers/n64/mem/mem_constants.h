@@ -2,42 +2,49 @@
 
 
 // RDRAM interface
-static constexpr u32  RI_SELECT_REG = 0x0470000c;
-static constexpr u32  RI_BASE_REG = 0x04700000;
-static constexpr u32  RI_CONFIG_REG = 0X04700004;
-static constexpr u32  RI_CURRENT_LOAD_REG = 0x04700008;
-static constexpr u32  RI_REFRESH_REG = 0x04700010;
+static constexpr u32  RI_SELECT = 0x0470000c;
+static constexpr u32  RI_BASE = 0x04700000;
+static constexpr u32  RI_CONFIG = 0X04700004;
+static constexpr u32  RI_CURRENT_LOAD = 0x04700008;
+static constexpr u32  RI_REFRESH = 0x04700010;
 
 // peripheral INTERFACE
-static constexpr u32  PI_CART_ADDR_REG = 0x04600004;
-static constexpr u32  PI_CART_DRAM_ADDR_REG = 0x04600000;
-static constexpr u32  PI_STATUS_REG = 0x04600010;
-static constexpr u32  PI_WR_LEN_REG = 0x0460000c;
+static constexpr u32  PI_CART_ADDR = 0x04600004;
+static constexpr u32  PI_CART_DRAM_ADDR = 0x04600000;
+static constexpr u32  PI_STATUS = 0x04600010;
+static constexpr u32  PI_WR_LEN = 0x0460000c;
 
 
 // mips interface
-static constexpr u32 MI_MODE_REG  = 0x04300000;
-static constexpr u32 MI_VERSION_REG = 0x04300004;
-static constexpr u32 MI_INTR_MASK_REG = 0x0430000C;
+static constexpr u32 MI_MODE  = 0x04300000;
+static constexpr u32 MI_VERSION = 0x04300004;
+static constexpr u32 MI_INTR_MASK = 0x0430000C;
 
 
 // video interface
-static constexpr u32 VI_CONTROL_REG = 0x04400000;
-static constexpr u32 VI_ORIGIN_REG = 0x04400004;
-static constexpr u32 VI_WIDTH_REG = 0x04400008;
-static constexpr u32 VI_INTR_REG = 0x0440000c;
-static constexpr u32 VI_CURRENT_REG = 0x04400010;
-static constexpr u32 VI_BURST_REG = 0x04400014;
-static constexpr u32 VI_V_SYNC_REG = 0x04400018;
-static constexpr u32 VI_H_SYNC_REG = 0x0440001c;
-static constexpr u32 VI_LEAP_REG = 0x04400020;
-static constexpr u32 VI_H_START_REG = 0x04400024;
-static constexpr u32 VI_V_START_REG = 0x04400028;
-static constexpr u32 VI_V_BURST_REG = 0x0440002c;
-static constexpr u32 VI_X_SCALE_REG = 0x04400030;
-static constexpr u32 VI_Y_SCALE_REG = 0x04400034;
+static constexpr u32 VI_CONTROL = 0x04400000;
+static constexpr u32 VI_ORIGIN = 0x04400004;
+static constexpr u32 VI_WIDTH = 0x04400008;
+static constexpr u32 VI_INTR = 0x0440000c;
+static constexpr u32 VI_CURRENT = 0x04400010;
+static constexpr u32 VI_BURST = 0x04400014;
+static constexpr u32 VI_V_SYNC = 0x04400018;
+static constexpr u32 VI_H_SYNC = 0x0440001c;
+static constexpr u32 VI_LEAP = 0x04400020;
+static constexpr u32 VI_H_START = 0x04400024;
+static constexpr u32 VI_V_START = 0x04400028;
+static constexpr u32 VI_V_BURST = 0x0440002c;
+static constexpr u32 VI_X_SCALE = 0x04400030;
+static constexpr u32 VI_Y_SCALE = 0x04400034;
 
-// intr bits
+
+// serial interface
+static constexpr u32 SI_STATUS = 0x0480'0018;
+
+// audio interface
+static constexpr u32 AI_STATUS = 0x0450'000C;
+
+// mips interface intr bits
 static constexpr u32 SP_INTR_BIT = 0;
 static constexpr u32 SI_INTR_BIT = 1;
 static constexpr u32 AI_INTR_BIT = 2;
@@ -49,8 +56,8 @@ static constexpr u32 DP_INTR_BIT = 5;
 
 
 // sp
-static constexpr u32 SP_PC_REG = 0x04080000;
-static constexpr u32 SP_STATUS_REG = 0x04040010;
+static constexpr u32 SP_PC = 0x04080000;
+static constexpr u32 SP_STATUS = 0x04040010;
 
 static constexpr u32 PIF_SIZE = 0x40;
 static constexpr u32 PIF_MASK = PIF_SIZE - 1;

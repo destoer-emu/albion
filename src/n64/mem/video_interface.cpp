@@ -7,7 +7,7 @@ void write_vi(N64& n64, u64 addr ,u32 v)
 
     switch(addr)
     {
-        case VI_CONTROL_REG:
+        case VI_CONTROL:
         {
             vi.bpp = v & 0b11;
             vi.gamma_dither = is_set(v,2);
@@ -39,13 +39,13 @@ void write_vi(N64& n64, u64 addr ,u32 v)
             break;
         }
 
-        case VI_ORIGIN_REG:
+        case VI_ORIGIN:
         {
             vi.origin = v & 0x00ffffff;
             break;
         }
 
-        case VI_WIDTH_REG:
+        case VI_WIDTH:
         {
             vi.width = v & 0xfff;
 
@@ -60,7 +60,7 @@ void write_vi(N64& n64, u64 addr ,u32 v)
             break;
         }
 
-        case VI_INTR_REG:
+        case VI_INTR:
         {
             vi.intr = v & 0x7ff;
             break;
@@ -68,26 +68,26 @@ void write_vi(N64& n64, u64 addr ,u32 v)
         
         // TODO: find out what the hell this thing does lol
         // need to start looking at how rendering works?
-        case VI_BURST_REG:
+        case VI_BURST:
         {
             vi.burst = v;
             break;
         }
 
-        case VI_V_SYNC_REG:
+        case VI_V_SYNC:
         {
             vi.vsync = v & 0x7ff;
             break;
         }
 
-        case VI_H_SYNC_REG:
+        case VI_H_SYNC:
         {
             vi.hsync = v & 0x7ff;
             break;
         }     
 
         // current line when written clears vi intr
-        case VI_CURRENT_REG:
+        case VI_CURRENT:
         {
             auto& mi = n64.mem.mi;
             mi.intr = deset_bit(mi.intr,VI_INTR_BIT);
@@ -95,37 +95,37 @@ void write_vi(N64& n64, u64 addr ,u32 v)
         }
 
         // TODO: seperate these into there fields
-        case VI_LEAP_REG:
+        case VI_LEAP:
         {
             vi.leap = v & 0x0fffffff;
             break;
         }
 
-        case VI_H_START_REG:
+        case VI_H_START:
         {
             vi.hstart = v & ~0b000000;
             break;
         }
 
-        case VI_V_START_REG:
+        case VI_V_START:
         {
             vi.vstart = v & ~0b000000;
             break;                
         }
 
-        case VI_V_BURST_REG:
+        case VI_V_BURST:
         {
             vi.vburst = v & ~0b000000;
             break;
         }
 
-        case VI_X_SCALE_REG:
+        case VI_X_SCALE:
         {
             vi.xscale = v & 0x0fffffff;
             break;
         }
 
-        case VI_Y_SCALE_REG:
+        case VI_Y_SCALE:
         {
             vi.yscale = v & 0x0fffffff;
             break;
@@ -141,7 +141,7 @@ u32 read_vi(N64& n64, u64 addr)
 
     switch(addr)
     {
-        case VI_CURRENT_REG: 
+        case VI_CURRENT: 
         {
             // TODO: what register controls the interlacing behavior?
             return n64.rdp.ly & ~0b1;
