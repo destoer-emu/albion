@@ -2,7 +2,8 @@ namespace nintendo64
 {
 struct SerialInterface
 {
-
+    u32 dram_addr = 0;
+    u32 pif_addr = 0;
 
 
     // si status , read only

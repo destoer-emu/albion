@@ -25,6 +25,12 @@ void N64Scheduler::service_event(const EventNode<n64_event> & node)
             count_event(n64,cycles_to_tick);
             break;
         }
+
+        case n64_event::ai_dma:
+        {
+            audio_event(n64);
+            break;
+        }
     }
 }
 

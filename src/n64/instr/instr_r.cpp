@@ -69,7 +69,10 @@ void instr_sra(N64 &n64, const Opcode &opcode)
 
 void instr_srav(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    // shift, clamp, sign extend
+    // thanks dillon
+    const auto v = s32(s64(n64.cpu.regs[opcode.rt]) >> (n64.cpu.regs[opcode.rs] & 0b111'11));
+    n64.cpu.regs[opcode.rd] = sign_extend_mips<s64,s32>(v);
 }
 
 void instr_dsrav(N64 &n64, const Opcode &opcode)

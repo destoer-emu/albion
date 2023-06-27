@@ -12,10 +12,11 @@ namespace nintendo64
 enum class n64_event
 {
     line_inc,
-    count
+    count,
+    ai_dma,
 };
 
-constexpr size_t EVENT_SIZE = 2;
+constexpr size_t EVENT_SIZE = 3;
 
 struct N64Scheduler final : public Scheduler<EVENT_SIZE,n64_event>
 {

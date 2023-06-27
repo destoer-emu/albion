@@ -11,8 +11,10 @@ static constexpr u32 AQUIRE_CHECKSUM_FLAG = 1 << 5;
 static constexpr u32 RUN_CHECKSUM_FLAG =  1 << 6;
 static constexpr u32 ACK_FLAG = 1 << 7;
 
-void handle_pif_commands(N64& n64, u8 commands)
+void handle_pif_commands(N64& n64)
 {
+    const u8 commands = n64.mem.pif_ram[PIF_MASK];
+
     if(commands & CONFIG_FLAG)
     {
         printf("pif: joybus config");
@@ -57,7 +59,7 @@ void write_pif(N64& n64, u64 addr, access_type v)
     // command byte written into last byte
     if(offset + sizeof(access_type) == PIF_SIZE)
     {
-        handle_pif_commands(n64,n64.mem.pif_ram[PIF_MASK]);
+        handle_pif_commands(n64);
     }
 }
 

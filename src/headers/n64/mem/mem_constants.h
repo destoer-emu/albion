@@ -50,6 +50,9 @@ static constexpr u32 VI_Y_SCALE = 0x04400034;
 
 // serial interface
 static constexpr u32 SI_STATUS = 0x0480'0018;
+static constexpr u32 SI_DRAM_ADDR = 0x0480'0000;
+static constexpr u32 SI_PIF_AD_WR64B = 0x0480'0010;
+static constexpr u32 SI_PIF_AD_RD64B = 0x0480'0004;
 
 // audio interface
 static constexpr u32 AI_STATUS = 0x0450'000C;
