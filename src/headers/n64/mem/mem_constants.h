@@ -2,18 +2,27 @@
 
 
 // RDRAM interface
-static constexpr u32  RI_SELECT = 0x0470000c;
-static constexpr u32  RI_BASE = 0x04700000;
-static constexpr u32  RI_CONFIG = 0X04700004;
-static constexpr u32  RI_CURRENT_LOAD = 0x04700008;
-static constexpr u32  RI_REFRESH = 0x04700010;
+static constexpr u32 RI_SELECT = 0x0470000c;
+static constexpr u32 RI_BASE = 0x04700000;
+static constexpr u32 RI_CONFIG = 0X04700004;
+static constexpr u32 RI_CURRENT_LOAD = 0x04700008;
+static constexpr u32 RI_REFRESH = 0x04700010;
 
 // peripheral INTERFACE
-static constexpr u32  PI_CART_ADDR = 0x04600004;
-static constexpr u32  PI_CART_DRAM_ADDR = 0x04600000;
-static constexpr u32  PI_STATUS = 0x04600010;
-static constexpr u32  PI_WR_LEN = 0x0460000c;
+static constexpr u32 PI_CART_ADDR = 0x04600004;
+static constexpr u32 PI_CART_DRAM_ADDR = 0x04600000;
+static constexpr u32 PI_STATUS = 0x04600010;
+static constexpr u32 PI_WR_LEN = 0x0460000c;
 
+static constexpr u32 PI_BSD_DOM1_LAT = 0x0460'0014;
+static constexpr u32 PI_BSD_DOM1_PWD = 0x0460'0018;
+static constexpr u32 PI_BSD_DOM1_PGS = 0x0460'001c;
+static constexpr u32 PI_BSD_DOM1_RLS = 0x0460'0020;
+
+static constexpr u32 PI_BSD_DOM2_LAT = 0x0460'0024;
+static constexpr u32 PI_BSD_DOM2_PWD = 0x0460'0028;
+static constexpr u32 PI_BSD_DOM2_PGS = 0x0460'002c;
+static constexpr u32 PI_BSD_DOM2_RLS = 0x0460'0030;
 
 // mips interface
 static constexpr u32 MI_MODE  = 0x04300000;

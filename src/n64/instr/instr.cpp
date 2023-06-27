@@ -214,8 +214,7 @@ void instr_beq(N64 &n64, const Opcode &opcode)
     }
 
     if(n64.cpu.regs[opcode.rs] == n64.cpu.regs[opcode.rt])
-    {
-        
+    { 
         write_pc(n64,target);
     }
 }
@@ -399,7 +398,12 @@ void instr_bgtz(N64 &n64, const Opcode &opcode)
 
 void instr_blez(N64& n64, const Opcode& opcode)
 {
-    instr_unknown_opcode(n64,opcode);
+    if(s64(n64.cpu.regs[opcode.rs]) <= 0)
+    {
+        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
+
+        write_pc(n64,target);
+    }
 }
 
 void instr_bgtzl(N64& n64, const Opcode& opcode)

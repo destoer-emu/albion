@@ -73,7 +73,16 @@ u32 read_pi(N64& n64, u64 addr)
     {
         case PI_STATUS: return pi.status;
 
-        
+        case PI_BSD_DOM1_LAT: return pi.bsd_dom1_lat;
+        case PI_BSD_DOM1_PWD: return pi.bsd_dom1_pwd;
+        case PI_BSD_DOM1_PGS: return pi.bsd_dom1_pgs;
+        case PI_BSD_DOM1_RLS: return pi.bsd_dom1_rls;
+
+        case PI_BSD_DOM2_LAT: return pi.bsd_dom2_lat;
+        case PI_BSD_DOM2_PWD: return pi.bsd_dom2_pwd;
+        case PI_BSD_DOM2_PGS: return pi.bsd_dom2_pgs;
+        case PI_BSD_DOM2_RLS: return pi.bsd_dom2_rls;
+
         default:
         {
             unimplemented("read_mem: peripheral interface: %8x\n",addr);
