@@ -100,6 +100,17 @@ void count_intr(N64 &n64)
     insert_count_event(n64);
 }
 
+void count_event(N64& n64, u32 cycles)
+{
+    auto& cop0 = n64.cpu.cop0;
+    cop0.count += cycles;
+
+    if((cop0.count >> 1) == cop0.compare)
+    {
+        count_intr(n64);        
+    }
+}
+
 void mi_intr(N64& n64)
 {
     set_intr_cop0(n64,MI_BIT);
@@ -247,12 +258,20 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
             break;
         }
 
+        case INDEX:
+        {
+            auto& index = cop0.index;
+            index.p = is_set(v,31);
+            index.idx = v & 0b111'111;
+            break;
+        }
+
         // read only
         case RANDOM: break;
 
         default:
         {
-            printf("unimplemented cop0 write: %s\n",COP0_NAMES[reg]);
+            printf("unimplemented cop0 write: %s(%d)\n",COP0_NAMES[reg],reg);
             exit(1);
         }
     }
@@ -294,9 +313,20 @@ u64 read_cop0(N64& n64, u32 reg)
             return read_entry_lo(cop0.entry_lo_one);
         }
 
+        case COUNT:
+        {
+            return (cop0.count >> 1);
+        }
+
+        case INDEX:
+        {
+            auto& index = cop0.index;
+            return (index.idx << 0) | (index.p << 31);
+        }
+
         default:
         {
-            printf("unimplemented cop0 read: %s\n",COP0_NAMES[reg]);
+            printf("unimplemented cop0 read: %s(%d)\n",COP0_NAMES[reg],reg);
             exit(1);
         }        
     }

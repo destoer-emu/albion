@@ -10,6 +10,8 @@ void N64Scheduler::skip_to_event()
 
 void N64Scheduler::service_event(const EventNode<n64_event> & node)
 {
+    const auto cycles_to_tick = timestamp - node.start;
+
     switch(node.type)
     {
         case n64_event::line_inc:
@@ -20,7 +22,7 @@ void N64Scheduler::service_event(const EventNode<n64_event> & node)
 
         case n64_event::count:
         {
-            count_intr(n64);
+            count_event(n64,cycles_to_tick);
             break;
         }
     }

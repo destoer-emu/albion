@@ -47,6 +47,12 @@ struct EntryLo
     b32 g = 0;
 };
 
+struct Index
+{
+    b32 p;
+    u32 idx;
+};
+
 // TODO: factor these into structs
 struct Cop0
 {
@@ -61,6 +67,7 @@ struct Cop0
     EntryHi entry_hi;
     EntryLo entry_lo_one;
     EntryLo entry_lo_zero;
+    Index index;
 
     // count and compare
     u64 count = 0;
