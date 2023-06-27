@@ -274,13 +274,42 @@ void instr_lwu(N64 &n64, const Opcode &opcode)
 template<const b32 debug>
 void instr_lwl(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_opcode(n64,opcode);
+    const auto base = opcode.rs;
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+    u64 addr = (n64.cpu.regs[base] + imm);
+
+    const u32 offset = (addr & 3);
+    const u32 mask = u32(0xffff'ffff) << (offset * 8);
+
+    // 'rotate' like an unaligned arm load
+    u32 v = read_u32<debug>(n64,addr) << (offset * 8);
+
+    // combine reg with load
+    v = (v & mask) | (u32(n64.cpu.regs[opcode.rt]) & ~mask);
+
+    // sign extend ans back out;
+    n64.cpu.regs[opcode.rt] = sign_extend_mips<s64,s32>(v);
 }
 
 template<const b32 debug>
 void instr_lwr(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_opcode(n64,opcode);
+    const auto base = opcode.rs;
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+    u64 addr = (n64.cpu.regs[base] + imm);
+
+    // right, so here 3 is identity
+    const u32 offset = 3 - (addr & 3);
+    const u32 mask = u32(0xffff'ffff) >> (offset * 8);
+
+    // 'rotate' like an unaligned arm load
+    u32 v = read_u32<debug>(n64,addr) >> (offset * 8); 
+
+    // combine reg with load
+    v = (v & mask) | (u32(n64.cpu.regs[opcode.rt]) & ~mask);
+
+    // sign extend ans back out;
+    n64.cpu.regs[opcode.rt] = sign_extend_mips<s64,s32>(v);
 }
 
 template<const b32 debug>
@@ -292,16 +321,45 @@ void instr_sw(N64 &n64, const Opcode &opcode)
     write_u32<debug>(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);
 }
 
-template<const b32 debug>
-void instr_swr(N64 &n64, const Opcode &opcode)
-{
-    instr_unknown_opcode(n64,opcode);
-}
 
 template<const b32 debug>
 void instr_swl(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_opcode(n64,opcode);
+    const auto base = opcode.rs;
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+    u64 addr = (n64.cpu.regs[base] + imm);
+
+    const u32 offset = (addr & 3);
+    const u32 mask = u32(0xffff'ffff) >> (offset * 8);
+
+    // 'rotate' like an unaligned arm load
+    u32 v = u32(n64.cpu.regs[opcode.rt]) >> (offset * 8);
+
+    // combine reg with load
+    v = (read_u32<debug>(n64,addr) & ~mask) | (v & mask);
+
+    // sign extend ans back out;
+    write_u32<debug>(n64,addr,v);
+}
+
+template<const b32 debug>
+void instr_swr(N64 &n64, const Opcode &opcode)
+{
+    const auto base = opcode.rs;
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+    u64 addr = (n64.cpu.regs[base] + imm);
+
+    const u32 offset = 3 - (addr & 3);
+    const u32 mask = u32(0xffff'ffff) << (offset * 8);
+
+    // 'rotate' like an unaligned arm load
+    u32 v = u32(n64.cpu.regs[opcode.rt]) << (offset * 8);
+
+    // combine reg with load
+    v = (read_u32<debug>(n64,addr) & ~mask) | (v & mask);
+
+    // sign extend ans back out;
+    write_u32<debug>(n64,addr,v);
 }
 
 template<const b32 debug>

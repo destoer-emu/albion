@@ -18,7 +18,7 @@ void write_si(N64& n64, u64 addr, u32 v)
 
         default:
         {
-            unimplemented("si write: %x\n",addr);
+            //unimplemented("si write: %x\n",addr);
             break;
         }
     }
@@ -38,7 +38,8 @@ u32 read_si(N64& n64, u64 addr)
 
         default:
         {
-            unimplemented("si read: %x\n",addr);
+            //unimplemented("si read: %x\n",addr);
+            return 0;
         }
     }
 }
