@@ -67,7 +67,12 @@ void do_pi_dma(N64 &n64, u32 src, u32 dst, u32 len);
 void reset_mem(Mem &mem, const std::string &filename)
 {
     // read rom in and hle the pif rom
-    read_bin(filename,mem.rom);
+    if(read_bin(filename,mem.rom))
+    {
+        const auto err = std::format("could not open file: {}\n",filename);
+
+        throw std::runtime_error(err);         
+    }
 
     if(mem.rom.size() < 32 * 1024 * 1024)
     {

@@ -147,6 +147,21 @@ void instr_slt(N64 &n64, const Opcode &opcode)
     n64.cpu.regs[opcode.rd] = s64(n64.cpu.regs[opcode.rs]) < s64(n64.cpu.regs[opcode.rt]);    
 }
 
+void instr_sub(N64& n64, const Opcode& opcode)
+{
+    const u64 ans = sign_extend_mips<s64,s32>(u32(n64.cpu.regs[opcode.rs]) - u32(n64.cpu.regs[opcode.rt]));
+
+    if(ssub_overflow(s32(n64.cpu.regs[opcode.rs]),s32(n64.cpu.regs[opcode.rt])))
+    {
+        unimplemented("sub overflow");
+    }
+
+    else
+    {
+        n64.cpu.regs[opcode.rd] = ans;
+    }
+}
+
 void instr_subu(N64 &n64, const Opcode &opcode)
 {
     // does not trap on overflow
@@ -155,7 +170,17 @@ void instr_subu(N64 &n64, const Opcode &opcode)
 
 void instr_dsub(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    const u64 ans = n64.cpu.regs[opcode.rs] - n64.cpu.regs[opcode.rt];
+
+    if(ssub_overflow(s64(n64.cpu.regs[opcode.rs]),s64(n64.cpu.regs[opcode.rt])))
+    {
+        unimplemented("sub overflow");
+    }
+
+    else
+    {
+        n64.cpu.regs[opcode.rd] = ans;
+    }
 }
 
 void instr_dsubu(N64 &n64, const Opcode &opcode)
@@ -173,7 +198,7 @@ void instr_add(N64 &n64, const Opcode &opcode)
 {
     const auto ans = sign_extend_mips<s64,s32>(u32(n64.cpu.regs[opcode.rs]) + u32(n64.cpu.regs[opcode.rt]));
 
-    if(did_overflow(s32(n64.cpu.regs[opcode.rs]),s32(n64.cpu.regs[opcode.rt]),s32(ans)))
+    if(sadd_overflow(s32(n64.cpu.regs[opcode.rs]),s32(n64.cpu.regs[opcode.rt])))
     {
         unimplemented("instr_add overflow");
     }
@@ -186,12 +211,22 @@ void instr_add(N64 &n64, const Opcode &opcode)
 
 void instr_dadd(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    const u64 ans = n64.cpu.regs[opcode.rs] + n64.cpu.regs[opcode.rt];
+
+    if(sadd_overflow(s64(n64.cpu.regs[opcode.rs]),s64(n64.cpu.regs[opcode.rt])))
+    {
+        unimplemented("instr_dadd overflow");
+    }
+
+    else
+    {
+        n64.cpu.regs[opcode.rd] = ans;
+    }
 }
 
 void instr_daddu(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    n64.cpu.regs[opcode.rd] = n64.cpu.regs[opcode.rs] + n64.cpu.regs[opcode.rt];
 }
 
 

@@ -37,7 +37,6 @@ void write_sp_regs(N64& n64, u64 addr ,u32 v)
                 const u32 idx = ((i + 10) * 2);
                 sp.signal[i] = deset_if_set(sp.signal[i],idx,v);
             }
-
             break;
         }
 
@@ -63,7 +62,7 @@ u32 read_sp_regs(N64& n64, u64 addr)
         default:
         {
             unimplemented("read_mem: sp regs %8x\n",addr);
-            return 0;
+            //return 0;
         }
     }    
 }

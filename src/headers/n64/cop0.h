@@ -53,6 +53,12 @@ struct Index
     u32 idx;
 };
 
+struct Context
+{
+    u32 bad_vpn2 = 0;
+    u32 pte_base = 0;
+};
+
 // TODO: factor these into structs
 struct Cop0
 {
@@ -69,8 +75,11 @@ struct Cop0
     EntryLo entry_lo_zero;
     Index index;
     u32 page_mask = 0;
+    u64 bad_vaddr = 0;
+    Context context;
 
     u64 epc = 0;
+    u64 error_epc = 0;
 
     // count and compare
     u64 count = 0;

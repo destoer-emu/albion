@@ -27,11 +27,13 @@ void standard_exception(N64& n64, u32 code)
             if(!in_delay_slot(n64.cpu))
             {
                 cop0.epc = n64.cpu.pc;
+                cause.branch_delay = false;
             }
 
             else
             {
                 cop0.epc = n64.cpu.pc - MIPS_INSTR_SIZE;
+                cause.branch_delay = true;
             }
         }
 
@@ -43,11 +45,13 @@ void standard_exception(N64& n64, u32 code)
             if(!in_delay_slot(n64.cpu))
             {
                 cop0.epc = n64.cpu.pc - MIPS_INSTR_SIZE;
+                cause.branch_delay = false;
             }
 
             else
             {
                 cop0.epc = n64.cpu.pc - (MIPS_INSTR_SIZE * 2);
+                cause.branch_delay = true;
             }
         }
 
@@ -124,11 +128,14 @@ void check_interrupts(N64 &n64)
 
 void insert_count_event(N64 &n64)
 {
+    // remove tick cycles before count
+    n64.scheduler.remove(n64_event::count);
+
     u64 cycles;
 
     auto& cop0 = n64.cpu.cop0;
 
-    const u32 count = cop0.count;
+    const u32 count = cop0.count >> 1;
     const u32 compare = cop0.compare;
 
     
@@ -143,7 +150,7 @@ void insert_count_event(N64 &n64)
     }
 
     const auto event = n64.scheduler.create_event(cycles,n64_event::count);
-    n64.scheduler.insert(event); 
+    n64.scheduler.insert(event,false); 
 }
 
 
@@ -167,7 +174,6 @@ void deset_intr_cop0(N64& n64, u32 bit)
 void count_intr(N64 &n64)
 {
     set_intr_cop0(n64,COUNT_BIT);
-    insert_count_event(n64);
 }
 
 void count_event(N64& n64, u32 cycles)
@@ -175,10 +181,15 @@ void count_event(N64& n64, u32 cycles)
     auto& cop0 = n64.cpu.cop0;
     cop0.count += cycles;
 
-    if((cop0.count >> 1) == cop0.compare)
+    printf("cmp : %zd : %zd\n",(cop0.count >> 1),cop0.compare);
+
+    // account for our shoddy timing..
+    if(abs((cop0.count >> 1) - cop0.compare) <= 25)
     {
         count_intr(n64);        
     }
+
+    insert_count_event(n64);
 }
 
 void mi_intr(N64& n64)
@@ -348,6 +359,18 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
             break;
         }
 
+        case ERROR_EPC:
+        {
+            cop0.error_epc = v;
+            break;
+        }
+
+        case BAD_VADDR:
+        {
+            cop0.bad_vaddr = v;
+            break;
+        }
+
         // read only
         case RANDOM: break;
 
@@ -420,6 +443,27 @@ u64 read_cop0(N64& n64, u32 reg)
         {
             auto& index = cop0.index;
             return (index.idx << 0) | (index.p << 31);
+        }
+
+        case ERROR_EPC:
+        {
+            return cop0.error_epc;
+        }
+
+        case BAD_VADDR:
+        {
+            return cop0.bad_vaddr;
+        }
+
+        case CONTEXT:
+        {
+            auto& context = cop0.context;
+            return (context.bad_vpn2 << 4) | (context.pte_base << 23);
+        }
+
+        case COMPARE:
+        {
+            return cop0.compare;
         }
 
         default:

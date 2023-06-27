@@ -94,6 +94,8 @@ void run_internal(N64 &n64)
     if(n64.mem.ai.enabled)
     {
         set_mi_interrupt(n64,AI_INTR_BIT);
+        n64.mem.ai.full = false;
+        n64.mem.ai.busy = false;
     }
 
     // dont know when the rendering should be finished just do at end for now

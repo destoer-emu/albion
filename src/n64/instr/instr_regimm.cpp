@@ -75,7 +75,12 @@ void instr_bgezall(N64 &n64, const Opcode &opcode)
 
 void instr_bltz(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_regimm(n64,opcode);
+    if(s64(n64.cpu.regs[opcode.rs]) < 0)
+    {
+        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
+
+        write_pc(n64,target);
+    }    
 }
 
 void instr_bltzl(N64 &n64, const Opcode &opcode)
