@@ -120,8 +120,13 @@ void write_pc(N64 &n64, u64 pc)
 void skip_instr(Cpu &cpu)
 {
     cpu.pc = cpu.pc_next;
-    cpu.pc_next += 4;
+    cpu.pc_next += MIPS_INSTR_SIZE;
 }
 
+
+b32 in_delay_slot(Cpu& cpu)
+{
+    return cpu.pc + MIPS_INSTR_SIZE != cpu.pc_next;
+}
 
 }

@@ -148,7 +148,7 @@ u32 remap_addr(N64& n64,u32 addr)
 
     if(is_set(tlb_set,idx))
     {
-        return addr & 0x1FFF'FFFF;
+        //return addr & 0x1FFF'FFFF;
         assert(false);
     }
 

@@ -24,14 +24,31 @@ void standard_exception(N64& n64, u32 code)
         // interrupt happens at start of instr
         if(code == beyond_all_repair::INTERRUPT)
         {
-            cop0.epc = n64.cpu.pc;
+            if(!in_delay_slot(n64.cpu))
+            {
+                cop0.epc = n64.cpu.pc;
+            }
+
+            else
+            {
+                cop0.epc = n64.cpu.pc - MIPS_INSTR_SIZE;
+            }
         }
 
         else
         {
-            // TODO: is this quite right?
+            // pc will be ahead + 4
             assert(false);
-            cop0.epc = n64.cpu.pc - MIPS_INSTR_SIZE;
+
+            if(!in_delay_slot(n64.cpu))
+            {
+                cop0.epc = n64.cpu.pc - MIPS_INSTR_SIZE;
+            }
+
+            else
+            {
+                cop0.epc = n64.cpu.pc - (MIPS_INSTR_SIZE * 2);
+            }
         }
 
         // bev bit is set
@@ -50,7 +67,7 @@ void standard_exception(N64& n64, u32 code)
                 case TLBL: vector = 0x0; assert(false); break;
                 case TLBS: vector = 0x080; assert(false); break;
 
-                default: vector = 0; break;
+                default: vector = 0x180; break;
             }
 
             const u32 target = 0xFFFF'FFFF'8000'0000 + vector; 

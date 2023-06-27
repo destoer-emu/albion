@@ -53,6 +53,11 @@ static constexpr u32 SI_STATUS = 0x0480'0018;
 
 // audio interface
 static constexpr u32 AI_STATUS = 0x0450'000C;
+static constexpr u32 AI_CONTROL = 0x0450'0008;
+static constexpr u32 AI_DACRATE = 0x0450'0010; 
+static constexpr u32 AI_BITRATE = 0x0450'0014;
+static constexpr u32 AI_DRAM_ADDR = 0x0450'0000;
+static constexpr u32 AI_LENGTH = 0x0450'0004;
 
 // mips interface intr bits
 static constexpr u32 SP_INTR_BIT = 0;
