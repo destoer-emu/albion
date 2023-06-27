@@ -21,7 +21,6 @@ void handle_pif_commands(N64& n64, u8 commands)
     if(commands & CHALLENGE_FLAG)
     {
         printf("pif: cic channlge\n");
-        n64.mem.pif_ram[PIF_MASK] = ACK_FLAG;
     }
 
     if(commands & TERMINATE_FLAG)
@@ -43,6 +42,8 @@ void handle_pif_commands(N64& n64, u8 commands)
     {
         printf("pif: run checksum");
     }
+
+    n64.mem.pif_ram[PIF_MASK] = 0;
 }
 
 

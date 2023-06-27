@@ -16,18 +16,18 @@ void reset_rdp(N64 &n64, u32 x, u32 y)
 
     // for now assume ntsc
     n64.rdp.scan_lines = 525;
+    n64.rdp.line_cycles = N64_CLOCK_CYCLES_FRAME / n64.rdp.scan_lines;
+
+    insert_line_event(n64);
 }
 
 void change_res(N64 &n64, u32 x, u32 y)
 {
     auto &rdp = n64.rdp;
-    printf("res change %d : %d : %d\n",x,y, x * y);
+    //printf("res change %d : %d : %d\n",x,y, x * y);
 
     rdp.screen_x = x;
     rdp.screen_y = y;
-
-    rdp.line_cycles = (N64_CLOCK_CYCLES_FRAME / rdp.scan_lines);
-    insert_line_event(n64); 
 
     rdp.screen.resize(x * y);
     std::fill(rdp.screen.begin(),rdp.screen.end(),0xff000000);
