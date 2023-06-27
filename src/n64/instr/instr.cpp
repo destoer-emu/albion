@@ -382,7 +382,10 @@ void instr_lhu(N64 &n64, const Opcode &opcode)
 template<const b32 debug>
 void instr_lh(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_opcode(n64,opcode);
+    const auto base = opcode.rs;
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+    n64.cpu.regs[opcode.rt] = sign_extend_mips<s64,s16>(read_u16<debug>(n64,n64.cpu.regs[base] + imm));
 }
 
 

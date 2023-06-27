@@ -67,6 +67,8 @@ u32 read_mi(N64& n64, u64 addr)
 
         case MI_INTR_MASK: return mi.mask;
 
+        case MI_INTERRUPT: return mi.intr;
+
         default:
         {
             unimplemented("read_mem: mips interface: %8x\n",addr);

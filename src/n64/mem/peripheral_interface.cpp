@@ -57,6 +57,16 @@ void write_pi(N64& n64, u64 addr, u32 v)
             break;
         }
 
+        case PI_BSD_DOM1_LAT: pi.bsd_dom1_lat = v & 0xff; break;
+        case PI_BSD_DOM1_PWD: pi.bsd_dom1_pwd = v & 0xff; break;
+        case PI_BSD_DOM1_PGS: pi.bsd_dom1_pgs = v & 0xf; break;
+        case PI_BSD_DOM1_RLS: pi.bsd_dom1_rls = v & 0b11; break;
+
+        case PI_BSD_DOM2_LAT: pi.bsd_dom2_lat = v & 0xff; break;
+        case PI_BSD_DOM2_PWD: pi.bsd_dom2_pwd = v & 0xff; break;
+        case PI_BSD_DOM2_PGS: pi.bsd_dom2_pgs = v & 0xf; break;
+        case PI_BSD_DOM2_RLS: pi.bsd_dom2_rls = v & 0b11; break;
+
         default: 
         {
             unimplemented("write_mem: pi interface: %08x\n",addr);

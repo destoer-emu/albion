@@ -28,6 +28,7 @@ static constexpr u32 PI_BSD_DOM2_RLS = 0x0460'0030;
 static constexpr u32 MI_MODE  = 0x04300000;
 static constexpr u32 MI_VERSION = 0x04300004;
 static constexpr u32 MI_INTR_MASK = 0x0430000C;
+static constexpr u32 MI_INTERRUPT = 0x0430'0008;
 
 
 // video interface

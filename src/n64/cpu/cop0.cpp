@@ -7,6 +7,79 @@ namespace nintendo64
 static constexpr u32 COUNT_BIT = 7;
 static constexpr u32 MI_BIT = 2;
 
+
+// see page 151 psuedo code of manual
+void standard_exception(N64& n64, u32 code)
+{
+    // TODO: i think we need to run tests for this LOL
+    auto& cop0 = n64.cpu.cop0;
+    auto& status = cop0.status;
+    auto& cause = cop0.cause;
+
+    if(!status.exl)
+    {
+        status.exl = true;
+        cause.exception_code = code;
+
+        // interrupt happens at start of instr
+        if(code == beyond_all_repair::INTERRUPT)
+        {
+            cop0.epc = n64.cpu.pc;
+        }
+
+        else
+        {
+            // TODO: is this quite right?
+            assert(false);
+            cop0.epc = n64.cpu.pc - MIPS_INSTR_SIZE;
+        }
+
+        // bev bit is set
+        if(is_set(status.ds,6))
+        {
+            unimplemented("bev interrupt");
+        }
+
+        else
+        {
+            u32 vector = 0;
+
+            switch(code)
+            {
+                // how do we know what kind of tlb refill it is lol
+                case TLBL: vector = 0x0; assert(false); break;
+                case TLBS: vector = 0x080; assert(false); break;
+
+                default: vector = 0; break;
+            }
+
+            const u32 target = 0xFFFF'FFFF'8000'0000 + vector; 
+
+            // TODO: do we have to wait to write this inside the step func?
+            write_pc(n64,target);
+            skip_instr(n64.cpu);
+        }
+    }
+
+    // double fault
+    else
+    {
+        assert(false);
+    }
+}
+
+void coprocesor_unusable(N64& n64, u32 number)
+{
+    assert(false);
+    UNUSED(n64); UNUSED(number);
+}
+
+void error_exception(N64& n64, u32 code)
+{
+    assert(false);
+    UNUSED(n64); UNUSED(code); 
+}
+
 void check_interrupts(N64 &n64)
 {
     auto& cop0 = n64.cpu.cop0;
@@ -27,29 +100,9 @@ void check_interrupts(N64 &n64)
     if(pending)
     {
         n64.cpu.interrupt = true;
-        // need to go look at exception handling for normal exceptions...
-        assert(false);
     }
 }
 
-// see page 121 psuedo code of manual
-void standard_exception(N64& n64, u32 code)
-{
-    assert(false); 
-    UNUSED(n64); UNUSED(code); 
-}
-
-void coprocesor_unusable(N64& n64, u32 number)
-{
-    assert(false);
-    UNUSED(n64); UNUSED(number);
-}
-
-void error_exception(N64& n64, u32 code)
-{
-    assert(false);
-    UNUSED(n64); UNUSED(code); 
-}
 
 
 void insert_count_event(N64 &n64)
