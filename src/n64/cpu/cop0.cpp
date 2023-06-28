@@ -53,31 +53,25 @@ void standard_exception(N64& n64, u32 code)
             }
         }
 
-        // bev bit is set
-        if(is_set(status.ds,6))
+        // bev goes to uncached
+        const u64 base = is_set(status.ds,6)? 0xFFFF'FFFF'BFC0'0200 : 0xFFFF'FFFF'8000'0000;
+
+        u32 vector = 0;
+
+        switch(code)
         {
-            unimplemented("bev interrupt");
+            // how do we know what kind of tlb refill it is lol
+            case TLBL: vector = 0x0; assert(false); break;
+            case TLBS: vector = 0x080; assert(false); break;
+
+            default: vector = 0x180; break;
         }
 
-        else
-        {
-            u32 vector = 0;
+        const u64 target = base + vector; 
 
-            switch(code)
-            {
-                // how do we know what kind of tlb refill it is lol
-                case TLBL: vector = 0x0; assert(false); break;
-                case TLBS: vector = 0x080; assert(false); break;
-
-                default: vector = 0x180; break;
-            }
-
-            const u32 target = 0xFFFF'FFFF'8000'0000 + vector; 
-
-            // TODO: do we have to wait to write this inside the step func?
-            write_pc(n64,target);
-            skip_instr(n64.cpu);
-        }
+        // TODO: do we have to wait to write this inside the step func?
+        write_pc(n64,target);
+        skip_instr(n64.cpu);   
     }
 
     // double fault
@@ -255,7 +249,7 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
         // when this is == count trigger in interrupt
         case COMPARE:
         {
-            printf("write cmp %d : %d\n",cop0.compare,u32(v));
+            printf("write cmp %x : %x\n",cop0.compare,u32(v));
             n64.scheduler.remove(n64_event::count);
             cop0.compare = v;
             insert_count_event(n64);
@@ -428,7 +422,7 @@ u64 read_cop0(N64& n64, u32 reg)
 
             return status.ie | (status.exl << 1) | (status.erl << 2) |
                 (status.ksu << 3) | (status.ux << 5) | (status.sx << 6) |
-                (status.kx << 7) | (status.im << 8) | (status.ds << 8) |
+                (status.kx << 7) | (status.im << 8) | (status.ds << 16) |
                 (status.re << 25) | (status.fr << 26) | (status.rp << 27) |
                 (status.cu0 << 28) | (status.cu1 << 29) | (status.cu2 << 30) | 
                 (status.cu3 << 31);

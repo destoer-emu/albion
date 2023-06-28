@@ -44,6 +44,8 @@ void reset_cpu(N64 &n64)
     write_cop0(n64,0x0006E463,CONFIG);
     write_cop0(n64,0,COUNT);
     write_cop0(n64,0,COMPARE);
+    write_cop0(n64,0xffff'ffff,EPC);
+    write_cop0(n64,0xffff'ffff,ERROR_EPC);
 
     cpu.pc = 0xA4000040;
     cpu.pc_next = cpu.pc + 4; 
