@@ -89,8 +89,7 @@ void write_vi(N64& n64, u64 addr ,u32 v)
         // current line when written clears vi intr
         case VI_CURRENT:
         {
-            auto& mi = n64.mem.mi;
-            mi.intr = deset_bit(mi.intr,VI_INTR_BIT);
+            deset_mi_interrupt(n64,VI_INTR_BIT);
             break;
         }
 
