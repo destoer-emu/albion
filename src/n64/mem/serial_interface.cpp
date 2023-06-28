@@ -24,18 +24,27 @@ void write_si(N64& n64, u64 addr, u32 v)
 
         case SI_PIF_AD_RD64B:
         {
-            for(u32 i = 0; i < 64; i += 4)
+            if(n64.mem.joybus_enabled)
             {
-                const u32 data = read_physical<u32>(n64,v + i);
-                write_physical<u32>(n64,si.dram_addr+i,data);
+                joybus_comands(n64);
             }
 
+            else
+            {
+                //printf("serial read: %x : %x\n",v,si.dram_addr);
+                for(u32 i = 0; i < 64; i += 4)
+                {
+                    const u32 data = read_physical<u32>(n64,v + i);
+                    write_physical<u32>(n64,si.dram_addr+i,data);
+                }
+            }
             set_mi_interrupt(n64,SI_INTR_BIT);
             break;            
         }
 
         case SI_PIF_AD_WR64B:
         {
+            //printf("serial write: %x : %x\n",v,si.dram_addr);
             for(u32 i = 0; i < 64; i += 4)
             {
                 const u32 data = read_physical<u32>(n64,si.dram_addr + i);

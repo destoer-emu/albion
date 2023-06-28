@@ -111,9 +111,11 @@ void check_interrupts(N64 &n64)
     auto& cause = cop0.cause;
 
 
+    //printf("boop : %x : %d : %d : %d\n",cause.pending,status.ie,status.erl,status.exl);
+
     // enable off or execption being serviced
     // no interrupts on
-    if(!status.ie || cop0.status.erl || cop0.status.exl)
+    if(!status.ie || status.erl || status.exl)
     {
         return;
     }
@@ -311,6 +313,7 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
                 unimplemented("64 bit addressing");
             }
 
+            check_interrupts(n64);
             break;
         }
 

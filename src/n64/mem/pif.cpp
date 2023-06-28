@@ -11,15 +11,32 @@ static constexpr u32 AQUIRE_CHECKSUM_FLAG = 1 << 5;
 static constexpr u32 RUN_CHECKSUM_FLAG =  1 << 6;
 static constexpr u32 ACK_FLAG = 1 << 7;
 
+void joybus_comands(N64& n64)
+{
+    auto& mem = n64.mem;
+    auto& si = mem.si;
+
+    // TODO: actually process the commands
+
+    for(u32 i = 0; i < PIF_SIZE; i++)
+    {
+        handle_write_n64<u8>(mem.pif_ram,i,0xff);
+        write_physical<u8>(n64,si.dram_addr+i,0xff);
+    }
+    handle_write_n64<u8>(mem.pif_ram,PIF_MASK,0x00);
+    write_physical<u8>(n64,si.dram_addr+PIF_MASK,0x00);
+
+    n64.mem.joybus_enabled = false;
+}
+
 void handle_pif_commands(N64& n64)
 {
-    const u8 commands = n64.mem.pif_ram[PIF_MASK];
-
-    printf("pif commands: %x\n",commands);
+    const u8 commands = handle_read_n64<u8>(n64.mem.pif_ram,PIF_MASK);
 
     if(commands & CONFIG_FLAG)
     {
-        printf("pif: joybus config");
+        printf("enable joybus\n");
+        n64.mem.joybus_enabled = true;
     }
 
     if(commands & CHALLENGE_FLAG)
@@ -29,25 +46,25 @@ void handle_pif_commands(N64& n64)
 
     if(commands & TERMINATE_FLAG)
     {
-        printf("pif: terminate");
+        printf("pif: terminate\n");
     }
 
     if(commands & LOCKOUT_FLAG)
     {
-        printf("pif: lockout");
+        printf("pif: lockout\n");
     }
 
     if(commands & AQUIRE_CHECKSUM_FLAG)
     {
-        printf("pif: aquire checksum");
+        printf("pif: aquire checksum\n");
     }
 
     if(commands & RUN_CHECKSUM_FLAG)
     {
-        printf("pif: run checksum");
+        printf("pif: run checksum\n");
     }
 
-    n64.mem.pif_ram[PIF_MASK] = 0;
+    handle_write_n64<u8>(n64.mem.pif_ram,PIF_MASK,0);
 }
 
 

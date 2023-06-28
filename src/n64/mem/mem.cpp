@@ -140,6 +140,7 @@ void reset_mem(Mem &mem, const std::string &filename)
     mem.sp_regs = {};
     mem.si = {};
     mem.ai = {};
+    mem.joybus_enabled = false;
 }
 
 u32 remap_addr(N64& n64,u32 addr)

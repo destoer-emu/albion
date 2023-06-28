@@ -34,6 +34,7 @@ struct Mem
     AudioInterface ai;
 
     std::vector<u8> pif_ram;
+    b32 joybus_enabled = false;
 };
 
 void reset_mem(Mem &mem, const std::string &filename);
