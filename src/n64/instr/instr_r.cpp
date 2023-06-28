@@ -276,11 +276,22 @@ void instr_div(N64 &n64, const Opcode &opcode)
     // div by zero not allowed
     if(n64.cpu.regs[opcode.rt] == 0)
     {
+        if(is_set(n64.cpu.regs[opcode.rs],31))
+        {
+            n64.cpu.lo = 1;
+        }
+
+        else
+        {
+            n64.cpu.lo = 0xffff'ffff;
+        }
+        n64.cpu.hi = n64.cpu.regs[opcode.rs];
         return;
     }
 
-    const s32 res = s32(n64.cpu.regs[opcode.rs]) / s32(n64.cpu.regs[opcode.rt]);
-    const s32 remainder = s32(n64.cpu.regs[opcode.rs]) % s32(n64.cpu.regs[opcode.rt]);
+    // prevent int_min division trap
+    const s32 res = s64(n64.cpu.regs[opcode.rs]) / s64(n64.cpu.regs[opcode.rt]);
+    const s32 remainder = s64(n64.cpu.regs[opcode.rs]) % s64(n64.cpu.regs[opcode.rt]);
 
     n64.cpu.lo = sign_extend_mips<s64,s32>(res);
     n64.cpu.hi = sign_extend_mips<s64,s32>(remainder);  
@@ -291,11 +302,14 @@ void instr_divu(N64 &n64, const Opcode &opcode)
     // div by zero not allowed
     if(n64.cpu.regs[opcode.rt] == 0)
     {
+        n64.cpu.lo = 0xffff'ffff;
+        n64.cpu.hi = n64.cpu.regs[opcode.rs];
         return;
     }
 
-    const u32 res = u32(n64.cpu.regs[opcode.rs]) / u32(n64.cpu.regs[opcode.rt]);
-    const u32 remainder = u32(n64.cpu.regs[opcode.rs]) % u32(n64.cpu.regs[opcode.rt]);
+    // prevent int_min division trap
+    const u32 res = s64(n64.cpu.regs[opcode.rs]) / s64(n64.cpu.regs[opcode.rt]);
+    const u32 remainder = s64(n64.cpu.regs[opcode.rs]) % s64(n64.cpu.regs[opcode.rt]);
 
     n64.cpu.lo = sign_extend_mips<s64,s32>(res);
     n64.cpu.hi = sign_extend_mips<s64,s32>(remainder);    

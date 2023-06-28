@@ -145,9 +145,6 @@ b32 cop0_usable(N64& n64)
 
 void insert_count_event(N64 &n64)
 {
-    // remove tick cycles before count
-    n64.scheduler.remove(n64_event::count);
-
     u64 cycles;
 
     auto& cop0 = n64.cpu.cop0;
@@ -158,15 +155,15 @@ void insert_count_event(N64 &n64)
     
     if(count < compare)
     {
-        cycles = (compare - count) * 2;
+        cycles = (compare - count);
     }
 
     else
     {
-        cycles = ((compare - count) + 0xffffffff) * 2; 
+        cycles = (0xffffffff - (compare - count)); 
     }
 
-    const auto event = n64.scheduler.create_event(cycles,n64_event::count);
+    const auto event = n64.scheduler.create_event(cycles * 2,n64_event::count);
     n64.scheduler.insert(event,false); 
 }
 
@@ -203,6 +200,7 @@ void count_event(N64& n64, u32 cycles)
     // account for our shoddy timing..
     if(abs((cop0.count >> 1) - cop0.compare) <= 25)
     {
+        cop0.count = cop0.compare * 2;
         count_intr(n64);        
     }
 
@@ -240,6 +238,7 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
         // cycle counter (incremented every other cycle)
         case COUNT:
         {
+            n64.scheduler.remove(n64_event::count);
             cop0.count = v;
             insert_count_event(n64);
             break;
@@ -248,6 +247,7 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
         // when this is == count trigger in interrupt
         case COMPARE:
         {
+            n64.scheduler.remove(n64_event::count);
             cop0.compare = v;
             insert_count_event(n64);
 
