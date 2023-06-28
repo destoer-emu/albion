@@ -12,6 +12,34 @@ f32 bit_cast_float(u32 v)
     return out;
 }
 
+f64 bit_cast_double(u64 v)
+{
+    static_assert(sizeof(f64) == sizeof(u64));
+
+    f64 out = 0.0;
+    memcpy(&out,&v,sizeof(u64));
+    return out;
+}
+
+u64 bit_cast_from_double(f64 v)
+{
+    static_assert(sizeof(f64) == sizeof(u64));
+
+    u64 out = 0;
+    memcpy(&out,&v,sizeof(f64));
+    return out;    
+}
+
+u32 bit_cast_from_float(f32 v)
+{
+    static_assert(sizeof(f32) == sizeof(u32));
+
+    u32 out = 0;
+    memcpy(&out,&v,sizeof(f32));
+    return out;    
+}
+
+
 void instr_unknown_cop1(N64 &n64, const Opcode &opcode)
 {
     const auto err = std::format("[cpu {:16x} {}] unknown cop1 opcode {:08x} : {:08x}\n",
@@ -66,7 +94,16 @@ void instr_ldc1(N64 &n64, const Opcode &opcode)
         return;
     }
 
-    instr_unknown_opcode(n64,opcode);
+    const auto base = opcode.rs;
+    const u32 ft = get_ft(opcode);
+
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+
+    const u32 v = read_u64<debug>(n64,n64.cpu.regs[base] + imm);
+    const f64 f = bit_cast_double(v);
+
+    write_cop1_reg(n64,ft,f);   
 }
 
 template<const b32 debug>
@@ -78,7 +115,16 @@ void instr_swc1(N64 &n64, const Opcode &opcode)
         return;
     }
 
-    instr_unknown_opcode(n64,opcode);
+    const auto base = opcode.rs;
+    const u32 ft = get_ft(opcode);
+
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+
+    const f64 f = read_cop1_reg(n64,ft);
+    const u32 v = bit_cast_from_float(f);
+
+    write_u32<debug>(n64,n64.cpu.regs[base] + imm,v);
 }
 
 template<const b32 debug>
@@ -90,7 +136,16 @@ void instr_sdc1(N64 &n64, const Opcode &opcode)
         return;
     }
 
-    instr_unknown_opcode(n64,opcode);
+    const auto base = opcode.rs;
+    const u32 ft = get_ft(opcode);
+
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+
+    const f64 f = read_cop1_reg(n64,ft);
+    const u64 v = bit_cast_from_double(f);
+
+    write_u64<debug>(n64,n64.cpu.regs[base] + imm,v);
 }
 
 void instr_cfc1(N64& n64, const Opcode &opcode)

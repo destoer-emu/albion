@@ -43,4 +43,9 @@ u64 read_cop0(N64& n64, u32 reg);
 
 void instr_unknown_opcode(N64 &n64, const Opcode &opcode);
 b32 in_delay_slot(Cpu& cpu);
+
+const u32 KERNEL_MODE = 0b00;
+const u32 SUPERVISOR_MODE = 0b01;
+const u32 USER_MODE = 0b10;
+
 }

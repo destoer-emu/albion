@@ -2,16 +2,13 @@
 namespace nintendo64
 {
 
-const u32 KERNEL_MODE = 0b00;
-const u32 SUPERVISOR_MODE = 0b01;
-const u32 USER_MODE = 0b10;
-
 b32 cop1_usable(N64& n64)
 {
+    // for now hack around this
+    return true;
     auto& status = n64.cpu.cop0.status;
 
-    // coprocesor unusable if disabled and not in kernel mode
-    if(status.cu1 && (status.ksu != KERNEL_MODE))
+    if(!status.cu1)
     {
         coprocesor_unusable(n64,1);
         return false;

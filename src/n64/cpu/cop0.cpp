@@ -40,7 +40,7 @@ void standard_exception(N64& n64, u32 code)
         else
         {
             // pc will be ahead + 4
-            assert(false);
+            //assert(false);
 
             if(!in_delay_slot(n64.cpu))
             {
@@ -91,8 +91,11 @@ void standard_exception(N64& n64, u32 code)
 
 void coprocesor_unusable(N64& n64, u32 number)
 {
-    assert(false);
-    UNUSED(n64); UNUSED(number);
+    // set coprocessor number, then its just a standard exception
+    // with the cop exception code?
+    auto& cause = n64.cpu.cop0.cause;
+    cause.coprocessor_error = number;
+    standard_exception(n64,COP_UNUSABLE);
 }
 
 void error_exception(N64& n64, u32 code)
@@ -124,6 +127,20 @@ void check_interrupts(N64 &n64)
     }
 }
 
+
+b32 cop0_usable(N64& n64)
+{
+    auto& status = n64.cpu.cop0.status;
+
+    // coprocesor unusable if disabled and not in kernel mode
+    if(!status.cu0 && (status.ksu != KERNEL_MODE))
+    {
+        coprocesor_unusable(n64,0);
+        return false;
+    }
+
+    return true;
+}
 
 
 void insert_count_event(N64 &n64)
