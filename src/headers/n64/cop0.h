@@ -19,8 +19,10 @@ struct Status
     b32 fr = 0;
     b32 rp = 0;
 
-    // other control bits are unused
-    b32 cu1 = 0;    
+    b32 cu0 = false;
+    b32 cu1 = false;
+    b32 cu2 = false;
+    b32 cu3 = false;    
 };
 
 struct Cause

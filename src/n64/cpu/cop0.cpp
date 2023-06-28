@@ -273,7 +273,10 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
             status.fr = is_set(v,26);
             status.rp = is_set(v,27);
 
+            status.cu0 = is_set(v,28);
             status.cu1 = is_set(v,29);
+            status.cu2 = is_set(v,30);
+            status.cu3 = is_set(v,31);
 
 
             if(status.rp)
@@ -299,10 +302,10 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
         {
             auto& cause = cop0.cause;
 
-            const auto PENDING_MASK = 0b11 << 8;
+            const auto PENDING_MASK = 0b11;
 
             // write can only modify lower 2 bits of interrupt pending
-            cause.pending = (cause.pending & ~PENDING_MASK)  | (v & PENDING_MASK);
+            cause.pending = (cause.pending & ~PENDING_MASK)  | ((v >> 8) & PENDING_MASK);
             break;
         }
 
@@ -399,7 +402,8 @@ u64 read_cop0(N64& n64, u32 reg)
                 (status.ksu << 3) | (status.ux << 5) | (status.sx << 6) |
                 (status.kx << 7) | (status.im << 8) | (status.ds << 8) |
                 (status.re << 25) | (status.fr << 26) | (status.rp << 27) |
-                (status.cu1 << 29);
+                (status.cu0 << 28) | (status.cu1 << 29) | (status.cu2 << 30) | 
+                (status.cu3 << 31);
         }
 
         case ENTRY_HI:
