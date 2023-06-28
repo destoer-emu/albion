@@ -11,30 +11,78 @@ static constexpr u32 AQUIRE_CHECKSUM_FLAG = 1 << 5;
 static constexpr u32 RUN_CHECKSUM_FLAG =  1 << 6;
 static constexpr u32 ACK_FLAG = 1 << 7;
 
+void controller_info(N64& n64)
+{
+    auto& mem = n64.mem;
+
+    // controller
+    handle_write_n64<u16>(mem.pif_ram,0,0x0500);
+
+    // for now no pack
+    handle_write_n64<u8>(mem.pif_ram,2,0x2);
+}
+
+void controller_state(N64& n64)
+{
+    auto& mem = n64.mem;
+
+    // no state for now
+    const u32 v = 0;
+
+    handle_write_n64<u32>(mem.pif_ram,0,v);
+}
+
+static constexpr u32 COMMAND_INFO = 0x00;
+static constexpr u32 COMMAND_CONTROLLER_STATE = 0x01;
+static constexpr u32 COMMAND_RESET = 0xff;
+
 void joybus_comands(N64& n64)
 {
-    puts("read joybus");
     auto& mem = n64.mem;
-    auto& si = mem.si;
+    auto& joybus = mem.joybus;
 
-    // TODO: actually process the commands
+    printf("joybus command: %x\n",joybus.command);
 
-    for(u32 i = 0; i < PIF_SIZE; i++)
+    switch(joybus.command)
     {
-        handle_write_n64<u8>(mem.pif_ram,i,0xff);
-        write_physical<u8>(n64,si.dram_addr+i,0xff);
+        // info
+        case COMMAND_INFO:
+        {
+            controller_info(n64);
+            break;
+        }
+
+        // controller state
+        case COMMAND_CONTROLLER_STATE:
+        {
+            controller_state(n64);
+            break;
+        }
+
+        case COMMAND_RESET:
+        {
+            // reset + info
+            controller_info(n64);
+            break;
+        }
+
+        default: 
+        {
+            printf("unknown joybus command: %x\n",joybus.command);
+            break;            
+        }
     }
-    handle_write_n64<u8>(mem.pif_ram,PIF_MASK,0x00);
-    write_physical<u8>(n64,si.dram_addr+PIF_MASK,0x00);
 }
 
 void handle_pif_commands(N64& n64)
 {
     const u8 commands = handle_read_n64<u8>(n64.mem.pif_ram,PIF_MASK);
 
+    // joybus config
     if(commands & CONFIG_FLAG)
     {
-        printf("enable joybus\n");
+        auto& joybus = n64.mem.joybus;
+        joybus.command = handle_read_n64<u8>(n64.mem.pif_ram,0x0);
         n64.mem.joybus_enabled = true;
     }
 

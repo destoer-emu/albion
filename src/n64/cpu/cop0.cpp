@@ -160,7 +160,7 @@ void insert_count_event(N64 &n64)
 
     else
     {
-        cycles = (0xffffffff - (compare - count)); 
+        cycles = (u32(0xffffffff) - (compare - count)); 
     }
 
     const auto event = n64.scheduler.create_event(cycles * 2,n64_event::count);
@@ -194,7 +194,7 @@ void check_count_intr(N64& n64)
 {
     auto& cop0 = n64.cpu.cop0;
 
-    printf("cmp : %d : %d\n",cop0.count,cop0.compare);
+    printf("cmp : %x : %x\n",cop0.count,cop0.compare);
 
     // account for our shoddy timing..
     if(beyond_all_repair::abs(cop0.count - cop0.compare) <= 25)
@@ -255,6 +255,7 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
         // when this is == count trigger in interrupt
         case COMPARE:
         {
+            printf("write cmp %d : %d\n",cop0.compare,u32(v));
             n64.scheduler.remove(n64_event::count);
             cop0.compare = v;
             insert_count_event(n64);

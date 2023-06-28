@@ -29,15 +29,14 @@ void write_si(N64& n64, u64 addr, u32 v)
                 joybus_comands(n64);
             }
 
-            else
+
+            //printf("serial read: %x : %x\n",v,si.dram_addr);
+            for(u32 i = 0; i < 64; i += 4)
             {
-                //printf("serial read: %x : %x\n",v,si.dram_addr);
-                for(u32 i = 0; i < 64; i += 4)
-                {
-                    const u32 data = read_physical<u32>(n64,v + i);
-                    write_physical<u32>(n64,si.dram_addr+i,data);
-                }
+                const u32 data = read_physical<u32>(n64,v + i);
+                write_physical<u32>(n64,si.dram_addr+i,data);
             }
+            
             set_mi_interrupt(n64,SI_INTR_BIT);
             break;            
         }

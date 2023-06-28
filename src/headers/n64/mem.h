@@ -7,6 +7,7 @@
 #include <n64/mem/mips_interface.h>
 #include <n64/mem/serial_interface.h>
 #include <n64/mem/audio_interface.h>
+#include <n64/mem/joybus.h>
 
 namespace nintendo64
 {
@@ -32,6 +33,7 @@ struct Mem
     VideoInterface vi;
     SerialInterface si;
     AudioInterface ai;
+    Joybus joybus;
 
     std::vector<u8> pif_ram;
     b32 joybus_enabled = false;
