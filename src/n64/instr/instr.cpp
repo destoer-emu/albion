@@ -5,6 +5,7 @@
 #include <n64/instr/instr_cop0.cpp>
 #include <n64/instr/instr_cop1.cpp>
 #include <n64/instr/instr_cop2.cpp>
+#include <n64/instr/instr_float.cpp>
 
 namespace nintendo64
 {

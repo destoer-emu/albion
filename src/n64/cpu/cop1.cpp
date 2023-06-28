@@ -1,3 +1,4 @@
+#include <fenv.h>
 
 namespace nintendo64
 {
@@ -48,6 +49,36 @@ void write_cop1_control(N64& n64, u32 idx, u32 v)
         cop1.enable = (v >> 7) & 0b111'11;
         cop1.flags = (v >> 2) & 0b111'11;
         cop1.rounding = v & 0b11;
+
+        // use fe to set the correct round mode
+        switch(cop1.rounding)
+        {
+            case 0:
+            {
+                fesetround(FE_TONEAREST);
+                break;
+            }
+
+            case 1:
+            {
+                fesetround(FE_TOWARDZERO);
+                break;
+            }
+
+            case 2:
+            {
+                fesetround(FE_UPWARD);
+                break;
+            }
+
+            case 3:
+            {
+                fesetround(FE_DOWNWARD);
+                break;
+            }
+        }
+
+
         check_cop1_exception(n64);
     }
 }
