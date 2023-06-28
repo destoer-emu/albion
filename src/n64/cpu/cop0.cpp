@@ -151,7 +151,7 @@ void insert_count_event(N64 &n64)
 
     auto& cop0 = n64.cpu.cop0;
 
-    const u32 count = cop0.count >> 1;
+    const u32 count = cop0.count;
     const u32 compare = cop0.compare;
 
     
@@ -192,19 +192,26 @@ void count_intr(N64 &n64)
     set_intr_cop0(n64,COUNT_BIT);
 }
 
+void check_count_intr(N64& n64)
+{
+    auto& cop0 = n64.cpu.cop0;
+
+    printf("cmp : %d : %d\n",cop0.count,cop0.compare);
+
+    // account for our shoddy timing..
+    if(beyond_all_repair::abs(cop0.count - cop0.compare) <= 25)
+    {
+        cop0.count = cop0.compare;
+        count_intr(n64);        
+    }
+}
+
 void count_event(N64& n64, u32 cycles)
 {
     auto& cop0 = n64.cpu.cop0;
-    cop0.count += cycles;
+    cop0.count += cycles >> 1;
 
-    printf("cmp : %zd : %zd\n",(cop0.count >> 1),cop0.compare);
-
-    // account for our shoddy timing..
-    if(abs((cop0.count >> 1) - cop0.compare) <= 25)
-    {
-        cop0.count = cop0.compare * 2;
-        count_intr(n64);        
-    }
+    check_count_intr(n64);
 
     insert_count_event(n64);
 }
@@ -240,7 +247,8 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
         // cycle counter (incremented every other cycle)
         case COUNT:
         {
-            n64.scheduler.remove(n64_event::count);
+            puts("wrote count");
+            n64.scheduler.remove(n64_event::count,false);
             cop0.count = v;
             insert_count_event(n64);
             break;
@@ -449,7 +457,7 @@ u64 read_cop0(N64& n64, u32 reg)
 
         case COUNT:
         {
-            return (cop0.count >> 1);
+            return cop0.count;
         }
 
         case EPC:

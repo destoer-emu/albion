@@ -13,6 +13,7 @@ static constexpr u32 ACK_FLAG = 1 << 7;
 
 void joybus_comands(N64& n64)
 {
+    puts("read joybus");
     auto& mem = n64.mem;
     auto& si = mem.si;
 
@@ -25,8 +26,6 @@ void joybus_comands(N64& n64)
     }
     handle_write_n64<u8>(mem.pif_ram,PIF_MASK,0x00);
     write_physical<u8>(n64,si.dram_addr+PIF_MASK,0x00);
-
-    n64.mem.joybus_enabled = false;
 }
 
 void handle_pif_commands(N64& n64)

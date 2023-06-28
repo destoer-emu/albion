@@ -84,8 +84,8 @@ struct Cop0
     u64 error_epc = 0;
 
     // count and compare
-    u64 count = 0;
-    u64 compare = 0; 
+    u32 count = 0;
+    u32 compare = 0; 
 
     u32 random = 0;
 

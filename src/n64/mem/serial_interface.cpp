@@ -44,6 +44,9 @@ void write_si(N64& n64, u64 addr, u32 v)
 
         case SI_PIF_AD_WR64B:
         {
+            // new write joybus commands are out
+            n64.mem.joybus_enabled = false;
+
             //printf("serial write: %x : %x\n",v,si.dram_addr);
             for(u32 i = 0; i < 64; i += 4)
             {
