@@ -334,6 +334,7 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
 
             // write can only modify lower 2 bits of interrupt pending
             cause.pending = (cause.pending & ~PENDING_MASK)  | ((v >> 8) & PENDING_MASK);
+            check_interrupts(n64);
             break;
         }
 
