@@ -167,4 +167,12 @@ void instr_mtc1(N64& n64, const Opcode &opcode)
     write_cop1_reg(n64,fs,f);
 }
 
+void instr_mfc1(N64& n64, const Opcode& opcode)
+{
+    const u32 fs = get_fs(opcode);
+
+    const u32 w = bit_cast_from_float(read_cop1_reg(n64,fs));
+    n64.cpu.regs[opcode.rt] = sign_extend_type<s64,s32>(w);
+}
+
 }

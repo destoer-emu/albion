@@ -40,6 +40,19 @@ void instr_cvt_s_d(N64& n64, const Opcode& opcode)
 }
 
 
+void instr_trunc_w_s(N64& n64, const Opcode& opcode)
+{
+    const u32 fs = get_fs(opcode);
+    const u32 fd = get_fd(opcode);
+
+    const f32 s = f32(read_cop1_reg(n64,fs));
+
+    const u32 w = s32(s); 
+    const f32 f = bit_cast_float(w);
+
+    write_cop1_reg(n64,fd,f);   
+}
+
 template<typename FUNC>
 void float_s_op(N64& n64, const Opcode& opcode, FUNC func)
 {
@@ -72,6 +85,7 @@ void instr_add_s(N64& n64, const Opcode& opcode)
     });
 }
 
+// table 7-11 for cond desc
 template<typename FUNC>
 void float_cond_s(N64& n64, const Opcode& opcode, FUNC func)
 {
