@@ -17,6 +17,7 @@ void reset_rdp(N64 &n64, u32 x, u32 y)
     // for now assume ntsc
     n64.rdp.scan_lines = 525;
     n64.rdp.line_cycles = N64_CLOCK_CYCLES_FRAME / n64.rdp.scan_lines;
+    n64.rdp.ly = 0;
 
     insert_line_event(n64);
 }

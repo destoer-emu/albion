@@ -11,8 +11,8 @@ struct SpRegs
     u32 pc = 0;
     b32 halt = false;
     b32 broke = false;
-    // TODO: is this in the mips intr reg
-    b32 intr = false;
+
+
     b32 dma_busy = false;
     b32 dma_full = false;
     b32 io_full = false;

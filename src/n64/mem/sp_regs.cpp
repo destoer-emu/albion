@@ -13,10 +13,15 @@ void write_sp_regs(N64& n64, u64 addr ,u32 v)
 
             sp.broke = deset_if_set(sp.broke,v,2);
 
-            // TODO: should this actually be in the mips int reg
-            // check this when we get intr
-            sp.intr = deset_if_set(sp.intr,v,3);
-            sp.intr = set_if_set(sp.intr,v,4);
+            if(is_set(v,3))
+            {
+                deset_mi_interrupt(n64,SP_INTR_BIT);
+            }
+
+            if(is_set(v,4))
+            {
+                set_mi_interrupt(n64,SP_INTR_BIT);
+            }
 
             sp.single_step = deset_if_set(sp.single_step,v,5);
             sp.single_step = set_if_set(sp.single_step,v,6);
