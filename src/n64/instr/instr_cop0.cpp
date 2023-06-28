@@ -47,6 +47,11 @@ void instr_tlbwi(N64& n64, const Opcode &opcode)
     UNUSED(n64); UNUSED(opcode);
 }
 
+void instr_tlbp(N64& n64, const Opcode &opcode)
+{
+    UNUSED(n64); UNUSED(opcode);
+}
+
 void instr_eret(N64& n64, const Opcode& opcode)
 {
     UNUSED(opcode);
@@ -67,6 +72,8 @@ void instr_eret(N64& n64, const Opcode& opcode)
 
     // this does not execute the delay slot
     skip_instr(n64.cpu);
+
+    check_interrupts(n64);
 }
 
 }

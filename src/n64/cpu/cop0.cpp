@@ -40,8 +40,6 @@ void standard_exception(N64& n64, u32 code)
         else
         {
             // pc will be ahead + 4
-            //assert(false);
-
             if(!in_delay_slot(n64.cpu))
             {
                 cop0.epc = n64.cpu.pc - MIPS_INSTR_SIZE;

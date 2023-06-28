@@ -88,10 +88,8 @@ void render(N64 &n64)
                 const u32 addr = vi.origin + (i * sizeof(u16));
                 const auto v = handle_read_n64<u16>(n64.mem.rd_ram,addr);
 
-                if(is_set(v,15))
-                {
-                    n64.rdp.screen[i] = convert_color(v);
-                }
+                
+                n64.rdp.screen[i] = convert_color(v);
             }
             break;
         }
@@ -108,7 +106,7 @@ void render(N64 &n64)
                 const u32 v = handle_read_n64<u32>(n64.mem.rd_ram,addr);
 
                 // convert to ARGB
-                n64.rdp.screen[i] = bswap(v); 
+                n64.rdp.screen[i] = bswap(v) | 0xff00'0000; 
             }
             break;
         }

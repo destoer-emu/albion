@@ -4,8 +4,8 @@ namespace nintendo64
 
 b32 cop1_usable(N64& n64)
 {
-    // for now hack around this
     return true;
+    // for now hack around this
     auto& status = n64.cpu.cop0.status;
 
     if(!status.cu1)

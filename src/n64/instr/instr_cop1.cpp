@@ -59,9 +59,8 @@ void instr_COP1(N64 &n64, const Opcode &opcode)
     }
 
     const u32 offset = calc_cop1_table_offset(opcode);
-    UNUSED(offset);
 
-    //call_handler<debug>(n64,opcode,offset);
+    call_handler<debug>(n64,opcode,offset);
 }
 
 template<const b32 debug>

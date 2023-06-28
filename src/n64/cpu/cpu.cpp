@@ -39,7 +39,7 @@ void reset_cpu(N64 &n64)
     auto& cop0 = n64.cpu.cop0;
 
     cop0.random = 0x0000001F;
-    write_cop0(n64,0x70400004,STATUS);
+    write_cop0(n64,0x70400000,STATUS);
     write_cop0(n64,0x00000B00,PRID);
     write_cop0(n64,0x0006E463,CONFIG);
     write_cop0(n64,0,COUNT);
@@ -72,7 +72,6 @@ void step(N64 &n64)
 
     const u32 op = read_u32<debug>(n64,n64.cpu.pc);
 
-// TODO: this needs to optimised
 #ifdef DEBUG 
     if constexpr(debug)
     {

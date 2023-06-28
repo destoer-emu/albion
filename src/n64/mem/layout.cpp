@@ -83,14 +83,14 @@ access_type read_physical(N64 &n64, u32 addr)
 
     // currently we dont emulate the pif rom
     // and it cant be read after bootup anyways
-    else if(addr < 0x1FC007C0)
+    else if(addr < 0x1FC0'07C0)
     {
         //unimplemented("pif boot rom read");
         return 0;
     }
 
     // pif ram (ignore for now but need to emulate later)
-    else if(addr < 0x1FC00800)
+    else if(addr < 0x1FC0'0800)
     {
         return read_pif<access_type>(n64,addr);
     }
