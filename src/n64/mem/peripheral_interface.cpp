@@ -81,7 +81,11 @@ u32 read_pi(N64& n64, u64 addr)
 
     switch(addr)
     {
-        case PI_STATUS: return pi.status;
+        case PI_STATUS:
+        {
+            // NOTE: this returns as never busy
+            return mi_intr_set(n64,PI_INTR_BIT) << 3;
+        }
 
         case PI_BSD_DOM1_LAT: return pi.bsd_dom1_lat;
         case PI_BSD_DOM1_PWD: return pi.bsd_dom1_pwd;
