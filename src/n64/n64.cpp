@@ -78,9 +78,12 @@ void run_internal(N64 &n64)
         {
 
 #ifdef DEBUG
-            if(n64.debug.is_halted())
+            if constexpr(debug)
             {
-                return;
+                if(n64.debug.is_halted())
+                {
+                    return;
+                }
             }
 #endif
             step<debug>(n64);

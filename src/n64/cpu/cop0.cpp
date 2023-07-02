@@ -34,6 +34,12 @@ void standard_exception(N64& n64, u32 code)
             cause.branch_delay = true;
         }
 
+        // all other exceptions happen in the middle of a instruction...
+        if(code != INTERRUPT)
+        {
+
+        }
+
         if(is_set(status.ds,6))
         {
             printf("Warning bev set in interrupt\n");
