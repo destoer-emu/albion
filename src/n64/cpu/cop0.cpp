@@ -117,6 +117,8 @@ void check_interrupts(N64 &n64)
 
     if(pending)
     {
+
+
         n64.cpu.interrupt = true;
     }
 }
@@ -449,6 +451,12 @@ u64 read_cop0(N64& n64, u32 reg)
 
         case COUNT:
         {
+            // fudge counter if there is a pending interrupt to prevent bad scheduling
+            if(cop0.count == cop0.compare && is_set(cop0.cause.pending,COUNT_BIT))
+            {
+                return cop0.count - 1;
+            }
+
             return cop0.count;
         }
 

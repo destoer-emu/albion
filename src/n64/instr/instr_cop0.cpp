@@ -58,6 +58,7 @@ void instr_eret(N64& n64, const Opcode& opcode)
 
     auto& cop0 = n64.cpu.cop0;
     auto& status = cop0.status;
+    auto& cause = cop0.cause;
 
     if(status.erl)
     {
@@ -69,6 +70,8 @@ void instr_eret(N64& n64, const Opcode& opcode)
         write_pc(n64,cop0.epc);
         status.exl = false;
     }
+
+    cause.branch_delay = false;
 
     // this does not execute the delay slot
     skip_instr(n64.cpu);

@@ -59,6 +59,10 @@ void write_ai(N64& n64, u64 addr ,u32 v)
         case AI_LENGTH:
         {
             ai.length = v & 0b11'1111'1111'1111'1111;
+            if(ai.enabled)
+            {
+                audio_event(n64);
+            }
             break;
         }
 
