@@ -53,7 +53,10 @@ void write_pi(N64& n64, u64 addr, u32 v)
         // NOTE: this should also technically stop dmas but ours complete instantly...
         case PI_STATUS:
         {
-            deset_mi_interrupt(n64,PI_INTR_BIT);
+            if(is_set(v,1))
+            {
+                deset_mi_interrupt(n64,PI_INTR_BIT);
+            }
             break;
         }
 

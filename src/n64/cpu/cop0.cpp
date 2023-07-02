@@ -177,8 +177,6 @@ void deset_intr_cop0(N64& n64, u32 bit)
     cause.pending = deset_bit(cause.pending,bit);
 }
 
-// NOTE: do this relative to your storage,
-// start tomorrow you are too tired
 void count_intr(N64 &n64)
 {
     set_intr_cop0(n64,COUNT_BIT);
@@ -191,7 +189,7 @@ void check_count_intr(N64& n64)
     printf("cmp : %x : %x\n",cop0.count,cop0.compare);
 
     // account for our shoddy timing..
-    if(beyond_all_repair::abs(cop0.count - cop0.compare) <= 25)
+    if(beyond_all_repair::abs(cop0.count - cop0.compare) <= 20)
     {
         cop0.count = cop0.compare;
         count_intr(n64);        

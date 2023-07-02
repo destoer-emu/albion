@@ -36,7 +36,9 @@ void reset_cpu(N64 &n64)
     cpu.regs[S6] = 0x000000000000003F;
     cpu.regs[SP] = 0xFFFFFFFFA4001FF0;
 
-    auto& cop0 = n64.cpu.cop0;
+    auto& cop0 = cpu.cop0;
+    cop0 = {};
+    
 
     cop0.random = 0x0000001F;
     write_cop0(n64,0x70400000,STATUS);
@@ -46,6 +48,8 @@ void reset_cpu(N64 &n64)
     write_cop0(n64,0,COMPARE);
     write_cop0(n64,0xffff'ffff,EPC);
     write_cop0(n64,0xffff'ffff,ERROR_EPC);
+
+    cpu.cop1 = {};
 
     cpu.pc = 0xA4000040;
     cpu.pc_next = cpu.pc + 4; 

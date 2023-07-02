@@ -15,7 +15,7 @@ struct Cop1
     u32 rounding = 0;
 
     // TODO: need to read on there operations a bit more
-    f64 regs[32];
+    f64 regs[32] = {0.0};
 };
 
 }
