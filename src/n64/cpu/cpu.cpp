@@ -69,13 +69,6 @@ void cycle_tick(N64 &n64, u32 cycles)
 template<const b32 debug>
 void step(N64 &n64)
 {
-    // TODO: we can probably make this faster but dont worry for now
-    if(n64.cpu.interrupt)
-    {
-        standard_exception(n64,beyond_all_repair::INTERRUPT); 
-        n64.cpu.interrupt = false;       
-    }
-
     const u32 op = read_u32<debug>(n64,n64.cpu.pc);
 
 #ifdef DEBUG 

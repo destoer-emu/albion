@@ -21,36 +21,22 @@ void standard_exception(N64& n64, u32 code)
         status.exl = true;
         cause.exception_code = code;
 
-        // interrupt happens at start of instr
-        if(code == beyond_all_repair::INTERRUPT)
-        {
-            if(!in_delay_slot(n64.cpu))
-            {
-                cop0.epc = n64.cpu.pc;
-                cause.branch_delay = false;
-            }
 
-            else
-            {
-                cop0.epc = n64.cpu.pc - MIPS_INSTR_SIZE;
-                cause.branch_delay = true;
-            }
+        if(!in_delay_slot(n64.cpu))
+        {
+            cop0.epc = n64.cpu.pc;
+            cause.branch_delay = false;
         }
 
         else
         {
-            // pc will be ahead + 4
-            if(!in_delay_slot(n64.cpu))
-            {
-                cop0.epc = n64.cpu.pc - MIPS_INSTR_SIZE;
-                cause.branch_delay = false;
-            }
+            cop0.epc = n64.cpu.pc - MIPS_INSTR_SIZE;
+            cause.branch_delay = true;
+        }
 
-            else
-            {
-                cop0.epc = n64.cpu.pc - (MIPS_INSTR_SIZE * 2);
-                cause.branch_delay = true;
-            }
+        if(is_set(status.ds,6))
+        {
+            printf("Warning bev set in interrupt\n");
         }
 
         // bev goes to uncached
@@ -117,9 +103,7 @@ void check_interrupts(N64 &n64)
 
     if(pending)
     {
-
-
-        n64.cpu.interrupt = true;
+        standard_exception(n64,beyond_all_repair::INTERRUPT); 
     }
 }
 
