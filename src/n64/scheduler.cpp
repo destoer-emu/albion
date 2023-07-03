@@ -31,6 +31,12 @@ void N64Scheduler::service_event(const EventNode<n64_event> & node)
             audio_event(n64);
             break;
         }
+
+        case n64_event::si_dma:
+        {
+            si_dma_finished(n64);
+            break;
+        }
     }
 }
 

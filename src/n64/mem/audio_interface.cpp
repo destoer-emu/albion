@@ -1,18 +1,41 @@
 namespace nintendo64
 {
 
+void insert_audio_event(N64& n64)
+{
+    auto& ai = n64.mem.ai;
+
+    // dont think this is the right value but roll with it for now
+    const auto event = n64.scheduler.create_event(ai.dac_rate,n64_event::ai_dma);
+    n64.scheduler.insert(event,false);    
+}
+
+void do_ai_dma(N64& n64)
+{
+    UNUSED(n64);
+}
+
 void audio_event(N64& n64)
 {
     auto& ai = n64.mem.ai;
 
-    if(ai.enabled)
-    {
-        // dont think this is the right value but roll with it for now
-        const auto event = n64.scheduler.create_event(ai.dac_rate,n64_event::ai_dma);
-        n64.scheduler.insert(event,false);
-    }     
+    // dma over
+    ai.busy = false;
 
-    set_mi_interrupt(n64,AI_INTR_BIT);    
+    // interrupt as transfer is done
+    set_mi_interrupt(n64,AI_INTR_BIT);  
+
+    // handle pending transfer
+    if(ai.full && ai.enabled)
+    {
+        ai.full = false;
+        ai.busy = true;
+
+        // we just have it do this instantly
+        do_ai_dma(n64);
+
+        insert_audio_event(n64);
+    }
 }
 
 void write_ai(N64& n64, u64 addr ,u32 v)
@@ -31,10 +54,6 @@ void write_ai(N64& n64, u64 addr ,u32 v)
         case AI_CONTROL:
         {
             ai.enabled = is_set(v,0);
-            if(ai.enabled)
-            {
-                audio_event(n64);
-            }
             break;
         } 
 
@@ -61,7 +80,27 @@ void write_ai(N64& n64, u64 addr ,u32 v)
             ai.length = v & 0b11'1111'1111'1111'1111;
             if(ai.enabled)
             {
-                audio_event(n64);
+                // initial dma
+                if(!ai.busy)
+                {
+                    // interrupt for intial transfer
+                    set_mi_interrupt(n64,AI_INTR_BIT);
+
+                    ai.busy = true;
+
+                    // we just have it do this instantly
+                    do_ai_dma(n64);
+
+                    // setup event for transfer end!
+                    insert_audio_event(n64);
+                }
+
+                // we are busy see if we can setup a pending dma
+                else if(!ai.full)
+                {
+                    // pending transfer
+                    ai.full = true;
+                }
             }
             break;
         }
