@@ -91,16 +91,16 @@ void step(N64 &n64)
     skip_instr(n64.cpu);
 
     // call the instr handler
-    //const u32 offset = beyond_all_repair::get_opcode_type(opcode.op);
-    const u32 offset = beyond_all_repair::calc_base_table_offset(opcode);
+    const u32 offset = beyond_all_repair::get_opcode_type(opcode.op);
+    //const u32 offset = beyond_all_repair::calc_base_table_offset(opcode);
     
     call_handler<debug>(n64,opcode,offset);
     
     // $zero is hardwired to zero, make sure writes cant touch it
     n64.cpu.regs[R0] = 0;
 
-    // assume 2 CPI
-    cycle_tick(n64,2);
+    // assume 1 CPI
+    cycle_tick(n64,1);
 }
 
 void write_pc(N64 &n64, u64 pc)

@@ -41,7 +41,7 @@ void write_vi(N64& n64, u64 addr ,u32 v)
 
         case VI_ORIGIN:
         {
-            vi.origin = v & 0x00ffffff;
+            vi.origin = v & 0x00ff'ffff;
             break;
         }
 

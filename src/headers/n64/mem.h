@@ -12,6 +12,10 @@
 namespace nintendo64
 {
 
+static constexpr u32 PAGE_SIZE = (1 * 1024 * 1024);
+static constexpr u64 MEMORY_SIZE = (u64(4) * 1024 * 1024 * 1024);
+static constexpr u64 PAGE_TABLE_SIZE = MEMORY_SIZE / PAGE_SIZE;
+
 
 struct Mem
 {
@@ -37,6 +41,9 @@ struct Mem
 
     std::vector<u8> pif_ram;
     b32 joybus_enabled = false;
+
+    std::vector<u8*> page_table_read;
+    std::vector<u8*> page_table_write;
 };
 
 void reset_mem(Mem &mem, const std::string &filename);

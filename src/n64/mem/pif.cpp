@@ -41,7 +41,7 @@ void joybus_comands(N64& n64)
     auto& mem = n64.mem;
     auto& joybus = mem.joybus;
 
-    printf("joybus command: %x\n",joybus.command);
+    //printf("joybus command: %x\n",joybus.command);
 
     switch(joybus.command)
     {

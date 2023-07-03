@@ -9,7 +9,7 @@ inline u64 swap_word(u64 v)
 }
 
 template<typename access_type>
-access_type handle_read_n64(std::vector<u8> &buf, u32 addr)
+access_type handle_read_n64(const u8* buf, u32 addr)
 {
     // handle endianess, we have swapped the entire rom
     // so offset the addresses
@@ -23,8 +23,7 @@ access_type handle_read_n64(std::vector<u8> &buf, u32 addr)
         addr ^= 3;
     }
 
-
-    auto v = handle_read<access_type>(buf,addr);
+    auto v = handle_read<access_type>(&buf[addr]);
 
     // 8 byte so we have to swap them
     if constexpr(sizeof(access_type) == 8)
@@ -37,7 +36,13 @@ access_type handle_read_n64(std::vector<u8> &buf, u32 addr)
 }
 
 template<typename access_type>
-void handle_write_n64(std::vector<u8> &buf, u32 addr, access_type v)
+access_type handle_read_n64(std::vector<u8> &buf, u32 addr)
+{
+    return handle_read_n64<access_type>(buf.data(),addr);
+}
+
+template<typename access_type>
+void handle_write_n64(u8* buf, u32 addr, access_type v)
 {
     // handle endianess, we have swapped the entire rom
     // so offset the addresses
@@ -58,11 +63,35 @@ void handle_write_n64(std::vector<u8> &buf, u32 addr, access_type v)
     }
 
 
-    handle_write<access_type>(buf,addr,v);
+    handle_write<access_type>(&buf[addr],v);
+}  
+
+template<typename access_type>
+void handle_write_n64(std::vector<u8> &buf, u32 addr, access_type v)
+{
+    handle_write_n64(buf.data(),addr,v);
 }    
 
 void do_pi_dma(N64 &n64, u32 src, u32 dst, u32 len);
 
+
+void write_physical_table(Mem& mem,const u32 offset)
+{
+    const u32 RDRAM_SIZE = 0x0080'0000 / PAGE_SIZE;
+    for(u32 i = 0; i < RDRAM_SIZE; i++)
+    {
+        mem.page_table_read[offset + i] = &mem.rd_ram[i * PAGE_SIZE];
+        mem.page_table_write[offset + i] = &mem.rd_ram[i * PAGE_SIZE];
+    } 
+
+    const u32 ROM_OFFSET = (0x1000'0000 / PAGE_SIZE);
+    const u32 ROM_SIZE = (0x1FC0'0000 - 0x1000'0000) / PAGE_SIZE;
+
+    for(u32 i = 0; i < ROM_SIZE; i++)
+    {
+        mem.page_table_read[ROM_OFFSET + offset + i] = &mem.rom[i * PAGE_SIZE];
+    }
+}
 
 void reset_mem(Mem &mem, const std::string &filename)
 {
@@ -141,6 +170,20 @@ void reset_mem(Mem &mem, const std::string &filename)
     mem.si = {};
     mem.ai = {};
     mem.joybus_enabled = false;
+
+    // setup the page table
+    mem.page_table_read.resize(PAGE_TABLE_SIZE);
+    mem.page_table_write.resize(PAGE_TABLE_SIZE);
+
+    for(u32 i = 0; i < PAGE_TABLE_SIZE; i++)
+    {
+        mem.page_table_read[i] = nullptr;
+        mem.page_table_write[i] = nullptr;
+    }
+
+
+    write_physical_table(mem,0x8000'0000 / PAGE_SIZE);
+    write_physical_table(mem,0xA000'0000 / PAGE_SIZE);
 }
 
 u32 remap_addr(N64& n64,u32 addr)
@@ -174,9 +217,19 @@ u32 remap_addr(N64& n64,u32 addr)
 template<const b32 debug,typename access_type>
 void write_mem(N64 &n64, u32 addr, access_type v)
 {
+    auto& mem = n64.mem;
+
     // force align addr
     addr &= ~(sizeof(access_type)-1);   
 
+    const u32 idx = addr / PAGE_SIZE;
+
+    if(mem.page_table_write[idx])
+    {
+        return handle_write_n64<access_type>(mem.page_table_write[idx],addr & (PAGE_SIZE - 1),v);
+    }
+
+    // if we are doing a slow access remap the addr manually
     addr = remap_addr(n64,addr);
 
     write_physical<access_type>(n64,addr,v);
@@ -190,9 +243,19 @@ void write_mem(N64 &n64, u32 addr, access_type v)
 template<const b32 debug,typename access_type>
 access_type read_mem(N64 &n64, u32 addr)
 {
+    auto& mem = n64.mem;
+
     // force align addr
     addr &= ~(sizeof(access_type)-1);   
 
+    const u32 idx = addr / PAGE_SIZE;
+
+    if(mem.page_table_read[idx])
+    {
+        return handle_read_n64<access_type>(mem.page_table_read[idx],addr & (PAGE_SIZE - 1));
+    }
+
+    // if we are doing a slow access remap the addr manually
     addr = remap_addr(n64,addr);
 
     return read_physical<access_type>(n64,addr);

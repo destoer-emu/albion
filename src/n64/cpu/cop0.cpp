@@ -55,7 +55,6 @@ void standard_exception(N64& n64, u32 code)
 
         const u64 target = base + vector; 
 
-        // TODO: do we have to wait to write this inside the step func?
         write_pc(n64,target);
         skip_instr(n64.cpu);   
     }
@@ -175,7 +174,7 @@ void check_count_intr(N64& n64)
     //printf("cmp : %x : %x\n",cop0.count,cop0.compare);
 
     // account for our shoddy timing..
-    if(beyond_all_repair::abs(cop0.count - cop0.compare) <= 8)
+    if(beyond_all_repair::abs(cop0.count - cop0.compare) <= 20)
     {
         cop0.count = cop0.compare;
         count_intr(n64);        
@@ -224,7 +223,7 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
         case COUNT:
         {
             //puts("wrote count");
-            
+
             n64.scheduler.remove(n64_event::count,false);
             cop0.count = v;
             insert_count_event(n64);

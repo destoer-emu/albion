@@ -69,6 +69,7 @@ void render(N64 &n64)
     // kinda assume some settings for just to get the test output
     UNUSED(n64);
 
+
     switch(vi.bpp)
     {
         // blank

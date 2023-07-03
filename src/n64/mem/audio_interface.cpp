@@ -6,7 +6,7 @@ void insert_audio_event(N64& n64)
     auto& ai = n64.mem.ai;
 
     // dont think this is the right value but roll with it for now
-    const auto event = n64.scheduler.create_event(ai.dac_rate,n64_event::ai_dma);
+    const auto event = n64.scheduler.create_event(ai.length,n64_event::ai_dma);
     n64.scheduler.insert(event,false);    
 }
 
