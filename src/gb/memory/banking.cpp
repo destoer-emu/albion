@@ -1,4 +1,4 @@
-#include <gb/gb.h>
+#include <gb/memory.h>
 
 namespace gameboy
 {

@@ -1,4 +1,4 @@
-#include <gb/gb.h>
+#include <gb/apu.h>
 
 namespace gameboy_psg
 { 

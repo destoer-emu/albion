@@ -1,6 +1,7 @@
-#include <gb/gb.h>
+#include <gb/cpu.h>
+#include <gb/memory.h>
 #include <gb/opcode_table.h>
-#include<gb/cpu.inl>
+#include <gb/cpu.inl>
 #include <albion/debug.h>
 
 

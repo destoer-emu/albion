@@ -41,7 +41,7 @@ struct Disass_entry
 
 
 // tables auto generated with a script
-constexpr Disass_entry opcode_table[256] = 
+static constexpr Disass_entry opcode_table[256] = 
 {
     {"nop",disass_type::op_none},
     {"ld bc,{}",disass_type::op_u16},
@@ -725,7 +725,7 @@ std::string Disass::disass_op(u16 addr) noexcept
 
     else
     {
-        Disass_entry entry = opcode_table[opcode];
+        const auto entry = opcode_table[opcode];
 
 
         switch(entry.type)
@@ -738,13 +738,13 @@ std::string Disass::disass_op(u16 addr) noexcept
 
                 if(get_symbol(v,symbol))
                 {
-                    const auto str = std::format(entry.fmt_str,symbol);
-                    return std::format("{} ; {:x}",str,v);               
+                    const auto str = runtime_format(entry.fmt_str,symbol);
+                    return runtime_format("{} ; {:x}",str,v);               
                 }
 
                 else
                 {
-                    return std::format(entry.fmt_str,std::format("{:x}",v));
+                    return runtime_format(entry.fmt_str,runtime_format("{:x}",v));
                 }
             }
 
@@ -757,18 +757,18 @@ std::string Disass::disass_op(u16 addr) noexcept
                 //  ld a, (ff00+xx)
                 if(opcode == 0xf0 && get_symbol(0xff00+v,symbol)) 
                 {
-                    return std::format("ld a, ({}) ; (ff00+{:x})",symbol,v);
+                    return runtime_format("ld a, ({}) ; (ff00+{:x})",symbol,v);
                 }
 
                 // ld (0xff00+xx), a
                 else if(opcode == 0xe0 && get_symbol(0xff00+v,symbol))
                 {
-                    return std::format("ld ({}), a ; (ff00+{:x})",symbol,v);
+                    return runtime_format("ld ({}), a ; (ff00+{:x})",symbol,v);
                 }
 
                 else
                 {
-                    return std::format(entry.fmt_str,std::format("{:x}",v));
+                    return runtime_format(entry.fmt_str,runtime_format("{:x}",v));
                 }
             }
 
@@ -780,13 +780,13 @@ std::string Disass::disass_op(u16 addr) noexcept
                 std::string symbol = "";
                 if(get_symbol(v,symbol))
                 {
-                    const auto str = std::format(entry.fmt_str,symbol);
-                    return std::format("{} ; {:x}",str,v);               
+                    const auto str = runtime_format(entry.fmt_str,symbol);
+                    return runtime_format("{} ; {:x}",str,v);               
                 }
 
                 else
                 {
-                    return std::format(entry.fmt_str,std::format("{:x}",v));
+                    return runtime_format(entry.fmt_str,runtime_format("{:x}",v));
                 }
             }
 

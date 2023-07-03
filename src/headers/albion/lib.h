@@ -26,6 +26,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 #include <limits.h>
 #include <stdarg.h>
@@ -65,3 +66,10 @@ inline u32 convert_color(u16 color)
 void load_ips_patch(const std::string &filename,std::vector<uint8_t> &rom);
 
 std::vector<std::string> read_sorted_directory(const std::string &file_path);
+
+
+template<typename... Args>
+inline std::string runtime_format(const char* fmt, Args... args)
+{
+    return std::vformat(fmt, std::make_format_args(args...));
+}

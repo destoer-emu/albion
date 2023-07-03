@@ -23,7 +23,6 @@ if(${FRONTEND} STREQUAL "IMGUI")
 	add_definitions(-DAUDIO_ENABLE -DSDL_REQUIRED -DAUDIO_SDL -DCONTROLLER_SDL -DFETCH_SPEEDHACK)
 	add_definitions(-DFRONTEND_IMGUI -DIMGUI_IMPL_OPENGL_LOADER_GLEW -DDEBUG -DLOG_CONSOLE)
 
-	# individual cores not supported in imgui
 	set(GB "TRUE")
 	set(GBA "TRUE")
 	set(N64 "TRUE")
@@ -35,7 +34,8 @@ if(${FRONTEND} STREQUAL "SDL")
 	add_definitions(-DFRONTEND_SDL)
 
 	set(N64 "TRUE")
-
+	#set(GB "TRUE")
+	#set(GBA "TRUE")
 endif()
 
 
@@ -169,6 +169,7 @@ if(DEFINED GBA)
 		"src/gba/ppu/*.cpp"
 		"src/gba/apu/*.cpp"
 	)
+
 	add_definitions(-DGBA_ENABLED)
 	add_library(gba STATIC ${gba_files})
 
@@ -192,6 +193,17 @@ if(DEFINED GB)
 
 
 	target_link_libraries(albion gb)
+endif()
+
+# build gb psg in seperate lib as two cores depend on it
+if(DEFINED GB OR DEFINED GBA)
+	file(GLOB psg_files
+		"src/gb/apu/psg/*cpp"
+	)
+
+	add_library(psg STATIC ${psg_files})
+
+	target_link_libraries(albion psg)
 endif()
 
 
