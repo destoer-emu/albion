@@ -18,7 +18,7 @@
 
 #include <albion/destoer-emu.h>
 
-void start_emu(std::string filename)
+void start_emu(std::string filename, Config& cfg)
 {
 	try
 	{
@@ -31,7 +31,7 @@ void start_emu(std::string filename)
 			case emu_type::gameboy:
 			{
 				GameboyWindow gb;
-				gb.main(filename);
+				gb.main(filename,cfg.start_debug);
 				break;
 			}
 		#endif
@@ -40,7 +40,7 @@ void start_emu(std::string filename)
 			case emu_type::gba:
 			{
 				GBAWindow gba;
-				gba.main(filename);
+				gba.main(filename,cfg.start_debug);
 				break;
 			}
 		#endif
@@ -49,7 +49,7 @@ void start_emu(std::string filename)
 			case emu_type::n64:
 			{
 				N64Window n64;
-				n64.main(filename);
+				n64.main(filename,cfg.start_debug);
 				break;
 			}
 		#endif
@@ -134,7 +134,7 @@ SDLMainWindow::~SDLMainWindow()
 }
 
 
-void SDLMainWindow::main(std::string filename)
+void SDLMainWindow::main(std::string filename, b32 start_debug)
 {
 	SDL_GL_SetSwapInterval(1);
 
@@ -145,6 +145,12 @@ void SDLMainWindow::main(std::string filename)
 
 	FpsCounter fps_counter;
 
+#ifdef DEBUG
+	if(start_debug)
+	{
+		debug_halt();
+	}
+#endif
 
     for(;;)
     {

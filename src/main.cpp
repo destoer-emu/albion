@@ -51,12 +51,14 @@ int main(int argc, char *argv[])
 
 #ifdef FRONTEND_SDL
     
-    if(argc != 2)
+    Config cfg = get_config(argc,argv);
+
+    if(argc < 2)
     {
         printf("usage: %s <rom_name>\n",argv[0]);
         return 0;
     }
-    start_emu(argv[1]);
+    start_emu(argv[1],cfg);
 #endif
 
 #ifdef FRONTEND_IMGUI

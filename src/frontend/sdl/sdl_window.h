@@ -14,7 +14,7 @@ class SDLMainWindow
 {
 public:
     ~SDLMainWindow();
-    void main(std::string filename);
+    void main(std::string filename, b32 start_debug);
 
 protected:
     virtual void init(const std::string& filename) = 0;
@@ -46,6 +46,39 @@ protected:
     b32 throttle_emu;       
 };
 
-void start_emu(std::string filename);
+
+// only supported on SDL for now
+struct Config
+{
+    b32 start_debug = false;
+};
+
+inline Config get_config(int argc, char* argv[])
+{
+    Config cfg;
+
+    if(argc == 3)
+    {
+        const char* str = argv[2];
+        while(*str)
+        {
+            const char c = *str;
+
+            switch(c)
+            {
+                case 'd': cfg.start_debug = true; break;
+                case '-': break;
+                default: printf("warning unknown flag: %c\n",c);
+            }
+
+            str++;
+        }
+    }
+
+    return cfg;    
+}
+
+
+void start_emu(std::string filename, Config& cfg);
 
 #endif

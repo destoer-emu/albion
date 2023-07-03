@@ -91,8 +91,8 @@ void step(N64 &n64)
     skip_instr(n64.cpu);
 
     // call the instr handler
-    const u32 offset = beyond_all_repair::get_opcode_type(opcode.op);
-    //const u32 offset = beyond_all_repair::calc_base_table_offset(opcode);
+    //const u32 offset = beyond_all_repair::get_opcode_type(opcode.op);
+    const u32 offset = beyond_all_repair::calc_base_table_offset(opcode);
     
     call_handler<debug>(n64,opcode,offset);
     
@@ -100,6 +100,7 @@ void step(N64 &n64)
     n64.cpu.regs[R0] = 0;
 
     // assume 1 CPI
+    // TODO: i dont anything should have such sensitive timings yet..
     cycle_tick(n64,1);
 }
 

@@ -6,7 +6,6 @@ void N64Window::init(const std::string& filename)
     init_sdl(320,240);
     input.init();
     reset(n64,filename);	
-    n64.debug.halt();
 }
 
 void N64Window::pass_input_to_core()
