@@ -1,6 +1,13 @@
 namespace nintendo64
 {
 
+void insert_si_event(N64& n64)
+{
+    // how long does this take?
+    const auto event = n64.scheduler.create_event(16,n64_event::si_dma);
+    n64.scheduler.insert(event,false);    
+}
+
 void si_dma_finished(N64& n64)
 {
     auto& si = n64.mem.si;
@@ -12,9 +19,6 @@ void si_dma_finished(N64& n64)
 void write_si(N64& n64, u64 addr, u32 v)
 {
     auto& si = n64.mem.si;
-
-    UNUSED(si); UNUSED(v);
-
 
     switch(addr)
     {
@@ -48,9 +52,7 @@ void write_si(N64& n64, u64 addr, u32 v)
 
             si.dma_busy = true;
 
-            // how long does this take?
-            const auto event = n64.scheduler.create_event(16,n64_event::si_dma);
-            n64.scheduler.insert(event,false);
+            insert_si_event(n64);
             break;            
         }
 
@@ -68,9 +70,7 @@ void write_si(N64& n64, u64 addr, u32 v)
 
             si.dma_busy = true;
 
-            // how long does this take?
-            const auto event = n64.scheduler.create_event(16,n64_event::si_dma);
-            n64.scheduler.insert(event,false);
+            insert_si_event(n64);
             break;
         }
 
