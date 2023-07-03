@@ -34,12 +34,6 @@ void standard_exception(N64& n64, u32 code)
             cause.branch_delay = true;
         }
 
-        // all other exceptions happen in the middle of a instruction...
-        if(code != INTERRUPT)
-        {
-
-        }
-
         if(is_set(status.ds,6))
         {
             printf("Warning bev set in interrupt\n");
@@ -66,7 +60,7 @@ void standard_exception(N64& n64, u32 code)
         skip_instr(n64.cpu);   
     }
 
-    // double fault
+    // double fault (this should not be technically possible)
     else
     {
         assert(false);
@@ -178,10 +172,10 @@ void check_count_intr(N64& n64)
 {
     auto& cop0 = n64.cpu.cop0;
 
-    printf("cmp : %x : %x\n",cop0.count,cop0.compare);
+    //printf("cmp : %x : %x\n",cop0.count,cop0.compare);
 
     // account for our shoddy timing..
-    if(beyond_all_repair::abs(cop0.count - cop0.compare) <= 20)
+    if(beyond_all_repair::abs(cop0.count - cop0.compare) <= 8)
     {
         cop0.count = cop0.compare;
         count_intr(n64);        
@@ -229,7 +223,8 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
         // cycle counter (incremented every other cycle)
         case COUNT:
         {
-            puts("wrote count");
+            //puts("wrote count");
+            
             n64.scheduler.remove(n64_event::count,false);
             cop0.count = v;
             insert_count_event(n64);
@@ -239,7 +234,8 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
         // when this is == count trigger in interrupt
         case COMPARE:
         {
-            printf("write cmp %x : %x\n",cop0.compare,u32(v));
+            //printf("write cmp %x : %x\n",cop0.compare,u32(v));
+
             n64.scheduler.remove(n64_event::count);
             cop0.compare = v;
             insert_count_event(n64);
@@ -441,6 +437,10 @@ u64 read_cop0(N64& n64, u32 reg)
 
         case COUNT:
         {
+            // read out count tick off all the cycles
+            n64.scheduler.remove(n64_event::count);
+            insert_count_event(n64);
+
             // fudge counter if there is a pending interrupt to prevent bad scheduling
             if(cop0.count == cop0.compare && is_set(cop0.cause.pending,COUNT_BIT))
             {
