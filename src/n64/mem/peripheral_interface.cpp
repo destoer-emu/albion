@@ -1,10 +1,23 @@
 namespace nintendo64
 {
 
+void pi_dma_finished(N64& n64)
+{
+    auto& pi = n64.mem.pi;
+    pi.busy = false;
+
+    // dma is done set the intr flag
+    set_mi_interrupt(n64,PI_INTR_BIT);
+}
+
 // TODO: handle dma domains properly
 void do_pi_dma(N64 &n64, u32 src, u32 dst, u32 len)
 {
     printf("dma from %08x to %08x len %08x\n",src,dst,len);
+
+    auto& pi = n64.mem.pi;
+    
+    pi.busy = true;
 
     // for now just do it naviely with a read and write
     // and optimise it with memcpy later
@@ -15,8 +28,10 @@ void do_pi_dma(N64 &n64, u32 src, u32 dst, u32 len)
         write_physical<u16>(n64,dst+i,v);
     }
 
-    // dma is done set the intr flag
-    set_mi_interrupt(n64,PI_INTR_BIT);
+
+    // TODO: what should the timings on this be?
+    const auto event = n64.scheduler.create_event(20,n64_event::pi_dma);
+    n64.scheduler.insert(event,false);  
 }
 
 void write_pi(N64& n64, u64 addr, u32 v)
@@ -57,6 +72,14 @@ void write_pi(N64& n64, u64 addr, u32 v)
             {
                 deset_mi_interrupt(n64,PI_INTR_BIT);
             }
+
+            // cancel dma
+            if(is_set(v,0))
+            {
+                pi.busy = false;
+                n64.scheduler.remove(n64_event::pi_dma,false);
+            }
+
             break;
         }
 
@@ -86,8 +109,7 @@ u32 read_pi(N64& n64, u64 addr)
     {
         case PI_STATUS:
         {
-            // NOTE: this returns as never busy
-            return mi_intr_set(n64,PI_INTR_BIT) << 3;
+            return (pi.busy << 0) | (mi_intr_set(n64,PI_INTR_BIT) << 3);
         }
 
         case PI_BSD_DOM1_LAT: return pi.bsd_dom1_lat;
