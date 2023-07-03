@@ -6,6 +6,7 @@ namespace nintendo64
 void N64Scheduler::skip_to_event()
 {
     timestamp = min_timestamp;
+    service_events();
 }
 
 void N64Scheduler::service_event(const EventNode<n64_event> & node)
