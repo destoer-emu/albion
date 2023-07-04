@@ -62,7 +62,7 @@ void write_vi(N64& n64, u64 addr ,u32 v)
 
         case VI_INTR:
         {
-            vi.intr = v & 0x7ff;
+            vi.intr = v & 0x3ff;
             break;
         }
         
@@ -76,13 +76,13 @@ void write_vi(N64& n64, u64 addr ,u32 v)
 
         case VI_V_SYNC:
         {
-            vi.vsync = v & 0x7ff;
+            vi.vsync = v & 0x3ff;
             break;
         }
 
         case VI_H_SYNC:
         {
-            vi.hsync = v & 0x7ff;
+            vi.hsync = v & 0x3ff;
             break;
         }     
 
@@ -93,7 +93,8 @@ void write_vi(N64& n64, u64 addr ,u32 v)
             break;
         }
 
-        // TODO: seperate these into there fields
+        // TODO: seperate these control regs into there fields
+        // as none of them are split properly at the moment
         case VI_LEAP:
         {
             vi.leap = v & 0x0fffffff;
