@@ -16,6 +16,19 @@ void si_dma_finished(N64& n64)
     si.dma_busy = false;    
 }
 
+void do_si_dma(N64& n64, u64 src, u64 dst)
+{
+    for(u32 i = 0; i < 64; i += 4)
+    {
+        const u32 data = read_physical<u32>(n64,src + i);
+        write_physical<u32>(n64,dst+i,data);
+    }
+
+    n64.mem.si.dma_busy = true;
+
+    insert_si_event(n64);    
+}
+
 void write_si(N64& n64, u64 addr, u32 v)
 {
     auto& si = n64.mem.si;
@@ -42,17 +55,7 @@ void write_si(N64& n64, u64 addr, u32 v)
                 joybus_comands(n64);
             }
 
-
-            //printf("serial read: %x : %x\n",v,si.dram_addr);
-            for(u32 i = 0; i < 64; i += 4)
-            {
-                const u32 data = read_physical<u32>(n64,v + i);
-                write_physical<u32>(n64,si.dram_addr+i,data);
-            }
-
-            si.dma_busy = true;
-
-            insert_si_event(n64);
+            do_si_dma(n64,v,si.dram_addr);
             break;            
         }
 
@@ -61,16 +64,7 @@ void write_si(N64& n64, u64 addr, u32 v)
             // new write joybus commands are out
             n64.mem.joybus_enabled = false;
 
-            //printf("serial write: %x : %x\n",v,si.dram_addr);
-            for(u32 i = 0; i < 64; i += 4)
-            {
-                const u32 data = read_physical<u32>(n64,si.dram_addr + i);
-                write_physical<u32>(n64,v+i,data);
-            }
-
-            si.dma_busy = true;
-
-            insert_si_event(n64);
+            do_si_dma(n64,si.dram_addr,v);
             break;
         }
 
