@@ -13,16 +13,35 @@ struct VideoInterface
     u32 origin = 0;
     u32 width = 0;
 
-    u32 intr = 0;
-    u32 burst = 0;
+    u32 intr = 0x3ff;
+    
+    u32 burst_start = 0;
+    u32 burst_width = 0;
+    u32 vsync_width = 0;
+    u32 hsync_width = 0;
+
     u32 vsync = 0;
     u32 hsync = 0;
-    u32 leap = 0;
-    u32 hstart = 0;
-    u32 vstart = 0;
-    u32 vburst = 0;
-    u32 xscale = 0;
-    u32 yscale = 0;    
+
+    u32 leap_a = 0;
+    u32 leap_b = 0;
+
+    u32 h_start = 0;
+    u32 h_end = 0;
+
+    u32 v_start = 0;
+    u32 v_end = 0;
+
+    u32 vburst_start = 0;
+    u32 vburst_end = 0;
+
+    u32 x_offset = 0;
+    u32 x_scale = 0;
+
+    u32 y_offset = 0;  
+    u32 y_scale = 0;  
+
+
 };
 
 }

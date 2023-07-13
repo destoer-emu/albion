@@ -65,12 +65,13 @@ void write_vi(N64& n64, u64 addr ,u32 v)
             vi.intr = v & 0x3ff;
             break;
         }
-        
-        // TODO: find out what the hell this thing does lol
-        // need to start looking at how rendering works?
+
         case VI_BURST:
         {
-            vi.burst = v;
+            vi.burst_start = (v >> 20) & 0x3ff;
+            vi.vsync_width = (v >> 16) & 0xf;
+            vi.burst_width = (v >> 8) & 0xff;
+            vi.hsync_width = (v >> 0) & 0xff;
             break;
         }
 
@@ -97,37 +98,43 @@ void write_vi(N64& n64, u64 addr ,u32 v)
         // as none of them are split properly at the moment
         case VI_LEAP:
         {
-            vi.leap = v & 0x0fffffff;
+            vi.leap_a = (v >> 16) & 0xfff;
+            vi.leap_b = v & 0xfff;
             break;
         }
 
         case VI_H_START:
         {
-            vi.hstart = v & ~0b000000;
+            vi.h_start = (v >> 16) & 0x3ff;
+            vi.h_end = v & 0x3ff;
             break;
         }
 
         case VI_V_START:
         {
-            vi.vstart = v & ~0b000000;
+            vi.v_start = (v >> 16) & 0x3ff;
+            vi.v_end = v & 0x3ff;
             break;                
         }
 
         case VI_V_BURST:
         {
-            vi.vburst = v & ~0b000000;
+            vi.vburst_start = (v >> 16) & 0x3ff;
+            vi.vburst_end = v & 0x3ff;
             break;
         }
 
         case VI_X_SCALE:
         {
-            vi.xscale = v & 0x0fffffff;
+            vi.x_offset = (v >> 16) & 0xfff;
+            vi.x_scale = v & 0xfff;
             break;
         }
 
         case VI_Y_SCALE:
         {
-            vi.yscale = v & 0x0fffffff;
+            vi.y_offset = (v >> 16) & 0xfff;
+            vi.y_scale = v & 0xfff;
             break;
         }
 
