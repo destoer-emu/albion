@@ -102,6 +102,7 @@ void check_interrupts(N64 &n64)
 
     if(pending)
     {
+        //print("FIRED: {:x} : {:x}\n",status.im,cause.pending);
         standard_exception(n64,beyond_all_repair::INTERRUPT); 
     }
 }

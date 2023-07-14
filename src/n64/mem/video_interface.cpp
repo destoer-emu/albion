@@ -94,8 +94,6 @@ void write_vi(N64& n64, u64 addr ,u32 v)
             break;
         }
 
-        // TODO: seperate these control regs into there fields
-        // as none of them are split properly at the moment
         case VI_LEAP:
         {
             vi.leap_a = (v >> 16) & 0xfff;

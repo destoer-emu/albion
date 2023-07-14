@@ -7,6 +7,8 @@ void check_mi_interrupts(N64& n64)
 {
     auto& mi = n64.mem.mi;
 
+    //print("mi mask {:b} : {:b}\n",mi.mask,mi.intr);
+
     if(mi.mask & mi.intr)
     {
         mi_intr(n64);

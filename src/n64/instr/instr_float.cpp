@@ -53,6 +53,16 @@ void instr_trunc_w_s(N64& n64, const Opcode& opcode)
     write_cop1_reg(n64,fd,f);   
 }
 
+void instr_mov_s(N64& n64, const Opcode& opcode)
+{
+    const u32 fs = get_fs(opcode);
+    const u32 fd = get_fd(opcode);
+
+    const f32 s = f32(read_cop1_reg(n64,fs));
+
+    write_cop1_reg(n64,fd,s);    
+}
+
 template<typename FUNC>
 void float_s_op(N64& n64, const Opcode& opcode, FUNC func)
 {
@@ -91,6 +101,14 @@ void instr_sub_s(N64& n64, const Opcode& opcode)
     {
         return v1 + v2;
     });
+}
+
+void instr_mul_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64,opcode,[](f32 v1, f32 v2)
+    {
+        return v1 * v2;
+    });    
 }
 
 

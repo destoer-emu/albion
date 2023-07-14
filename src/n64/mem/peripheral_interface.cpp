@@ -13,7 +13,7 @@ void pi_dma_finished(N64& n64)
 // TODO: handle dma domains properly
 void do_pi_dma(N64 &n64, u32 src, u32 dst, u32 len)
 {
-    printf("dma from %08x to %08x len %08x\n",src,dst,len);
+    //printf("dma from %08x to %08x len %08x\n",src,dst,len);
 
     auto& pi = n64.mem.pi;
     

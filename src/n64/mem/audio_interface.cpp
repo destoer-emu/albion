@@ -23,7 +23,7 @@ void audio_event(N64& n64)
     ai.busy = false;
 
     // interrupt as transfer is done
-    set_mi_interrupt(n64,AI_INTR_BIT);  
+    //set_mi_interrupt(n64,AI_INTR_BIT);  
 
     // handle pending transfer
     if(ai.full && ai.enabled)
@@ -92,7 +92,7 @@ void write_ai(N64& n64, u64 addr ,u32 v)
                     do_ai_dma(n64);
 
                     // setup event for transfer end!
-                    insert_audio_event(n64);
+                    //insert_audio_event(n64);
                 }
 
                 // we are busy see if we can setup a pending dma
