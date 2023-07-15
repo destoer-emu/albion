@@ -62,6 +62,7 @@ void write_ai(N64& n64, u64 addr ,u32 v)
         {
             ai.dac_rate = (v & 0b1111'1111'1111'11);
             ai.freq = VIDEO_CLOCK / (ai.dac_rate + 1);
+            ai.freq = 44100;
             break; 
         }
 
@@ -95,7 +96,7 @@ void write_ai(N64& n64, u64 addr ,u32 v)
 
                     // setup event for transfer end!
                     // TODO: calculated freq is botched
-                    //insert_audio_event(n64);
+                    insert_audio_event(n64);
                 }
 
                 // we are busy see if we can setup a pending dma
