@@ -10,9 +10,9 @@ void insert_line_event(N64 &n64)
 }
 
 
-void reset_rdp(N64 &n64, u32 x, u32 y)
+void reset_rdp(N64 &n64)
 {
-    change_res(n64,x,y);
+    change_res(n64);
 
     // for now assume ntsc
     n64.rdp.scan_lines = 525;
@@ -22,10 +22,26 @@ void reset_rdp(N64 &n64, u32 x, u32 y)
     insert_line_event(n64);
 }
 
-void change_res(N64 &n64, u32 x, u32 y)
+void change_res(N64 &n64)
 {
     auto &rdp = n64.rdp;
+    auto &vi = n64.mem.vi;
+
+    u32 x = beyond_all_repair::abs(vi.h_end - vi.h_start);
+
+    // account for half lines
+    u32 y = beyond_all_repair::abs(vi.v_end - vi.v_start) >> 1; 
+    
     //printf("res change %d : %d : %d\n",x,y, x * y);
+
+    const f32 x_scale = (f32(vi.x_scale) / f32(1 << 10));
+    const f32 y_scale = (f32(vi.y_scale) / f32(1 << 10));
+
+    // scale res
+    x = f32(x) * x_scale;
+    y = f32(y) * y_scale;
+
+    //printf("res change scale %d : %d : %d : %f : %f\n",x,y, x * y,x_scale,y_scale);
 
     rdp.screen_x = x;
     rdp.screen_y = y;
@@ -121,9 +137,10 @@ inline u32 convert_color(u16 color)
 void render(N64 &n64)
 {
     auto& vi = n64.mem.vi;
+    auto& rdp = n64.rdp;
 
     // kinda assume some settings for just to get the test output
-    UNUSED(n64);
+    UNUSED(n64); UNUSED(rdp);
 
 
     switch(vi.bpp)
@@ -138,15 +155,22 @@ void render(N64 &n64)
         // rgb 5551
         case 2:
         {
-            // TODO: handle alpha
-            // this probably has more to it but just a plain copy for now
-            for(u32 i = 0; i < n64.rdp.screen.size(); i++)
-            {
-                const u32 addr = vi.origin + (i * sizeof(u16));
-                const auto v = handle_read_n64<u16>(n64.mem.rd_ram,addr);
+            const u32 stride = vi.width;
+            const u32 origin = vi.origin;
 
-                
-                n64.rdp.screen[i] = convert_color(v);
+            const u32 x_offset = vi.width - rdp.screen_x;
+
+            for(u32 y = 0; y < rdp.screen_y; y++)
+            {
+                for(u32 x = 0; x < rdp.screen_x; x++)
+                {
+                    const u32 offset = (y * stride) + x + x_offset;
+                    
+                    const u32 addr = origin + (offset * 2);
+                    const auto v = handle_read_n64<u16>(n64.mem.rd_ram,addr);
+
+                    n64.rdp.screen[(y * rdp.screen_x) + x] = convert_color(v);                    
+                }
             }
             break;
         }
@@ -155,16 +179,25 @@ void render(N64 &n64)
         // what format is this in?
         case 3:
         {
-            // this probably has more to it but just a plain copy for now
-            for(u32 i = 0; i < n64.rdp.screen.size(); i++)
+            const u32 stride = vi.width;
+            const u32 origin = vi.origin;
+
+            const u32 x_offset = vi.width - rdp.screen_x;
+
+            for(u32 y = 0; y < rdp.screen_y; y++)
             {
-                const u32 addr = vi.origin + (i * sizeof(u32));
+                for(u32 x = 0; x < rdp.screen_x; x++)
+                {
+                    const u32 offset = (y * stride) + x + x_offset;
+                    
+                    const u32 addr = origin + (offset * 4);
+                    const auto v = handle_read_n64<u32>(n64.mem.rd_ram,addr);
 
-                const u32 v = handle_read_n64<u32>(n64.mem.rd_ram,addr);
-
-                // convert to ABGR
-                n64.rdp.screen[i] = bswap(v); 
+                    // convert to ABGR
+                    n64.rdp.screen[(y * rdp.screen_x) + x] = bswap(v);                    
+                }
             }
+
             break;
         }
 

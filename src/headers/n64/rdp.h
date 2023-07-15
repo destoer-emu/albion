@@ -18,8 +18,8 @@ struct Rdp
 
 
 
-void reset_rdp(N64 &n64, u32 x, u32 y);
-void change_res(N64 &n64, u32 x, u32 y);
+void reset_rdp(N64 &n64);
+void change_res(N64 &n64);
 
 static constexpr u32 VIDEO_CLOCK = 46 * 1024 * 1024;
 

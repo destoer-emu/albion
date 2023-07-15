@@ -490,8 +490,7 @@ u64 read_cop0(N64& n64, u32 reg)
 
         default:
         {
-            printf("unimplemented cop0 read: %s(%d)\n",COP0_NAMES[reg],reg);
-            exit(1);
+            unimplemented("cop0 read: %s(%d)\n",COP0_NAMES[reg],reg);
         }        
     }
 }

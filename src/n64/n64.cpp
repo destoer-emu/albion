@@ -58,7 +58,7 @@ void reset(N64 &n64, const std::string &filename)
 {
     reset_mem(n64.mem,filename);
     reset_cpu(n64);
-    reset_rdp(n64,320,240);
+    reset_rdp(n64);
     n64.size_change = false;
 
     // initializer external disassembler

@@ -8,6 +8,8 @@ struct AudioInterface
     u32 dram_addr = 0;
     u32 length = 0;
 
+    u32 freq = 0;
+
     // status
     b32 full = false;
     b32 busy = false;

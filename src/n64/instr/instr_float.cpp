@@ -74,9 +74,16 @@ void float_s_op(N64& n64, const Opcode& opcode, FUNC func)
     write_cop1_reg(n64,fd,ans);
 }
 
-f32 float_div_s(f32 v1, f32 v2)
+
+template<typename FUNC>
+void float_d_op(N64& n64, const Opcode& opcode, FUNC func)
 {
-    return v1 / v2;
+    const u32 fs = get_fs(opcode);
+    const u32 fd = get_fd(opcode);
+    const u32 ft = get_ft(opcode);
+
+    const f64 ans = func(f64(read_cop1_reg(n64,fs)),f64(read_cop1_reg(n64,ft)));
+    write_cop1_reg(n64,fd,ans);
 }
 
 void instr_div_s(N64& n64, const Opcode& opcode)
@@ -109,6 +116,14 @@ void instr_mul_s(N64& n64, const Opcode& opcode)
     {
         return v1 * v2;
     });    
+}
+
+void instr_add_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64,opcode,[](f64 v1, f64 v2)
+    {
+        return v1 + v2;
+    });
 }
 
 
