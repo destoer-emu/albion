@@ -1,3 +1,4 @@
+#ifdef GBA_ENABLED
 #include "imgui_window.h"
 #include <gba/gba.h>
 #include <albion/destoer-emu.h>
@@ -308,3 +309,4 @@ void GBAWindow::draw_screen()
     ImGui::Image((void*)(intptr_t)screen.get_texture(),ImVec2(screen.get_width(),screen.get_height()));    
     ImGui::End();    
 }
+#endif

@@ -1,3 +1,4 @@
+#ifdef GB_ENABLED
 #include "imgui_window.h"
 #include <gb/gb.h>
 #include <albion/destoer-emu.h>
@@ -217,3 +218,4 @@ void GBWindow::draw_screen()
     ImGui::Image((void*)(intptr_t)screen.get_texture(),ImVec2(screen.get_width(),screen.get_height()));    
     ImGui::End();    
 }
+#endif

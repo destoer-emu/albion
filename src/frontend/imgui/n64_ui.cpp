@@ -1,3 +1,4 @@
+#ifdef N64_ENABLED
 #include "n64_ui.h"
 using namespace nintendo64;
 
@@ -46,3 +47,4 @@ void N64Window::run_frame()
         return;
     }    
 }
+#endif
