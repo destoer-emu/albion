@@ -62,6 +62,62 @@ u32 blend(const u32 v1, const u32 v2)
 }
 */
 
+
+using ColorLut = std::array<u32,65535>;
+constexpr ColorLut pop_color_lut()
+{
+	ColorLut lut{};
+
+	for(u16 c = 0; c < lut.size(); c++)
+	{
+        // rgba 5551
+    /*
+        
+        r    g   g   b   a
+        <5 | 3>, <2 | 5 | 1> 
+
+        
+    */
+
+    /*
+        // bswap          
+        g    b   a   r   g
+        <2 | 5 | 1>, <5 | 3>
+    */
+
+    /*
+        5   3   2   5   1
+        r | g | g | b | a 
+    */
+
+		u32 R = (c >> 11) & 0x1f;
+		u32 G = (((c >> 8) & 0b111) << 2) | (((c >> 6) & 0b11) << 0);
+		u32 B = (c >> 1) & 0x1f;
+        const b32 A = (c >> 0) & 0x1;
+
+        R |= R << 3;
+        B |= B << 3;
+        G |= G << 3;
+
+		// default to standard colors until we add proper correction
+		lut[c] =  B << 16 |  G << 8 | R << 0;
+
+        if(A)
+        {
+            lut[c] |= 0xff00'0000;
+        }
+	}
+
+	return lut;
+}
+
+static constexpr ColorLut COL_LUT = pop_color_lut();
+
+inline u32 convert_color(u16 color)
+{
+	return COL_LUT[color];
+}
+
 void render(N64 &n64)
 {
     auto& vi = n64.mem.vi;
@@ -106,8 +162,8 @@ void render(N64 &n64)
 
                 const u32 v = handle_read_n64<u32>(n64.mem.rd_ram,addr);
 
-                // convert to ARGB
-                n64.rdp.screen[i] = bswap(v) | 0xff00'0000; 
+                // convert to ABGR
+                n64.rdp.screen[i] = bswap(v); 
             }
             break;
         }

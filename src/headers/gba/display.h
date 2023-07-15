@@ -101,4 +101,6 @@ struct Display
 
 };
 
+inline u32 convert_color(u16 color);
+
 }
