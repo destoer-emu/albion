@@ -99,7 +99,7 @@ void instr_ldc1(N64 &n64, const Opcode &opcode)
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
 
-    const u32 v = read_u64<debug>(n64,n64.cpu.regs[base] + imm);
+    const u64 v = read_u64<debug>(n64,n64.cpu.regs[base] + imm);
     const f64 f = bit_cast_double(v);
 
     write_cop1_reg(n64,ft,f);   
@@ -120,7 +120,7 @@ void instr_swc1(N64 &n64, const Opcode &opcode)
     const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
 
 
-    const f64 f = read_cop1_reg(n64,ft);
+    const f32 f = read_cop1_reg(n64,ft);
     const u32 v = bit_cast_from_float(f);
 
     write_u32<debug>(n64,n64.cpu.regs[base] + imm,v);
