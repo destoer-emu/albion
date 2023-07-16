@@ -9,7 +9,7 @@ void instr_cvt_d_w(N64& n64, const Opcode& opcode)
     const u32 fs = get_fs(opcode);
     const u32 fd = get_fd(opcode);
 
-    const u32 word = bit_cast_from_float(read_cop1_reg(n64,fs));
+    const s32 word = bit_cast_from_float(read_cop1_reg(n64,fs));
 
     const f64 d = f64(word);
 
@@ -21,7 +21,7 @@ void instr_cvt_s_w(N64& n64, const Opcode& opcode)
     const u32 fs = get_fs(opcode);
     const u32 fd = get_fd(opcode);
 
-    const u32 word = bit_cast_from_float(read_cop1_reg(n64,fs));
+    const s32 word = bit_cast_from_float(read_cop1_reg(n64,fs));
 
     const f32 w = f32(word);
 
@@ -47,8 +47,48 @@ void instr_trunc_w_s(N64& n64, const Opcode& opcode)
 
     const f32 s = f32(read_cop1_reg(n64,fs));
 
-    const u32 w = s32(s); 
+    const s32 w = s32(s); 
     const f32 f = bit_cast_float(w);
+
+    write_cop1_reg(n64,fd,f);   
+}
+
+// TODO: these need operand checking
+void instr_trunc_w_d(N64& n64, const Opcode& opcode)
+{
+    const u32 fs = get_fs(opcode);
+    const u32 fd = get_fd(opcode);
+
+    const f64 d = f64(read_cop1_reg(n64,fs));
+
+    const s32 w = s32(d); 
+    const f32 f = bit_cast_float(w);
+
+    write_cop1_reg(n64,fd,f);   
+}
+
+void instr_trunc_l_s(N64& n64, const Opcode& opcode)
+{
+    const u32 fs = get_fs(opcode);
+    const u32 fd = get_fd(opcode);
+
+    const f32 s = f32(read_cop1_reg(n64,fs));
+
+    const s64 l = s64(s); 
+    const f64 f = bit_cast_double(l);
+
+    write_cop1_reg(n64,fd,f);   
+}
+
+void instr_trunc_l_d(N64& n64, const Opcode& opcode)
+{
+    const u32 fs = get_fs(opcode);
+    const u32 fd = get_fd(opcode);
+
+    const f64 d = f64(read_cop1_reg(n64,fs));
+
+    const s64 l = s64(d); 
+    const f64 f = bit_cast_double(l);
 
     write_cop1_reg(n64,fd,f);   
 }

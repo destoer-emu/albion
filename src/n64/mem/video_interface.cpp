@@ -31,8 +31,10 @@ void write_vi(N64& n64, u64 addr ,u32 v)
                 //unimplemented("divot");
             }
 
+            // interlacing
             if(vi.serrate)
             {
+                puts("serrate");
                 //unimplemented("serrate");
             }
             break;
@@ -181,14 +183,14 @@ void write_vi(N64& n64, u64 addr ,u32 v)
 
 u32 read_vi(N64& n64, u64 addr)
 {
-    //auto& vi = n64.mem.vi;
+    auto& vi = n64.mem.vi;
+    UNUSED(vi);
 
     switch(addr)
     {
         case VI_CURRENT: 
         {
-            // TODO: what register controls the interlacing behavior?
-            return n64.rdp.ly & ~0b1;
+            return (n64.rdp.ly << 1) & ~1;
         }
 
         default:

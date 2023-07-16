@@ -3,34 +3,34 @@
 namespace nintendo64
 {
 
-f32 bit_cast_float(u32 v)
+f32 bit_cast_float(s32 v)
 {
-    static_assert(sizeof(f32) == sizeof(u32));
+    static_assert(sizeof(f32) == sizeof(s32));
 
     f32 out = 0.0;
-    memcpy(&out,&v,sizeof(u32));
+    memcpy(&out,&v,sizeof(s32));
     return out;
 }
 
-f64 bit_cast_double(u64 v)
+f64 bit_cast_double(s64 v)
 {
-    static_assert(sizeof(f64) == sizeof(u64));
+    static_assert(sizeof(f64) == sizeof(s64));
 
     f64 out = 0.0;
     memcpy(&out,&v,sizeof(u64));
     return out;
 }
 
-u64 bit_cast_from_double(f64 v)
+s64 bit_cast_from_double(f64 v)
 {
-    static_assert(sizeof(f64) == sizeof(u64));
+    static_assert(sizeof(f64) == sizeof(s64));
 
     u64 out = 0;
     memcpy(&out,&v,sizeof(f64));
     return out;    
 }
 
-u32 bit_cast_from_float(f32 v)
+s32 bit_cast_from_float(f32 v)
 {
     static_assert(sizeof(f32) == sizeof(u32));
 
@@ -121,7 +121,7 @@ void instr_swc1(N64 &n64, const Opcode &opcode)
 
 
     const f32 f = read_cop1_reg(n64,ft);
-    const u32 v = bit_cast_from_float(f);
+    const s32 v = bit_cast_from_float(f);
 
     write_u32<debug>(n64,n64.cpu.regs[base] + imm,v);
 }
@@ -142,7 +142,7 @@ void instr_sdc1(N64 &n64, const Opcode &opcode)
 
 
     const f64 f = read_cop1_reg(n64,ft);
-    const u64 v = bit_cast_from_double(f);
+    const s64 v = bit_cast_from_double(f);
 
     write_u64<debug>(n64,n64.cpu.regs[base] + imm,v);
 }
@@ -171,7 +171,7 @@ void instr_mfc1(N64& n64, const Opcode& opcode)
 {
     const u32 fs = get_fs(opcode);
 
-    const u32 w = bit_cast_from_float(read_cop1_reg(n64,fs));
+    const s32 w = bit_cast_from_float(read_cop1_reg(n64,fs));
     n64.cpu.regs[opcode.rt] = sign_extend_type<s64,s32>(w);
 }
 
