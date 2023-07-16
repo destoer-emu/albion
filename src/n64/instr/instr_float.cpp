@@ -146,7 +146,7 @@ void instr_sub_s(N64& n64, const Opcode& opcode)
 {
     float_s_op(n64,opcode,[](f32 v1, f32 v2)
     {
-        return v1 + v2;
+        return v1 - v2;
     });
 }
 
@@ -166,6 +166,14 @@ void instr_add_d(N64& n64, const Opcode& opcode)
     });
 }
 
+
+void instr_sub_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64,opcode,[](f64 v1, f64 v2)
+    {
+        return v1 - v2;
+    });
+}
 
 // table 7-11 for cond desc
 template<typename FUNC>
