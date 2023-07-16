@@ -200,6 +200,21 @@ void float_cond_s(N64& n64, const Opcode& opcode, FUNC func)
     n64.cpu.cop1.c = func(v1,v2);
 }
 
+template<typename FUNC>
+void float_cond_d(N64& n64, const Opcode& opcode, FUNC func)
+{
+    const u32 fs = get_fs(opcode);
+    const u32 ft = get_ft(opcode);
+
+    const f64 v1 = f64(read_cop1_reg(n64,fs));
+    const f64 v2 = f64(read_cop1_reg(n64,ft));
+
+    // TODO: check inputs are valid
+
+    // write out result of comparison
+    n64.cpu.cop1.c = func(v1,v2);
+}
+
 void instr_c_le_s(N64& n64, const Opcode& opcode)
 {
     float_cond_s(n64,opcode,[](f32 v1, f32 v2)
@@ -207,6 +222,15 @@ void instr_c_le_s(N64& n64, const Opcode& opcode)
         return v1 <= v2;
     });
 }
+
+void instr_c_le_d(N64& n64, const Opcode& opcode)
+{
+    float_cond_d(n64,opcode,[](f64 v1, f64 v2)
+    {
+        return v1 <= v2;
+    });
+}
+
 
 void instr_bc1tl(N64& n64, const Opcode& opcode)
 {
@@ -223,6 +247,45 @@ void instr_bc1tl(N64& n64, const Opcode& opcode)
     {
         skip_instr(n64.cpu);
     }    
+}
+
+void instr_bc1fl(N64& n64, const Opcode& opcode)
+{
+    const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
+
+    // cond is false
+    if(!n64.cpu.cop1.c)
+    {
+        write_pc(n64,target);
+    }
+    
+    // discard delay slot
+    else
+    {
+        skip_instr(n64.cpu);
+    }    
+}
+
+void instr_bc1t(N64& n64, const Opcode& opcode)
+{
+    const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
+
+    // cond is true
+    if(n64.cpu.cop1.c)
+    {
+        write_pc(n64,target);
+    } 
+}
+
+void instr_bc1f(N64& n64, const Opcode& opcode)
+{
+    const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
+
+    // cond is false
+    if(!n64.cpu.cop1.c)
+    {
+        write_pc(n64,target);
+    } 
 }
 
 }
