@@ -210,12 +210,8 @@ u32 remap_addr(N64& n64,u32 addr)
 }
 
 
-// for now assume accesses are force aligned
-// however they are supposed to throw exceptions
-// when they are not
-
-template<const b32 debug,typename access_type>
-void write_mem(N64 &n64, u32 addr, access_type v)
+template<typename access_type>
+void write_mem_internal(N64& n64, u32 addr, access_type v)
 {
     auto& mem = n64.mem;
 
@@ -232,7 +228,28 @@ void write_mem(N64 &n64, u32 addr, access_type v)
     // if we are doing a slow access remap the addr manually
     addr = remap_addr(n64,addr);
 
-    write_physical<access_type>(n64,addr,v);
+    write_physical<access_type>(n64,addr,v);    
+}
+
+// for now assume accesses are force aligned
+// however they are supposed to throw exceptions
+// when they are not
+
+template<const b32 debug,typename access_type>
+void write_mem(N64 &n64, u32 addr, access_type v)
+{
+    if constexpr(debug)
+    {
+#ifdef DEBUG
+        if(n64.debug.breakpoint_hit(addr,v,break_type::write))
+        {
+            write_log(n64.debug,"write breakpoint hit at {:08x}:{:08x}:{:08x}",addr,v,n64.cpu.pc);
+            n64.debug.halt();
+        }   
+#endif
+    }
+
+    write_mem_internal<access_type>(n64,addr,v);
 }
 
 
@@ -240,8 +257,8 @@ void write_mem(N64 &n64, u32 addr, access_type v)
 // however they are supposed to throw exceptions
 // when they are not
 
-template<const b32 debug,typename access_type>
-access_type read_mem(N64 &n64, u32 addr)
+template<typename access_type>
+access_type read_mem_internal(N64& n64, u32 addr)
 {
     auto& mem = n64.mem;
 
@@ -258,7 +275,26 @@ access_type read_mem(N64 &n64, u32 addr)
     // if we are doing a slow access remap the addr manually
     addr = remap_addr(n64,addr);
 
-    return read_physical<access_type>(n64,addr);
+    return read_physical<access_type>(n64,addr);    
+}
+
+template<const b32 debug,typename access_type>
+access_type read_mem(N64 &n64, u32 addr)
+{
+    const auto v = read_mem_internal<access_type>(n64,addr);
+
+    if constexpr(debug)
+    {
+#ifdef DEBUG
+    if(n64.debug.breakpoint_hit(addr,v,break_type::read))
+    {
+        write_log(n64.debug,"read breakpoint hit at {:08x}:{:08x}:{:08x}",addr,v,n64.cpu.pc);
+        n64.debug.halt();
+    }
+#endif
+    }
+
+    return v;
 }
 
 
