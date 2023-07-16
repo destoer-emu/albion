@@ -4,93 +4,168 @@ namespace nintendo64
 // TODO: handle floating point exceptions and restrictions
 // but we will just ignore them for now
 
-void instr_cvt_d_w(N64& n64, const Opcode& opcode)
+template<typename FUNC>
+void instr_cvt(N64& n64, const Opcode& opcode, FUNC func)
 {
     const u32 fs = get_fs(opcode);
     const u32 fd = get_fd(opcode);
 
-    const s32 word = bit_cast_from_float(read_cop1_reg(n64,fs));
+    const f64 out = func(read_cop1_reg(n64,fs));
 
-    const f64 d = f64(word);
+    write_cop1_reg(n64,fd,out);    
+}
 
-    write_cop1_reg(n64,fd,d);
+void instr_cvt_d_w(N64& n64, const Opcode& opcode)
+{
+    instr_cvt(n64,opcode,[](f64 in)
+    {
+        const s32 word = bit_cast_from_float(in);
+        return f64(word);
+    });
+}
+
+void instr_cvt_d_l(N64& n64, const Opcode& opcode)
+{
+    instr_cvt(n64,opcode,[](f64 in)
+    {
+        const s64 l = bit_cast_from_double(in);
+        return f64(l);
+    });
+}
+
+void instr_cvt_d_s(N64& n64, const Opcode& opcode)
+{
+    instr_cvt(n64,opcode,[](f64 in)
+    {
+        const f32 s = f32(in);
+        return f64(s);        
+    });
+}
+
+
+void instr_cvt_l_d(N64& n64, const Opcode& opcode)
+{
+    instr_cvt(n64,opcode,[](f64 in)
+    {
+        const s64 l = s64(in);
+        return bit_cast_double(l);        
+    });
+}
+
+
+void instr_cvt_l_s(N64& n64, const Opcode& opcode)
+{
+    instr_cvt(n64,opcode,[](f64 in)
+    {
+        const f32 s = f32(in);
+        const s64 l = s64(s);
+
+        return bit_cast_double(l);
+    });
 }
 
 void instr_cvt_s_w(N64& n64, const Opcode& opcode)
 {
-    const u32 fs = get_fs(opcode);
-    const u32 fd = get_fd(opcode);
+    instr_cvt(n64,opcode,[](f64 in)
+    {
+        const s32 word = bit_cast_from_float(in);
+        const f32 s = f32(word);
 
-    const s32 word = bit_cast_from_float(read_cop1_reg(n64,fs));
-
-    const f32 w = f32(word);
-
-    write_cop1_reg(n64,fd,w);
+        return s;
+    });
 }
 
 void instr_cvt_s_d(N64& n64, const Opcode& opcode)
 {
+    instr_cvt(n64,opcode,[](f64 in)
+    {
+        return f32(in);
+    });
+}
+
+void instr_cvt_s_l(N64& n64, const Opcode& opcode)
+{
+    instr_cvt(n64,opcode,[](f64 in)
+    {
+        const s64 l = bit_cast_from_double(in);
+        return f32(l);
+    });
+}
+
+void instr_cvt_w_d(N64& n64, const Opcode& opcode)
+{
+    instr_cvt(n64,opcode,[](f64 in)
+    {
+        const s32 w = s32(in);
+
+        return f64(bit_cast_float(w));
+    });
+}
+
+void instr_cvt_w_s(N64& n64, const Opcode& opcode)
+{
+    instr_cvt(n64,opcode,[](f64 in)
+    {
+        const f32 s = f32(in);
+        const s32 w = s32(s);
+
+        return f64(bit_cast_float(w));
+    });
+}
+
+template<typename FUNC>
+void instr_trunc(N64& n64, const Opcode& opcode, FUNC func)
+{
     const u32 fs = get_fs(opcode);
     const u32 fd = get_fd(opcode);
 
-    const f64 d = read_cop1_reg(n64,fs);
-    const f32 w = f32(d);
+    const f64 out = func(read_cop1_reg(n64,fs));
 
-    write_cop1_reg(n64,fd,w);
+    write_cop1_reg(n64,fd,out);    
 }
-
 
 void instr_trunc_w_s(N64& n64, const Opcode& opcode)
 {
-    const u32 fs = get_fs(opcode);
-    const u32 fd = get_fd(opcode);
+    instr_trunc(n64,opcode,[](f64 in)
+    {
+        const f32 s = f32(in);
+        const s32 w = s32(s);
 
-    const f32 s = f32(read_cop1_reg(n64,fs));
-
-    const s32 w = s32(s); 
-    const f32 f = bit_cast_float(w);
-
-    write_cop1_reg(n64,fd,f);   
+        return bit_cast_float(w);
+    });
 }
 
-// TODO: these need operand checking
 void instr_trunc_w_d(N64& n64, const Opcode& opcode)
 {
-    const u32 fs = get_fs(opcode);
-    const u32 fd = get_fd(opcode);
+    instr_trunc(n64,opcode,[](f64 in)
+    {
+        const s32 w = s32(in);
 
-    const f64 d = f64(read_cop1_reg(n64,fs));
-
-    const s32 w = s32(d); 
-    const f32 f = bit_cast_float(w);
-
-    write_cop1_reg(n64,fd,f);   
+        return bit_cast_float(w);
+    });
 }
+
 
 void instr_trunc_l_s(N64& n64, const Opcode& opcode)
 {
-    const u32 fs = get_fs(opcode);
-    const u32 fd = get_fd(opcode);
+    instr_trunc(n64,opcode,[](f64 in)
+    {
+        const f32 s = f32(in);
+        const s64 l = s64(s);
 
-    const f32 s = f32(read_cop1_reg(n64,fs));
-
-    const s64 l = s64(s); 
-    const f64 f = bit_cast_double(l);
-
-    write_cop1_reg(n64,fd,f);   
+        return bit_cast_double(l);
+    });
 }
+
 
 void instr_trunc_l_d(N64& n64, const Opcode& opcode)
 {
-    const u32 fs = get_fs(opcode);
-    const u32 fd = get_fd(opcode);
+    instr_trunc(n64,opcode,[](f64 in)
+    {
+        const s64 l = s64(in);
 
-    const f64 d = f64(read_cop1_reg(n64,fs));
-
-    const s64 l = s64(d); 
-    const f64 f = bit_cast_double(l);
-
-    write_cop1_reg(n64,fd,f);   
+        return bit_cast_double(l);
+    });
 }
 
 void instr_mov_s(N64& n64, const Opcode& opcode)
