@@ -32,7 +32,7 @@ s64 bit_cast_from_double(f64 v)
 
 s32 bit_cast_from_float(f32 v)
 {
-    static_assert(sizeof(f32) == sizeof(u32));
+    static_assert(sizeof(f32) == sizeof(s32));
 
     u32 out = 0;
     memcpy(&out,&v,sizeof(f32));

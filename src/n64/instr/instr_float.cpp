@@ -175,6 +175,15 @@ void instr_sub_d(N64& n64, const Opcode& opcode)
     });
 }
 
+void instr_mul_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64,opcode,[](f64 v1, f64 v2)
+    {
+        return v1 * v2;
+    });
+}
+
+
 // table 7-11 for cond desc
 template<typename FUNC>
 void float_cond_s(N64& n64, const Opcode& opcode, FUNC func)
