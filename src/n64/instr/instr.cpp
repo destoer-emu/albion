@@ -1,5 +1,38 @@
 #include <n64/n64.h>
 
+namespace nintendo64
+{
+
+template<typename FUNC>
+void instr_branch(N64& n64, const Opcode& opcode, FUNC func)
+{
+    if(func(n64,opcode))
+    {
+        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
+
+        write_pc(n64,target);
+    }
+}
+
+template<typename FUNC>
+void instr_branch_likely(N64& n64, const Opcode& opcode, FUNC func)
+{
+    if(func(n64,opcode))
+    {
+        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
+
+        write_pc(n64,target);
+    }
+
+    // skip delay slot
+    else
+    {
+        skip_instr(n64.cpu);
+    }   
+}
+
+}
+
 #include <n64/instr/instr_r.cpp>
 #include <n64/instr/instr_regimm.cpp>
 #include <n64/instr/instr_cop0.cpp>
@@ -140,87 +173,43 @@ void instr_j(N64 &n64, const Opcode &opcode)
 
 void instr_beql(N64 &n64, const Opcode &opcode)
 {
-    if(n64.cpu.regs[opcode.rs] == n64.cpu.regs[opcode.rt])
+    instr_branch_likely(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
-        write_pc(n64,target);
-    }
-    
-    // discard delay slot
-    else
-    {
-        skip_instr(n64.cpu);
-    }
+        return n64.cpu.regs[opcode.rs] == n64.cpu.regs[opcode.rt];
+    });
 }
 
 void instr_blezl(N64 &n64, const Opcode &opcode)
 {
-    if(s64(n64.cpu.regs[opcode.rs]) <= 0)
+    instr_branch_likely(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
-        write_pc(n64,target);
-    }
-    
-    // discard delay slot
-    else
-    {
-        skip_instr(n64.cpu);
-    }
+        return s64(n64.cpu.regs[opcode.rs]) <= 0;
+    });
 }
 
 void instr_bnel(N64 &n64, const Opcode &opcode)
 {
-    const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
-    // branch to self (trivial waitloop)
-    if(opcode.rs == opcode.rt && target == (n64.cpu.pc - 4))
+    instr_branch_likely(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        puts("waitloop");
-        exit(1);
-    }
-
-
-    if(n64.cpu.regs[opcode.rs] != n64.cpu.regs[opcode.rt])
-    {
-        write_pc(n64,target);
-    }
-    
-    // discard delay slot
-    else
-    {
-        skip_instr(n64.cpu);
-    }
+        return n64.cpu.regs[opcode.rs] != n64.cpu.regs[opcode.rt];
+    });
 }
 
 
 void instr_bne(N64 &n64, const Opcode &opcode)
 {
-    if(n64.cpu.regs[opcode.rs] != n64.cpu.regs[opcode.rt])
+    instr_branch(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
-        write_pc(n64,target);
-    }
+        return n64.cpu.regs[opcode.rs] != n64.cpu.regs[opcode.rt];
+    });
 }
 
 void instr_beq(N64 &n64, const Opcode &opcode)
 {
-    
-    const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
-    // branch to self (trivial waitloop)
-    if(opcode.rs == opcode.rt && target == (n64.cpu.pc - 4))
+    instr_branch(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        puts("waitloop");
-        exit(1);
-    }
-
-    if(n64.cpu.regs[opcode.rs] == n64.cpu.regs[opcode.rt])
-    { 
-        write_pc(n64,target);
-    }
+        return n64.cpu.regs[opcode.rs] == n64.cpu.regs[opcode.rt];
+    });
 }
 
 
@@ -481,38 +470,26 @@ void instr_lh(N64 &n64, const Opcode &opcode)
 
 void instr_bgtz(N64 &n64, const Opcode &opcode)
 {
-    if(s64(n64.cpu.regs[opcode.rs]) > 0)
+    instr_branch(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
-        write_pc(n64,target);
-    }
+        return s64(n64.cpu.regs[opcode.rs]) > 0;
+    });
 }
 
 void instr_blez(N64& n64, const Opcode& opcode)
 {
-    if(s64(n64.cpu.regs[opcode.rs]) <= 0)
+    instr_branch(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
-        write_pc(n64,target);
-    }
+        return s64(n64.cpu.regs[opcode.rs]) <= 0;
+    });
 }
 
 void instr_bgtzl(N64& n64, const Opcode& opcode)
 {
-    if(s64(n64.cpu.regs[opcode.rs]) > 0)
+    instr_branch_likely(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
-        write_pc(n64,target);
-    }
-
-    // skip delay slot
-    else
-    {
-        skip_instr(n64.cpu);
-    }    
+        return s64(n64.cpu.regs[opcode.rs]) > 0;
+    }); 
 }
 
 }

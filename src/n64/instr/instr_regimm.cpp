@@ -26,28 +26,18 @@ void instr_REGIMM(N64& n64, const Opcode& opcode)
 
 void instr_bgez(N64& n64, const Opcode& opcode)
 {
-    if(s64(n64.cpu.regs[opcode.rs]) >= 0)
+    instr_branch(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
-        write_pc(n64,target);
-    }
+        return s64(n64.cpu.regs[opcode.rs]) >= 0;
+    }); 
 }
 
 void instr_bgezl(N64 &n64, const Opcode &opcode)
 {
-    if(s64(n64.cpu.regs[opcode.rs]) >= 0)
+    instr_branch_likely(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
-        write_pc(n64,target);
-    }
-    
-    // discard delay slot
-    else
-    {
-        skip_instr(n64.cpu);
-    }
+        return s64(n64.cpu.regs[opcode.rs]) >= 0;
+    }); 
 }
 
 void instr_bgezal(N64 &n64, const Opcode &opcode)
@@ -55,17 +45,10 @@ void instr_bgezal(N64 &n64, const Opcode &opcode)
     // link unconditonally
     n64.cpu.regs[RA] = n64.cpu.pc_next;
 
-    if(s64(n64.cpu.regs[opcode.rs]) >= 0)
+    instr_branch(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-        write_pc(n64,target);
-    }
-    
-    // discard delay slot
-    else
-    {
-        skip_instr(n64.cpu);
-    }
+        return s64(n64.cpu.regs[opcode.rs]) >= 0;
+    });
 }
 
 void instr_bgezall(N64 &n64, const Opcode &opcode)
@@ -75,27 +58,18 @@ void instr_bgezall(N64 &n64, const Opcode &opcode)
 
 void instr_bltz(N64 &n64, const Opcode &opcode)
 {
-    if(s64(n64.cpu.regs[opcode.rs]) < 0)
+    instr_branch(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
-        write_pc(n64,target);
-    }    
+        return s64(n64.cpu.regs[opcode.rs]) < 0;
+    });   
 }
 
 void instr_bltzl(N64 &n64, const Opcode &opcode)
 {
-    if(s64(n64.cpu.regs[opcode.rs]) < 0)
+    instr_branch_likely(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-        write_pc(n64,target);
-    }
-    
-    // discard delay slot
-    else
-    {
-        skip_instr(n64.cpu);
-    }
+        return s64(n64.cpu.regs[opcode.rs]) < 0;
+    }); 
 }
 
 void instr_bltzal(N64 &n64, const Opcode &opcode)

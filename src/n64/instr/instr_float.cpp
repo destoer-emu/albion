@@ -234,58 +234,38 @@ void instr_c_le_d(N64& n64, const Opcode& opcode)
 
 void instr_bc1tl(N64& n64, const Opcode& opcode)
 {
-    const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
-    // cond is true
-    if(n64.cpu.cop1.c)
+    instr_branch_likely(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        write_pc(n64,target);
-    }
-    
-    // discard delay slot
-    else
-    {
-        skip_instr(n64.cpu);
-    }    
+        UNUSED(opcode);
+        return n64.cpu.cop1.c;
+    });   
 }
 
 void instr_bc1fl(N64& n64, const Opcode& opcode)
 {
-    const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
-    // cond is false
-    if(!n64.cpu.cop1.c)
+    instr_branch_likely(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        write_pc(n64,target);
-    }
-    
-    // discard delay slot
-    else
-    {
-        skip_instr(n64.cpu);
-    }    
+        UNUSED(opcode);
+        return !n64.cpu.cop1.c;
+    });    
 }
 
 void instr_bc1t(N64& n64, const Opcode& opcode)
 {
-    const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
-    // cond is true
-    if(n64.cpu.cop1.c)
+    instr_branch(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        write_pc(n64,target);
-    } 
+        UNUSED(opcode);
+        return n64.cpu.cop1.c;
+    }); 
 }
 
 void instr_bc1f(N64& n64, const Opcode& opcode)
 {
-    const auto target = compute_branch_addr(n64.cpu.pc,opcode.imm);
-
-    // cond is false
-    if(!n64.cpu.cop1.c)
+    instr_branch(n64,opcode,[](N64& n64, const Opcode& opcode)
     {
-        write_pc(n64,target);
-    } 
+        UNUSED(opcode);
+        return !n64.cpu.cop1.c;
+    }); 
 }
 
 }
