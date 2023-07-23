@@ -26,10 +26,49 @@ void controller_state(N64& n64)
 {
     auto& mem = n64.mem;
 
-    // no state for now
-    const u32 v = 0;
+    printf("state : %x\n",mem.joybus.state);
 
-    handle_write_n64<u32>(mem.pif_ram,0,v);
+    handle_write_n64<u32>(mem.pif_ram,0,mem.joybus.state);
+}
+
+void set_button(Joybus& joybus, u32 bit, b32 down)
+{
+    if(down)
+    {
+        joybus.state = set_bit(joybus.state,bit);
+    }
+
+    else
+    {
+        joybus.state = deset_bit(joybus.state,bit);
+    }
+}
+
+void handle_input(N64& n64, Controller& controller)
+{
+    auto& joybus = n64.mem.joybus;
+
+	for(auto& event : controller.input_events)
+	{
+		switch(event.input)
+		{
+            // a button
+			case controller_input::a:
+            {
+                set_button(joybus,31,event.down);
+                break;
+            }
+
+            // b button
+			case controller_input::x: 
+            {
+                set_button(joybus,30,event.down);
+                break;
+            }
+
+			default: break;
+		}
+    }
 }
 
 static constexpr u32 COMMAND_INFO = 0x00;

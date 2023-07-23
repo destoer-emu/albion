@@ -45,6 +45,11 @@ struct Controller
         add_event(event);
     }
 
+    // controller axis
+    u32 left_x = 0;
+    u32 left_y = 0;
+
+    b32 simulate_dpad = true;
 
     std::vector<InputEvent> input_events;
 };

@@ -38,16 +38,20 @@ void change_res(N64 &n64)
     const f32 y_scale = (f32(vi.y_scale) / f32(1 << 10));
 
     // scale res
-    x = f32(x) * x_scale;
-    y = f32(y) * y_scale;
+    x = (f32(x) * x_scale);
+    y = (f32(y) * y_scale) + 3;
 
     //printf("res change scale %d : %d : %d : %f : %f\n",x,y, x * y,x_scale,y_scale);
+    if(x != rdp.screen_x || y != rdp.screen_y)
+    {
+        n64.size_change = true;
+    
+        rdp.screen_x = x;
+        rdp.screen_y = y;
 
-    rdp.screen_x = x;
-    rdp.screen_y = y;
-
-    rdp.screen.resize(x * y);
-    std::fill(rdp.screen.begin(),rdp.screen.end(),0xff000000);
+        rdp.screen.resize(x * y);
+        std::fill(rdp.screen.begin(),rdp.screen.end(),0xff000000);
+    }
 }
 
 
@@ -158,13 +162,16 @@ void render(N64 &n64)
             const u32 stride = vi.width;
             const u32 origin = vi.origin;
 
-            const u32 x_offset = vi.width - rdp.screen_x;
+            //const u32 x_offset = vi.width - rdp.screen_x;
+
+            const u32 x_offset = vi.x_offset >> 10;
+            const u32 y_offset = vi.y_offset >> 10;
 
             for(u32 y = 0; y < rdp.screen_y; y++)
             {
                 for(u32 x = 0; x < rdp.screen_x; x++)
                 {
-                    const u32 offset = (y * stride) + x + x_offset;
+                    const u32 offset = ((y + y_offset) * stride) + x + x_offset;
                     
                     const u32 addr = origin + (offset * 2);
                     const auto v = handle_read_n64<u16>(n64.mem.rd_ram,addr);
@@ -182,13 +189,14 @@ void render(N64 &n64)
             const u32 stride = vi.width;
             const u32 origin = vi.origin;
 
-            const u32 x_offset = vi.width - rdp.screen_x;
+            const u32 x_offset = vi.x_offset >> 10;
+            const u32 y_offset = vi.y_offset >> 10;
 
             for(u32 y = 0; y < rdp.screen_y; y++)
             {
                 for(u32 x = 0; x < rdp.screen_x; x++)
                 {
-                    const u32 offset = (y * stride) + x + x_offset;
+                    const u32 offset = ((y + y_offset) * stride) + x + x_offset;
                     
                     const u32 addr = origin + (offset * 4);
                     const auto v = handle_read_n64<u32>(n64.mem.rd_ram,addr);

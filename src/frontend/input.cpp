@@ -257,100 +257,107 @@ void Input::handle_controller_input()
     }
 
 
-    // handle the joystick
-    const auto x = SDL_GameControllerGetAxis(game_controller,SDL_CONTROLLER_AXIS_LEFTX);
-    const auto y = SDL_GameControllerGetAxis(game_controller,SDL_CONTROLLER_AXIS_LEFTY);
-
     // input of more than half in either direction is enough to make
     // to cause an input
     constexpr int16_t threshold = std::numeric_limits<int16_t>::max() / 2;
 
-
-	// NOTE: this is effectively a digital input for the anlog stick and should be ignored by the handler when we
-	// actually want an input the stick directly
+    // NOTE: this is effectively a digital input for the anlog stick and should be ignored by the handler when we
+    // actually want an input the stick directly
 
     // if something is greater than threshold and not pushed before
     // key press or if it was and now isnt release the key
     // do for all 4 keys
-
-
-    static constexpr int LEFT = 0;
-    static constexpr int RIGHT = 1;
-    static constexpr int UP = 2;
-    static constexpr int DOWN = 3;
-    static bool prev_dpad[4] = 
+    if(controller.simulate_dpad)
     {
-        false, // left
-        false, // right
-        false, // up
-        false // down
-    };
-
-    // in y axis deadzone deset both
-    if(y == threshold)
-    {
-        if(prev_dpad[DOWN])
+        static constexpr int LEFT = 0;
+        static constexpr int RIGHT = 1;
+        static constexpr int UP = 2;
+        static constexpr int DOWN = 3;
+        static bool prev_dpad[4] = 
         {
-			controller.add_event(controller_input::down,false);
+            false, // left
+            false, // right
+            false, // up
+            false // down
+        };
+
+        // handle the joystick
+        const auto x = SDL_GameControllerGetAxis(game_controller,SDL_CONTROLLER_AXIS_LEFTX);
+        const auto y = SDL_GameControllerGetAxis(game_controller,SDL_CONTROLLER_AXIS_LEFTY);
+
+        // in y axis deadzone deset both
+        if(y == threshold)
+        {
+            if(prev_dpad[DOWN])
+            {
+                controller.add_event(controller_input::down,false);
+            }
+
+            if(prev_dpad[UP])
+            {
+                controller.add_event(controller_input::up,false);
+            }
+            prev_dpad[LEFT] = false;
+            prev_dpad[RIGHT] = false;
         }
 
-        if(prev_dpad[UP])
+        // in x axis deadzone deset both
+        if(x == threshold)
         {
-			controller.add_event(controller_input::up,false);
-        }
-        prev_dpad[LEFT] = false;
-        prev_dpad[RIGHT] = false;
-    }
+            if(prev_dpad[LEFT])
+            {
+                controller.add_event(controller_input::left,false);
+            }
 
-    // in x axis deadzone deset both
-    if(x == threshold)
-    {
-        if(prev_dpad[LEFT])
+            if(prev_dpad[RIGHT])
+            {
+                controller.add_event(controller_input::right,false);
+            }
+            prev_dpad[LEFT] = false;
+            prev_dpad[RIGHT] = false;
+        }
+
+
+        const bool r = x > threshold;
+        const bool l = x < -threshold;
+        const bool u = y < -threshold;
+        const bool d = y > threshold;
+
+
+        // right
+        if(prev_dpad[RIGHT] != r)
         {
-			controller.add_event(controller_input::left,false);
+            controller.add_event(controller_input::right,r);
+            prev_dpad[RIGHT] = r;
         }
 
-        if(prev_dpad[RIGHT])
+        // left
+        if(prev_dpad[LEFT] != l)
         {
-			controller.add_event(controller_input::right,false);
+            controller.add_event(controller_input::left,l);
+            prev_dpad[LEFT] = l;
         }
-        prev_dpad[LEFT] = false;
-        prev_dpad[RIGHT] = false;
+
+        // up
+        if(prev_dpad[UP] != u)
+        {
+            controller.add_event(controller_input::up,u);
+            prev_dpad[UP] = u;    
+        }
+
+        // down
+        if(prev_dpad[DOWN] != d)
+        {
+            controller.add_event(controller_input::down,d);
+            prev_dpad[DOWN] = d;    
+        }
+
     }
 
-
-    const bool r = x > threshold;
-    const bool l = x < -threshold;
-    const bool u = y < -threshold;
-    const bool d = y > threshold;
-
-
-    // right
-    if(prev_dpad[RIGHT] != r)
+    else
     {
-		controller.add_event(controller_input::right,r);
-        prev_dpad[RIGHT] = r;
-    }
-
-    // left
-    if(prev_dpad[LEFT] != l)
-    {
-		controller.add_event(controller_input::left,l);
-        prev_dpad[LEFT] = l;
-    }
-
-    // up
-    if(prev_dpad[UP] != u)
-    {
-		controller.add_event(controller_input::up,u);
-        prev_dpad[UP] = u;    
-    }
-
-    // down
-    if(prev_dpad[DOWN] != d)
-    {
-		controller.add_event(controller_input::down,d);
-        prev_dpad[DOWN] = d;    
+        controller.left_x = SDL_GameControllerGetAxis(game_controller,SDL_CONTROLLER_AXIS_LEFTX);
+        controller.left_y = SDL_GameControllerGetAxis(game_controller,SDL_CONTROLLER_AXIS_LEFTY);;
     }
 
     // handle analog triggers

@@ -6,6 +6,7 @@
 #include <n64/scheduler.h>
 #include <albion/lib.h>
 #include <beyond_all_repair.h>
+#include <albion/input.h>
 
 namespace nintendo64
 {
@@ -32,4 +33,5 @@ void reset(N64 &n64, const std::string &filename);
 void run(N64 &n64);
 
 std::string disass_n64(N64& n64, Opcode opcode, u64 addr);
+void handle_input(N64& n64, Controller& controller);
 }

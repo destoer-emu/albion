@@ -5,12 +5,13 @@ void N64Window::init(const std::string& filename)
 {
     init_sdl(320,240);
     input.init();
-    reset(n64,filename);	
+    reset(n64,filename);
+    input.controller.simulate_dpad = false;	
 }
 
 void N64Window::pass_input_to_core()
 {
-
+    nintendo64::handle_input(n64,input.controller);
     input.controller.input_events.clear();
 }
 

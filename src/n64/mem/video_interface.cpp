@@ -104,17 +104,7 @@ void write_vi(N64& n64, u64 addr ,u32 v)
             vi.h_start = (v >> 16) & 0x3ff;
             vi.h_end = v & 0x3ff;
 
-            //printf("h start: %d : %d : %d\n",vi.h_start,vi.h_end,vi.h_end - vi.h_start);
-
-            const u32 width = beyond_all_repair::abs(vi.h_end - vi.h_start);
-            const auto x_old = n64.rdp.screen_x; 
-
-            n64.size_change = (width != x_old);
-
-            if(n64.size_change)
-            {
-                change_res(n64);
-            }
+            change_res(n64);
             break;
         }
 
@@ -124,17 +114,7 @@ void write_vi(N64& n64, u64 addr ,u32 v)
             vi.v_start = (v >> 16) & 0x3ff;
             vi.v_end = v & 0x3ff;
 
-            //printf("v start: %d : %d : %d\n",vi.v_start >> 1,vi.v_end >> 1,(vi.v_end - vi.v_start) >> 1);
-
-            const u32 height = beyond_all_repair::abs(vi.v_end - vi.v_start) >> 1;
-            const auto y_old = n64.rdp.screen_y; 
-
-            n64.size_change = (height != y_old);
-
-            if(n64.size_change)
-            {
-                change_res(n64);
-            }
+            change_res(n64);
             break;                
         }
 
@@ -147,33 +127,20 @@ void write_vi(N64& n64, u64 addr ,u32 v)
 
         case VI_X_SCALE:
         {
-            const u32 scale_old = vi.x_scale;
-
             vi.x_offset = (v >> 16) & 0xfff;
             vi.x_scale = v & 0xfff;
 
-            //printf("x scale: %d\n",vi.x_scale);
 
-            if(vi.x_scale != scale_old)
-            {
-                change_res(n64);
-            }
+            change_res(n64);
             break;
         }
 
         case VI_Y_SCALE:
         {
-            const u32 scale_old = vi.y_scale;
-
             vi.y_offset = (v >> 16) & 0xfff;
             vi.y_scale = v & 0xfff;
 
-            //printf("y scale: %d\n",vi.y_scale);
-
-            if(vi.y_scale != scale_old)
-            {
-                change_res(n64);
-            }
+            change_res(n64);
             break;
         }
 
