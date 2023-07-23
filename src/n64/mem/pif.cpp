@@ -11,6 +11,7 @@ static constexpr u32 AQUIRE_CHECKSUM_FLAG = 1 << 5;
 static constexpr u32 RUN_CHECKSUM_FLAG =  1 << 6;
 static constexpr u32 ACK_FLAG = 1 << 7;
 
+//https://www.qwertymodo.com/hardware-projects/n64/n64-controller
 void controller_info(N64& n64)
 {
     auto& mem = n64.mem;
@@ -26,7 +27,7 @@ void controller_state(N64& n64)
 {
     auto& mem = n64.mem;
 
-    printf("state : %x\n",mem.joybus.state);
+    //printf("state : %x\n",mem.joybus.state);
 
     handle_write_n64<u32>(mem.pif_ram,0,mem.joybus.state);
 }
@@ -69,6 +70,15 @@ void handle_input(N64& n64, Controller& controller)
 			default: break;
 		}
     }
+
+
+    u8 x = controller.left.x / 128;
+    u8 y = controller.left.y / 128;        
+    
+
+    joybus.state = joybus.state & 0xffff'0000;
+    joybus.state = joybus.state | (y << 0);
+    joybus.state = joybus.state | (x << 8);
 }
 
 static constexpr u32 COMMAND_INFO = 0x00;

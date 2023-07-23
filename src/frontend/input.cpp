@@ -123,8 +123,7 @@ emu_control Input::handle_input(SDL_Window* window, b32 ignore_key_inputs)
 				}
 				break;
 			}
-		
-	
+
 			case SDL_QUIT:
 			{
 				control = emu_control::quit_t;
@@ -199,6 +198,26 @@ emu_control Input::handle_input(SDL_Window* window, b32 ignore_key_inputs)
 	}
 
 	return control;
+}
+
+
+void get_joystick(SDL_GameController* game_controller,Joystick& stick,SDL_GameControllerAxis x_axis, SDL_GameControllerAxis y_axis)
+{
+    static constexpr u32 DEADZONE_LIM = 3200;
+
+    stick.x = SDL_GameControllerGetAxis(game_controller,x_axis);
+    stick.y = SDL_GameControllerGetAxis(game_controller,y_axis);   
+
+    //printf("(%d,%d)\n",stick.x,stick.y);
+
+    // not enough push on the controller dont register an input
+    stick.in_deadzone = abs(stick.x) <= DEADZONE_LIM && abs(stick.y) <= DEADZONE_LIM;
+
+    if(stick.in_deadzone)
+    {
+        stick.x = 0;
+        stick.y = 0;
+    }
 }
 
 void Input::handle_controller_input()
@@ -356,8 +375,7 @@ void Input::handle_controller_input()
 
     else
     {
-        controller.left_x = SDL_GameControllerGetAxis(game_controller,SDL_CONTROLLER_AXIS_LEFTX);
-        controller.left_y = SDL_GameControllerGetAxis(game_controller,SDL_CONTROLLER_AXIS_LEFTY);;
+        get_joystick(game_controller,controller.left,SDL_CONTROLLER_AXIS_LEFTX,SDL_CONTROLLER_AXIS_LEFTY);
     }
 
     // handle analog triggers

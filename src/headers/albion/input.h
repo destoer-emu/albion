@@ -32,6 +32,14 @@ inline InputEvent make_input_event(controller_input input, b32 down)
 	return event;
 }
 
+struct Joystick
+{
+    s32 x = 0;
+    s32 y = 0;
+
+    b32 in_deadzone = false;
+};
+
 struct Controller
 {
     void add_event(const InputEvent& event)
@@ -46,8 +54,7 @@ struct Controller
     }
 
     // controller axis
-    u32 left_x = 0;
-    u32 left_y = 0;
+    Joystick left;
 
     b32 simulate_dpad = true;
 
