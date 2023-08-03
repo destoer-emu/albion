@@ -14,6 +14,9 @@ void si_dma_finished(N64& n64)
 
     set_mi_interrupt(n64,SI_INTR_BIT);
     si.dma_busy = false;    
+
+    // update dram addr
+    si.dram_addr += 64;
 }
 
 void do_si_dma(N64& n64, u64 src, u64 dst)
@@ -50,10 +53,11 @@ void write_si(N64& n64, u64 addr, u32 v)
 
         case SI_PIF_AD_RD64B:
         {
-            if(n64.mem.joybus_enabled)
+            if(n64.mem.joybus.enabled)
             {
                 joybus_comands(n64);
             }
+
 
             do_si_dma(n64,v,si.dram_addr);
             break;            
@@ -62,7 +66,7 @@ void write_si(N64& n64, u64 addr, u32 v)
         case SI_PIF_AD_WR64B:
         {
             // new write joybus commands are out
-            n64.mem.joybus_enabled = false;
+            n64.mem.joybus.enabled = false;
 
             do_si_dma(n64,si.dram_addr,v);
             break;

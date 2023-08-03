@@ -40,7 +40,6 @@ struct Mem
     Joybus joybus;
 
     std::vector<u8> pif_ram;
-    b32 joybus_enabled = false;
 
     std::vector<u8*> page_table_read;
     std::vector<u8*> page_table_write;

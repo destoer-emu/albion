@@ -119,11 +119,15 @@ void reset_mem(Mem &mem, const std::string &filename)
     // init memory
     // 8mb rd ram
     mem.rd_ram.resize(8 * 1024 * 1024);
+    memset(&mem.rd_ram[0],0,mem.rd_ram.size());
+
     mem.sp_dmem.resize(0x1000);
 
     mem.sp_imem.resize(0x1000);
 
-    mem.pif_ram.resize(PIF_SIZE);
+    // times two so we can be a little lazy with bounds checking...
+    mem.pif_ram.resize(PIF_SIZE * 2);
+
 
     auto magic = handle_read<u32>(mem.rom,0x0);
 
@@ -169,7 +173,7 @@ void reset_mem(Mem &mem, const std::string &filename)
     mem.sp_regs = {};
     mem.si = {};
     mem.ai = {};
-    mem.joybus_enabled = false;
+    mem.joybus.enabled = false;
 
     // setup the page table
     mem.page_table_read.resize(PAGE_TABLE_SIZE);

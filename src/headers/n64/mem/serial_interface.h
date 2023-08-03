@@ -13,5 +13,6 @@ struct SerialInterface
 
     b32 io_busy = false;
     b32 dma_busy = false;
-}; 
+};
+
 }
