@@ -258,6 +258,22 @@ void instr_mul_d(N64& n64, const Opcode& opcode)
     });
 }
 
+void instr_div_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64,opcode,[](f64 v1, f64 v2)
+    {
+        return v1 / v2;
+    });
+}
+
+void instr_mov_d(N64& n64, const Opcode& opcode)
+{
+    const u32 fs = get_fs(opcode);
+    const u32 fd = get_fd(opcode);
+
+    write_cop1_reg(n64,fd,read_cop1_reg(n64,fs));    
+}
+
 
 // table 7-11 for cond desc
 template<typename FUNC>
@@ -306,6 +322,13 @@ void instr_c_le_d(N64& n64, const Opcode& opcode)
     });
 }
 
+void instr_c_lt_d(N64& n64, const Opcode& opcode)
+{
+    float_cond_d(n64,opcode,[](f64 v1, f64 v2)
+    {
+        return v1 < v2;
+    });
+}
 
 void instr_bc1tl(N64& n64, const Opcode& opcode)
 {
