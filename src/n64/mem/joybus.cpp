@@ -39,6 +39,13 @@ void handle_input(N64& n64, Controller& controller)
                 break;
             }
 
+            // start button
+            case controller_input::start:
+            {
+                set_button(joybus,28,event.down);
+                break;
+            }
+
 			default: break;
 		}
     }
@@ -55,6 +62,8 @@ void handle_input(N64& n64, Controller& controller)
 
 static constexpr u32 COMMAND_INFO = 0x00;
 static constexpr u32 COMMAND_CONTROLLER_STATE = 0x01;
+static constexpr u32 COMMAND_CONTROLLER_READ = 0x02;
+static constexpr u32 COMMAND_CONTROLLER_WRITE = 0x03;
 static constexpr u32 COMMAND_RESET = 0xff;
 
 //https://www.qwertymodo.com/hardware-projects/n64/n64-controller
@@ -66,8 +75,8 @@ void controller_info(N64& n64)
     // controller
     handle_write_n64<u16>(mem.pif_ram,command_offset + 0,0x0500);
 
-    // for now no pack
-    handle_write_n64<u8>(mem.pif_ram,command_offset + 2,0x2);
+    // pack present
+    handle_write_n64<u8>(mem.pif_ram,command_offset + 2,0x1);
 }
 
 void controller_state(N64& n64)
@@ -78,6 +87,35 @@ void controller_state(N64& n64)
     //printf("state : %x\n",mem.joybus.state);
 
     handle_write_n64<u32>(mem.pif_ram,command_offset + 0,mem.joybus.state);
+}
+
+
+void read_controller(N64& n64)
+{
+    auto& mem = n64.mem;
+    const u32 command_offset = mem.joybus.command_offset; 
+
+    const u16 data = handle_read_n64<u16>(mem.pif_ram,command_offset + 0);
+
+    const u32 addr = data & ~0b1111'1;
+
+    u8 crc = 0;
+
+    UNUSED(addr); UNUSED(crc);
+}
+
+void write_controller(N64& n64)
+{
+    auto& mem = n64.mem;
+    const u32 command_offset = mem.joybus.command_offset; 
+
+    const u16 data = handle_read_n64<u16>(mem.pif_ram,command_offset + 0);
+
+    const u32 addr = data & ~0b1111'1;
+
+    u8 crc = 0;
+
+    UNUSED(addr); UNUSED(crc);
 }
 
 
@@ -127,6 +165,18 @@ void joybus_comands(N64& n64)
                 break;
             }
 
+            case COMMAND_CONTROLLER_READ:
+            {
+                read_controller(n64);
+                break;
+            }
+
+            case COMMAND_CONTROLLER_WRITE:
+            {
+                write_controller(n64);
+                break;
+            }
+
             case COMMAND_RESET:
             {
                 // reset + info
@@ -134,9 +184,15 @@ void joybus_comands(N64& n64)
                 break;
             }
 
+            // unknown command
             default: 
             {
-                //unimplemented("unknown joybus command: %x\n",command);
+                //printf("unknown joybus command: %x\n",command);
+
+                const u32 command_offset = mem.joybus.command_offset;
+
+                // no device
+                handle_write_n64<u16>(mem.pif_ram,command_offset + 0,0xffff);
                 break;            
             }
         }

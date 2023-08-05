@@ -103,7 +103,7 @@ void reset_mem(Mem &mem, const std::string &filename)
         throw std::runtime_error(err);         
     }
 
-    if(mem.rom.size() < 32 * 1024 * 1024)
+    if(mem.rom.size() <= 32 * 1024 * 1024)
     {
         // ensure rom is power of two!!
         mem.rom.resize(32 * 1024 * 1024);
