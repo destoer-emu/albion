@@ -24,7 +24,7 @@ constexpr ColorLut pop_15bpp_color_lut()
 
 static constexpr ColorLut COL_15BPP_LUT = pop_15bpp_color_lut();
 
-inline u32 convert_color(u16 color)
+u32 convert_color(u16 color)
 {
 	return COL_15BPP_LUT[deset_bit(color,15)];
 }
