@@ -27,8 +27,8 @@ u32 Mem::get_rom_wait(u32 region, u32 size, bool seq, bool use_prefetch)
             return 2;
         }
 
-
-        if(size == sizeof(u16))
+        // 16 bit or 8 bit
+        else
         {
             return 1;
         }
