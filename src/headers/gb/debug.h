@@ -59,6 +59,13 @@ struct GBDebug final : public Debug
 struct GBDebug : public Debug 
 {
     GBDebug(GB &gb) { UNUSED(gb); }
+
+    void change_breakpoint_enable(bool enable) override { UNUSED(enable); }
+    u8 read_mem(uint64_t addr) override { UNUSED(addr); return 0; }
+    
+    void write_mem(u64 addr, u8 v) override { UNUSED(addr); UNUSED(v);  }
+
+    void debug_input() {}
 };
 
 #endif
