@@ -29,7 +29,7 @@ struct Cause
 {
     u32 exception_code = 0;
     u8 pending = 0;
-    u32 coprocessor_error = 0;
+    u32 coprocessor_error = 0b11;
     b32 branch_delay = 0;
 };
 
