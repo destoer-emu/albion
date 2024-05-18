@@ -367,7 +367,7 @@ void ImguiMainWindow::draw_memory_internal(Debug& debug, MemRegion* region_ptr, 
             {
                 ImGui::TableNextColumn();
                 uint64_t dest = (base_addr+j+(i*0x10));
-                if(ImGui::Selectable(std::format("{:02x} ",debug.read_mem(dest)).c_str(),i == y && j == x,ImGuiSelectableFlags_AllowDoubleClick))
+                if(ImGui::Selectable(fmt::format("{:02x} ",debug.read_mem(dest)).c_str(),i == y && j == x,ImGuiSelectableFlags_AllowDoubleClick))
                 {
                     y = i;
                     x = j;

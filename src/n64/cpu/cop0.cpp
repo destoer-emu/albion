@@ -4,10 +4,6 @@ namespace nintendo64
 
 // NOTE: all intr handling goes here
 
-static constexpr u32 COUNT_BIT = 7;
-static constexpr u32 MI_BIT = 2;
-
-
 // see page 151 psuedo code of manual
 void standard_exception(N64& n64, u32 code)
 {
@@ -296,7 +292,7 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
 
             if((status.ux && status.ksu == 0b10) || (status.sx && status.ksu == 0b01) || (status.kx && status.ksu == 0b00))
             {
-                unimplemented("64 bit addressing");
+                //unimplemented("64 bit addressing");
             }
 
             check_interrupts(n64);
@@ -348,12 +344,14 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
         case XCONFIG:
         {
             cop0.xconfig.pte = v >> 32;
+            break;
         }
 
         case WIRED:
         {
             cop0.wired = (v >> 5) & 0b11111;
             cop0.random = 31;
+            break;
         }
 
         case INDEX:
@@ -407,7 +405,7 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
 
 u64 read_cop0(N64& n64, u32 reg)
 {
-    UNUSED(n64);
+    using namespace beyond_all_repair;
 
     auto& cpu = n64.cpu;
     auto& cop0 = cpu.cop0;
@@ -561,13 +559,10 @@ u64 read_cop0(N64& n64, u32 reg)
             return cop0.wired;
         }
 
-        // reserved
-        case 7: case 21: case 22: case 23: case 24: case 25: case 31:
-            return 0;
-
         default:
         {
-            unimplemented("cop0 read: %s(%d)\n",COP0_NAMES[reg],reg);
+            spdlog::debug("cop0 unknown: {}\n",reg);
+            return 0;
         }        
     }
 }

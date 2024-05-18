@@ -65,7 +65,7 @@ void GBDebug::step(const std::vector<Token> &args)
 std::string GBDebug::disass_instr(u64 addr)
 {
     u64 bank = addr < 0x8000? gb.mem.cart_rom_bank : 0;
-    return std::format("{:x}:{:x} {}",bank,addr,gb.disass.disass_op(addr));    
+    return fmt::format("{:x}:{:x} {}",bank,addr,gb.disass.disass_op(addr));    
 }
 
 u64 GBDebug::get_instr_size(u64 addr)

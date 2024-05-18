@@ -304,14 +304,14 @@ bool Cpu::cond()
 
 void Cpu::undefined_opcode()
 {
-	const auto str = std::format("[ERROR] invalid opcode {:x} at {:x}:{}",mem.read_mem(pc-1),pc-1,disass.disass_op(pc-1));
+	const auto str = fmt::format("[ERROR] invalid opcode {:x} at {:x}:{}",mem.read_mem(pc-1),pc-1,disass.disass_op(pc-1));
 	write_log(debug,str);
 	throw std::runtime_error(str);		
 }
 
 void Cpu::undefined_opcode_cb()
 {
-	const auto str = std::format("[ERROR] invalid cb opcode {:x} at {:x}:{}",mem.read_mem(pc-1),pc-2,disass.disass_op(pc-2));
+	const auto str = fmt::format("[ERROR] invalid cb opcode {:x} at {:x}:{}",mem.read_mem(pc-1),pc-2,disass.disass_op(pc-2));
 	write_log(debug,str);
 	throw std::runtime_error(str);		
 }

@@ -3,6 +3,11 @@
 
 void Texture::update_texture()
 {
+    if(!is_valid || buf.size() == 0)
+    {
+        return;
+    }
+
     glEnable(GL_TEXTURE_2D); 
     glBindTexture(GL_TEXTURE_2D,texture);
     glTexSubImage2D(GL_TEXTURE_2D,0,0,0,x,y,GL_RGBA, GL_UNSIGNED_BYTE,buf.data());
@@ -12,6 +17,12 @@ void Texture::update_texture()
 
 void Texture::init_texture(const int X, const int Y)
 {
+    if(X == 0 || Y == 0)
+    {
+        is_valid = false;
+        return;
+    }
+
     x = X;
     y = Y;
     buf.resize(x*y);
@@ -30,20 +41,32 @@ void Texture::init_texture(const int X, const int Y)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 1);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,x,y,0,GL_RGBA, GL_UNSIGNED_BYTE,buf.data());
+    glTexImage2D(GL_TEXTURE_2D,0,GL_RGB,x,y,0,GL_RGBA, GL_UNSIGNED_BYTE,buf.data());
 
     glBindTexture(GL_TEXTURE_2D,0);
     glDisable(GL_TEXTURE_2D); 
+
+    is_valid = true;
 }
 
 void Texture::swap_buffer(std::vector<uint32_t> &other)
 {
+    if(!is_valid)
+    {
+        return;
+    }
+
     std::swap(other,buf);
 }
 
 
 void Texture::draw_texture(u32 width_offset, u32 height_offset,u32 factor_x, u32 factor_y)
 {
+    if(!is_valid)
+    {
+        return;
+    }
+
     // render this straight to background with imgui
     ImVec2 min_pos = ImVec2(width_offset,height_offset);
     ImVec2 max_pos = ImVec2(width_offset + (x * factor_x), height_offset + (y * factor_y));

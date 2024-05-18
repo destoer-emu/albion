@@ -68,7 +68,7 @@ std::string N64Debug::disass_instr(u64 addr)
 
     const Opcode op = beyond_all_repair::make_opcode(opcode);  
 
-    return std::format("{:x}: {}",addr,disass_n64(n64,op,addr+sizeof(u32)));
+    return fmt::format("{:x}: {}",addr,disass_n64(n64,op,addr+sizeof(u32)));
 }
 
 

@@ -84,7 +84,7 @@ void step(N64 &n64)
 
     const Opcode opcode = beyond_all_repair::make_opcode(op);
 
-    //std::cout << std::format("{:16x}: {}\n",n64.cpu.pc,disass_n64(n64,op,n64.cpu.pc_next));
+    //std::cout << fmt::format("{:16x}: {}\n",n64.cpu.pc,disass_n64(n64,op,n64.cpu.pc_next));
     
     skip_instr(n64.cpu);
 

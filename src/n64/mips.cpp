@@ -35,7 +35,4 @@ namespace nintendo64
         "fp", // frame pointer
         "ra", // return address 
     };
-
-
-
 }

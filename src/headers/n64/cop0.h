@@ -134,4 +134,7 @@ struct Cop0
     void updateRandom();
 };
 
+static constexpr u32 COUNT_BIT = 7;
+static constexpr u32 MI_BIT = 2;
+
 }

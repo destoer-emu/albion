@@ -174,7 +174,7 @@ void DestoerUI::draw_text(u32 x, u32 y, std::string fmt,Args... args)
     assert(x < SCREEN_WIDTH);
     assert(y < SCREEN_HEIGHT);
 
-    const auto str = std::format(fmt,args...);
+    const auto str = fmt::format(fmt,args...);
 
     // keep drawing 8 by 8 chars to the screen
     for(size_t i = 0; i < str.size(); i++)
@@ -235,7 +235,7 @@ void DestoerUI::draw_button(u32 x, u32 y, u32 sx, u32 sy, std::string fmt,Args..
         screen[offset + (SCREEN_WIDTH * (sy_clipped - 1)) + x_sprite] = LIGHT_GRAY;
     }
 
-    const auto str = std::format(fmt,args...);
+    const auto str = fmt::format(fmt,args...);
 
     // draw the centre text 
     draw_text(centre_text_x(x,sx,str.size()), centre_text_y(y,sy),str);   

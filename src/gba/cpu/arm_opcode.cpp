@@ -122,7 +122,7 @@ void Cpu::exec_arm()
 void Cpu::arm_unknown(u32 opcode)
 {
     const auto op = ((opcode >> 4) & 0xf) | ((opcode >> 16) & 0xff0);
-    const auto err = std::format("[cpu-arm {:08x}] unknown opcode {:08x}:{:08x}\n{}\n",pc_actual,opcode,op,disass.disass_arm(pc_actual));
+    const auto err = fmt::format("[cpu-arm {:08x}] unknown opcode {:08x}:{:08x}\n{}\n",pc_actual,opcode,op,disass.disass_arm(pc_actual));
     debug.trace.print();
     throw std::runtime_error(err);
 }
@@ -417,7 +417,7 @@ void Cpu::arm_block_data_transfer(u32 opcode)
                 // likely follows standard behavior for msr
                 else
                 {
-                    auto err = std::format("[block data: {:08x}] illegal status bank {:x}\n",pc_actual,idx);
+                    auto err = fmt::format("[block data: {:08x}] illegal status bank {:x}\n",pc_actual,idx);
                     throw std::runtime_error(err);
                 }
                 // TODO what happens if thumb bit changed here
@@ -915,7 +915,7 @@ void Cpu::arm_hds_data_transfer(u32 opcode)
         {
             case 0:
             {
-                auto err = std::format("hds illegal load op: {:08x}:{:08x}\n",pc_actual,opcode);
+                auto err = fmt::format("hds illegal load op: {:08x}:{:08x}\n",pc_actual,opcode);
                 throw std::runtime_error(err);
                 break;
             }
@@ -989,7 +989,7 @@ void Cpu::arm_hds_data_transfer(u32 opcode)
             
             default: // doubleword ops not supported on armv4
             {
-                auto err = std::format("hds illegal store op: {:08x}:{:08x}\n",pc_actual,opcode);
+                auto err = fmt::format("hds illegal store op: {:08x}:{:08x}\n",pc_actual,opcode);
                 throw std::runtime_error(err);
             }
 

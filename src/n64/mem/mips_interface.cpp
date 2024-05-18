@@ -3,6 +3,9 @@
 namespace nintendo64
 {
 
+void mi_intr(N64& n64);
+void deset_intr_cop0(N64& n64, u32 bit);
+
 void check_mi_interrupts(N64& n64)
 {
     auto& mi = n64.mem.mi;

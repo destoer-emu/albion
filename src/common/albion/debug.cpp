@@ -174,7 +174,7 @@ Debug::~Debug()
 
 void Debug::draw_console()
 {
-    ImGui::BeginChild("console_child",ImVec2(0, 300), true);
+    ImGui::BeginChild("console_child",ImVec2(0, 350), true);
 
     static b32 update = false;
 
