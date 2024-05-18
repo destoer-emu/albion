@@ -145,8 +145,6 @@ if(WIN32)
 	find_package(SDL2 CONFIG REQUIRED)
 
 	target_link_libraries(albion SDL2::SDL2 spdlog::spdlog)
-	
-    include_directories("C:/SDL2-2.0.14/include")
 else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -march=native -pthread -O1 -fomit-frame-pointer -Wno-missing-braces")
 
