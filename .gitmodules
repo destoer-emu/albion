@@ -8,3 +8,6 @@
 [submodule "beyond-all-repair"]
 	path = beyond-all-repair
 	url = git@github.com:destoer/beyond-all-repair.git
+[submodule "spdlog"]
+	path = spdlog
+	url = git@github.com:gabime/spdlog.git

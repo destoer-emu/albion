@@ -3,11 +3,14 @@
 cmake_minimum_required(VERSION 3.10)
 
 project(albion)
+include(FetchContent)
 
+add_subdirectory(spdlog)
+
+find_package(spdlog)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-
 
 #set(FRONTEND "QT")
 set(FRONTEND "SDL")
@@ -129,14 +132,19 @@ if(WIN32)
 	endif()
 
 
-	# sdl (allways needed)
-    add_library(SDL2 SHARED IMPORTED)
-    set_target_properties(SDL2 PROPERTIES
-        IMPORTED_LOCATION "C:/SDL2-2.0.14/lib/x64/SDL2.dll"
-        IMPORTED_IMPLIB "C:/SDL2-2.0.14/lib/x64/SDL2.lib"
-        LINKER_LANGUAGE C
-    )
-	target_link_libraries(albion SDL2)
+
+	# Fetch SDL for the runtime
+	FetchContent_Declare(
+			SDL2
+			URL https://www.libsdl.org/release/SDL2-devel-2.30.2-VC.zip
+	)
+	FetchContent_MakeAvailable(SDL2)
+	set(SDL2_DIR ${sdl2_SOURCE_DIR})
+	list(APPEND CMAKE_PREFIX_PATH "${sdl2_SOURCE_DIR}/cmake")
+
+	find_package(SDL2 CONFIG REQUIRED)
+
+	target_link_libraries(albion SDL2::SDL2 spdlog::spdlog)
 	
     include_directories("C:/SDL2-2.0.14/include")
 else()
@@ -145,7 +153,7 @@ else()
 	if(${FRONTEND} STREQUAL "HEADLESS")
 
 	else ()
-		target_link_libraries(albion SDL2)
+		target_link_libraries(albion SDL2 spdlog::spdlog)
 	endif()
 endif()
 
