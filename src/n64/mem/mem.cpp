@@ -98,7 +98,7 @@ void reset_mem(Mem &mem, const std::string &filename)
     // read rom in and hle the pif rom
     if(read_bin(filename,mem.rom))
     {
-        const auto err = std::format("could not open file: {}\n",filename);
+        const auto err = fmt::format("could not open file: {}\n",filename);
 
         throw std::runtime_error(err);         
     }
@@ -201,8 +201,8 @@ u32 remap_addr(N64& n64,u32 addr)
 
     if(is_set(tlb_set,idx))
     {
-        //return addr & 0x1FFF'FFFF;
         assert(false);
+        return addr & 0x1FFF'FFFF;
     }
 
     else

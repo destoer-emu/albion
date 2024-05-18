@@ -976,7 +976,7 @@ void Display::render()
 */
         default: // mode ?
         {
-            auto err = std::format("unknown ppu mode {:08x}\n",render_mode);
+            auto err = fmt::format("unknown ppu mode {:08x}\n",render_mode);
             throw std::runtime_error(err);
         }
     }

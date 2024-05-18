@@ -46,4 +46,7 @@ std::string get_emulator_name(emu_type type) {
         case emu_type::n64: return "Nintendo 64";
         case emu_type::none: return "Invalid";
     }
+
+    assert(false);
+    return "";
 }

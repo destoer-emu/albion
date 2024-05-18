@@ -10,6 +10,7 @@ public:
     void draw_texture(u32 width_offset, u32 height_offset,u32 factor_x, u32 factor_y);
     int get_width() const { return x; } 
     int get_height() const { return y; } 
+    bool valid() const { return is_valid; }
 
     std::vector<uint32_t> buf;
 
@@ -19,4 +20,5 @@ private:
     GLuint texture;
     u32 shader_program;
     bool first_time = true;
+    bool is_valid = false;
 };

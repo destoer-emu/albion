@@ -14,7 +14,6 @@
 #ifdef N64_ENABLED
 #include <frontend/sdl/n64_window.h>
 #include "n64_window.cpp"
-#include "spdlog/spdlog.h"
 
 #endif
 
@@ -22,6 +21,8 @@
 
 void start_emu(std::string filename, Config& cfg)
 {
+	UNUSED(cfg);
+
 	try
 	{
 		const auto type = get_emulator_type(filename);
@@ -201,7 +202,7 @@ void SDLMainWindow::main(std::string filename, b32 start_debug)
 
 		fps_counter.reading_end();
 
-		SDL_SetWindowTitle(window,std::format("albion: {}",fps_counter.get_fps()).c_str());
+		SDL_SetWindowTitle(window,fmt::format("albion: {}",fps_counter.get_fps()).c_str());
 
 		//next_time = current_time() + screen_ticks_per_frame;
 		

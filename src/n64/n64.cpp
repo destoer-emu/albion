@@ -8,8 +8,8 @@
 #include <beyond_all_repair.cpp>
 using namespace beyond_all_repair;
 
-#include <n64/cpu/cpu.cpp>
 #include <n64/mem/mem.cpp>
+#include <n64/cpu/cpu.cpp>
 #include <n64/mem/layout.cpp>
 #include <n64/instr/instr.cpp>
 #include <n64/instr/mips_lut.cpp>
@@ -53,6 +53,12 @@ b32 read_func(beyond_all_repair::Program& program,u64 addr,void* out, u32 size)
 
     return true;
 }
+
+const char* reg_name(u32 idx) 
+{
+    return beyond_all_repair::REG_NAMES[idx];
+}
+
 
 void reset(N64 &n64, const std::string &filename)
 {

@@ -240,7 +240,7 @@ void RomInfo::init(std::vector<uint8_t> &rom, std::string romname)
 
             catch(std::runtime_error &ex)
             {
-                throw std::runtime_error(std::format("error converting isx!: {}",ex.what()));
+                throw std::runtime_error(fmt::format("error converting isx!: {}",ex.what()));
             }
         }
     }
@@ -286,7 +286,7 @@ void RomInfo::init(std::vector<uint8_t> &rom, std::string romname)
 
         default:
         {
-            throw std::runtime_error(std::format("unknown cart type: {:x}",cart_type));
+            throw std::runtime_error(fmt::format("unknown cart type: {:x}",cart_type));
             break;
         }
     }
@@ -311,7 +311,7 @@ void RomInfo::init(std::vector<uint8_t> &rom, std::string romname)
 
         default:
         {
-            throw std::runtime_error(std::format("invalid bank type: {:x}",bank_type));
+            throw std::runtime_error(fmt::format("invalid bank type: {:x}",bank_type));
         }
     }
 
@@ -330,7 +330,7 @@ void RomInfo::init(std::vector<uint8_t> &rom, std::string romname)
 
     if(ram_type > 5)
     {
-        throw std::runtime_error(std::format("invalid ram type: {:x}",ram_type));
+        throw std::runtime_error(fmt::format("invalid ram type: {:x}",ram_type));
     }
 
     no_ram_banks = ram_table[ram_type];

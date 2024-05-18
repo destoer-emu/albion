@@ -1,5 +1,6 @@
 #pragma once
-#include <format>
+#include <fmt/format.h>
+#include <spdlog/spdlog.h>
 #include <string>
 #include <vector>
 #include <array>
@@ -43,5 +44,5 @@ std::vector<std::string> read_sorted_directory(const std::string &file_path);
 template<typename... Args>
 inline std::string runtime_format(const char* fmt, Args... args)
 {
-    return std::vformat(fmt, std::make_format_args(args...));
+    return fmt::vformat(fmt,fmt::make_format_args(args...));
 }

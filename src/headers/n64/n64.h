@@ -34,4 +34,5 @@ void run(N64 &n64);
 
 std::string disass_n64(N64& n64, Opcode opcode, u64 addr);
 void handle_input(N64& n64, Controller& controller);
+const char* reg_name(u32 idx);
 }

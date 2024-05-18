@@ -120,7 +120,7 @@ void Cpu::execute_thumb_opcode(u16 instr)
 void Cpu::thumb_unknown(u16 opcode)
 {
     const u8 op = get_thumb_opcode_bits(opcode);
-    auto err = std::format("[cpu-thumb {:08x}] unknown opcode {:04x}:{:x}\n{}\n",regs[PC],opcode,op,disass.disass_thumb(pc_actual));
+    auto err = fmt::format("[cpu-thumb {:08x}] unknown opcode {:04x}:{:x}\n{}\n",regs[PC],opcode,op,disass.disass_thumb(pc_actual));
     debug.trace.print();
     throw std::runtime_error(err);
 }

@@ -142,7 +142,7 @@ void ImguiMainWindow::breakpoint_ui_internal(Debug& debug)
         i++;
         Breakpoint b = it.second;    
     
-        std::string break_str = std::format(
+        std::string break_str = fmt::format(
             "{:04x}: {}{}{} {} {:x} {}",b.addr,
                 b.break_setting & static_cast<int>(break_type::read)? "r" : "",
                 b.break_setting & static_cast<int>(break_type::write)? "w" : "",
@@ -181,6 +181,11 @@ void ImguiMainWindow::render_ui()
 
 void ImguiMainWindow::render_screen()
 {
+    if(!screen.valid())
+    {
+        return;
+    }
+
     // calc offseting and display the screen
     int display_w, display_h;
     SDL_GetWindowSize(context.window, &display_w, &display_h);
@@ -213,6 +218,8 @@ void ImguiMainWindow::render_screen()
     // and use it to keep it in the centre of the viewpoert
     int width_offset = (x - screen_x) / 2;
     int height_offset = (y - screen_y) / 2;
+
+    UNUSED(width_offset); UNUSED(height_offset);
 
     screen.update_texture();
     screen.draw_texture(width_offset,height_offset,fact_x,fact_y);
@@ -314,7 +321,7 @@ void ImguiMainWindow::mainloop(const std::string &rom_name)
 
         fps.reading_end();
 
-        SDL_SetWindowTitle(context.window,std::format("albion: {}",fps.get_fps()).c_str());
+        SDL_SetWindowTitle(context.window,fmt::format("albion: {}",fps.get_fps()).c_str());
     }
 
     stop_instance();
