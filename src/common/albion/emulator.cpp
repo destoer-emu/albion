@@ -36,8 +36,14 @@ emu_type get_emulator_type(std::string filename)
 
 	}
 
-    else 
-    {
-        return emu_type::none;
+    return emu_type::none;
+}
+
+std::string get_emulator_name(emu_type type) {
+    switch(type) {
+        case emu_type::gameboy: return "Gameboy";
+        case emu_type::gba: return "Gameboy Advance";
+        case emu_type::n64: return "Nintendo 64";
+        case emu_type::none: return "Invalid";
     }
 }
