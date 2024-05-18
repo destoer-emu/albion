@@ -41,9 +41,6 @@ void reset_cpu(N64 &n64)
     
 
     cop0.random = 0x0000001F;
-    write_cop0(n64,0x34000000,STATUS);
-    write_cop0(n64,0x00000B00,PRID);
-    write_cop0(n64,0x0006E463,CONFIG);
     write_cop0(n64,0,COUNT);
     write_cop0(n64,0,COMPARE);
     write_cop0(n64,0xffff'ffff,EPC);
