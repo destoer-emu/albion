@@ -185,7 +185,7 @@ void float_s_op(N64& n64, const Opcode& opcode, FUNC func)
     const u32 fd = get_fd(opcode);
     const u32 ft = get_ft(opcode);
 
-    const f32 ans = func(f32(read_cop1_reg(n64,fs)),f32(read_cop1_reg(n64,ft)));
+    const f64 ans = func(f32(read_cop1_reg(n64,fs)),f32(read_cop1_reg(n64,ft)));
     write_cop1_reg(n64,fd,ans);
 }
 
@@ -233,6 +233,79 @@ void instr_mul_s(N64& n64, const Opcode& opcode)
     });    
 }
 
+void instr_sqrt_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return std::sqrt(f);
+    });
+}
+
+void instr_abs_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return std::abs(f);
+    });
+}
+
+void instr_neg_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return -f;
+    });
+}
+
+void instr_round_l_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return std::nearbyint(((double) f) * 0.5) * 2.0f;
+    });
+}
+
+void instr_ceil_l_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return std::ceil((double)f);
+    });
+}
+
+void instr_floor_l_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return std::floor((double)f);
+    });
+}
+
+void instr_round_w_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return std::nearbyint(f * 0.5) * 2.0f;
+    });
+}
+
+void instr_ceil_w_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return std::ceil(f);
+    });
+}
+
+void instr_floor_w_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return std::floor(f);
+    });
+}
+
+
 void instr_add_d(N64& n64, const Opcode& opcode)
 {
     float_d_op(n64,opcode,[](f64 v1, f64 v2)
@@ -272,6 +345,76 @@ void instr_mov_d(N64& n64, const Opcode& opcode)
     const u32 fd = get_fd(opcode);
 
     write_cop1_reg(n64,fd,read_cop1_reg(n64,fs));    
+}
+
+void instr_sqrt_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return std::sqrt(f);
+    });
+}
+
+void instr_abs_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return std::abs(f);
+    });
+}
+
+void instr_neg_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return -f;
+    });
+}
+
+void instr_roundl_d(N64& n64, const Opcode& opcode) {
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return std::nearbyint(f * 0.5) * 2.0f; // round to nearest, tiebreak towards the even number
+    });
+}
+
+void instr_ceil_l_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return std::ceil(f);
+    });
+}
+
+void instr_floor_l_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return std::floor(f);
+    });
+}
+
+void instr_round_w_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return (double) (std::nearbyint(((float) f) * 0.5) * 2.0f); // truncate to float, round, cast up to double
+    });
+}
+
+void instr_ceil_w_d(N64& n64, const Opcode& opcode) {
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return (double) (std::ceil((float) f));
+    });
+}
+
+void instr_floor_w_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return (double) std::floor((float) f);
+    });
 }
 
 

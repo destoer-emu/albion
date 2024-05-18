@@ -50,6 +50,12 @@ void instr_unknown_opcode(N64 &n64, const Opcode &opcode)
     throw std::runtime_error(err);    
 }
 
+void instr_invalid_opcode_cvt_d_d(N64& n64, const Opcode& opcode)
+{
+    const auto err = std::format("[cpu {:16x} cvt.d.d $f0 $f0] invalid opcode format for cvt\n", n64.cpu.pc-4);
+    throw std::runtime_error(err);
+}
+
 void instr_lui(N64 &n64, const Opcode &opcode)
 {
     // virtually everything on mips has to be sign extended

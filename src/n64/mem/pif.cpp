@@ -17,6 +17,8 @@ void handle_pif_commands(N64& n64)
 {
     const u8 commands = handle_read_n64<u8>(n64.mem.pif_ram,PIF_MASK);
 
+    std::string msg("PIF Command: ");
+
     // joybus config
     if(commands & CONFIG_FLAG)
     {
@@ -25,33 +27,23 @@ void handle_pif_commands(N64& n64)
     }
 
     if(commands & CHALLENGE_FLAG)
-    {
-        printf("pif: cic channlge\n");
-    }
+        msg += "CIC Challenge";
 
     if(commands & TERMINATE_FLAG)
-    {
-        printf("pif: terminate\n");
-    }
+        msg += "Terminate";
 
     if(commands & LOCKOUT_FLAG)
-    {
-        printf("pif: lockout\n");
-    }
+        msg += "Lockout Check";
 
     if(commands & AQUIRE_CHECKSUM_FLAG)
-    {
-        printf("pif: aquire checksum\n");
-    }
+        msg += "Acquire Checksum";
 
     if(commands & RUN_CHECKSUM_FLAG)
-    {
-        printf("pif: run checksum\n");
-    }
+        msg += "Run Checksum";
 
+    spdlog::trace(msg);
     handle_write_n64<u8>(n64.mem.pif_ram,PIF_MASK,0);
 }
-
 
 template<typename access_type>
 void write_pif(N64& n64, u64 addr, access_type v)
