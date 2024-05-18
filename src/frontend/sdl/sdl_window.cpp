@@ -14,6 +14,8 @@
 #ifdef N64_ENABLED
 #include <frontend/sdl/n64_window.h>
 #include "n64_window.cpp"
+#include "spdlog/spdlog.h"
+
 #endif
 
 #include <albion/destoer-emu.h>
@@ -23,7 +25,8 @@ void start_emu(std::string filename, Config& cfg)
 	try
 	{
 		const auto type = get_emulator_type(filename);
-	
+
+        spdlog::info("Starting", get_emulator_name(type), " emulator engine.");
 
 		switch(type)
 		{
@@ -56,8 +59,7 @@ void start_emu(std::string filename, Config& cfg)
 
 			default:
 			{
-				std::cout << "unrecognised rom type" 
-					<< filename << "\n";
+				spdlog::error("Unrecognised ROM type:", filename);
 			}
 		}
 	}
@@ -159,6 +161,8 @@ void SDLMainWindow::main(std::string filename, b32 start_debug)
 		auto control = input.handle_input(window);
 		
 		pass_input_to_core();
+
+
 
 		run_frame();
 

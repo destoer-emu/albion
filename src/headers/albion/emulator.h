@@ -13,3 +13,4 @@ enum class emu_test
 };
 
 emu_type get_emulator_type(std::string filename);
+std::string get_emulator_name(emu_type);
