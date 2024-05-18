@@ -245,15 +245,14 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
             break;
         }
         
-        case TAGLO: // for cache, ignore for now
+        case TAGLO:
         {
-            cop0.tag_lo = v;
+            cop0.tagLo = v;
             break;
         }
 
-        case TAGHI: // for cache, ignore for now
+        case TAGHI: // write nothing
         {
-            cop0.tag_hi = v;
             break;
         }
 
@@ -337,17 +336,24 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
             break;
         }
 
-        // TODO: what is this used for?
-        case PRID:
+        case CONFIG:
         {
-            cop0.prid = v;
+            cop0.config.transfer_mode = (v >> 24 & 0b111);
+            cop0.config.endianness = is_set(v, 14);
+            cop0.config.cu = is_set(v, 2);
+            cop0.config.k0 = v & 0b11;
             break;
         }
 
-        case CONFIG:
+        case XCONFIG:
         {
-            cop0.config = v;
-            break;
+            cop0.xconfig.pte = v >> 32;
+        }
+
+        case WIRED:
+        {
+            cop0.wired = (v >> 5) & 0b11111;
+            cop0.random = 31;
         }
 
         case INDEX:
@@ -383,7 +389,13 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
         }
 
         // read only
-        case RANDOM: break;
+        case RANDOM:
+        case LLADDR:
+        case PRID:
+        case PARITY_ERROR:
+        case CACHE_ERROR:
+        case 7: case 21: case 22: case 23: case 24: case 25: case 31:
+            break;
 
         default:
         {
@@ -402,6 +414,41 @@ u64 read_cop0(N64& n64, u32 reg)
 
     switch(reg)
     {
+        case RANDOM:
+        {
+            return cop0.random;
+        }
+
+        case LLADDR:
+        {
+            return cop0.load_linked;
+        }
+
+        case WATCH_LO:
+        {
+            return cop0.watchLo.paddr0 << 3 | (cop0.watchLo.read & 1) << 1 | (cop0.watchLo.write & 1);
+        }
+
+        case WATCH_HI:
+        {
+            return cop0.watchHi.paddr1 & 0b111;
+        }
+
+        case XCONFIG:
+        {
+            return (u64) cop0.xconfig.pte << 33 | (cop0.xconfig.r & 0b11) << 31 | cop0.xconfig.bad_vpn << 3;
+        }
+
+        case PARITY_ERROR:
+        {
+            return cop0.parity;
+        }
+
+        case CACHE_ERROR:
+        {
+            return 0;
+        }
+
         case STATUS:
         {
             auto& status = cop0.status;
@@ -435,6 +482,16 @@ u64 read_cop0(N64& n64, u32 reg)
             return (cop0.page_mask << 13);
         }
 
+        case TAGLO:
+        {
+            return cop0.tagLo;
+        }
+
+        case TAGHI:
+        {
+            return 0;
+        }
+
         case COUNT:
         {
             // read out count tick off all the cycles
@@ -459,6 +516,17 @@ u64 read_cop0(N64& n64, u32 reg)
         {
             auto& cause = cop0.cause;
             return (cause.exception_code << 2) | (cause.pending  << 8) | (cause.coprocessor_error << 28) | (cause.branch_delay << 31); 
+        }
+
+        case CONFIG:
+        {
+            auto& config = cop0.config;
+            return config.freq << 28 | config.transfer_mode << 24 | 0b1101 << 15 | config.endianness << 14 | 0b11001000110 << 4 | config.cu << 2 | config.k0;
+        }
+
+        case PRID:
+        {
+            return cop0.prid;
         }
 
         case INDEX:
@@ -488,11 +556,24 @@ u64 read_cop0(N64& n64, u32 reg)
             return cop0.compare;
         }
 
+        case WIRED:
+        {
+            return cop0.wired;
+        }
+
+        // reserved
+        case 7: case 21: case 22: case 23: case 24: case 25: case 31:
+            return 0;
+
         default:
         {
             unimplemented("cop0 read: %s(%d)\n",COP0_NAMES[reg],reg);
         }        
     }
+}
+
+void Cop0::updateRandom() {
+    if (--random == 0) random = 31;
 }
 
 }

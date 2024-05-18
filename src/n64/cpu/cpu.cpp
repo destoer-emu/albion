@@ -61,6 +61,7 @@ void reset_cpu(N64 &n64)
 void cycle_tick(N64 &n64, u32 cycles)
 {
     n64.scheduler.delay_tick(cycles);
+    n64.cpu.cop0.updateRandom();
 }
 
 

@@ -10,17 +10,17 @@ struct Status
     b32 exl = 0;
     b32 erl = 0;
     u32 ksu = 0;
-    b32 ux = 0;
-    b32 sx = 0;
-    b32 kx = 0;
+    b32 ux = 1;
+    b32 sx = 1;
+    b32 kx = 1;
     u8 im = 0;
-    u32 ds = 0;
+    u32 ds = 0b10000;
     b32 re = 0;
-    b32 fr = 0;
+    b32 fr = 1;
     b32 rp = 0;
 
     b32 cu0 = false;
-    b32 cu1 = false;
+    b32 cu1 = true;
     b32 cu2 = false;
     b32 cu3 = false;    
 };
@@ -61,6 +61,30 @@ struct Context
     u32 pte_base = 0;
 };
 
+struct Config {
+    u8 freq = 0b111;
+    u8 transfer_mode = 0;
+    u8 endianness = 1;
+    u8 cu = 0;
+    u8 k0 = 0b11;
+};
+
+struct WatchLo {
+    u32 paddr0;
+    u8 read;
+    u8 write;
+};
+
+struct WatchHi {
+    u8 paddr1;
+};
+
+struct XConfig {
+    u32 pte;
+    u8 r;
+    u32 bad_vpn;
+};
+
 // TODO: factor these into structs
 struct Cop0
 {
@@ -85,16 +109,29 @@ struct Cop0
 
     // count and compare
     u32 count = 0;
-    u32 compare = 0; 
+    u32 compare = 0;
 
-    u32 random = 0;
+    u8 wired = 0;
 
-    u32 prid = 0;
-    u32 config = 0;
+    // random register set to 31 on init
+    u32 random = 0b11111;
+
+    u32 prid = 0xB22;
+    Config config;
 
     // cache tags (these have fields we just dont care about them)
-    u32 tag_hi = 0; 
-    u32 tag_lo = 0;
+    WatchHi watchHi;
+    WatchLo watchLo;
+
+    u32 tagLo;
+
+    u8 parity = 0;
+
+    XConfig xconfig;
+
+    u32 load_linked = ~0u;
+
+    void updateRandom();
 };
 
 }
