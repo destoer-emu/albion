@@ -261,7 +261,7 @@ void instr_round_l_s(N64& n64, const Opcode& opcode)
 {
     float_s_op(n64, opcode, [](f32 f, f32 unused)
     {
-        return std::nearbyint(((double) f) * 0.5) * 2.0f;
+        return bit_cast_double(long(std::nearbyint((f))));
     });
 }
 
@@ -269,7 +269,7 @@ void instr_ceil_l_s(N64& n64, const Opcode& opcode)
 {
     float_s_op(n64, opcode, [](f32 f, f32 unused)
     {
-        return std::ceil((double)f);
+        return bit_cast_double(long(std::ceil(f)));
     });
 }
 
@@ -277,7 +277,7 @@ void instr_floor_l_s(N64& n64, const Opcode& opcode)
 {
     float_s_op(n64, opcode, [](f32 f, f32 unused)
     {
-        return std::floor((double)f);
+        return bit_cast_double(long(std::floor(f)));
     });
 }
 
@@ -285,7 +285,7 @@ void instr_round_w_s(N64& n64, const Opcode& opcode)
 {
     float_s_op(n64, opcode, [](f32 f, f32 unused)
     {
-        return std::nearbyint(f * 0.5) * 2.0f;
+        return bit_cast_float(int(std::nearbyint(f )));
     });
 }
 
@@ -293,7 +293,7 @@ void instr_ceil_w_s(N64& n64, const Opcode& opcode)
 {
     float_s_op(n64, opcode, [](f32 f, f32 unused)
     {
-        return std::ceil(f);
+        return bit_cast_float(int(std::ceil(f)));
     });
 }
 
@@ -301,7 +301,7 @@ void instr_floor_w_s(N64& n64, const Opcode& opcode)
 {
     float_s_op(n64, opcode, [](f32 f, f32 unused)
     {
-        return std::floor(f);
+        return bit_cast_float(int(std::floor(f)));
     });
 }
 
@@ -374,7 +374,7 @@ void instr_neg_d(N64& n64, const Opcode& opcode)
 void instr_roundl_d(N64& n64, const Opcode& opcode) {
     float_d_op(n64, opcode, [](f64 f, f64 unused)
     {
-        return std::nearbyint(f * 0.5) * 2.0f; // round to nearest, tiebreak towards the even number
+        return bit_cast_double(long(std::nearbyint(f))); // round to nearest, tiebreak towards the even number
     });
 }
 
@@ -382,7 +382,7 @@ void instr_ceil_l_d(N64& n64, const Opcode& opcode)
 {
     float_d_op(n64, opcode, [](f64 f, f64 unused)
     {
-        return std::ceil(f);
+        return bit_cast_double(long(std::ceil(f)));
     });
 }
 
@@ -390,7 +390,7 @@ void instr_floor_l_d(N64& n64, const Opcode& opcode)
 {
     float_d_op(n64, opcode, [](f64 f, f64 unused)
     {
-        return std::floor(f);
+        return bit_cast_double(long(std::floor(f)));
     });
 }
 
@@ -398,14 +398,14 @@ void instr_round_w_d(N64& n64, const Opcode& opcode)
 {
     float_d_op(n64, opcode, [](f64 f, f64 unused)
     {
-        return (double) (std::nearbyint(((float) f) * 0.5) * 2.0f); // truncate to float, round, cast up to double
+        return bit_cast_float(int(std::nearbyint(f))); // truncate to float, round, cast up to double
     });
 }
 
 void instr_ceil_w_d(N64& n64, const Opcode& opcode) {
     float_d_op(n64, opcode, [](f64 f, f64 unused)
     {
-        return (double) (std::ceil((float) f));
+        return bit_cast_float(int(std::ceil(f)));
     });
 }
 
@@ -413,7 +413,7 @@ void instr_floor_w_d(N64& n64, const Opcode& opcode)
 {
     float_d_op(n64, opcode, [](f64 f, f64 unused)
     {
-        return (double) std::floor((float) f);
+        return bit_cast_float(int(std::floor(f)));
     });
 }
 
