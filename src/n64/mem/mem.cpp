@@ -1,4 +1,5 @@
 #include <n64/n64.h>
+#include "spdlog/spdlog.h"
 
 namespace nintendo64
 {
@@ -103,10 +104,12 @@ void reset_mem(Mem &mem, const std::string &filename)
         throw std::runtime_error(err);         
     }
 
-    if(mem.rom.size() <= 32 * 1024 * 1024)
+    spdlog::info("ROM file " + filename + " read, " + std::to_string(mem.rom.size()) + " bytes.");
+
+    if(mem.rom.size() <= 40 * 1024 * 1024)
     {
         // ensure rom is power of two!!
-        mem.rom.resize(32 * 1024 * 1024);
+        mem.rom.resize(40 * 1024 * 1024);
     }
 
     else
@@ -131,28 +134,28 @@ void reset_mem(Mem &mem, const std::string &filename)
 
     auto magic = handle_read<u32>(mem.rom,0x0);
 
-    printf("rom magic: %x\n",magic);
+    spdlog::debug("ROM Magic Number: " + std::to_string(magic));
 
     // if rom is middle endian byteswap it
     if(magic == 0x12408037)
     {
-        puts("middle swap rom");
+        spdlog::debug("Swapping middle-endian ROM..");
         
         for(u32 i = 0; i < mem.rom.size() - 1; i += 2)
         {
             std::swap(mem.rom[i],mem.rom[i+1]);
         }
 
-    }
-    // re read the magic
-    magic = handle_read<u32>(mem.rom,0x0);
+        // re read the magic
+        magic = handle_read<u32>(mem.rom,0x0);
 
-    printf("rom magic: %x\n",magic);
+        spdlog::debug("ROM Magic Number: " + std::to_string(magic));
+    }
 
     // big endian swap around
     if(magic == 0x40123780)
     {
-        puts("swapping big endian into le");
+        spdlog::debug("Swapping big-endian ROM..");
 
         for(u32 i = 0; i < mem.rom.size(); i += sizeof(u32))
         {

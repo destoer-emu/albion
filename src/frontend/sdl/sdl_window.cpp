@@ -27,7 +27,7 @@ void start_emu(std::string filename, Config& cfg)
 	{
 		const auto type = get_emulator_type(filename);
 
-        spdlog::info("Starting", get_emulator_name(type), " emulator engine.");
+        spdlog::info("Starting " + get_emulator_name(type) + " emulator engine.");
 
 		switch(type)
 		{
@@ -67,7 +67,7 @@ void start_emu(std::string filename, Config& cfg)
 
 	catch(std::exception &ex)
 	{
-		std::cout << ex.what() << "\n";
+		spdlog::error(ex.what());
 		return;
 	}
 }

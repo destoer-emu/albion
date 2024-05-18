@@ -5,6 +5,21 @@ cmake_minimum_required(VERSION 3.10)
 project(albion)
 include(FetchContent)
 
+macro(thirdparty_module name)
+	FetchContent_Declare(${name}
+			${ARGN}
+			PREFIX "${CMAKE_CURRENT_BINARY_DIR}/${name}"
+			TMP_DIR "${CMAKE_CURRENT_BINARY_DIR}/${name}/tmp"
+			STAMP_DIR "${CMAKE_CURRENT_BINARY_DIR}/${name}/stamp"
+			DOWNLOAD_DIR "${CMAKE_CURRENT_BINARY_DIR}/${name}/dl"
+			SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/${name}/src"
+			SUBBUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/${name}/build"
+			BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/${name}/bin"
+			INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/${name}/inst"
+			LOG_DIR "${CMAKE_CURRENT_BINARY_DIR}/${name}/log"
+			)
+	list(APPEND CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}/cmake/${name}")
+endmacro()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -16,7 +31,16 @@ set(FRONTEND "SDL")
 # external frontend
 #set(FRONTEND "HEADLESS")
 
-find_package(spdlog REQUIRED)
+thirdparty_module(spdlog
+		URL https://github.com/gabime/spdlog/archive/refs/tags/v1.14.1.zip
+)
+
+set(SPDLOG_INSTALL ON)
+set(SPDLOG_ENABLE_PCH ON)
+
+FetchContent_MakeAvailable(spdlog)
+set_property(TARGET spdlog PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 
 #add_definitions(-DBOUNDS_CHECK)
 if(${FRONTEND} STREQUAL "IMGUI")
