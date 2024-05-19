@@ -235,4 +235,4 @@ if(${FRONTEND} STREQUAL "IMGUI")
 	target_link_libraries(albion PUBLIC GL GLEW)
 endif()
 
-target_link_libraries(albion PUBLIC spdlog fmt)
+target_link_libraries(albion PUBLIC spdlog)
