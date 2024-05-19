@@ -237,6 +237,7 @@ void instr_sqrt_s(N64& n64, const Opcode& opcode)
 {
     float_s_op(n64, opcode, [](f32 f, f32 unused)
     {
+        UNUSED(unused);
         return std::sqrt(f);
     });
 }
@@ -245,6 +246,7 @@ void instr_abs_s(N64& n64, const Opcode& opcode)
 {
     float_s_op(n64, opcode, [](f32 f, f32 unused)
     {
+        UNUSED(unused);
         return std::abs(f);
     });
 }
@@ -253,6 +255,7 @@ void instr_neg_s(N64& n64, const Opcode& opcode)
 {
     float_s_op(n64, opcode, [](f32 f, f32 unused)
     {
+        UNUSED(unused);
         return -f;
     });
 }
@@ -261,6 +264,7 @@ void instr_round_l_s(N64& n64, const Opcode& opcode)
 {
     float_s_op(n64, opcode, [](f32 f, f32 unused)
     {
+        UNUSED(unused);
         return bit_cast_double(long(std::nearbyint((f))));
     });
 }
@@ -269,6 +273,7 @@ void instr_ceil_l_s(N64& n64, const Opcode& opcode)
 {
     float_s_op(n64, opcode, [](f32 f, f32 unused)
     {
+        UNUSED(unused);
         return bit_cast_double(long(std::ceil(f)));
     });
 }
@@ -277,6 +282,7 @@ void instr_floor_l_s(N64& n64, const Opcode& opcode)
 {
     float_s_op(n64, opcode, [](f32 f, f32 unused)
     {
+        UNUSED(unused);
         return bit_cast_double(long(std::floor(f)));
     });
 }
@@ -285,6 +291,7 @@ void instr_round_w_s(N64& n64, const Opcode& opcode)
 {
     float_s_op(n64, opcode, [](f32 f, f32 unused)
     {
+        UNUSED(unused);
         return bit_cast_float(int(std::nearbyint(f )));
     });
 }
@@ -293,6 +300,7 @@ void instr_ceil_w_s(N64& n64, const Opcode& opcode)
 {
     float_s_op(n64, opcode, [](f32 f, f32 unused)
     {
+        UNUSED(unused);
         return bit_cast_float(int(std::ceil(f)));
     });
 }
@@ -301,6 +309,7 @@ void instr_floor_w_s(N64& n64, const Opcode& opcode)
 {
     float_s_op(n64, opcode, [](f32 f, f32 unused)
     {
+        UNUSED(unused);
         return bit_cast_float(int(std::floor(f)));
     });
 }
@@ -351,6 +360,7 @@ void instr_sqrt_d(N64& n64, const Opcode& opcode)
 {
     float_d_op(n64, opcode, [](f64 f, f64 unused)
     {
+        UNUSED(unused);
         return std::sqrt(f);
     });
 }
@@ -359,6 +369,7 @@ void instr_abs_d(N64& n64, const Opcode& opcode)
 {
     float_d_op(n64, opcode, [](f64 f, f64 unused)
     {
+        UNUSED(unused);
         return std::abs(f);
     });
 }
@@ -367,6 +378,7 @@ void instr_neg_d(N64& n64, const Opcode& opcode)
 {
     float_d_op(n64, opcode, [](f64 f, f64 unused)
     {
+        UNUSED(unused);
         return -f;
     });
 }
@@ -374,6 +386,7 @@ void instr_neg_d(N64& n64, const Opcode& opcode)
 void instr_roundl_d(N64& n64, const Opcode& opcode) {
     float_d_op(n64, opcode, [](f64 f, f64 unused)
     {
+        UNUSED(unused);
         return bit_cast_double(long(std::nearbyint(f))); // round to nearest, tiebreak towards the even number
     });
 }
@@ -382,6 +395,7 @@ void instr_ceil_l_d(N64& n64, const Opcode& opcode)
 {
     float_d_op(n64, opcode, [](f64 f, f64 unused)
     {
+        UNUSED(unused);
         return bit_cast_double(long(std::ceil(f)));
     });
 }
@@ -390,6 +404,7 @@ void instr_floor_l_d(N64& n64, const Opcode& opcode)
 {
     float_d_op(n64, opcode, [](f64 f, f64 unused)
     {
+        UNUSED(unused);
         return bit_cast_double(long(std::floor(f)));
     });
 }
@@ -398,6 +413,7 @@ void instr_round_w_d(N64& n64, const Opcode& opcode)
 {
     float_d_op(n64, opcode, [](f64 f, f64 unused)
     {
+        UNUSED(unused);
         return bit_cast_float(int(std::nearbyint(f))); // truncate to float, round, cast up to double
     });
 }
@@ -405,6 +421,7 @@ void instr_round_w_d(N64& n64, const Opcode& opcode)
 void instr_ceil_w_d(N64& n64, const Opcode& opcode) {
     float_d_op(n64, opcode, [](f64 f, f64 unused)
     {
+        UNUSED(unused);
         return bit_cast_float(int(std::ceil(f)));
     });
 }
@@ -413,6 +430,7 @@ void instr_floor_w_d(N64& n64, const Opcode& opcode)
 {
     float_d_op(n64, opcode, [](f64 f, f64 unused)
     {
+        UNUSED(unused);
         return bit_cast_float(int(std::floor(f)));
     });
 }
@@ -492,6 +510,7 @@ void instr_c_f_s(N64& n64, const Opcode& opcode)
 {
     float_cond_s(n64, opcode, [](f32 v1, f32 v2)
     {
+        UNUSED(v1); UNUSED(v2);
         return false;
     });
 }
@@ -500,6 +519,7 @@ void instr_c_f_d(N64& n64, const Opcode& opcode)
 {
     float_cond_d(n64, opcode, [](f64 v1, f64 v2)
     {
+        UNUSED(v1); UNUSED(v2);
         return false;
     });
 }
@@ -590,6 +610,7 @@ void instr_c_sf_d(N64& n64, const Opcode& opcode)
 {
     float_cond_d(n64, opcode, [](f64 v1, f64 v2)
     {
+        UNUSED(v1); UNUSED(v2);
         return false;
     });
 }
@@ -654,6 +675,7 @@ void instr_c_sf_s(N64& n64, const Opcode& opcode)
 {
     float_cond_s(n64, opcode, [](f32 v1, f32 v2)
     {
+    UNUSED(v1); UNUSED(v2);
        return false;
     });
 }

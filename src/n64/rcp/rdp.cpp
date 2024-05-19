@@ -32,14 +32,14 @@ void change_res(N64 &n64)
     // account for half lines
     u32 y = beyond_all_repair::abs(vi.v_end - vi.v_start) >> 1; 
     
-    spdlog::debug("res change %d : %d : %d\n",x,y, x * y);
-
     const f32 x_scale = (f32(vi.x_scale) / f32(1 << 10));
     const f32 y_scale = (f32(vi.y_scale) / f32(1 << 10));
 
     // scale res
     x = (f32(x) * x_scale);
-    y = (f32(y) * y_scale) + 3;
+    y = (f32(y + 3) * y_scale);
+
+    spdlog::debug("res change %d : %d : %d\n",x,y, x * y);
 
     //printf("res change scale %d : %d : %d : %f : %f\n",x,y, x * y,x_scale,y_scale);
     if(x != rdp.screen_x || y != rdp.screen_y)

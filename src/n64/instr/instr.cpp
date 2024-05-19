@@ -52,7 +52,8 @@ void instr_unknown_opcode(N64 &n64, const Opcode &opcode)
 
 void instr_invalid_opcode_cvt_d_d(N64& n64, const Opcode& opcode)
 {
-    const auto err = std::format("[cpu {:16x} cvt.d.d $f0 $f0] invalid opcode format for cvt\n", n64.cpu.pc-4);
+    UNUSED(opcode);
+    const auto err = fmt::format("[cpu {:16x} cvt.d.d $f0 $f0] invalid opcode format for cvt\n", n64.cpu.pc-4);
     throw std::runtime_error(err);
 }
 

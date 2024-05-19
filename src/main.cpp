@@ -8,7 +8,6 @@
 #define SDL_MAIN_HANDLED
 #ifdef _WIN32
 #include <SDL.H>
-#include <cfenv>
 
 #else
 #include <SDL2/SDL.h>
@@ -17,6 +16,7 @@
 
 #include "test.cpp"
 #include "spdlog/spdlog.h"
+#include <cfenv>
 
 int main(int argc, char *argv[])
 {  
