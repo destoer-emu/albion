@@ -41,3 +41,7 @@ gen_sm83_lut
 *.a
 .idea/
 cmake-build-debug/
+CPackConfig.cmake
+CPackSourceConfig.cmake
+spdlog.pc
+N64/
