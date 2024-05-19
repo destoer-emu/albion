@@ -109,17 +109,20 @@ void instr_srl(N64 &n64, const Opcode &opcode)
 
 void instr_dsrl(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    const auto shamt = get_shamt(opcode.op);
+    n64.cpu.regs[opcode.rd] = u64(n64.cpu.regs[opcode.rt]) >> shamt;
 }
 
 void instr_dsrl32(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    const auto shamt = get_shamt(opcode.op);
+    n64.cpu.regs[opcode.rd] = u64(n64.cpu.regs[opcode.rt]) >> (shamt + 32);
 }
 
 void instr_dsra(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    const auto shamt = get_shamt(opcode.op);
+    n64.cpu.regs[opcode.rd] = s64(n64.cpu.regs[opcode.rt]) >> shamt;
 }
 
 void instr_dsra32(N64 &n64, const Opcode &opcode)

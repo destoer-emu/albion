@@ -23,14 +23,14 @@
 #include <atomic>
 #include <optional>
 #include <variant>
-#include <stdint.h>
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-#include <limits.h>
-#include <stdarg.h>
+#include <cstdint>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
+#include <cstring>
+#include <climits>
+#include <cstdarg>
 #include <destoer.h>
 using namespace destoer;
 

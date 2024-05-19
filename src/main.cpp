@@ -8,12 +8,15 @@
 #define SDL_MAIN_HANDLED
 #ifdef _WIN32
 #include <SDL.H>
+#include <cfenv>
+
 #else
 #include <SDL2/SDL.h>
 #endif
 #endif
 
 #include "test.cpp"
+#include "spdlog/spdlog.h"
 
 int main(int argc, char *argv[])
 {  
@@ -21,7 +24,8 @@ int main(int argc, char *argv[])
 #ifndef FRONTEND_HEADLESS    
     if(argc == 2)
     {
-        if(std::string(argv[1]) == "-t")
+        std::string arg(argv[1]);
+        if(arg == "-t")
         {
             try
             {
@@ -35,8 +39,15 @@ int main(int argc, char *argv[])
 
             return 0;
         }
+
+        if (arg == "-dev-gen")
+        {
+        }
     }
 #endif
+
+    spdlog::set_pattern("[%H:%M:%S.%e] [%l] %v");
+    std::fesetround(FE_TONEAREST);
 
 // if sdl is used for anything we need to init it here
 #ifdef SDL_REQUIRED

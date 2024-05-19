@@ -175,4 +175,19 @@ void instr_mfc1(N64& n64, const Opcode& opcode)
     n64.cpu.regs[opcode.rt] = sign_extend_type<s64,s32>(w);
 }
 
+void instr_dmfc1(N64& n64, const Opcode &opcode)
+{
+    const u32 fs = get_fs(opcode);
+    const s64 val = bit_cast_from_double(read_cop1_reg(n64, fs));
+    n64.cpu.regs[opcode.rt] = val;
+}
+
+void instr_dmtc1(N64& n64, const Opcode &opcode)
+{
+    const u32 fs = get_fs(opcode);
+    const f64 val = bit_cast_double(n64.cpu.regs[opcode.rt]);
+
+    write_cop1_reg(n64, fs, val);
+}
+
 }

@@ -185,7 +185,7 @@ void float_s_op(N64& n64, const Opcode& opcode, FUNC func)
     const u32 fd = get_fd(opcode);
     const u32 ft = get_ft(opcode);
 
-    const f32 ans = func(f32(read_cop1_reg(n64,fs)),f32(read_cop1_reg(n64,ft)));
+    const f64 ans = func(f32(read_cop1_reg(n64,fs)),f32(read_cop1_reg(n64,ft)));
     write_cop1_reg(n64,fd,ans);
 }
 
@@ -233,6 +233,79 @@ void instr_mul_s(N64& n64, const Opcode& opcode)
     });    
 }
 
+void instr_sqrt_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return std::sqrt(f);
+    });
+}
+
+void instr_abs_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return std::abs(f);
+    });
+}
+
+void instr_neg_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return -f;
+    });
+}
+
+void instr_round_l_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return bit_cast_double(long(std::nearbyint((f))));
+    });
+}
+
+void instr_ceil_l_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return bit_cast_double(long(std::ceil(f)));
+    });
+}
+
+void instr_floor_l_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return bit_cast_double(long(std::floor(f)));
+    });
+}
+
+void instr_round_w_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return bit_cast_float(int(std::nearbyint(f )));
+    });
+}
+
+void instr_ceil_w_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return bit_cast_float(int(std::ceil(f)));
+    });
+}
+
+void instr_floor_w_s(N64& n64, const Opcode& opcode)
+{
+    float_s_op(n64, opcode, [](f32 f, f32 unused)
+    {
+        return bit_cast_float(int(std::floor(f)));
+    });
+}
+
+
 void instr_add_d(N64& n64, const Opcode& opcode)
 {
     float_d_op(n64,opcode,[](f64 v1, f64 v2)
@@ -274,6 +347,76 @@ void instr_mov_d(N64& n64, const Opcode& opcode)
     write_cop1_reg(n64,fd,read_cop1_reg(n64,fs));    
 }
 
+void instr_sqrt_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return std::sqrt(f);
+    });
+}
+
+void instr_abs_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return std::abs(f);
+    });
+}
+
+void instr_neg_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return -f;
+    });
+}
+
+void instr_roundl_d(N64& n64, const Opcode& opcode) {
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return bit_cast_double(long(std::nearbyint(f))); // round to nearest, tiebreak towards the even number
+    });
+}
+
+void instr_ceil_l_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return bit_cast_double(long(std::ceil(f)));
+    });
+}
+
+void instr_floor_l_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return bit_cast_double(long(std::floor(f)));
+    });
+}
+
+void instr_round_w_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return bit_cast_float(int(std::nearbyint(f))); // truncate to float, round, cast up to double
+    });
+}
+
+void instr_ceil_w_d(N64& n64, const Opcode& opcode) {
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return bit_cast_float(int(std::ceil(f)));
+    });
+}
+
+void instr_floor_w_d(N64& n64, const Opcode& opcode)
+{
+    float_d_op(n64, opcode, [](f64 f, f64 unused)
+    {
+        return bit_cast_float(int(std::floor(f)));
+    });
+}
+
 
 // table 7-11 for cond desc
 template<typename FUNC>
@@ -306,7 +449,7 @@ void float_cond_d(N64& n64, const Opcode& opcode, FUNC func)
     n64.cpu.cop1.c = func(v1,v2);
 }
 
-void instr_c_le_s(N64& n64, const Opcode& opcode)
+void instr_c_ole_s(N64& n64, const Opcode& opcode)
 {
     float_cond_s(n64,opcode,[](f32 v1, f32 v2)
     {
@@ -314,7 +457,7 @@ void instr_c_le_s(N64& n64, const Opcode& opcode)
     });
 }
 
-void instr_c_le_d(N64& n64, const Opcode& opcode)
+void instr_c_ole_d(N64& n64, const Opcode& opcode)
 {
     float_cond_d(n64,opcode,[](f64 v1, f64 v2)
     {
@@ -322,11 +465,252 @@ void instr_c_le_d(N64& n64, const Opcode& opcode)
     });
 }
 
-void instr_c_lt_d(N64& n64, const Opcode& opcode)
+void instr_c_olt_d(N64& n64, const Opcode& opcode)
 {
     float_cond_d(n64,opcode,[](f64 v1, f64 v2)
     {
         return v1 < v2;
+    });
+}
+
+void instr_c_eq_d(N64& n64, const Opcode& opcode)
+{
+    float_cond_d(n64, opcode, [](f64 v1, f64 v2) {
+        return v1 == v2;
+    });
+}
+
+void instr_c_eq_s(N64& n64, const Opcode& opcode)
+{
+    float_cond_s(n64, opcode, [](f32 v1, f32 v2)
+    {
+        return v1 == v2;
+    });
+}
+
+void instr_c_f_s(N64& n64, const Opcode& opcode)
+{
+    float_cond_s(n64, opcode, [](f32 v1, f32 v2)
+    {
+        return false;
+    });
+}
+
+void instr_c_f_d(N64& n64, const Opcode& opcode)
+{
+    float_cond_d(n64, opcode, [](f64 v1, f64 v2)
+    {
+        return false;
+    });
+}
+
+bool isnan_f(f32 f) {
+    return std::isnan(f);
+}
+
+bool isnan_d(f64 f) {
+    return f == std::numeric_limits<double>::quiet_NaN();
+}
+
+void instr_c_un_d(N64& n64, const Opcode& opcode)
+{
+    float_cond_d(n64, opcode, [](f64 v1, f64 v2)
+    {
+        return isnan_d(v1) || isnan_d(v2);
+    });
+}
+
+void instr_c_un_s(N64& n64, const Opcode& opcode)
+{
+    float_cond_s(n64, opcode, [](f32 v1, f32 v2)
+    {
+        return isnan_f(v1) || isnan_f(v2);
+    });
+}
+
+void instr_c_ueq_d(N64& n64, const Opcode& opcode)
+{
+    float_cond_d(n64, opcode, [](f64 v1, f64 v2)
+    {
+        return (isnan_d(v1) || isnan_d(v2)) || (v1 == v2);
+    });
+}
+
+void instr_c_ueq_s(N64& n64, const Opcode& opcode)
+{
+    float_cond_s(n64, opcode, [](f32 v1, f32 v2)
+    {
+        return (isnan_f(v1) || isnan_f(v2)) || (v1 == v2);
+    });
+}
+
+void instr_c_olt_s(N64& n64, const Opcode& opcode)
+{
+    float_cond_s(n64, opcode, [](f32 v1, f32 v2)
+    {
+        return v1 < v2;
+    });
+}
+
+void instr_c_ult_d(N64& n64, const Opcode& opcode)
+{
+    float_cond_d(n64, opcode, [](f64 v1, f64 v2)
+    {
+        return (isnan_d(v1) || isnan_d(v2)) || v1 < v2;
+    });
+}
+
+void instr_c_ult_s(N64& n64, const Opcode& opcode)
+{
+    float_cond_s(n64, opcode, [](f32 v1, f32 v2)
+    {
+        return (isnan_f(v1) || isnan_f(v2)) || v1 < v2;
+    });
+}
+
+void instr_c_ule_s(N64& n64, const Opcode& opcode)
+{
+    float_cond_s(n64, opcode, [](f32 v1, f32 v2)
+    {
+        return (isnan_f(v1) || isnan_f(v2)) || (v1 < v2) || (v1 == v2);
+    });
+}
+
+void instr_c_ule_d(N64& n64, const Opcode& opcode)
+{
+    float_cond_d(n64, opcode, [](f64 v1, f64 v2)
+    {
+        return (isnan_d(v1) || isnan_d(v2)) || (v1 < v2) || (v1 == v2);
+    });
+}
+
+
+// TODO: these all exception on nan
+void instr_c_sf_d(N64& n64, const Opcode& opcode)
+{
+    float_cond_d(n64, opcode, [](f64 v1, f64 v2)
+    {
+        return false;
+    });
+}
+
+void instr_c_ngle_d(N64& n64, const Opcode& opcode)
+{
+    float_cond_d(n64, opcode, [](f64 v1, f64 v2)
+    {
+        return isnan_d(v1) || isnan_d(v2);
+    });
+}
+
+void instr_c_seq_d(N64& n64, const Opcode& opcode)
+{
+    float_cond_d(n64, opcode, [](f64 v1, f64 v2)
+    {
+        return v1 == v2;
+    });
+}
+
+void instr_c_ngl_d(N64& n64, const Opcode& opcode)
+{
+    float_cond_d(n64, opcode, [](f64 v1, f64 v2)
+    {
+        return (isnan_d(v1) || isnan_d(v2)) || v1 == v2;
+    });
+}
+
+void instr_c_lt_d(N64& n64, const Opcode& opcode)
+{
+    float_cond_d(n64, opcode, [](f64 v1, f64 v2)
+    {
+        return v1 < v2;
+    });
+}
+
+void instr_c_nge_d(N64& n64, const Opcode& opcode)
+{
+    float_cond_d(n64, opcode, [](f64 v1, f64 v2)
+    {
+        return (isnan_d(v1) || isnan_d(v2)) || v1 < v2;
+    });
+}
+
+void instr_c_le_d(N64& n64, const Opcode& opcode)
+{
+    float_cond_d(n64, opcode, [](f64 v1, f64 v2)
+    {
+        return v1 < v2 || v1 == v2;
+    });
+}
+
+void instr_c_ngt_d(N64& n64, const Opcode& opcode)
+{
+    float_cond_d(n64, opcode, [](f64 v1, f64 v2)
+    {
+        return (isnan_d(v1) || isnan_d(v2)) || v1 < v2 || v1 == v2;
+    });
+}
+
+void instr_c_sf_s(N64& n64, const Opcode& opcode)
+{
+    float_cond_s(n64, opcode, [](f32 v1, f32 v2)
+    {
+       return false;
+    });
+}
+
+void instr_c_ngle_s(N64& n64, const Opcode& opcode)
+{
+    float_cond_s(n64, opcode, [](f32 v1, f32 v2)
+    {
+       return (isnan_d(v1) || isnan_d(v2));
+    });
+}
+
+void instr_c_seq_s(N64& n64, const Opcode& opcode)
+{
+    float_cond_s(n64, opcode, [](f32 v1, f32 v2)
+    {
+        return v1 == v2;
+    });
+}
+
+void instr_c_ngl_s(N64& n64, const Opcode& opcode)
+{
+    float_cond_s(n64, opcode, [](f32 v1, f32 v2)
+    {
+        return (isnan_d(v1) || isnan_d(v2)) || v1 == v2;
+    });
+}
+
+void instr_c_lt_s(N64& n64, const Opcode& opcode)
+{
+    float_cond_s(n64, opcode, [](f32 v1, f32 v2)
+    {
+        return v1 < v2;
+    });
+}
+
+void instr_c_nge_s(N64& n64, const Opcode& opcode)
+{
+    float_cond_s(n64, opcode, [](f32 v1, f32 v2)
+    {
+        return (isnan_d(v1) || isnan_d(v2)) || v1 < v2;
+    });
+}
+
+void instr_c_le_s(N64& n64, const Opcode& opcode)
+{
+    float_cond_s(n64, opcode, [](f32 v1, f32 v2)
+    {
+        return v1 < v2 || v1 == v2;
+    });
+}
+
+void instr_c_ngt_s(N64& n64, const Opcode& opcode)
+{
+    float_cond_s(n64, opcode, [](f32 v1, f32 v2)
+    {
+       return (isnan_d(v1) || isnan_d(v2)) || v1 < v2 || v1 == v2;
     });
 }
 

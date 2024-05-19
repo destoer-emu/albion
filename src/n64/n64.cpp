@@ -69,6 +69,8 @@ void reset(N64 &n64, const std::string &filename)
 
     // initializer external disassembler
     n64.program = beyond_all_repair::make_program(0xA4000040,false,&read_func,&n64);
+
+    spdlog::info("N64 Emulation Core initialized.");
 }
 
 template<const b32 debug>
