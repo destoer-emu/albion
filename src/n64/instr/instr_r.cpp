@@ -262,12 +262,28 @@ void instr_mult(N64 &n64, const Opcode &opcode)
 
 void instr_dmultu(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+#ifdef _MSC_VER
+    static_assert(false);
+#else
+    using u128 = unsigned __int128;
+
+    const u128 ans = u128(n64.cpu.regs[opcode.rs]) * u128(n64.cpu.regs[opcode.rt]);
+    n64.cpu.lo = ans & 0xffff'ffff'ffff'ffff;
+    n64.cpu.hi = ans >> 64;
+#endif
 }
 
 void instr_dmult(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+#ifdef _MSC_VER
+    static_assert(false);
+#else
+    using s128 = __int128;
+
+    const s128 ans = s128(s64(n64.cpu.regs[opcode.rs])) * s128(s64(n64.cpu.regs[opcode.rt]));
+    n64.cpu.lo = ans & 0xffff'ffff'ffff'ffff;
+    n64.cpu.hi = ans >> 64;
+#endif
 }
 
 void instr_break(N64 &n64, const Opcode &opcode)

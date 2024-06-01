@@ -184,9 +184,15 @@ if(DEFINED N64)
 	set(N64_OPCODE_TABLE "${CMAKE_SOURCE_DIR}/src/n64/instr/mips_instr_table.h")
 
 if(WIN32)
-	add_custom_target(mips_lut COMMAND ${CMAKE_SOURCE_DIR}/beyond-all-repair/bar.exe -g 3 ${N64_OPCODE_TABLE})
+	add_custom_target(mips_lut 
+		COMMAND ${CMAKE_SOURCE_DIR}/beyond-all-repair/bar.exe -g 3 ${N64_OPCODE_TABLE} 
+		DEPENDS ${CMAKE_SOURCE_DIR}/beyond-all-repair/src/mips_table.inl
+	)
 else ()
-	add_custom_target(mips_lut COMMAND ${CMAKE_SOURCE_DIR}/beyond-all-repair/bar -g 3 ${N64_OPCODE_TABLE})
+	add_custom_target(mips_lut 
+		COMMAND ${CMAKE_SOURCE_DIR}/beyond-all-repair/bar -g 3 ${N64_OPCODE_TABLE} 
+		DEPENDS ${CMAKE_SOURCE_DIR}/beyond-all-repair/src/mips_table.inl
+	)
 endif ()	
 
 	set_source_files_properties(${N64_OPCODE_TABLE} PROPERTIES GENERATED true)
