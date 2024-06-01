@@ -77,7 +77,7 @@ void instr_srav(N64 &n64, const Opcode &opcode)
 
 void instr_dsrav(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    n64.cpu.regs[opcode.rd] = s64(n64.cpu.regs[opcode.rt]) >> n64.cpu.regs[opcode.rs];
 }
 
 void instr_syscall(N64 &n64, const Opcode &opcode)
@@ -140,7 +140,7 @@ void instr_srlv(N64 &n64, const Opcode &opcode)
 
 void instr_dsrlv(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    n64.cpu.regs[opcode.rd] = n64.cpu.regs[opcode.rt] >> (n64.cpu.regs[opcode.rs]);  
 }
 
 void instr_sltu(N64 &n64, const Opcode &opcode)
