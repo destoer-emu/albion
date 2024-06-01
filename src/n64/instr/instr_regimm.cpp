@@ -74,12 +74,24 @@ void instr_bltzl(N64 &n64, const Opcode &opcode)
 
 void instr_bltzal(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_regimm(n64,opcode);
+    // link unconditonally
+    n64.cpu.regs[RA] = n64.cpu.pc_next;
+
+    instr_branch(n64,opcode,[](N64& n64, const Opcode& opcode)
+    {
+        return s64(n64.cpu.regs[opcode.rs]) < 0;
+    });   
 }
 
 void instr_bltzall(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_regimm(n64,opcode);
+    // link unconditonally
+    n64.cpu.regs[RA] = n64.cpu.pc_next;
+
+    instr_branch_likely(n64,opcode,[](N64& n64, const Opcode& opcode)
+    {
+        return s64(n64.cpu.regs[opcode.rs]) < 0;
+    }); 
 }
 
 
