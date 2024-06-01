@@ -77,7 +77,7 @@ void instr_srav(N64 &n64, const Opcode &opcode)
 
 void instr_dsrav(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    n64.cpu.regs[opcode.rd] = s64(n64.cpu.regs[opcode.rt]) >> n64.cpu.regs[opcode.rs];
 }
 
 void instr_syscall(N64 &n64, const Opcode &opcode)
@@ -140,7 +140,7 @@ void instr_srlv(N64 &n64, const Opcode &opcode)
 
 void instr_dsrlv(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    n64.cpu.regs[opcode.rd] = n64.cpu.regs[opcode.rt] >> (n64.cpu.regs[opcode.rs]);  
 }
 
 void instr_sltu(N64 &n64, const Opcode &opcode)
@@ -191,7 +191,8 @@ void instr_dsub(N64 &n64, const Opcode &opcode)
 
 void instr_dsubu(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    // does not trap on overflow
+    n64.cpu.regs[opcode.rd] = n64.cpu.regs[opcode.rs] - n64.cpu.regs[opcode.rt];
 }
 
 void instr_addu(N64 &n64, const Opcode &opcode)
@@ -261,12 +262,28 @@ void instr_mult(N64 &n64, const Opcode &opcode)
 
 void instr_dmultu(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+#ifdef _MSC_VER
+    static_assert(false);
+#else
+    using u128 = unsigned __int128;
+
+    const u128 ans = u128(n64.cpu.regs[opcode.rs]) * u128(n64.cpu.regs[opcode.rt]);
+    n64.cpu.lo = ans & 0xffff'ffff'ffff'ffff;
+    n64.cpu.hi = ans >> 64;
+#endif
 }
 
 void instr_dmult(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+#ifdef _MSC_VER
+    static_assert(false);
+#else
+    using s128 = __int128;
+
+    const s128 ans = s128(s64(n64.cpu.regs[opcode.rs])) * s128(s64(n64.cpu.regs[opcode.rt]));
+    n64.cpu.lo = ans & 0xffff'ffff'ffff'ffff;
+    n64.cpu.hi = ans >> 64;
+#endif
 }
 
 void instr_break(N64 &n64, const Opcode &opcode)
@@ -293,8 +310,11 @@ void instr_div(N64 &n64, const Opcode &opcode)
     }
 
     // prevent int_min division trap
-    const s32 res = s64(n64.cpu.regs[opcode.rs]) / s64(n64.cpu.regs[opcode.rt]);
-    const s32 remainder = s64(n64.cpu.regs[opcode.rs]) % s64(n64.cpu.regs[opcode.rt]);
+    const s64 v1 = s64(n64.cpu.regs[opcode.rs]);
+    const s64 v2 = s64(n64.cpu.regs[opcode.rt]);
+
+    const s32 res = v1 / v2;
+    const s32 remainder = v1 % v2;
 
     n64.cpu.lo = sign_extend_mips<s64,s32>(res);
     n64.cpu.hi = sign_extend_mips<s64,s32>(remainder);  
@@ -311,8 +331,11 @@ void instr_divu(N64 &n64, const Opcode &opcode)
     }
 
     // prevent int_min division trap
-    const u32 res = s64(n64.cpu.regs[opcode.rs]) / s64(n64.cpu.regs[opcode.rt]);
-    const u32 remainder = s64(n64.cpu.regs[opcode.rs]) % s64(n64.cpu.regs[opcode.rt]);
+    const s64 v1 = s64(n64.cpu.regs[opcode.rs]);
+    const s64 v2 = s64(n64.cpu.regs[opcode.rt]);
+
+    const u32 res = v1 / v2;
+    const u32 remainder = v1 % v2;
 
     n64.cpu.lo = sign_extend_mips<s64,s32>(res);
     n64.cpu.hi = sign_extend_mips<s64,s32>(remainder);    
@@ -320,12 +343,68 @@ void instr_divu(N64 &n64, const Opcode &opcode)
 
 void instr_ddiv(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    const s64 v1 = s64(n64.cpu.regs[opcode.rs]);
+    const s64 v2 = s64(n64.cpu.regs[opcode.rt]);
+
+    // div by zero not allowed
+    if(v2 == 0)
+    {
+        if(v1 < 0)
+        {
+            n64.cpu.lo = 1;
+        }
+
+        else
+        {
+            n64.cpu.lo = 0xffff'ffff'ffff'ffff;
+        }
+        n64.cpu.hi = v1;
+        return;
+    }
+
+    if(v1 == INT64_MIN && v2 == -1)
+    {
+
+        n64.cpu.lo = 0x8000'0000'0000'0000;
+        n64.cpu.hi = 0;
+        return;   
+    }
+
+    const u64 res = v1 / v2;
+    const u64 remainder = v1 % v2;
+
+    n64.cpu.lo = res;
+    n64.cpu.hi = remainder; 
 }
 
 void instr_ddivu(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_r(n64,opcode);
+    const s64 v1 = s64(n64.cpu.regs[opcode.rs]);
+    const s64 v2 = s64(n64.cpu.regs[opcode.rt]);
+
+    // div by zero not allowed
+    if(v2 == 0)
+    {
+        n64.cpu.lo = 0xffff'ffff'ffff'ffff;
+        n64.cpu.hi = v1;
+        return;
+    }
+
+    if(v1 == INT64_MIN && v2 == -1)
+    {
+
+        n64.cpu.lo = 0x8000'0000'0000'0000;
+        n64.cpu.hi = 0;
+        return;   
+    }
+
+    spdlog::info("{} / {}\n",s64(v1),v2);
+
+    const u64 res = v1 / v2;
+    const u64 remainder = v1 % v2;
+
+    n64.cpu.lo = res;
+    n64.cpu.hi = remainder; 
 }
 
 void instr_mflo(N64 &n64, const Opcode &opcode)

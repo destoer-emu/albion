@@ -408,13 +408,31 @@ void instr_sdr(N64 &n64, const Opcode &opcode)
 template<const b32 debug>
 void instr_ll(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_opcode(n64,opcode);
+    const auto base = opcode.rs;
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+    const u64 addr = n64.cpu.regs[base] + imm;
+    const u64 paddr = remap_addr(n64,addr);
+
+    n64.cpu.cop0.load_linked = paddr >> 4;
+    n64.cpu.cop0.ll_bit = true;
+
+    n64.cpu.regs[opcode.rt] = sign_extend_mips<s64,s32>(read_u32<debug>(n64,addr));
 }
 
 template<const b32 debug>
 void instr_lld(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_opcode(n64,opcode);
+    const auto base = opcode.rs;
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+    const u64 addr = n64.cpu.regs[base] + imm;
+    const u64 paddr = remap_addr(n64,addr);
+
+    n64.cpu.cop0.load_linked = paddr >> 4;
+    n64.cpu.cop0.ll_bit = true;
+
+    n64.cpu.regs[opcode.rt] = read_u64<debug>(n64,addr);
 }
 
 template<const b32 debug>

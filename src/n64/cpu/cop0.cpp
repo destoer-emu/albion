@@ -386,9 +386,28 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
             break;
         }
 
+        case LLADDR:
+        {
+            cop0.load_linked = v;
+            break;   
+        }
+
+        case WATCH_LO:
+        {
+            cop0.watchLo.paddr0 = v >> 3;
+            cop0.watchLo.read = is_set(v,1);
+            cop0.watchLo.write = is_set(v,0);
+            break;
+        }
+
+        case WATCH_HI:
+        {
+            cop0.watchHi.paddr1 = v & 0b111;
+            break;
+        }
+
         // read only
         case RANDOM:
-        case LLADDR:
         case PRID:
         case PARITY_ERROR:
         case CACHE_ERROR:

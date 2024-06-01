@@ -138,31 +138,58 @@ void n64_run_tests()
     Test TESTS[] = 
     {
         // {"N64/CPUTest/CPU//CPU.N64","N64/CPUTest/CPU//CPU.png","KROM_CPU_",5},
+        // {"N64/CPUTest/CPU/LOADSTORE//CPU.N64","N64/CPUTest/CPU/LOADSTORE//CPU.png","KROM_CPU_",5},
         {"N64/CPUTest/CPU/ADD/CPUADD.N64","N64/CPUTest/CPU/ADD/CPUADD.png","KROM_CPU_ADD",5},
         {"N64/CPUTest/CPU/ADDU/CPUADDU.N64","N64/CPUTest/CPU/ADDU/CPUADDU.png","KROM_CPU_ADDU",5},
         {"N64/CPUTest/CPU/AND/CPUAND.N64","N64/CPUTest/CPU/AND/CPUAND.png","KROM_CPU_AND",5},
         {"N64/CPUTest/CPU/DADDU/CPUDADDU.N64","N64/CPUTest/CPU/DADDU/CPUDADDU.png","KROM_CPU_DADDU",5},
-        //{"N64/CPUTest/CPU/DDIV/CPUDDIV.N64","N64/CPUTest/CPU/DDIV/CPUDDIV.png","KROM_CPU_DDIV",5},
-        //{"N64/CPUTest/CPU/DDIVU/CPUDDIVU.N64","N64/CPUTest/CPU/DDIVU/CPUDDIVU.png","KROM_CPU_DDIVU",5},
+
+        {"N64/CPUTest/CPU/DDIV/CPUDDIV.N64","N64/CPUTest/CPU/DDIV/CPUDDIV.png","KROM_CPU_DDIV",5},
+        {"N64/CPUTest/CPU/DDIVU/CPUDDIVU.N64","N64/CPUTest/CPU/DDIVU/CPUDDIVU.png","KROM_CPU_DDIVU",5},
         {"N64/CPUTest/CPU/DIV/CPUDIV.N64","N64/CPUTest/CPU/DIV/CPUDIV.png","KROM_CPU_DIV",5},
         {"N64/CPUTest/CPU/DIVU/CPUDIVU.N64","N64/CPUTest/CPU/DIVU/CPUDIVU.png","KROM_CPU_DIVU",5},
-        //{"N64/CPUTest/CPU/DMULT/CPUDMULT.N64","N64/CPUTest/CPU/DMULT/CPUDMULT.png","KROM_CPU_DMULT",5},
-        //{"N64/CPUTest/CPU/DMULTU/CPUDMULTU.N64","N64/CPUTest/CPU/DMULTU/CPUDMULTU.png","KROM_CPU_DMULTU",5},
+
+        {"N64/CPUTest/CPU/DMULT/CPUDMULT.N64","N64/CPUTest/CPU/DMULT/CPUDMULT.png","KROM_CPU_DMULT",5},
+        {"N64/CPUTest/CPU/DMULTU/CPUDMULTU.N64","N64/CPUTest/CPU/DMULTU/CPUDMULTU.png","KROM_CPU_DMULTU",5},
+
         {"N64/CPUTest/CPU/DSUB/CPUDSUB.N64","N64/CPUTest/CPU/DSUB/CPUDSUB.png","KROM_CPU_DSUB",5},
-        //{"N64/CPUTest/CPU/DSUBU/CPUDSUBU.N64","N64/CPUTest/CPU/DSUBU/CPUDSUBU.png","KROM_CPU_DSUBU",5},
+        {"N64/CPUTest/CPU/DSUBU/CPUDSUBU.N64","N64/CPUTest/CPU/DSUBU/CPUDSUBU.png","KROM_CPU_DSUBU",5},
+
+        {"N64/CPUTest/CPU/LOADSTORE/LB/CPULB.N64","N64/CPUTest/CPU/LOADSTORE/LB/CPULB.png","KROM_CPU_LB",5},
+        {"N64/CPUTest/CPU/LOADSTORE/LH/CPULH.N64","N64/CPUTest/CPU/LOADSTORE/LH/CPULH.png","KROM_CPU_LH",5},
+        {"N64/CPUTest/CPU/LOADSTORE/LW/CPULW.N64","N64/CPUTest/CPU/LOADSTORE/LW/CPULW.png","KROM_CPU_LW",5},
+        {"N64/CPUTest/CPU/LOADSTORE/LD/CPULD.N64","N64/CPUTest/CPU/LOADSTORE/LD/CPULD.png","KROM_CPU_LD",5},
+
+        //passing without a matching image?
+    /* 
+        {"N64/CPUTest/CPU/LOADSTORE/SB/CPUSB.N64","N64/CPUTest/CPU/LOADSTORE/SB/CPUSB.png","KROM_CPU_SB",5},
+        {"N64/CPUTest/CPU/LOADSTORE/SH/CPUSH.N64","N64/CPUTest/CPU/LOADSTORE/SH/CPUSH.png","KROM_CPU_SH",5},
+        {"N64/CPUTest/CPU/LOADSTORE/SW/CPUSW.N64","N64/CPUTest/CPU/LOADSTORE/SW/CPUSW.png","KROM_CPU_SW",5},
+        {"N64/CPUTest/CPU/LOADSTORE/SD/CPUSD.N64","N64/CPUTest/CPU/LOADSTORE/SD/CPUSD.png","KROM_CPU_SD",5},
+    
+        {"N64/CPUTest/CPU/LOADSTORE/LL_LLD_SC_SCD/LL_LLD_SC_SCD.N64","N64/CPUTest/CPU/LOADSTORE/LL_LLD_SC_SCD/LL_LLD_SC_SCD.png","KROM_CPU_LL_LLD_SC_SCD",5},
+    */
+        {"N64/CPUTest/CPU/MULT/CPUMULT.N64","N64/CPUTest/CPU/MULT/CPUMULT.png","KROM_CPU_MULT",5},
+        {"N64/CPUTest/CPU/MULTU/CPUMULTU.N64","N64/CPUTest/CPU/MULTU/CPUMULTU.png","KROM_CPU_MULTU",5},
+
+        {"N64/CPUTest/CPU/NOR/CPUNOR.N64","N64/CPUTest/CPU/NOR/CPUNOR.png","KROM_CPU_NOR",5},
+        {"N64/CPUTest/CPU/OR/CPUOR.N64","N64/CPUTest/CPU/OR/CPUOR.png","KROM_CPU_NO",5},
+
+        {"N64/CPUTest/CPU/SUB/CPUSUB.N64","N64/CPUTest/CPU/SUB/CPUSUB.png","KROM_CPU_SUB",5},
+        {"N64/CPUTest/CPU/SUBU/CPUSUBU.N64","N64/CPUTest/CPU/SUBU/CPUSUBU.png","KROM_CPU_SUBU",5},
     };
 
     int TEST_SIZE = sizeof(TESTS) / sizeof(Test);
 
 
-    puts("n64 tests:");
+    spdlog::info("n64 tests:\n");
     
     try
     {
         for(int t = 0; t < TEST_SIZE; t++)
         {
             auto& test = TESTS[t];
-            printf("start test: %s\n",test.name);
+            spdlog::info("start test: {}\n",test.name);
 
             nintendo64::N64 n64;
             nintendo64::reset(n64,test.rom_path);
@@ -180,7 +207,7 @@ void n64_run_tests()
             // Cannot find file -> auto set the image
             if(error)
             {
-                printf("cannot find reference image\n");
+                spdlog::error("cannot find reference image\n");
                 return;
             }
 
@@ -198,7 +225,7 @@ void n64_run_tests()
                         const u32 v2 = (n64.rdp.screen[i] & 0x00ff'ffff);
                         if(v1 != v2)
                         {
-                            printf("images differ at: %d, %x != %x\n",i,v1,v2);
+                            spdlog::info("images differ at: {}, {:x} != {:x}\n",i,v1,v2);
                             pass = false;
                             break;
                         }
@@ -207,15 +234,16 @@ void n64_run_tests()
 
                 else
                 {
-                    printf("images differ in size: %zd : %zd\n",screen_check.size(),n64.rdp.screen.size());
+                    spdlog::info("images differ in size: {} : {}\n",screen_check.size(),n64.rdp.screen.size());
                     pass = false;
                 }
 
-                printf("%s: %s\n",test.rom_path,pass? "PASS" : "FAIL");
+                spdlog::info("{}: {}\n",test.rom_path,pass? "PASS" : "FAIL");
 
                 if(!pass)
                 {
                     write_test_image("fail.png",n64.rdp.screen,n64.rdp.screen_x,n64.rdp.screen_y);
+                    exit(1);
                 }
             }
         }
