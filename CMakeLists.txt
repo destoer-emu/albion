@@ -179,6 +179,20 @@ endif()
 if(DEFINED N64)
 	add_definitions(-DN64_ENABLED)
 	add_library(n64 STATIC "src/n64/n64.cpp")
+
+	# handle opcode generation
+	set(N64_OPCODE_TABLE "${CMAKE_SOURCE_DIR}/src/n64/instr/mips_instr_table.h")
+
+if(WIN32)
+	add_custom_target(mips_lut COMMAND ${CMAKE_SOURCE_DIR}/beyond-all-repair/bar.exe -g 3 ${N64_OPCODE_TABLE})
+else ()
+	add_custom_target(mips_lut COMMAND ${CMAKE_SOURCE_DIR}/beyond-all-repair/bar -g 3 ${N64_OPCODE_TABLE})
+endif ()	
+
+	set_source_files_properties(${N64_OPCODE_TABLE} PROPERTIES GENERATED true)
+	
+	add_dependencies(n64 mips_lut)
+
 	include_directories("beyond-all-repair/src")
 	target_link_libraries(n64 spdlog)
 
