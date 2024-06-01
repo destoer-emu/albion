@@ -31,13 +31,30 @@ void instr_mfc0(N64 &n64, const Opcode &opcode)
 template<const b32 debug>
 void instr_sc(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_opcode(n64,opcode);
+    const auto base = opcode.rs;
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+    if(n64.cpu.cop0.ll_bit)
+    {
+        write_u32<debug>(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);   
+    }
+
+    n64.cpu.regs[opcode.rt] = n64.cpu.cop0.ll_bit;
 }
+
 
 template<const b32 debug>
 void instr_scd(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_opcode(n64,opcode);
+    const auto base = opcode.rs;
+    const auto imm = sign_extend_mips<s64,s16>(opcode.imm);
+
+    if(n64.cpu.cop0.ll_bit)
+    {
+        write_u64<debug>(n64,n64.cpu.regs[base] + imm,n64.cpu.regs[opcode.rt]);
+    }
+
+    n64.cpu.regs[opcode.rt] = n64.cpu.cop0.ll_bit;
 }
 
 // tlb instrs
@@ -72,6 +89,8 @@ void instr_eret(N64& n64, const Opcode& opcode)
     }
 
     cause.branch_delay = false;
+
+    n64.cpu.cop0.ll_bit = false;
 
     // this does not execute the delay slot
     skip_instr(n64.cpu);

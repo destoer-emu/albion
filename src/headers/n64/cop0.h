@@ -104,6 +104,8 @@ struct Cop0
     u64 bad_vaddr = 0;
     Context context;
 
+    b32 ll_bit = false;
+
     u64 epc = 0;
     u64 error_epc = 0;
 

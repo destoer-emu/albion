@@ -46,3 +46,4 @@ CPackSourceConfig.cmake
 spdlog.pc
 N64/
 mips_instr_table.h
+fail.png

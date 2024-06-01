@@ -386,9 +386,14 @@ void write_cop0(N64 &n64, u64 v, u32 reg)
             break;
         }
 
+        case LLADDR:
+        {
+            cop0.load_linked = v;
+            break;   
+        }
+
         // read only
         case RANDOM:
-        case LLADDR:
         case PRID:
         case PARITY_ERROR:
         case CACHE_ERROR:
