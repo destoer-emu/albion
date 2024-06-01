@@ -142,27 +142,27 @@ void n64_run_tests()
         {"N64/CPUTest/CPU/ADDU/CPUADDU.N64","N64/CPUTest/CPU/ADDU/CPUADDU.png","KROM_CPU_ADDU",5},
         {"N64/CPUTest/CPU/AND/CPUAND.N64","N64/CPUTest/CPU/AND/CPUAND.png","KROM_CPU_AND",5},
         {"N64/CPUTest/CPU/DADDU/CPUDADDU.N64","N64/CPUTest/CPU/DADDU/CPUDADDU.png","KROM_CPU_DADDU",5},
-        //{"N64/CPUTest/CPU/DDIV/CPUDDIV.N64","N64/CPUTest/CPU/DDIV/CPUDDIV.png","KROM_CPU_DDIV",5},
-        //{"N64/CPUTest/CPU/DDIVU/CPUDDIVU.N64","N64/CPUTest/CPU/DDIVU/CPUDDIVU.png","KROM_CPU_DDIVU",5},
+        {"N64/CPUTest/CPU/DDIV/CPUDDIV.N64","N64/CPUTest/CPU/DDIV/CPUDDIV.png","KROM_CPU_DDIV",5},
+        {"N64/CPUTest/CPU/DDIVU/CPUDDIVU.N64","N64/CPUTest/CPU/DDIVU/CPUDDIVU.png","KROM_CPU_DDIVU",5},
         {"N64/CPUTest/CPU/DIV/CPUDIV.N64","N64/CPUTest/CPU/DIV/CPUDIV.png","KROM_CPU_DIV",5},
         {"N64/CPUTest/CPU/DIVU/CPUDIVU.N64","N64/CPUTest/CPU/DIVU/CPUDIVU.png","KROM_CPU_DIVU",5},
         //{"N64/CPUTest/CPU/DMULT/CPUDMULT.N64","N64/CPUTest/CPU/DMULT/CPUDMULT.png","KROM_CPU_DMULT",5},
         //{"N64/CPUTest/CPU/DMULTU/CPUDMULTU.N64","N64/CPUTest/CPU/DMULTU/CPUDMULTU.png","KROM_CPU_DMULTU",5},
         {"N64/CPUTest/CPU/DSUB/CPUDSUB.N64","N64/CPUTest/CPU/DSUB/CPUDSUB.png","KROM_CPU_DSUB",5},
-        //{"N64/CPUTest/CPU/DSUBU/CPUDSUBU.N64","N64/CPUTest/CPU/DSUBU/CPUDSUBU.png","KROM_CPU_DSUBU",5},
+        {"N64/CPUTest/CPU/DSUBU/CPUDSUBU.N64","N64/CPUTest/CPU/DSUBU/CPUDSUBU.png","KROM_CPU_DSUBU",5},
     };
 
     int TEST_SIZE = sizeof(TESTS) / sizeof(Test);
 
 
-    puts("n64 tests:");
+    spdlog::info("n64 tests:\n");
     
     try
     {
         for(int t = 0; t < TEST_SIZE; t++)
         {
             auto& test = TESTS[t];
-            printf("start test: %s\n",test.name);
+            spdlog::info("start test: {}\n",test.name);
 
             nintendo64::N64 n64;
             nintendo64::reset(n64,test.rom_path);
@@ -180,7 +180,7 @@ void n64_run_tests()
             // Cannot find file -> auto set the image
             if(error)
             {
-                printf("cannot find reference image\n");
+                spdlog::error("cannot find reference image\n");
                 return;
             }
 
@@ -198,7 +198,7 @@ void n64_run_tests()
                         const u32 v2 = (n64.rdp.screen[i] & 0x00ff'ffff);
                         if(v1 != v2)
                         {
-                            printf("images differ at: %d, %x != %x\n",i,v1,v2);
+                            spdlog::info("images differ at: {}, {:x} != {:x}\n",i,v1,v2);
                             pass = false;
                             break;
                         }
@@ -207,15 +207,16 @@ void n64_run_tests()
 
                 else
                 {
-                    printf("images differ in size: %zd : %zd\n",screen_check.size(),n64.rdp.screen.size());
+                    spdlog::info("images differ in size: {} : {}\n",screen_check.size(),n64.rdp.screen.size());
                     pass = false;
                 }
 
-                printf("%s: %s\n",test.rom_path,pass? "PASS" : "FAIL");
+                spdlog::info("{}: {}\n",test.rom_path,pass? "PASS" : "FAIL");
 
                 if(!pass)
                 {
                     write_test_image("fail.png",n64.rdp.screen,n64.rdp.screen_x,n64.rdp.screen_y);
+                    exit(1);
                 }
             }
         }
