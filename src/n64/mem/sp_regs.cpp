@@ -104,6 +104,12 @@ void write_sp_regs(N64& n64, u64 addr ,u32 v)
 
     switch(addr)
     {
+        case SP_PC: 
+        {
+            sp.pc = v & 0xfff;
+            break;
+        }
+
         case SP_STATUS:
         {
             sp.halt = deset_if_set(sp.halt,v,0);
