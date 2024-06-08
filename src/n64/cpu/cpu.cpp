@@ -45,6 +45,7 @@ void reset_cpu(N64 &n64)
     write_cop0(n64,0,COMPARE);
     write_cop0(n64,0xffff'ffff,EPC);
     write_cop0(n64,0xffff'ffff,ERROR_EPC);
+    write_cop0(n64,0x3400'0000,STATUS);
 
     cpu.cop1 = {};
 

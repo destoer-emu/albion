@@ -119,6 +119,8 @@ void reset_mem(Mem &mem, const std::string &filename)
 
 
 
+    mem.is_viewer.resize(0x208);
+
     // init memory
     // 8mb rd ram
     mem.rd_ram.resize(8 * 1024 * 1024);

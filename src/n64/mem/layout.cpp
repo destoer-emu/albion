@@ -180,6 +180,20 @@ void write_physical(N64 &n64, u32 addr, access_type v)
     // rom
     else if(addr < 0x1FC00000)
     {
+        // is viewer
+        if(addr >= 0x13FF'0020 && addr < 0x13FF'0220)
+        {
+            handle_write_n64<access_type>(n64.mem.is_viewer,(addr - 0x13FF'0020) & 0x1ff,bswap(v));
+        }
+
+        else if(addr == 0x13FF'0014)
+        {
+            if(v < 0x200)
+            {
+                fwrite((char*)n64.mem.is_viewer.data(),sizeof(char),v,stdout);
+            }
+        }
+
         // does this do anything?
         //unimplemented("rom write");
     }

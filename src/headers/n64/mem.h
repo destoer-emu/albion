@@ -26,6 +26,7 @@ struct Mem
     std::vector<u8> sp_dmem;
     std::vector<u8> sp_imem;
 
+    std::vector<u8> is_viewer;
 
     u32 rd_ram_regs[10];
     RdramInterface ri;
