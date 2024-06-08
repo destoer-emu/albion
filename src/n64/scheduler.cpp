@@ -44,6 +44,12 @@ void N64Scheduler::service_event(const EventNode<n64_event> & node)
             pi_dma_finished(n64);
             break;
         }
+
+        case n64_event::sp_dma:
+        {
+            sp_dma_finished(n64);
+            break;
+        }
     }
 }
 

@@ -16,9 +16,10 @@ enum class n64_event
     ai_dma,
     si_dma,
     pi_dma,
+    sp_dma,
 };
 
-constexpr size_t EVENT_SIZE = 5;
+constexpr size_t EVENT_SIZE = 6;
 
 struct N64Scheduler final : public Scheduler<EVENT_SIZE,n64_event>
 {

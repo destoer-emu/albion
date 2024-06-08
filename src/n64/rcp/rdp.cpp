@@ -39,9 +39,8 @@ void change_res(N64 &n64)
     x = (f32(x) * x_scale);
     y = (f32(y + 3) * y_scale);
 
-    spdlog::debug("res change %d : %d : %d\n",x,y, x * y);
+    spdlog::debug("res change {} : {} : {}\n",x,y, x * y);
 
-    //printf("res change scale %d : %d : %d : %f : %f\n",x,y, x * y,x_scale,y_scale);
     if(x != rdp.screen_x || y != rdp.screen_y)
     {
         n64.size_change = true;

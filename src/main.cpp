@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
+    spdlog::set_level(spdlog::level::debug);
     spdlog::set_pattern("[%H:%M:%S.%e] [%l] %v");
     std::fesetround(FE_TONEAREST);
 

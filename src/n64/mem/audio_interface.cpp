@@ -4,7 +4,6 @@ namespace nintendo64
 void insert_audio_event(N64& n64)
 {
     auto& ai = n64.mem.ai;
-    UNUSED(ai);
 
     // dont think this is the right value but roll with it for now
     const auto event = n64.scheduler.create_event(ai.freq,n64_event::ai_dma);
@@ -13,7 +12,13 @@ void insert_audio_event(N64& n64)
 
 void do_ai_dma(N64& n64)
 {
-    UNUSED(n64);
+    auto& ai = n64.mem.ai;
+
+    ai.busy = true;
+
+    // TODO: Actually do the transfer
+
+    insert_audio_event(n64);
 }
 
 void audio_event(N64& n64)
@@ -30,12 +35,9 @@ void audio_event(N64& n64)
     if(ai.full && ai.enabled)
     {
         ai.full = false;
-        ai.busy = true;
 
         // we just have it do this instantly
         do_ai_dma(n64);
-
-        insert_audio_event(n64);
     }
 }
 
@@ -94,10 +96,6 @@ void write_ai(N64& n64, u64 addr ,u32 v)
 
                     // we just have it do this instantly
                     do_ai_dma(n64);
-
-                    // setup event for transfer end!
-                    // TODO: calculated freq is botched
-                    insert_audio_event(n64);
                 }
 
                 // we are busy see if we can setup a pending dma

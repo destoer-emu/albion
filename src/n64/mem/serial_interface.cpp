@@ -21,6 +21,13 @@ void si_dma_finished(N64& n64)
 
 void do_si_dma(N64& n64, u64 src, u64 dst)
 {
+    if(n64.mem.si.dma_busy)
+    {
+        return;
+    }
+
+    spdlog::debug("si dma of 256 bytes from {:x} to {:x}\n",src,dst);
+
     for(u32 i = 0; i < 64; i += 4)
     {
         const u32 data = read_physical<u32>(n64,src + i);

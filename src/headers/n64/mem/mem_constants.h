@@ -79,3 +79,10 @@ static constexpr u32 SP_STATUS = 0x04040010;
 
 static constexpr u32 PIF_SIZE = 0x40;
 static constexpr u32 PIF_MASK = PIF_SIZE - 1;
+
+static constexpr u32 SP_MEM_ADDR = 0x0404'0000;
+static constexpr u32 SP_DRAM_ADDR = 0x0404'0004;
+static constexpr u32 SP_RD_LEN = 0x0404'0008;
+static constexpr u32 SP_WR_LEN = 0x0404'000c;
+static constexpr u32 SP_DMA_BUSY = 0x0404'0018;
+static constexpr u32 SP_DMA_FULL = 0x0404'0014;
