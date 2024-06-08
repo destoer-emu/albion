@@ -181,7 +181,7 @@ void write_physical(N64 &n64, u32 addr, access_type v)
     else if(addr < 0x1FC00000)
     {
         // does this do anything?
-        unimplemented("rom write");
+        //unimplemented("rom write");
     }
 
     // should this be ignored?

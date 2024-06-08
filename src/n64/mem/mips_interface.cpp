@@ -60,6 +60,12 @@ void write_mi(N64& n64, u64 addr, u32 v)
             break;
         }
 
+        // read only?
+        case MI_INTERRUPT:
+        {
+            break;
+        }
+
         case MI_INTR_MASK:
         {
             mi.mask = deset_bitset_if_set(mi.mask,v,0,SP_INTR_BIT);

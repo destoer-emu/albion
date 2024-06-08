@@ -28,6 +28,11 @@ void instr_mfc0(N64 &n64, const Opcode &opcode)
     n64.cpu.regs[opcode.rt] = sign_extend_type<s64,s32>(read_cop0(n64,opcode.rd)); 
 }
 
+void instr_dmfc0(N64 &n64, const Opcode &opcode)
+{
+    n64.cpu.regs[opcode.rt] = read_cop0(n64,opcode.rd); 
+}
+
 template<const b32 debug>
 void instr_sc(N64 &n64, const Opcode &opcode)
 {

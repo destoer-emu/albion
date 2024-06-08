@@ -73,7 +73,7 @@ void sp_dma_finished(N64& n64)
     }
 }
 
-void write_dma(N64& n64, SpDma& reg, u32 v, b32 to_rdram)
+void write_sp_dma(N64& n64, SpDma& reg, u32 v, b32 to_rdram)
 {
     reg.len = v & 0xfff;
     reg.count = (v >> 12) & 0xff;
@@ -93,7 +93,7 @@ void write_dma(N64& n64, SpDma& reg, u32 v, b32 to_rdram)
     }
 }
 
-u32 read_dma(SpDma& reg)
+u32 read_sp_dma(SpDma& reg)
 {
     return reg.len | reg.count << 12 | reg.skip << 20;
 }
@@ -164,13 +164,19 @@ void write_sp_regs(N64& n64, u64 addr ,u32 v)
 
         case SP_WR_LEN: 
         {
-            write_dma(n64,sp.write_dma,v,true);
+            write_sp_dma(n64,sp.write_dma,v,true);
             break;
         }
 
         case SP_RD_LEN: 
         {
-            write_dma(n64,sp.read_dma,v,false);
+            write_sp_dma(n64,sp.read_dma,v,false);
+            break;
+        }
+
+        case SP_SEMAPHORE: 
+        {
+            sp.semaphore = false;
             break;
         }
 
@@ -211,12 +217,18 @@ u32 read_sp_regs(N64& n64, u64 addr)
 
         case SP_WR_LEN: 
         {
-            return read_dma(sp.write_dma);
+            return read_sp_dma(sp.write_dma);
         }
 
         case SP_RD_LEN: 
         {
-            return read_dma(sp.read_dma);
+            return read_sp_dma(sp.read_dma);
+        }
+
+        case SP_SEMAPHORE: 
+        {
+            sp.semaphore = true;
+            return 0;
         }
 
         case SP_DMA_BUSY:

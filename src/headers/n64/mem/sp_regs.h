@@ -24,6 +24,7 @@ struct SpRegs
     SpDma write_dma;
     SpDma read_dma;
 
+    b32 semaphore = false;
 
     b32 dma_busy = false;
     b32 dma_full = false;

@@ -86,3 +86,4 @@ static constexpr u32 SP_RD_LEN = 0x0404'0008;
 static constexpr u32 SP_WR_LEN = 0x0404'000c;
 static constexpr u32 SP_DMA_BUSY = 0x0404'0018;
 static constexpr u32 SP_DMA_FULL = 0x0404'0014;
+static constexpr u32 SP_SEMAPHORE = 0x0404'001c;
