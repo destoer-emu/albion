@@ -94,6 +94,19 @@ void instr_bltzall(N64 &n64, const Opcode &opcode)
     }); 
 }
 
+void raise_trap(N64& n64)
+{
+    UNUSED(n64);
+    unimplemented("raise trap");
+}
+
+void trap_cmp(N64& n64, b32 cmp_res)
+{
+    if(cmp_res)
+    {
+        raise_trap(n64);
+    }
+}
 
 void instr_tge(N64 &n64, const Opcode &opcode)
 {
@@ -117,7 +130,7 @@ void instr_tltu(N64 &n64, const Opcode &opcode)
 
 void instr_teq(N64 &n64, const Opcode &opcode)
 {
-    instr_unknown_regimm(n64,opcode);
+    trap_cmp(n64,n64.cpu.regs[opcode.rs] == n64.cpu.regs[opcode.rt]);
 }
 
 void instr_tne(N64 &n64, const Opcode &opcode)

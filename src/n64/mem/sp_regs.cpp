@@ -137,14 +137,14 @@ void write_sp_regs(N64& n64, u64 addr ,u32 v)
             for(u32 i = 0; i < 8; i++)
             {
                 const u32 idx = ((i + 9) * 2);
-                sp.signal[i] = set_if_set(sp.signal[i],idx,v);
+                sp.signal = set_bitset_if_set(sp.signal,v,idx,i);
             }
 
             // handle signal clear
             for(u32 i = 0; i < 8; i++)
             {
                 const u32 idx = ((i + 10) * 2);
-                sp.signal[i] = deset_if_set(sp.signal[i],idx,v);
+                sp.signal = deset_bitset_if_set(sp.signal,v,idx,i);
             }
             break;
         }
@@ -223,6 +223,13 @@ u32 read_sp_regs(N64& n64, u64 addr)
         case SP_RD_LEN: 
         {
             return read_sp_dma(sp.read_dma);
+        }
+
+        case SP_STATUS: 
+        {
+            return sp.halt | sp.broke << 1 | sp.dma_busy << 2 | sp.dma_full << 3 |
+                sp.io_full << 4 | sp.single_step << 5 | sp.intr_on_break << 6 | 
+                sp.signal << 7;
         }
 
         case SP_SEMAPHORE: 

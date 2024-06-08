@@ -35,7 +35,7 @@ struct SpRegs
     b32 clear_intr_on_break = false;
     b32 set_intr_on_break = false;
     b32 intr_on_break = false;
-    b32 signal[8] = {0};
+    u8 signal = 0;
 };
 
 }
