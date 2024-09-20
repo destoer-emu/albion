@@ -39,9 +39,10 @@ using namespace gl;
 #endif
 
 
-#include <imgui/imgui.h>
-#include <imgui/backends/imgui_impl_sdl2.h>
-#include <imgui/backends/imgui_impl_opengl3.h>
+#include <imgui.h>
+#include <backends/imgui_impl_sdl2.h>
+#include <backends/imgui_impl_opengl3.h>
+
 #include <stdio.h>
 #include <albion/lib.h>
 #include <albion/emulator.h>

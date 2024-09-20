@@ -1,13 +1,6 @@
-[submodule "src/common/thirdparty/imgui"]
-	path = src/common/thirdparty/imgui
-	url = https://github.com/ocornut/imgui
-	branch = master
 [submodule "destoer-lib"]
 	path = destoer-lib
 	url = https://github.com/destoer/destoer-lib.git
 [submodule "beyond-all-repair"]
 	path = beyond-all-repair
 	url = git@github.com:destoer/beyond-all-repair.git
-[submodule "spdlog"]
-	path = spdlog
-	url = git@github.com:gabime/spdlog.git
