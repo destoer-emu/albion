@@ -5,17 +5,15 @@ namespace gameboyadvance
 
 Apu::Apu(GBA &gba) : mem(gba.mem), cpu(gba.cpu), scheduler(gba.scheduler)
 {
-    playback.init(44100,sample_size);
+    // init our audio playback
+    audio_buffer = make_audio_buffer();
 }
 
 void Apu::init()
 {
     apu_io.init();
 
-    // sound is broken?
-	playback.start();
-    audio_buf_idx = 0;
-    down_sample_cnt = (16 * 1024 * 1024) / 44100;
+    down_sample_cnt = (16 * 1024 * 1024) / AUDIO_BUFFER_SAMPLE_RATE;
     dma_a_sample = 0;
     dma_b_sample = 0;
 
@@ -100,12 +98,12 @@ void Apu::push_samples(int cycles)
 
     else
     {
-        down_sample_cnt = ((16 * 1024 * 1024) / 44100);
+        down_sample_cnt = ((16 * 1024 * 1024) / AUDIO_BUFFER_SAMPLE_RATE);
         insert_new_sample_event();
     }
 
 
-    if(!playback.is_playing() || !psg.sound_enabled) 
+    if(!psg.sound_enabled) 
     { 
         return; 
     }
@@ -113,15 +111,11 @@ void Apu::push_samples(int cycles)
     
     //printf("%d:%d\n",dma_a_sample,dma_b_sample);
     
-    // volume calc
-    // (this is nice and jank and doesent handle the output properly but just roll with it for a sec)
-    // (also the audio on the one rom that works is earbleeding cause it doesent run the rom at the correct speed)
-    // (this code also aint checking if the channels are enabled)
+
     // we also need to handle soundbias
     // and eventually the internal resampling rate
     // along with the psg sound scaling
-    // figure out how the volume and the bias works properly tomorrow lol
-    int volume = 50;
+    // figure out how the volume and the bias works properly
 
 
     float output[4];
@@ -134,65 +128,34 @@ void Apu::push_samples(int cycles)
     const auto sound_select = psg.read_nr51();
     const auto nr50 = psg.read_nr50();
 
+    const f32 psg_left = gameboy_psg::mix_psg_channels(output,(nr50 >> 4) & 7,(sound_select >> 4) & 0xf,true);
+    const f32 psg_right =  gameboy_psg::mix_psg_channels(output,nr50 & 7,sound_select & 0xf,true);
 
-
-    // mix left and right channels
-
-    // mix dma left
-    float f0 = 0.0;
+    f32 left = psg_left;
 
     if(apu_io.sound_cnt.enable_left_a)
     {
-        const float f1 = static_cast<float>(dma_a_sample) / 128.0;
-        playback.mix_samples(f0,f1,volume);
+        left += f32(dma_a_sample) / 128.0f;
     }
 
     if(apu_io.sound_cnt.enable_left_b)
     {
-        const float f1 = static_cast<float>(dma_b_sample) / 128.0;
-        playback.mix_samples(f0,f1,volume);
+        left += f32(dma_b_sample) / 128.0f;
     }
-    
-    // mix psg left
-    int psg_volume = 20*((nr50 & 7)+1);
-    for(int i = 0; i < 4; i++)
-    {
-        if(is_set(sound_select,i))
-        {
-            const float f1 = output[i];
-            playback.mix_samples(f0,f1,psg_volume);
-        }            
-    }
-    const float left = f0;
 
-    // mix dma right
-    f0 = 0.0;
-    
+    f32 right = psg_right;
+
     if(apu_io.sound_cnt.enable_right_a)
     {
-        const float f1 = static_cast<float>(dma_a_sample) / 128.0;
-        playback.mix_samples(f0,f1,volume);
+        right += f32(dma_a_sample) / 128.0f;
     }
 
     if(apu_io.sound_cnt.enable_right_b)
     {
-        const float f1 = static_cast<float>(dma_b_sample) / 128.0;
-        playback.mix_samples(f0,f1,volume);
+        right += f32(dma_b_sample) / 128.0f;
     }
 
-    // mix psg right
-    psg_volume = 16*(((nr50 >> 4) & 7)+1);
-    for(int i = 0; i < 4; i++)
-    {
-        if(is_set(sound_select,i+4))
-        {
-            const float f1 = output[i];
-            playback.mix_samples(f0,f1,psg_volume);
-        }            
-    } 
-    const float right = f0;
-
-    playback.push_sample(left,right);
+    push_sample(audio_buffer,left,right);
 }
 
 

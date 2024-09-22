@@ -30,23 +30,24 @@ void GBAWindow::stop_instance()
 
 void GBAWindow::enable_audio()
 {
-    gba.apu.playback.start();
+    playback.start();
 }
 
 void GBAWindow::disable_audio()
 {
-    gba.apu.playback.stop();
+    reset_audio_buffer(gba.apu.audio_buffer);
+    playback.stop();
 }
 
 void GBAWindow::throttle_core()
 {
-    gba.apu.playback.start();
+    playback.start();
     gba.throttle_emu = true;
 }
 
 void GBAWindow::unbound_core()
 {
-    gba.apu.playback.stop();
+    disable_audio();
     gba.throttle_emu = false;     
 }
 

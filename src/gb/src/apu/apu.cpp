@@ -64,37 +64,6 @@ void Apu::insert_new_sample_event() noexcept
     scheduler.insert(event,false);
 }
 
-f32 mix_psg_channels(const f32 *output,u32 volume_level,u32 enable_set,bool enable)
-{
-    if(!enable)
-    {
-        return 0.0;
-    }
-
-    f32 f0 = 0.0;
-
-    //enable_set = 0b0100;
-
-    // 16 * 8 = 256 max
-    const f32 volume = (16 * (volume_level + 1)) / 256.0f;
-    u32 enabled = 0;
-    for(int i = 0; i < 4; i++)
-    {
-        if(is_set(enable_set,i))
-        {
-            f0 += output[i];
-            enabled += 1;
-        }            
-    }
-
-    if(enabled == 0) 
-    {
-        return 0.0;
-    }
-
-    return (f0 / f32(enabled)) * volume;   
-}
-
 void Apu::push_samples(u32 cycles) noexcept
 {
 	// handle audio output 

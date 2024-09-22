@@ -137,7 +137,7 @@ u32 Mem::get_waitstates(u32 addr, bool seq, bool use_prefetch)
             // 4 -> 2 (word)
             // 2 -> 1 (half)
             // 1 -> 0 (byte)
-            return wait_states[region][sizeof(access_type) >> 1];
+            return wait_states[u32(mem_region)][sizeof(access_type) >> 1];
         }
     }
 }

@@ -23,9 +23,12 @@ if(${FRONTEND} STREQUAL "IMGUI")
 	include("thirdparty/imgui.cmake")
 endif()
 
-set(GB "TRUE")
-#set(GBA "TRUE")
+#set(GB "TRUE")
+set(GBA "TRUE")
 #set(N64 "TRUE")
+
+# add_compile_options(-fsanitize=undefined)
+# add_link_options(-fsanitize=undefined)
 
 #add_definitions(-DBOUNDS_CHECK)
 if(${FRONTEND} STREQUAL "IMGUI")
@@ -90,6 +93,9 @@ add_executable(albion  ${src_files} ${frontend_files})
 if(WIN32)
 
 else()
+	# prevent O3 being injected
+	SET( CMAKE_CXX_FLAGS_DEBUG  "")
+	SET( CMAKE_CXX_FLAGS_RELEASE  "")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -march=native -pthread -O0 -fomit-frame-pointer -Wno-missing-braces")
 endif()
 
@@ -120,5 +126,4 @@ if(${FRONTEND} STREQUAL "IMGUI")
 	target_link_libraries(albion PUBLIC imgui)
 endif()
 
-find_package(SDL2 REQUIRED)
-target_link_libraries(albion PRIVATE destoer spdlog::spdlog SDL2)
+target_link_libraries(albion PRIVATE destoer spdlog::spdlog SDL2::SDL2-static)

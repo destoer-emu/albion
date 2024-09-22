@@ -35,15 +35,15 @@ struct Flash
         none
     };
 
-    bool chip_identify;
+    bool chip_identify = false;
 
 
-    int bank;
+    int bank = 0;
     
     std::string filename;
 
-    flash_command_state command_state;
-    flash_operation operation;
+    flash_command_state command_state = flash_command_state::ready;
+    flash_operation operation = flash_operation::none;
 
     std::vector<u8> ram;
 };

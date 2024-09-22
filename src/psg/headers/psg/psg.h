@@ -58,6 +58,8 @@ void length_trigger(Channel &c);
 void write_lengthc(Channel &c, u8 v);
 void length_write(Channel &c, u8 v, u8 seq_step);
 
+f32 mix_psg_channels(const f32 *output,u32 volume_level,u32 enable_set,bool enable);
+
 // freq
 void freq_reload_period(Channel &c);
 void freq_trigger(Channel &c);

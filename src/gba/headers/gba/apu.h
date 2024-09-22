@@ -1,7 +1,7 @@
 #pragma once
 #include <albion/lib.h>
 #include <albion/debug.h>
-#include <frontend/playback.h>
+#include <albion/audio.h>
 #include <gba/forward_def.h>
 #include <gba/apu_io.h>
 #include <psg/psg.h>
@@ -70,7 +70,7 @@ struct Apu
 
     ApuIo apu_io;
 
-    Playback playback;
+    AudioBuffer audio_buffer;
     gameboy_psg::Psg psg;
 
     Mem &mem;
@@ -86,8 +86,7 @@ struct Apu
 
 	//  internal sound playback
 	float audio_buf[sample_size] = {0};
-    int audio_buf_idx = 0;
-    int down_sample_cnt = 380;
+    int down_sample_cnt = (16 * 1024 * 1024) / AUDIO_BUFFER_SAMPLE_RATE;
 };
 
 }

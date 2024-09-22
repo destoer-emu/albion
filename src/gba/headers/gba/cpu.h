@@ -392,7 +392,7 @@ struct Cpu final
 
     bool cond_met(u32 cond)
     {
-        const auto flags = flag_z | flag_c << 1 | flag_n << 2 | flag_v << 3;
+        const u32 flags = flag_z | flag_c << 1 | flag_n << 2 | flag_v << 3;
 
         return is_set(cond_lut[cond],flags);
     }
@@ -439,16 +439,16 @@ struct Cpu final
 
     // flags
     // combined into cpsr when it is read
-    bool flag_z;
-    bool flag_n;
-    bool flag_c;
-    bool flag_v;
+    bool flag_z = false;
+    bool flag_n = false;
+    bool flag_c = false;
+    bool flag_v = false;
 
-    bool interrupt_request;
-    bool interrupt_service;
+    bool interrupt_request = false;
+    bool interrupt_service = false;
 
 
-    bool bios_hle_interrupt;
+    bool bios_hle_interrupt = false;
 
 
     // backup stores
@@ -477,7 +477,7 @@ struct Cpu final
     bool dma_in_progress = false;
 
     // what context is the arm cpu in
-    cpu_mode arm_mode;
+    cpu_mode arm_mode = cpu_mode::system;
 
     // rather than 16 by 16 bool array
     // store are a bitset
@@ -502,7 +502,7 @@ struct Cpu final
 
     const COND_LUT cond_lut = gen_cond_lut();
 
-    bool in_bios;
+    bool in_bios = false;
 
     // cpu pipeline
     u32 pipeline[2] = {0};

@@ -48,6 +48,7 @@ using namespace gl;
 #include <albion/emulator.h>
 #include <albion/debug.h>
 #include <frontend/input.h>
+#include <frontend/playback.h>
 #include "texture.h"
 
 
@@ -159,7 +160,7 @@ protected:
     virtual void write_mem(u64 addr, u8 v) {UNUSED(addr); UNUSED(v);}
 
 
-
+    Playback playback;
     b32 emu_running = false;
 
     b32 display_viewer_enabled = false;

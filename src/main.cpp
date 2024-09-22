@@ -2,6 +2,7 @@
 #include <frontend/imgui/imgui_window.h>
 #include <frontend/destoer/destoer_window.h>
 #include <albion/lib.h>
+#include <iostream>
 
 #ifdef SDL_REQUIRED
 #define SDL_MAIN_HANDLED

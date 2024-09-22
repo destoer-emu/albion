@@ -51,6 +51,7 @@ Mem::Mem(GBA &gba) : dma{gba}, debug(gba.debug), cpu(gba.cpu),
     std::fill(vram.begin(),vram.end(),0);
     std::fill(oam.begin(),oam.end(),0);
     std::fill(sram.begin(),sram.end(),0);
+    std::fill(rom.begin(),rom.end(),0);
 
 
     backing_vec[static_cast<size_t>(memory_region::wram_board)] = board_wram.data();
@@ -67,10 +68,6 @@ void Mem::init(std::string filename)
 
     // read out rom
     read_bin(filename,rom);
-
-
-
-    
 
     std::fill(board_wram.begin(),board_wram.end(),0);
     std::fill(chip_wram.begin(),chip_wram.end(),0);

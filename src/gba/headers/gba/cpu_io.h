@@ -41,17 +41,17 @@ struct Timer
     void write_control(u8 v);
 
     // counter
-    u16 reload;
-    u16 counter;
+    u16 reload = 0;
+    u16 counter = 0;
 
 
-    int cycle_count;
+    int cycle_count = 0;
 
     // control
-    int scale;
-    bool count_up;
-    bool irq;
-    bool enable;
+    int scale = 0;
+    bool count_up = false;
+    bool irq = false;
+    bool enable = false;
 
 
     static constexpr int cycle_limit[4] = {1,64,256,1024};
@@ -76,9 +76,9 @@ struct CpuIo
 
 
     // interrupt master enable
-    bool ime;
-    u16 interrupt_enable;
-    u16 interrupt_flag;
+    bool ime = false;
+    u16 interrupt_enable = 0;
+    u16 interrupt_flag = 0;
     HaltCnt halt_cnt;
 
 

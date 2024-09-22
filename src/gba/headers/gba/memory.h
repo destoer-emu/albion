@@ -411,7 +411,7 @@ struct Mem final
     Flash flash;
 
     save_type cart_type;
-    size_t save_size;
+    size_t save_size = 0;
     std::string filename;
 
 
@@ -457,27 +457,27 @@ struct Mem final
     };
 
     std::vector<u8> eeprom; // 0x2000
-    int addr_size;
-    int eeprom_idx;
-    int eeprom_command;
-    u32 eeprom_addr;
-    uint64_t eeprom_data;
-    eeprom_state state;
-    u32 rom_size;
+    int addr_size = 0;
+    int eeprom_idx = 0;
+    int eeprom_command = 0;
+    u32 eeprom_addr = 0;
+    uint64_t eeprom_data = 0;
+    eeprom_state state = eeprom_state::ready;
+    u32 rom_size = 0;
 
 
     // access information
-    bool sequential;
-    u32 last_addr;
+    bool sequential = true;
+    u32 last_addr = 0;
 
     // wait state caching
-    u32 wait_seq_16;
-    u32 wait_seq_32;
+    u32 wait_seq_16 = 0;
+    u32 wait_seq_32 = 0;
 
-    u32 wait_nseq_16;
-    u32 wait_nseq_32;
+    u32 wait_nseq_16 = 0;
+    u32 wait_nseq_32 = 0;
     
-    u32 prefetch_count;
+    u32 prefetch_count = 0;
     bool use_prefetch = false;
    
 

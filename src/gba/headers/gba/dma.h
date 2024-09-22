@@ -22,34 +22,34 @@ struct DmaReg
     DmaReg(int reg);
     void init();
 
-    u32 src;
-    u32 dst;
-    u16 word_count;
+    u32 src = 0;
+    u32 dst = 0;
+    u16 word_count = 0;
     
     // internal copies reloaded upon enable
     // or upon repeat
-    u32 src_shadow;
-    u32 dst_shadow;
-    u16 word_count_shadow;
+    u32 src_shadow = 0;
+    u32 dst_shadow = 0;
+    u16 word_count_shadow = 0;
 
 
-    int dst_cnt; // 0 = inc, 1 = dec, 3 = inc/reload
-    int src_cnt; // 0 = inc, 1 = dec, 3 = invalid
-    bool dma_repeat;
-    bool is_word; // else 16 bit
-    bool drq; // game pak 3 only
-    int transfer_type;  // immediatly, vblank, hblank, special
-    dma_type start_time;
-    bool irq; // irq at end of word count
-    bool enable;
+    int dst_cnt = 0; // 0 = inc, 1 = dec, 3 = inc/reload
+    int src_cnt = 0; // 0 = inc, 1 = dec, 3 = invalid
+    bool dma_repeat = false;
+    bool is_word = false; // else 16 bit
+    bool drq = false; // game pak 3 only
+    int transfer_type = 0;  // immediatly, vblank, hblank, special
+    dma_type start_time = dma_type::immediate;
+    bool irq = false; // irq at end of word count
+    bool enable = false;
     static constexpr int max_counts[4] = {0x4000,0x4000,0x4000,0x10000};
-    const int max_count;
+    const int max_count = false;
 
 
     static constexpr interrupt dma_interrupts[4] = {interrupt::dma0,interrupt::dma1,interrupt::dma2,interrupt::dma3}; 
     const interrupt dma_interrupt;
 
-    bool interrupted;
+    bool interrupted = false;
 };
 
 
@@ -70,7 +70,7 @@ struct Dma
 
     void turn_off_video_capture();
 
-    int active_dma;
+    int active_dma = -1;
     std::array<DmaReg,4> dma_regs{0,1,2,3};
 
 
