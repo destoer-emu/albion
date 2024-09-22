@@ -83,8 +83,8 @@ void Apu::push_samples(u32 cycles) noexcept
 		const auto sound_select = psg.read_nr51();
         const auto nr50 = psg.read_nr50();
 
-        const f32 left = mix_psg_channels(output,(nr50 >> 4) & 7,(sound_select >> 4) & 0xf,true);
-        const f32 right = mix_psg_channels(output,nr50 & 7,sound_select & 0xf,true);
+        const f32 left = gameboy_psg::mix_psg_channels(output,(nr50 >> 4) & 7,(sound_select >> 4) & 0xf,true);
+        const f32 right = gameboy_psg::mix_psg_channels(output,nr50 & 7,sound_select & 0xf,true);
 
         // push our samples!
         push_sample(audio_buffer,left,right);

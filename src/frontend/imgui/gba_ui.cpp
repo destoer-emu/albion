@@ -19,6 +19,9 @@ void GBAWindow::reset_instance(const std::string& name, b32 use_bios)
     gba_display_viewer.init();
     screen.init_texture(gameboyadvance::SCREEN_WIDTH,gameboyadvance::SCREEN_HEIGHT);
     gba.reset(name);
+    gba.apu.audio_buffer.playback = &playback;
+    playback.init(gba.apu.audio_buffer);
+    playback.start();
 }
 
 void GBAWindow::stop_instance()
