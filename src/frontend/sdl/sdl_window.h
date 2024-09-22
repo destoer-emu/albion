@@ -1,6 +1,7 @@
 #pragma once
 #ifdef FRONTEND_SDL
 #include <frontend/input.h>
+#include <frontend/playback.h>
 
 #define SDL_MAIN_HANDLED
 #ifdef _WIN32
@@ -17,7 +18,8 @@ public:
     void main(std::string filename, b32 start_debug);
 
 protected:
-    virtual void init(const std::string& filename) = 0;
+    // This should setup the playback with an appropiate buffer
+    virtual void init(const std::string& filename,Playback& playback) = 0;
     virtual void pass_input_to_core() = 0;
     virtual void run_frame() = 0;
     virtual void handle_debug() = 0;
@@ -25,9 +27,6 @@ protected:
     virtual void core_throttle() = 0;
     virtual void core_unbound() = 0;
     virtual void debug_halt() = 0;
-
-
-
 
 
     void init_sdl(u32 x, u32 y);
@@ -42,6 +41,7 @@ protected:
     s32 Y;
 
     Input input;
+    Playback playback;
 
     b32 throttle_emu;       
 };

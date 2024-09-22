@@ -1,4 +1,4 @@
-#include <destoer.h>
+#include <destoer/destoer.h>
 #include <albion/lib.h>
 #ifndef FRONTEND_HEADLESS 
 
@@ -22,7 +22,6 @@ void gb_run_test_helper(const std::vector<std::string> &tests, int seconds)
         try
         {
             gb.reset(x);
-            gb.apu.playback.stop();
             gb.throttle_emu = false;
 
 

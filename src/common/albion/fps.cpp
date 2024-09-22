@@ -1,4 +1,5 @@
 #include <albion/fps.h>
+#include <numeric>
 
 FpsCounter::FpsCounter()
 {
@@ -31,11 +32,11 @@ void FpsCounter::reading_end()
     
         const auto frame_time_average = std::accumulate(frame_times.begin(),frame_times.end(),0) / SIZE;
 
-        fps = 1000000 / frame_time_average;
+        fps = 1000000.0 / frame_time_average;
     }
 }
 
-uint32_t FpsCounter::get_fps() const
+f32 FpsCounter::get_fps() const
 {
     return fps;
 }

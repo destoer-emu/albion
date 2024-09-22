@@ -2,11 +2,13 @@
 #include "gb_window.h"
 
 
-void GameboyWindow::init(const std::string& filename)
+void GameboyWindow::init(const std::string& filename,Playback& playback)
 {
     init_sdl(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);
     input.init();
     gb.reset(filename);	
+    gb.apu.audio_buffer.playback = &playback;
+    playback.init(gb.apu.audio_buffer);
 }
 
 void GameboyWindow::pass_input_to_core()
@@ -24,7 +26,7 @@ void GameboyWindow::core_quit()
 void GameboyWindow::run_frame()
 {
     gb.run();
-    render(gb.ppu.screen.data());
+    render(gb.ppu.rendered.data());
 }
 
 void GameboyWindow::debug_halt()
@@ -34,13 +36,14 @@ void GameboyWindow::debug_halt()
 
 void GameboyWindow::core_throttle()
 {
-    gb.apu.playback.start();
+    playback.start();
+    reset_audio_buffer(gb.apu.audio_buffer);
     gb.throttle_emu = true;
 }
 
 void GameboyWindow::core_unbound()
 {
-    gb.apu.playback.stop();
+    playback.stop();
     gb.throttle_emu = false; 
 }
 

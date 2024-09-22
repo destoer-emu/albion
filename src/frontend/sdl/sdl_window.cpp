@@ -144,7 +144,7 @@ void SDLMainWindow::main(std::string filename, b32 start_debug)
 	//constexpr uint32_t fps = 60; 
 	//constexpr uint32_t screen_ticks_per_frame = 1000 / fps;
 	//uint64_t next_time = current_time() + screen_ticks_per_frame;
-	init(filename);
+	init(filename,playback);
 
 	FpsCounter fps_counter;
 
@@ -156,14 +156,14 @@ void SDLMainWindow::main(std::string filename, b32 start_debug)
 	}
 #endif
 
+	playback.start();
+
     for(;;)
     {
 		fps_counter.reading_start();
 		auto control = input.handle_input(window);
 		
 		pass_input_to_core();
-
-
 
 		run_frame();
 
@@ -202,7 +202,7 @@ void SDLMainWindow::main(std::string filename, b32 start_debug)
 
 		fps_counter.reading_end();
 
-		SDL_SetWindowTitle(window,fmt::format("albion: {}",fps_counter.get_fps()).c_str());
+		SDL_SetWindowTitle(window,fmt::format("albion: {:.2f}",fps_counter.get_fps()).c_str());
 
 		//next_time = current_time() + screen_ticks_per_frame;
 		

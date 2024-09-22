@@ -1,5 +1,7 @@
 
 #include "playback.h"
+#include <algorithm>
+
 #ifdef AUDIO_SDL
 
 
@@ -10,68 +12,28 @@
 #include <SDL2/SDL.h>
 #endif
 
-void Playback::init(int playback_frequency,int sample_size) noexcept
+// legacy interface
+static constexpr SDL_AudioDeviceID dev = 1;
+
+void Playback::init(AudioBuffer& buffer) noexcept
 {
+    UNUSED(buffer);
     SDL_AudioSpec audio_spec;
 
 	memset(&audio_spec,0,sizeof(audio_spec));
 
-	audio_spec.freq = playback_frequency;
+	audio_spec.freq = AUDIO_BUFFER_SAMPLE_RATE;
 	audio_spec.format = AUDIO_F32SYS;
-	audio_spec.channels = 2;
-	audio_spec.samples = sample_size;	
-	audio_spec.callback = NULL; // we will use SDL_QueueAudio()  rather than 
-	audio_spec.userdata = NULL; // using a callback :)
+	audio_spec.channels = AUDIO_CHANNEL_COUNT;
+	audio_spec.samples = 2048;	
+	audio_spec.callback = NULL; 
+	audio_spec.userdata = NULL;
 
-
-    sample_idx = 0;
-
-    audio_buf.resize(sample_size);
-
-    SDL_OpenAudio(&audio_spec,NULL);
-	start();
-}
-
-void Playback::mix_samples(float &f1, const float &f2, int volume) noexcept
-{
-    SDL_MixAudioFormat((Uint8*)&f1,(Uint8*)&f2,AUDIO_F32SYS,sizeof(float),volume);
-}
-
-
-void Playback::push_sample(const float &l, const float &r) noexcept
-{
-    if(sample_idx >= audio_buf.size())
+    if(SDL_OpenAudio(&audio_spec,NULL) < 0) 
     {
-        push_samples();
-        sample_idx = 0;
+        spdlog::error("Failed to open audio {}",SDL_GetError());
     }
-
-    audio_buf[sample_idx] = l;
-    audio_buf[sample_idx+1] = r;
-
-    sample_idx += 2;
-}
-
-#include <thread>
-
-void Playback::push_samples()
-{
-    // legacy interface
-    static constexpr SDL_AudioDeviceID dev = 1;
-    
-    auto buffer_size = (audio_buf.size() * sizeof(float));
-
-    // delay execution and let the que drain
-    while(SDL_GetQueuedAudioSize(dev) > buffer_size)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }			
-
-
-    if(SDL_QueueAudio(dev,audio_buf.data(),buffer_size) < 0)
-    {
-        printf("%s\n",SDL_GetError()); exit(1);
-    }
+	stop();
 }
 
 void Playback::start() noexcept
@@ -84,14 +46,43 @@ void Playback::stop() noexcept
 {
 	play_audio = false;
     SDL_PauseAudio(1);
-	SDL_ClearQueuedAudio(1);
+	SDL_ClearQueuedAudio(dev);
 }
 
 Playback::~Playback()
 {
+    stop();
     SDL_CloseAudio();
 }
 
+void push_samples(Playback* playback,AudioBuffer& audio_buffer)
+{
+    playback->push_samples(audio_buffer);
+}
+
+void Playback::push_samples(AudioBuffer& audio_buffer)
+{
+    if(!play_audio)
+    {
+        return;
+    }
+
+    //printf("pushing: %ld : %ld : %ld\n",audio_buffer.length,audio_buffer.buffer.size(),SDL_GetQueuedAudioSize(dev) / sizeof(f32));
+
+    const u32 buffer_size = audio_buffer.length * sizeof(f32);
+
+    // delay execution and let the queue drain
+    while(SDL_GetQueuedAudioSize(dev) > buffer_size)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }			
+
+    
+    if(SDL_QueueAudio(dev,audio_buffer.buffer.data(),buffer_size) < 0)
+    {
+        printf("Failed to queue audio %s\n",SDL_GetError()); exit(1);
+    }
+}
 
 #else
 
@@ -105,21 +96,6 @@ static_assert(false,"no audio frontend defined!");
 
 // stub audio playback helpers
 #ifndef AUDIO_ENABLE
-void Playback::init(int playback_frequency,int sample_size) noexcept
-{
-    UNUSED(playback_frequency); UNUSED(sample_size);
-}
-
-void Playback::mix_samples(float &f1, const float &f2,int volume) noexcept
-{
-    UNUSED(f1); UNUSED(f2); UNUSED(volume);
-}
-
-void Playback::push_sample(const float &l, const float &r) noexcept
-{
-    UNUSED(l); UNUSED(r);
-}
-
 void Playback::start() noexcept
 {
 

@@ -17,6 +17,9 @@ void GBWindow::reset_instance(const std::string& name, b32 use_bios)
     gb_display_viewer.init();
     screen.init_texture(gameboy::SCREEN_WIDTH,gameboy::SCREEN_HEIGHT);
     gb.reset(name,true,use_bios);
+    gb.apu.audio_buffer.playback = &playback;
+    playback.init(gb.apu.audio_buffer);
+    playback.start();
 }
 
 void GBWindow::stop_instance()
@@ -40,12 +43,13 @@ void GBWindow::save_state(const std::string& filename)
 
 void GBWindow::enable_audio()
 {
-    gb.apu.playback.start();
+    playback.start();
 }
 
 void GBWindow::disable_audio()
 {
-    gb.apu.playback.stop();
+    playback.stop();
+    reset_audio_buffer(gb.apu.audio_buffer);
 }
 
 void GBWindow::run_frame()
@@ -81,13 +85,14 @@ void GBWindow::run_frame()
 
 void GBWindow::throttle_core()
 {
-    gb.apu.playback.start();
+    playback.start();
     gb.throttle_emu = true;
 }
 
 void GBWindow::unbound_core()
 {
-    gb.apu.playback.stop();
+    playback.stop();
+    reset_audio_buffer(gb.apu.audio_buffer);
     gb.throttle_emu = false;     
 }
 

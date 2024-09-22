@@ -1,8 +1,8 @@
-#include <destoer.cpp>
 #include <frontend/sdl/sdl_window.h>
 #include <frontend/imgui/imgui_window.h>
 #include <frontend/destoer/destoer_window.h>
 #include <albion/lib.h>
+#include <iostream>
 
 #ifdef SDL_REQUIRED
 #define SDL_MAIN_HANDLED
@@ -39,13 +39,10 @@ int main(int argc, char *argv[])
 
             return 0;
         }
-
-        if (arg == "-dev-gen")
-        {
-        }
     }
 #endif
 
+    spdlog::set_level(spdlog::level::debug);
     spdlog::set_pattern("[%H:%M:%S.%e] [%l] %v");
     std::fesetround(FE_TONEAREST);
 

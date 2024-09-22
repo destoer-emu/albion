@@ -1,10 +1,12 @@
 #include "gba_window.h"
 
-void GBAWindow::init(const std::string& filename)
+void GBAWindow::init(const std::string& filename, Playback& playback)
 {
     init_sdl(gameboyadvance::SCREEN_WIDTH,gameboyadvance::SCREEN_HEIGHT);
     input.init();
     gba.reset(filename);	
+    gba.apu.audio_buffer.playback = &playback;
+    playback.init(gba.apu.audio_buffer);
 }
 
 void GBAWindow::pass_input_to_core()
@@ -32,13 +34,14 @@ void GBAWindow::debug_halt()
 
 void GBAWindow::core_throttle()
 {
-    gba.apu.playback.start();
+    playback.start();
+    reset_audio_buffer(gba.apu.audio_buffer);
     gba.throttle_emu = true;
 }
 
 void GBAWindow::core_unbound()
 {
-    gba.apu.playback.stop();
+    playback.stop();
     gba.throttle_emu = false; 
 }
 

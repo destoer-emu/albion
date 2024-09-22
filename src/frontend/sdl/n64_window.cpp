@@ -1,8 +1,9 @@
 #include "n64_window.h"
 
 
-void N64Window::init(const std::string& filename)
+void N64Window::init(const std::string& filename,Playback& playback)
 {
+    UNUSED(playback);
     init_sdl(320,240);
     input.init();
     reset(n64,filename);
