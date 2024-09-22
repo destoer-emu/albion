@@ -1,6 +1,6 @@
 #pragma once
 #include <albion/lib.h>
-#include <frontend/playback.h>
+#include <albion/audio.h>
 #include <gb/forward_def.h>
 #include <gb/mem_constants.h>
 #include <gb/scheduler.h>
@@ -50,7 +50,7 @@ struct Apu
 	}
 
 	gameboy_psg::Psg psg;
-	Playback playback;
+	AudioBuffer audio_buffer;
 
 	bool is_cgb;
 
@@ -71,12 +71,9 @@ struct Apu
 	GameboyScheduler &scheduler;
 
 	// counter used to down sample	
-	int down_sample_cnt = 0; 
+	s32 down_sample_cnt = 0; 
 
-
-	static constexpr int freq_playback = 44100;
-	static constexpr int down_sample_lim = (4 * 1024 * 1024) / freq_playback;
-
+	static constexpr int DOWN_SAMPLE_LIMIT = (4 * 1024 * 1024) / AUDIO_BUFFER_SAMPLE_RATE;
 };
 
 }

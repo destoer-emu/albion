@@ -1,4 +1,3 @@
-#include <destoer.cpp>
 #include <frontend/sdl/sdl_window.h>
 #include <frontend/imgui/imgui_window.h>
 #include <frontend/destoer/destoer_window.h>

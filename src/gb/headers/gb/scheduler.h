@@ -19,10 +19,11 @@ enum class gameboy_event
     internal_timer,
     timer_reload,
     ppu,
-    serial
+    serial,
+    cycle_frame,
 };
 
-constexpr size_t EVENT_SIZE = 10;
+constexpr size_t EVENT_SIZE = 11;
 
 struct GameboyScheduler final : public Scheduler<EVENT_SIZE,gameboy_event>
 {

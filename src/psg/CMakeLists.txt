@@ -14,4 +14,4 @@ set(psg_files
 add_library(psg STATIC ${psg_files})
 target_include_directories(psg PUBLIC "headers/")
 
-target_link_libraries(psg PUBLIC spdlog::spdlog)
+target_link_libraries(psg PUBLIC spdlog::spdlog destoer)

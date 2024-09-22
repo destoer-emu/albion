@@ -1,6 +1,5 @@
 #include <gb/gb.h>
-
-
+#include <albion/audio.h>
 
 namespace gameboy
 {
@@ -8,19 +7,17 @@ namespace gameboy
 Apu::Apu(GB &gb) : scheduler(gb.scheduler)
 {
     // init our audio playback
-    playback.init(freq_playback,2048);
+    audio_buffer = make_audio_buffer();
 }
 
 void Apu::init(gameboy_psg::psg_mode mode, bool use_bios) noexcept
 {
+    reset_audio_buffer(audio_buffer);
     psg.init(mode,use_bios);
 
 	enable_sound();
 
-
-	playback.start();
-
-    down_sample_cnt = down_sample_lim;
+    down_sample_cnt = DOWN_SAMPLE_LIMIT;
 
     insert_new_sample_event(); 
 }
@@ -67,60 +64,61 @@ void Apu::insert_new_sample_event() noexcept
     scheduler.insert(event,false);
 }
 
+f32 mix_psg_channels(const f32 *output,u32 volume_level,u32 enable_set,bool enable)
+{
+    if(!enable)
+    {
+        return 0.0;
+    }
+
+    f32 f0 = 0.0;
+
+    //enable_set = 0b0100;
+
+    // 16 * 8 = 256 max
+    const f32 volume = (16 * (volume_level + 1)) / 256.0f;
+    u32 enabled = 0;
+    for(int i = 0; i < 4; i++)
+    {
+        if(is_set(enable_set,i))
+        {
+            f0 += output[i];
+            enabled += 1;
+        }            
+    }
+
+    if(enabled == 0) 
+    {
+        return 0.0;
+    }
+
+    return (f0 / f32(enabled)) * volume;   
+}
+
 void Apu::push_samples(u32 cycles) noexcept
 {
 	// handle audio output 
     down_sample_cnt -= cycles;
 	if(down_sample_cnt <= 0)
 	{
-		down_sample_cnt = down_sample_lim;
+		down_sample_cnt += DOWN_SAMPLE_LIMIT;
         insert_new_sample_event();
 
-		if(!playback.is_playing()) 
-		{ 
-			return; 
-		}
-
-	
-
-        float output[4];
+        f32 output[4];
         for(int i = 0; i < 4; i++)
         {
-            output[i] = static_cast<float>(psg.channels[i].output) / 100;
+            output[i] = f32(psg.channels[i].output) / 16.0f;
         }
+
 
 		const auto sound_select = psg.read_nr51();
         const auto nr50 = psg.read_nr50();
 
-        // left output
-        float f0 = 0;
-        int volume = 16*((nr50 & 7)+1);
-        for(int i = 0; i < 4; i++)
-        {
-            if(is_set(sound_select,i))
-            {
-                const float f1 = output[i];
-                playback.mix_samples(f0,f1,volume);
-            }            
-        }
-        const float left = f0;
-
-		// right output
-		f0 = 0.0f;
-        volume = 16*(((nr50 >> 4) & 7)+1);
-        for(int i = 0; i < 4; i++)
-        {
-            if(is_set(sound_select,i+4))
-            {
-                const float f1 = output[i];
-                playback.mix_samples(f0,f1,volume);
-            }            
-        }
-        const float right = f0;
-
+        const f32 left = mix_psg_channels(output,(nr50 >> 4) & 7,(sound_select >> 4) & 0xf,true);
+        const f32 right = mix_psg_channels(output,nr50 & 7,sound_select & 0xf,true);
 
         // push our samples!
-        playback.push_sample(left,right);
+        push_sample(audio_buffer,left,right);
     }
 }
 

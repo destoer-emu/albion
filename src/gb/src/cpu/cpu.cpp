@@ -224,6 +224,13 @@ void Cpu::switch_double_speed() noexcept
 
 }
 
+void Cpu::insert_new_cycle_event() noexcept
+{
+	const u32 cycles = is_double? (8 * 1024 * 1024) : (4 * 1024 * 1024);
+	const auto cycle_event = scheduler.create_event(cycles / 60,gameboy_event::cycle_frame);
+	scheduler.insert(cycle_event,false);		
+}
+
 void Cpu::tima_reload() noexcept
 {
 	mem.io[IO_TIMA] = mem.io[IO_TMA]; // reset to value in tma

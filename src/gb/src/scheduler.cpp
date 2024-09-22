@@ -40,6 +40,12 @@ void GameboyScheduler::service_event(const EventNode<gameboy_event> &node)
 
     switch(node.type)
     {
+        case gameboy_event::cycle_frame:
+        {
+            cpu.cycle_frame = true;
+            break;
+        }
+
         case gameboy_event::oam_dma_end:
         {
             mem.tick_dma(cycles_to_tick);

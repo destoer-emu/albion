@@ -53,7 +53,6 @@ struct GB
     GameboyScheduler scheduler{*this};
     GBDebug debug{*this};
 
-
     std::atomic_bool quit = false;
     bool throttle_emu = true;
 };

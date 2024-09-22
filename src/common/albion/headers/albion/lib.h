@@ -1,37 +1,7 @@
 #pragma once
-// #include <spdlog/fmt/bundled/format.h>
+#include <spdlog/fmt/bundled/format.h>
 #include <spdlog/spdlog.h>
-#include <string>
-#include <vector>
-#include <array>
-#include <iostream>
-#include <algorithm>
-#include <iterator>
-#include <functional>
-#include <exception>
-#include <filesystem>
-#include <numeric>
-#include <limits>
-#include <thread>
-#include <mutex>
-#include <chrono>
-#include <map>
-#include <list>
-#include <set>
-#include <fstream>
-#include <type_traits>
-#include <atomic>
-#include <optional>
-#include <variant>
-#include <cstdint>
-#include <cassert>
-#include <cstdio>
-#include <cstdlib>
-#include <cmath>
-#include <cstring>
-#include <climits>
-#include <cstdarg>
-#include <destoer.h>
+#include <destoer/destoer.h>
 using namespace destoer;
 
 

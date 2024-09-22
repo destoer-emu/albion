@@ -1,5 +1,6 @@
 #pragma once
 #include <albion/lib.h>
+#include <iostream>
 
 
 struct Trace

@@ -192,15 +192,16 @@ void GB::key_pressed(button b)
 void GB::run()
 {
     ppu.new_vblank = false;
+	cpu.cycle_frame = false;
+	cpu.insert_new_cycle_event();
 #ifdef DEBUG
-
 	if(debug.is_halted())
 	{
 		return;
 	}
 
 	// break out early if we have hit a debug event
-	while(!ppu.new_vblank) 
+	while(!cpu.cycle_frame) 
     {
 		cpu.exec_instr();
 		if(debug.is_halted())
@@ -209,7 +210,8 @@ void GB::run()
 		}
 	}
 #else 
-	while(!ppu.new_vblank) // exec until a vblank hits
+	// exec until cycles have elapsed
+	while(!cpu.cycle_frame)
 	{
 		cpu.exec_instr();
 	}

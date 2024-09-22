@@ -1,7 +1,7 @@
 
 
 add_library(n64 STATIC "src/n64.cpp")
-target_compile_definitions(n64 PUBLIC -DGBA_ENABLED)
+target_compile_definitions(n64 PUBLIC -DN64_ENABLED)
 target_include_directories(n64 PUBLIC "headers/")
 target_include_directories(n64 PUBLIC "src/")
 

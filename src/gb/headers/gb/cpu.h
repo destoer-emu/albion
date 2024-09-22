@@ -24,6 +24,8 @@ struct Cpu final
 
     bool get_double() const;
 
+    void insert_new_cycle_event() noexcept;
+
     void insert_new_timer_event() noexcept;
     int get_next_timer_event() const noexcept;
 
@@ -188,6 +190,8 @@ struct Cpu final
     u16 sp;
     u16 pc;
 
+
+    bool cycle_frame = false;
 
     static constexpr u32 Z = 7; // zero flag
     static constexpr u32 N = 6; // negative flag

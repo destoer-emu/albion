@@ -11,6 +11,7 @@ namespace gameboy
 Ppu::Ppu(GB &gb) : cpu(gb.cpu), mem(gb.mem),scheduler(gb.scheduler) 
 {
 	screen.resize(SCREEN_WIDTH*SCREEN_HEIGHT);
+	rendered.resize(SCREEN_WIDTH*SCREEN_HEIGHT);
 	std::fill(screen.begin(),screen.end(),0);	
 }
 
@@ -427,10 +428,13 @@ void Ppu::update_graphics(u32 cycles) noexcept
 				if(current_line == 144)
 				{
 					mode = ppu_mode::vblank; // switch to vblank
-					new_vblank = true;
 					window_y_triggered = false;
 					cpu.request_interrupt(0); // vblank interrupt
-					
+					new_vblank = true;
+
+					// swap the drawing buffer
+					std::swap(screen,rendered);
+
 					// edge case oam stat interrupt is triggered here if enabled
 					if(is_set(status,5) && !signal)
 					{
@@ -465,7 +469,7 @@ void Ppu::update_graphics(u32 cycles) noexcept
 					window_y_line = 0;
 					// enter oam search on the first line :)
 					mode = ppu_mode::oam_search; 
-					early_line_zero = false;	
+					early_line_zero = false;
 				}
 				stat_update();
 				insert_new_ppu_event();		

@@ -1,4 +1,4 @@
-#include <frontend/input.h>
+#include "input.h"
 #include <albion/lib.h>
 
 #ifdef CONTROLLER_SDL

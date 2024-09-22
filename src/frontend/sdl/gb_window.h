@@ -5,7 +5,7 @@
 class GameboyWindow final : public SDLMainWindow
 {
 protected:
-    void init(const std::string& filename) override;
+    void init(const std::string& filename,Playback& playback) override;
     void pass_input_to_core() override;
     void run_frame() override;
     void handle_debug() override;

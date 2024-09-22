@@ -28,4 +28,4 @@ add_library(gb STATIC ${gb_files})
 target_compile_definitions(gb PUBLIC -DGB_ENABLED)
 target_include_directories(gb PUBLIC "headers/")
 
-target_link_libraries(gb PUBLIC spdlog::spdlog psg)
+target_link_libraries(gb PUBLIC spdlog::spdlog psg destoer)

@@ -35,7 +35,7 @@ struct Ppu
     int get_next_ppu_event() const noexcept;
     void insert_new_ppu_event() noexcept;
 
-
+    std::vector<u32> rendered; 
     std::vector<u32> screen; // 160 by 144
 
     // inform ppu that registers that can affect

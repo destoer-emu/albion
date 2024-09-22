@@ -8,8 +8,8 @@ include(FetchContent)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-#set(FRONTEND "SDL")
-set(FRONTEND "IMGUI")
+set(FRONTEND "SDL")
+#set(FRONTEND "IMGUI")
 #set(FRONTEND "DESTOER")
 
 # external frontend
@@ -24,8 +24,8 @@ if(${FRONTEND} STREQUAL "IMGUI")
 endif()
 
 set(GB "TRUE")
-set(GBA "TRUE")
-set(N64 "TRUE")
+#set(GBA "TRUE")
+#set(N64 "TRUE")
 
 #add_definitions(-DBOUNDS_CHECK)
 if(${FRONTEND} STREQUAL "IMGUI")
@@ -63,13 +63,7 @@ file(GLOB src_files
 # add some includes
 include_directories("src/common/albion/headers")
 include_directories("src/common/thirdparty")
-
-include_directories("src")
-
-#destoer lib
-include_directories("destoer-lib/src/")
-add_definitions(-DFORWARD_DEF_DESTOER_LIB)
-
+include_directories("src/")
 
 if(${FRONTEND} STREQUAL "SDL")
 	file(GLOB frontend_files
@@ -99,6 +93,8 @@ else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Werror -Wall -Wextra -march=native -pthread -O0 -fomit-frame-pointer -Wno-missing-braces")
 endif()
 
+add_subdirectory("destoer-lib")
+
 if(DEFINED N64)
 	add_subdirectory("src/n64")
 	add_subdirectory("beyond-all-repair")
@@ -124,4 +120,5 @@ if(${FRONTEND} STREQUAL "IMGUI")
 	target_link_libraries(albion PUBLIC imgui)
 endif()
 
-target_link_libraries(albion PRIVATE spdlog::spdlog SDL2::SDL2-static)
+find_package(SDL2 REQUIRED)
+target_link_libraries(albion PRIVATE destoer spdlog::spdlog SDL2)
